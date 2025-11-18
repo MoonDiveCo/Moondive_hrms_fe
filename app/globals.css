@@ -1,26 +1,165 @@
-@import "tailwindcss";
-
+@import 'tailwindcss';
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-size-base: clamp(0.6rem, 0.9rem + 0.2vw, 1.125rem);
+
+  --font-size-h1: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+  --font-size-h2: clamp(1.5rem, 1.7rem + 2vw, 2.75rem);
+  --font-size-h3: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  --font-size-h4: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  --font-size-h5: clamp(1rem, 0.9rem + 0.3vw, 1.25rem);
+  --font-size-sm: clamp(0.875rem, 0.8rem + 0.2vw, 1rem);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  --color-primary: #FF7B30;
+  --color-blackText: #0D1B2A;
+  --color-whiteText: #FFFFFF;
+  --color-whiteBg:#FEFEFE;
+  --color-primaryText:#484F57;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.container {
+  width: 100%;
+  max-width: 1280px;
+  padding: 0px 10px;
+  margin: 0 auto;
+}
+
+.section-heading{
+  font-weight: 600;
+}
+
+
+
+body {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: 700;
+   line-height: 1.2;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: var(--font-size-h3);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+h4 {
+  font-size: var(--font-size-h4);
+  font-weight: 500;
+}
+
+h5 {
+  font-size: var(--font-size-h5);
+  font-weight: 500;
+}
+
+p,
+a,
+label,
+ul,
+li {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+}
+.custom-scrollbar {
+  scrollbar-width: none; 
+}
+.custom-scrollbar::-webkit-scrollbar {
+  display: none; 
+}
+.medium-para{
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-primaryText);
+}
+ 
+.small-para-medium{
+  font-size:0.875 rem;
+  font-weight: 500;
+}
+.small-para-semibold{
+    font-size:0.875 rem;
+    font-weight: 600;
+}
+ 
+.micro-para-medium{
+    font-size:0.75 rem;
+    font-weight: 600;
+}
+
+.component-spacing-top-bottom{
+  padding-top:64px;
+  padding-bottom:64px
+}
+
+.component-spacing-top{
+  padding-top:64px;
+}
+
+.component-spacing-bottom{
+  padding-bottom: 64px;
+}
+.component-spacing-top{
+  padding-top: 64px;
+}
+
+@media (max-width:1280px){
+  .container{
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (min-width:1480px) {
+  :root {
+    --font-size-base:1.1rem;
+  }
 }
+
+@media (min-width:1536px) {
+  .container {
+    width: 100%;
+    max-width: 1380px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+@media (max-width:640px){
+  :root{
+  --font-size-2xl: clamp(1.8rem,1rem + 2vw, 9rem);
+  --font-size-xl: clamp(1.875rem, 1.25rem + 1.5vw, 3rem);
+  --font-size-lg: clamp(1.25rem, 1rem + 1vw, 2rem);
+  --font-size-md: clamp(1rem, 0.875rem + 0.5vw, 1.8rem);
+ }
+  
+  .container {
+    width: 90%;
+  }
+  .dashboardContainer{
+    width: 90%;
+  }
+  p{
+    font-size: 0.9rem;
+  }
+}
+
+
+
+
+
+
+
+
