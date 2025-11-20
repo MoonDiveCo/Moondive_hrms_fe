@@ -1,9 +1,32 @@
 "use client";
-
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
+import Sign from "../public/signup/Sign.svg";
+import Google from "../public/signup/Google.png";
+import LinkedIn from "../public/signup/LinkedIn.png";
+import { COUNTRY_CODES } from "../constants/CountryCodes";
+import {
+  SIGNUP_BRAND_LETTER,
+  SIGNUP_BRAND_NAME,
+  SIGNUP_HEADING_LINE1,
+  SIGNUP_HEADING_LINE2,
+  SIGNUP_DESCRIPTION,
+  SIGNUP_LABEL_LASTNAME,
+  SIGNUP_LABEL_FIRSTNAME,
+  SIGNUP_LABEL_EMAIL,
+  SIGNUP_LABEL_PASSWORD,
+  SIGNUP_LABEL_PHONE,
+  SIGNUP_LABEL_AGREE_PREFIX,
+  SIGNUP_LABEL_TERMS,
+  SIGNUP_FOOTER,
+  SIGNUP_PLACEHOLDER_FIRSTNAME,
+  SIGNUP_PLACEHOLDER_LASTNAME,
+  SIGNUP_PLACEHOLDER_EMAIL,
+  SIGNUP_PLACEHOLDER_PASSWORD,
+  SIGNUP_PLACEHOLDER_PHONE,
+  SIGNUP_SOCIAL_TEXT,
+} from "../text";
 export default function Signup() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -38,7 +61,6 @@ export default function Signup() {
       setErrorMsg("Please fill all required fields.");
       return;
     }
-
     setLoading(true);
 
     try {
@@ -89,22 +111,23 @@ export default function Signup() {
         <section className="w-full max-w-md">
           <div className="flex items-center gap-2 mb-6 md:mb-8">
             <div className="h-6 w-6 md:h-8 md:w-8 rounded-lg bg-blue-500 flex items-center justify-center text-white font-semibold text-sm md:text-base">
-              M
+              {SIGNUP_BRAND_LETTER}
             </div>
             <span className="font-semibold text-base md:text-lg text-gray-900">
-              MoonDive
+              {SIGNUP_BRAND_NAME}
             </span>
           </div>
 
           <h3 className="text-lg md:text-2xl font-semibold text-gray-900 leading-snug mb-2">
-            Welcome to MoonDive’s CRM.
-            <br /> Sign Up to get started.
+            {SIGNUP_HEADING_LINE1}
+            <br /> {SIGNUP_HEADING_LINE2}
           </h3>
-          <span className="text-sm text-gray-500">
-            Enter your details to proceed further
-          </span>
+          <span className="text-sm text-gray-500">{SIGNUP_DESCRIPTION}</span>
 
-          <form className="mt-6 md:mt-8 space-y-4 md:space-y-5" onSubmit={handleSubmit}>
+          <form
+            className="mt-6 md:mt-8 space-y-4 md:space-y-5"
+            onSubmit={handleSubmit}
+          >
             {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
             {successMsg && (
               <div className="text-sm text-green-600">{successMsg}</div>
@@ -112,77 +135,77 @@ export default function Signup() {
 
             <div>
               <label className="text-sm text-gray-700 font-medium mb-1 block">
-                First Name <span className="text-red-800">*</span>
+                {SIGNUP_LABEL_FIRSTNAME} <span className="text-red-800">*</span>
               </label>
               <input
                 name="firstName"
                 value={form.firstName}
                 onChange={handleChange}
                 type="text"
-                placeholder="john..."
+                placeholder={SIGNUP_PLACEHOLDER_FIRSTNAME}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
             </div>
 
             <div>
               <label className="text-sm text-gray-700 font-medium mb-1 block">
-                Last Name <span className="text-red-800">*</span>
+                {SIGNUP_LABEL_LASTNAME} <span className="text-red-800">*</span>
               </label>
               <input
                 name="lastName"
                 value={form.lastName}
                 onChange={handleChange}
                 type="text"
-                placeholder="Singh..."
+                placeholder={SIGNUP_PLACEHOLDER_LASTNAME}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
             </div>
 
             <div>
               <label className="text-sm text-gray-700 font-medium mb-1 block">
-                Email <span className="text-red-800">*</span>
+                {SIGNUP_LABEL_EMAIL} <span className="text-red-800">*</span>
               </label>
               <input
                 name="email"
                 value={form.email}
                 onChange={handleChange}
                 type="email"
-                placeholder="abc@gmail.com"
+                placeholder={SIGNUP_PLACEHOLDER_EMAIL}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
             </div>
 
             <div>
               <label className="text-sm text-gray-700 font-medium mb-1 block">
-                Password <span className="text-red-800">*</span>
+                {SIGNUP_LABEL_PASSWORD} <span className="text-red-800">*</span>
               </label>
               <input
                 name="password"
                 value={form.password}
                 onChange={handleChange}
                 type="password"
-                placeholder="*******"
+                placeholder={SIGNUP_PLACEHOLDER_PASSWORD}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
             </div>
 
             <div>
               <label className="text-sm text-gray-700 font-medium mb-1 block">
-                Phone Number <span className="text-red-800">*</span>
+                {SIGNUP_LABEL_PHONE} <span className="text-red-800">*</span>
               </label>
 
               <div className="flex items-center w-full rounded-full border border-gray-800 px-2 py-2">
-                {/* Country Code */}
                 <select
                   name="countryCode"
                   className="bg-transparent outline-none text-sm px-2 cursor-pointer"
-                  defaultValue="+91"
+                  value={form.countryCode}
+                  onChange={handleChange}
                 >
-                  <option value="+91">+91</option>
-                  <option value="+1">+11</option>
-                  <option value="+44">+44</option>
-                  <option value="+61">+61</option>
-                  <option value="+971">+971</option>
+                  {COUNTRY_CODES.map((item, index) => (
+                    <option key={index} value={item.code}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
                 <span className="h-6 w-px bg-gray-300 mx-2"></span>
                 <input
@@ -190,12 +213,11 @@ export default function Signup() {
                   value={form.phone}
                   onChange={handleChange}
                   type="tel"
-                  placeholder="Enter your phone number"
+                  placeholder={SIGNUP_PLACEHOLDER_PHONE}
                   className="w-full bg-transparent outline-none text-sm px-1"
                 />
               </div>
             </div>
-
             <div className="flex items-center gap-2 pt-2">
               <input
                 name="agree"
@@ -205,8 +227,10 @@ export default function Signup() {
                 className="h-4 w-4 md:h-5 md:w-5 appearance-none rounded-full border-2 border-blue-600 checked:bg-blue-600 checked:border-blue-600 cursor-pointer transition-all"
               />
               <span className="text-black font-semibold text-sm">
-                I agree with{" "}
-                <span className="text-black font-semibold">terms & conditions</span>
+                {SIGNUP_LABEL_AGREE_PREFIX}{" "}
+                <span className="text-black font-semibold">
+                  {SIGNUP_LABEL_TERMS}
+                </span>
               </span>
             </div>
 
@@ -222,32 +246,31 @@ export default function Signup() {
           </form>
 
           <div className="flex flex-col items-center gap-3 mt-6 md:mt-8">
-            <p className="text-xs text-gray-500">Or sign in with</p>
+            <p className="text-xs text-gray-500">{SIGNUP_SOCIAL_TEXT}</p>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition"
               >
-                <Image src="/LinkedIn.png" width={18} height={18} alt="LinkedIn" />
+                <Image src={LinkedIn} width={18} height={18} alt="LinkedIn" />
               </button>
               <button
                 type="button"
                 className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition"
               >
-                <Image src="/Google.png" width={18} height={18} alt="Google" />
+                <Image src={Google} width={18} height={18} alt="Google" />
               </button>
             </div>
           </div>
 
           <p className="mt-6 md:mt-8 text-xs text-gray-400 text-center">
-            © 2025 MoonDive Pvt. Ltd. – MoonDive Private Limited, All Rights
-            Reserved.
+            {SIGNUP_FOOTER}
           </p>
         </section>
       </div>
       <div className="hidden md:block md:w-1/2 relative">
         <Image
-          src="/signup/Sign.svg"
+          src={Sign}
           alt="MoonDive background"
           fill
           priority

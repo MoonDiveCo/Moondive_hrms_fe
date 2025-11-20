@@ -2,6 +2,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
+import {
+  OTP_HEADING,
+  OTP_DESCRIPTION,
+  OTP_FOOTER,
+  OTP_EMAIL_PREFIX 
+} from "../text";
+
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
 export default function OtpPage() {
@@ -182,10 +189,10 @@ export default function OtpPage() {
               <span className="font-semibold text-lg text-gray-900">MoonDive</span>
             </div>
             <h3 className="text-2xl md:text-3xl font-semibold leading-snug text-gray-900">
-              Verify your account
+             {OTP_HEADING}
             </h3>
-            <p className="mt-3 text-sm text-gray-500">Enter the one-time password sent to your email</p>
-            <p className="mt-3 text-sm text-gray-600">Email: <span className="font-semibold">{email}</span></p>
+            <p className="mt-3 text-sm text-gray-500">{OTP_DESCRIPTION}</p>
+            <p className="mt-3 text-sm text-gray-600">{OTP_EMAIL_PREFIX } <span className="font-semibold">{email}</span></p>
             <form onSubmit={handleVerify} className="mt-6 space-y-6">
               <div className="flex gap-3">
                 {otp.map((digit, index) => (
@@ -225,7 +232,7 @@ export default function OtpPage() {
           </div>
         </main>
         <footer className="px-8 pb-6 text-[10px] md:text-xs text-gray-400 text-center">
-          © 2025 Moondive Pvt. Ltd. – MoonDive Private Limited, All Rights Reserved.
+         {OTP_FOOTER}
         </footer>
       </div>
       <div className="hidden md:block md:w-1/2 relative">
