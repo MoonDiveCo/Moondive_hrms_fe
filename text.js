@@ -1,0 +1,1 @@
+export const SignUpButtonText ="Sign up/Sign in"
