@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-:root {
+/* :root {
   --font-size-base: clamp(0.6rem, 0.9rem + 0.2vw, 1.125rem);
   --font-size-h1: clamp(2.5rem, 2rem + 2vw, 3.5rem);
   --font-size-h2: clamp(1.5rem, 1.7rem + 2vw, 2.75rem);
@@ -7,7 +7,7 @@
   --font-size-h4: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
   --font-size-h5: clamp(1rem, 0.9rem + 0.3vw, 1.25rem);
   --font-size-sm: clamp(0.875rem, 0.8rem + 0.2vw, 1rem);
-}
+} */
 
 @theme {
   --color-primary: #FF7B30;
@@ -65,9 +65,9 @@ h4 {
 h5 {
   font-size: var(--font-size-h5);
   font-weight: 500;
-}
+} */
 
-p,
+/* p,
 a,
 label,
 ul,
@@ -75,7 +75,6 @@ li {
   font-size: var(--font-size-base);
   font-weight: 400;
 } */
-
 .custom-scrollbar {
   scrollbar-width: none; 
 }
@@ -117,6 +116,27 @@ li {
 .component-spacing-top{
   padding-top: 64px;
 }
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    background-position: 100% 50%;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 1.2s ease forwards;
+}
+
+
+
 
 @media (max-width:1280px){
   .container{

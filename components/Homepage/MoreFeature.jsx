@@ -5,7 +5,7 @@ import SmartAttendance from "../../public/Homepage/SmartAttendance.png";
 const MoreFeature = () => {
   return (
     <div className="container ">
-   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-16">
+   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 py-16 px-8">
       <Box
         bgClass="bg-[#EBFFF5]"
         borderClass="border-[#30FFFC42]"
