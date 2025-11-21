@@ -1,1 +1,2 @@
-export const SignUpButtonText ="Sign up/Sign in"
+export const SignInText ="Sign in"
+export const GetStartedText = "Get Started"
