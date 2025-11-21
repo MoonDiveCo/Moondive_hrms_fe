@@ -1,3 +1,5 @@
+export const SignInText ="Sign in"
+export const GetStartedText = "Get Started"
 export const SignUpButtonText = "Sign up/Sign in"
 export const SIGNUP_BRAND_LETTER = "M";
 export const SIGNUP_BRAND_NAME = "MoonDive";
