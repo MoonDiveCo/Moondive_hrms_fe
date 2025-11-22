@@ -27,83 +27,108 @@ import {
   SIGNUP_PLACEHOLDER_PHONE,
   SIGNUP_SOCIAL_TEXT,
 } from "../text";
-export default function Signup() {
-  const router = useRouter();
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    phone: "",
-    agree: false,
-  });
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
+import { userService } from "@/services/userService";
+const initialFormState = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  countryCode: "+91",
+  mobileNumber: "",
+  acceptedTerms: false,
+};
 
-  function handleChange(e) {
+
+export default function Signup() {
+const [formData, setFormData] = useState(initialFormState);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting,setIsSubmitting] = useState(false)
+  const router = useRouter();
+
+    function handleChange(e) {
     const { name, value, type, checked } = e.target;
-    setForm((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+      api: "",
+    }));
+  }
+
+  function validate(values) {
+    const newErrors = {};
+
+    if (!values.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+
+    if (!values.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    }
+
+    if (!values.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (
+      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email.trim())
+    ) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!values.password) {
+      newErrors.password = "Password is required";
+    } else if (values.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!values.mobileNumber.trim()) {
+      newErrors.mobileNumber = "Phone number is required";
+    } else if (!/^\d{7,15}$/.test(values.mobileNumber.trim())) {
+      newErrors.mobileNumber = "Enter a valid phone number";
+    }
+
+    if (!values.acceptedTerms) {
+      newErrors.acceptedTerms = "You must agree to the terms & conditions";
+    }
+
+    return newErrors;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setErrorMsg("");
-    setSuccessMsg("");
+    const validationErrors = validate(formData);
 
-    if (
-      !form.firstName ||
-      !form.lastName ||
-      !form.email ||
-      !form.password ||
-      !form.phone
-    ) {
-      setErrorMsg("Please fill all required fields.");
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-    setLoading(true);
+
+    setIsSubmitting(true);
 
     try {
-      const res = await fetch("http://localhost:2000/api/v1/user/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          password: form.password,
-          mobileNumber: form.phone,
-        }),
-      });
+      const payload = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        mobileNumber: formData.mobileNumber.trim(),
+        countryCode: formData.countryCode,
+      };
 
-      const text = await res.text();
-      let data;
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { _raw: text };
-      }
-
-      if (!res.ok) {
-        console.error("Server returned error:", res.status, data);
-        setErrorMsg(
-          data?.message ||
-            data?.error ||
-            data?._raw ||
-            `Registration failed (${res.status})`
-        );
-        return;
-      }
-      setSuccessMsg(data?.message || "Registered successfully");
-      const params = new URLSearchParams({ email: form.email });
-      router.push(`/otp?${params.toString()}`);
-    } catch (err) {
-      console.error("Network or fetch error:", err);
-      setErrorMsg("Network error or backend not running.");
+      const response = await userService.register(payload);
+      router.push(`/otp?email=${encodeURIComponent(payload.email)}`);
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Something went wrong. Please try again.";
+      setErrors((prev) => ({ ...prev, api: message }));
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   }
+
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row z-2 bg-white">
@@ -128,10 +153,10 @@ export default function Signup() {
             className="mt-6 md:mt-8 space-y-4 md:space-y-5"
             onSubmit={handleSubmit}
           >
-            {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
+            {/* {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
             {successMsg && (
               <div className="text-sm text-green-600">{successMsg}</div>
-            )}
+            )} */}
 
             <div>
               <label className="text-sm text-gray-700 font-medium mb-1 block">
@@ -139,12 +164,15 @@ export default function Signup() {
               </label>
               <input
                 name="firstName"
-                value={form.firstName}
+                value={formData.firstName}
                 onChange={handleChange}
                 type="text"
                 placeholder={SIGNUP_PLACEHOLDER_FIRSTNAME}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
+               {errors.firstName && (
+              <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
+            )}
             </div>
 
             <div>
@@ -153,12 +181,15 @@ export default function Signup() {
               </label>
               <input
                 name="lastName"
-                value={form.lastName}
+                value={formData.lastName}
                 onChange={handleChange}
                 type="text"
                 placeholder={SIGNUP_PLACEHOLDER_LASTNAME}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
+               {errors.lastName && (
+              <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
+            )}
             </div>
 
             <div>
@@ -167,12 +198,15 @@ export default function Signup() {
               </label>
               <input
                 name="email"
-                value={form.email}
+                value={formData.email}
                 onChange={handleChange}
                 type="email"
                 placeholder={SIGNUP_PLACEHOLDER_EMAIL}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
+               {errors.email && (
+              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+            )}
             </div>
 
             <div>
@@ -181,12 +215,15 @@ export default function Signup() {
               </label>
               <input
                 name="password"
-                value={form.password}
+                value={formData.password}
                 onChange={handleChange}
                 type="password"
                 placeholder={SIGNUP_PLACEHOLDER_PASSWORD}
                 className="w-full rounded-full border border-gray-800 px-3 md:px-4 py-2 text-sm md:py-2.5 outline-none focus:ring-2 focus:ring-orange-400"
               />
+              {errors.password && (
+              <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+            )}
             </div>
 
             <div>
@@ -198,7 +235,7 @@ export default function Signup() {
                 <select
                   name="countryCode"
                   className="bg-transparent outline-none text-sm px-2 cursor-pointer"
-                  value={form.countryCode}
+                  value={formData.countryCode}
                   onChange={handleChange}
                 >
                   {COUNTRY_CODES.map((item, index) => (
@@ -209,38 +246,45 @@ export default function Signup() {
                 </select>
                 <span className="h-6 w-px bg-gray-300 mx-2"></span>
                 <input
-                  name="phone"
-                  value={form.phone}
+                  name="mobileNumber"
+                  value={formData.mobileNumber}
                   onChange={handleChange}
                   type="tel"
                   placeholder={SIGNUP_PLACEHOLDER_PHONE}
                   className="w-full bg-transparent outline-none text-sm px-1"
                 />
+                 {errors.mobileNumber && (
+            <p className="mt-1 text-xs text-red-600">{errors.mobileNumber}</p>
+          )}
               </div>
             </div>
             <div className="flex items-center gap-2 pt-2">
               <input
-                name="agree"
-                checked={form.agree}
+                name="acceptedTerms"
+                checked={formData.acceptedTerms}
                 onChange={handleChange}
                 type="checkbox"
                 className="h-4 w-4 md:h-5 md:w-5 appearance-none rounded-full border-2 border-blue-600 checked:bg-blue-600 checked:border-blue-600 cursor-pointer transition-all"
               />
+              
               <span className="text-black font-semibold text-sm">
                 {SIGNUP_LABEL_AGREE_PREFIX}{" "}
                 <span className="text-black font-semibold">
                   {SIGNUP_LABEL_TERMS}
                 </span>
               </span>
+               {errors.acceptedTerms && (
+            <p className="mt-1 text-xs text-red-600">{errors.acceptedTerms}</p>
+          )}
             </div>
 
             <div className="mt-4 md:mt-6">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isSubmitting}
                 className="w-full bg-amber-700 text-white rounded-full px-3 md:px-4 py-2 text-sm md:py-2.5 font-semibold outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-60"
               >
-                {loading ? "Creating..." : "Get Started"}
+                {isSubmitting ? "Creating..." : "Get Started"}
               </button>
             </div>
           </form>

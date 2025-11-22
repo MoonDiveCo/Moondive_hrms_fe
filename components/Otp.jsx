@@ -136,7 +136,7 @@ export default function OtpPage() {
         return;
       }
       setSuccessMsg(data?.message || "OTP verified");
-      setTimeout(() => router.push("/dashboard"), 700);
+      // setTimeout(() => router.push("/dashboard"), 700);
     } catch (err) {
       console.error("Verify error:", err);
       setErrorMsg("Network error or backend not running.");
