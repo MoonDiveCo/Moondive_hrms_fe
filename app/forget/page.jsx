@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ForgotFlowModal from "../../components/ForgotFlowModal"; // adjust path if needed
+import ForgotFlowModal from "../../components/Loginpage/ForgotModal"; // adjust path if needed
 
 export default function ForgotPage() {
   const router = useRouter();
