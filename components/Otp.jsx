@@ -8,6 +8,7 @@ import {
   OTP_FOOTER,
   OTP_EMAIL_PREFIX 
 } from "../text";
+import axios from "axios";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -119,24 +120,18 @@ export default function OtpPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:2000/api/v1/user/verifyotp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: code }),
-      });
-      const text = await res.text();
-      let data;
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { _raw: text };
-      }
+      const res = await axios.post("http://localhost:2000/api/v1/user/verifyotp", {
+email,otp:code      });
+      console.log(res)
+   if(res?.data.responseCode == 200){
+ setSuccessMsg(res?.data?.responseMessage || "OTP verified");
+ router.push("/dashboard")
+   }
       if (!res.ok) {
-        setErrorMsg(data?.message || data?._raw || `Failed (${res.status})`);
+        setErrorMsg(res?.data?.responseMessage);
         return;
       }
-      setSuccessMsg(data?.message || "OTP verified");
-      // setTimeout(() => router.push("/dashboard"), 700);
+     
     } catch (err) {
       console.error("Verify error:", err);
       setErrorMsg("Network error or backend not running.");

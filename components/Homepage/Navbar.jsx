@@ -53,13 +53,13 @@ export default function Navbar() {
           <div className="ml-auto flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               <Link
-                href="#signin"
+                href="/login"
                 className="text-[18px] text-blackText hover:text-primary transition-colors"
               >
                 {SignInText}
               </Link>
               <Link
-                href="#get-started"
+                href="/signup"
                 className="inline-flex items-center px-6 py-2 rounded-full font-semibold text-sm text-white bg-primary hover:bg-whiteBg hover:border-1 hover:border-primary hover:text-primary"
               >
                 {GetStartedText}
@@ -122,14 +122,14 @@ export default function Navbar() {
 
                 <div className="mt-4 border-t border-[#F3F4F6] pt-4 flex flex-col gap-3">
                   <Link
-                    href="#signin"
+                    href="/login"
                     className="text-sm text-shadow-primaryText hover:underline"
                     onClick={() => setOpen(false)}
                   >
                     {SignInText}
                   </Link>
                   <Link
-                    href="#get-started"
+                    href="/signup"
                     className="inline-block text-center px-4 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-b from-[#ff7a33] to-[#f7651a]"
                     onClick={() => setOpen(false)}
                   >
