@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { userService } from "@/services/userService";
+
 const OTP_LEN = 6;
 const RESEND_COOLDOWN = 60;
 
-export default function ForgotModal({ email, onClose,setEmail }) {
+export default function ForgotModal({ email, onClose, setEmail }) {
   const router = useRouter();
 
   const [pageMsg, setPageMsg] = useState("");
@@ -20,29 +20,41 @@ export default function ForgotModal({ email, onClose,setEmail }) {
   const [modalMsg, setModalMsg] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const cooldownRef = useRef(null);
-  useEffect(() => () => { if (cooldownRef.current) clearInterval(cooldownRef.current); }, []);
+
+  useEffect(
+    () => () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    },
+    []
+  );
 
   function startCooldown() {
     setCooldown(RESEND_COOLDOWN);
     if (cooldownRef.current) clearInterval(cooldownRef.current);
     cooldownRef.current = setInterval(() => {
       setCooldown((c) => {
-        if (c <= 1) { clearInterval(cooldownRef.current); cooldownRef.current = null; return 0; }
+        if (c <= 1) {
+          clearInterval(cooldownRef.current);
+          cooldownRef.current = null;
+          return 0;
+        }
         return c - 1;
       });
     }, 1000);
   }
+
   async function handleSendOtp(e) {
     e?.preventDefault();
     setPageMsg("");
- setModalMsg("");
+    setModalMsg("");
 
     if (!validateEmailOrShow()) return;
     setSending(true);
     try {
-      const res = await userService.sendForgotOtp(email)
-   
-      const msg = res?.data?.responseMessage || res?.data?.message || "OTP sent";
+      const res = await userService.sendForgotOtp(email);
+
+      const msg =
+        res?.data?.responseMessage || res?.data?.message || "OTP sent";
       setPageMsg(msg);
       setStep("verify");
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
@@ -50,7 +62,9 @@ export default function ForgotModal({ email, onClose,setEmail }) {
     } catch (err) {
       console.error("sendOtp error:", err);
       const server = err?.response?.data;
-      setPageMsg(server?.responseMessage || server?.message || "Failed to send OTP.");
+      setPageMsg(
+        server?.responseMessage || server?.message || "Failed to send OTP."
+      );
     } finally {
       setSending(false);
     }
@@ -75,7 +89,11 @@ export default function ForgotModal({ email, onClose,setEmail }) {
 
   function setOtpDigit(idx, val) {
     const d = val.replace(/\D/g, "").slice(-1);
-    setOtp((p) => { const n = [...p]; n[idx] = d; return n; });
+    setOtp((p) => {
+      const n = [...p];
+      n[idx] = d;
+      return n;
+    });
     if (d && idx < OTP_LEN - 1) otpRefs.current[idx + 1]?.focus();
   }
 
@@ -84,7 +102,11 @@ export default function ForgotModal({ email, onClose,setEmail }) {
     if (k === "Backspace") {
       if (otp[idx]) {
         e.preventDefault();
-        setOtp((p) => { const n = [...p]; n[idx] = ""; return n; });
+        setOtp((p) => {
+          const n = [...p];
+          n[idx] = "";
+          return n;
+        });
         return;
       }
       if (idx > 0) {
@@ -92,47 +114,55 @@ export default function ForgotModal({ email, onClose,setEmail }) {
         otpRefs.current[idx - 1]?.focus();
       }
     } else if (k === "ArrowLeft" && idx > 0) {
-      e.preventDefault(); otpRefs.current[idx - 1]?.focus();
+      e.preventDefault();
+      otpRefs.current[idx - 1]?.focus();
     } else if (k === "ArrowRight" && idx < OTP_LEN - 1) {
-      e.preventDefault(); otpRefs.current[idx + 1]?.focus();
+      e.preventDefault();
+      otpRefs.current[idx + 1]?.focus();
     }
   }
+
   async function handleVerifyOtp(e) {
     e?.preventDefault();
     setModalMsg("");
     const code = otp.join("");
-    if (code.length !== OTP_LEN) { setModalMsg("Enter full OTP."); return; }
+
+    if (code.length !== OTP_LEN) {
+      setModalMsg("Enter full OTP.");
+      return;
+    }
 
     setLoading(true);
     try {
-      const res = await  userService.verifyOtp(email, code);
+      const res = await userService.verifyOtp(email, code);
       const data = res.data ?? {};
-       const msg = data.responseMessage || data.message;
-
-      if(!data.responseCode)
-        {
-  console.log(msg)
-      setModalMsg(msg);
-   setOtp(new Array(OTP_LEN).fill(""));
-     setStep("reset") 
+      const msg = data.responseMessage || data.message || "";
+      if (data.responseCode === 200 || data.responseCode === "200") {
+        setOtp(new Array(OTP_LEN).fill(""));
+        setModalMsg("");
+        setPageMsg("");
+        setStep("reset");
+      } else {
+        setModalMsg(msg || "OTP verification failed.");
       }
-       setModalMsg(msg);
-      return
-   
     } catch (err) {
       console.error("verifyOtp error:", err);
       const server = err?.response?.data;
-      setModalMsg(server?.responseMessage || server?.message || "OTP verify failed.");
+      setModalMsg(
+        server?.responseMessage || server?.message || "OTP verify failed."
+      );
     } finally {
       setLoading(false);
     }
   }
+
   async function handleResendOtp() {
     if (cooldown > 0) return;
     setPageMsg("");
     try {
       const res = await userService.resendOtp(email);
-      const msg = res?.data?.responseMessage || res?.data?.message || "OTP resent";
+      const msg =
+        res?.data?.responseMessage || res?.data?.message || "OTP resent";
       setPageMsg(msg);
       startCooldown();
       setOtp(new Array(OTP_LEN).fill(""));
@@ -140,41 +170,69 @@ export default function ForgotModal({ email, onClose,setEmail }) {
     } catch (err) {
       console.error("resendOtp error:", err);
       const server = err?.response?.data;
-      setPageMsg(server?.responseMessage || server?.message || "Resend failed.");
+      setPageMsg(
+        server?.responseMessage || server?.message || "Resend failed."
+      );
     }
   }
+
   async function handleResetPassword(e) {
     e?.preventDefault();
+    console.log("🔁 handleResetPassword called");
+
     setModalMsg("");
-    if (!password || password.length < 6) { setModalMsg("Password must be at least 6 chars."); return; }
-    if (password !== confirm) { setModalMsg("Passwords do not match."); return; }
+    if (!password || password.length < 6) {
+      console.log("❌ password too short");
+      setModalMsg("Password must be at least 6 chars.");
+      return;
+    }
+    if (password !== confirm) {
+      console.log("❌ passwords do not match");
+      setModalMsg("Passwords do not match.");
+      return;
+    }
+
+    const emailToUse = sessionStorage.getItem("forgotEmail") || email;
+    console.log("Using email for reset:", emailToUse);
 
     setLoading(true);
     try {
-      const res = await userService.resetPassword(email,confirm,password) 
+      const res = await userService.resetPassword(
+        emailToUse,
+        confirm,
+        password
+      );
+      console.log("✅ resetPassword response", res.data);
 
-      const msg = res?.data?.responseMessage || res?.data?.message || "Password reset successful";
+      const msg =
+        res?.data?.responseMessage ||
+        res?.data?.message ||
+        "Password reset successful";
 
+      setModalMsg(msg);
       if (onClose) onClose();
       router.push("/login?reset=success");
     } catch (err) {
       console.error("resetPassword error:", err);
       const server = err?.response?.data;
-      setModalMsg(server?.responseMessage || server?.message || "Reset failed.");
+      setModalMsg(
+        server?.responseMessage || server?.message || "Reset failed."
+      );
     } finally {
       setLoading(false);
     }
   }
 
-
   function handleOtpPaste(e) {
     e.preventDefault();
-    const paste = (e.clipboardData || window.clipboardData).getData("text") || "";
+    const paste =
+      (e.clipboardData || window.clipboardData).getData("text") || "";
     const digits = paste.replace(/\D/g, "").slice(0, OTP_LEN).split("");
     if (!digits.length) return;
     setOtp((prev) => {
       const next = [...prev];
-      for (let i = 0; i < next.length && i < digits.length; i++) next[i] = digits[i];
+      for (let i = 0; i < next.length && i < digits.length; i++)
+        next[i] = digits[i];
       return next;
     });
     setTimeout(() => {
@@ -188,40 +246,65 @@ export default function ForgotModal({ email, onClose,setEmail }) {
   }
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-xl bg-white rounded-lg shadow p-6">
-        
-          <div className="flex items-center  mb-3">
-            <h3 className="text-lg items-center font-semibold">Forgot password</h3>
-            <button onClick={closeAll} className="text-sm text-gray-600">Close</button>
+    <div className="fixed inset-0 bg-white flex items-center justify-center z-50 p-4 overflow-hidden">
+      <div className="bg-white rounded-lg w-full max-w-md border border-gray-200 shadow-lg">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+          <h3 className="text-lg md:text-xl font-semibold text-gray-900">
+            Forgot password
+          </h3>
+          <button
+            onClick={closeAll}
+            className="text-sm cursor-pointer text-gray-500 hover:text-gray-700"
+          >
+            Close
+          </button>
+        </div>
+        {(modalMsg || pageMsg) && (
+          <div className="px-6 mb-2">
+            <div className="text-sm text-red-600">{modalMsg || pageMsg}</div>
           </div>
-          {step === "enter" && (
-            <>
-              <p className="text-sm text-gray-600 mb-3">Enter your email and we'll send a verification code.</p>
-              {pageMsg && <div className="mb-3 text-sm text-red-600">{pageMsg}</div>}
-              <form onSubmit={handleSendOtp} className="flex gap-3">
-                <input
-                  className="flex-1 border rounded px-3 py-2"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  type="email"
-                />
-                <button className="px-4 py-2 bg-orange-500 text-white rounded disabled:opacity-60" disabled={sending}>
-                  {sending ? "Sending..." : "Send code"}
-                </button>
-              </form>
-            </>
-          )}
+        )}
+        {step === "enter" && (
+          <div className="px-6 pb-6">
+            <p className="text-sm text-gray-600 mb-4">
+              Enter your email and we&apos;ll send a verification code.
+            </p>
+            <form onSubmit={handleSendOtp} className="space-y-3">
+              <input
+                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none  focus-within:border-primary "
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                type="email"
+              />
+              <button
+                className="w-full cursor-pointer px-4 py-2 bg-primary mt-4 text-white rounded-full text-sm font-semibold disabled:opacity-60 hover:bg-primary transition-colors"
+                disabled={sending}
+              >
+                {sending ? "Sending..." : "Send code"}
+              </button>
+            </form>
+          </div>
+        )}
+        {step === "verify" && (
+          <div className="px-6 pb-6">
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600">We sent a code to</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1">
+                {sessionStorage.getItem("forgotEmail") || email}
+              </p>
+            </div>
 
-          {step === "verify" && (
-            <>
-              <p className="text-sm text-gray-600 mb-3">We sent a code to <strong>{sessionStorage.getItem("forgotEmail") || email}</strong></p>
-              {modalMsg && <div className="mb-2 text-sm text-red-600">{modalMsg}</div>}
-              <form onSubmit={handleVerifyOtp} onPaste={handleOtpPaste}>
-                <div className="flex gap-2 mb-3 justify-center">
-                  {otp.map((d, i) => (
+            <form onSubmit={handleVerifyOtp} onPaste={handleOtpPaste}>
+              <label className="text-sm text-gray-700 font-medium mb-3 block text-center">
+                Enter 6-digit code
+              </label>
+
+              <div className="flex justify-between gap-2 mb-4">
+                {otp.map((d, i) => {
+                  const isFilled = d !== "";
+
+                  return (
                     <input
                       key={i}
                       ref={(el) => (otpRefs.current[i] = el)}
@@ -231,51 +314,83 @@ export default function ForgotModal({ email, onClose,setEmail }) {
                       inputMode="numeric"
                       maxLength={1}
                       aria-label={`OTP ${i + 1}`}
-                      className="w-12 h-12 text-center border rounded"
+                      className={`w-12 h-12 text-center rounded-full text-lg font-semibold border-2 outline-none transition-all
+                      ${isFilled ? "border-primary" : "border-gray-300"}
+                      focus:border-primary`}
                     />
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
 
-                <div className="flex gap-2">
-                  <button type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-orange-500 text-white rounded">
-                    {loading ? "Verifying..." : "Verify"}
-                  </button>
-                  <button type="button" 
-                  onClick={() => {setStep("enter")
-                  setOtp(new Array(OTP_LEN).fill(""));
-                  setModalMsg(""); 
-                   setPageMsg("");                     
-                }} className="px-4 py-2 border rounded">Change email</button>
-                </div>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 cursor-pointer bg-primary text-white rounded-full text-sm font-semibold disabled:opacity-60 hover:bg-primary transition-colors"
+                >
+                  {loading ? "Verifying..." : "Verify"}
+                </button>
+              </div>
+              <div className="mt-2 flex items-center  text-xs text-gray-600">
+                <div>Didn&apos;t receive it?</div>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={cooldown > 0}
+                  className="text-amber-700 cursor-pointer font-semibold hover:text-amber-800  disabled:opacity-60"
+                >
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+        {step === "reset" && (
+          <div className="px-6 pb-6">
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600">Create a new password</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1">
+                {sessionStorage.getItem("forgotEmail")}
+              </p>
+            </div>
+            <form onSubmit={handleResetPassword}>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="New password"
+                className="w-full border border-gray-300 rounded-full px-4 py-3 mb-2 text-sm 
+             focus:outline-none focus:border-primary focus:ring-0"
+              />
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Confirm password"
+                className="w-full border border-gray-300 rounded-full px-4 py-3 mb-4 text-sm 
+             focus:outline-none focus:border-primary focus:ring-0"
+              />
 
-                <div className="mt-3 flex items-center justify-between text-sm">
-                  <div>Didn't receive it?</div>
-                  <button type="button" onClick={handleResendOtp} disabled={cooldown > 0} className="text-blue-600 underline disabled:opacity-60">
-                    {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend"}
-                  </button>
-                </div>
-              </form>
-            </>
-          )}
-
-          {step === "reset" && (
-            <>
-              <p className="text-sm text-gray-600 mb-3">Create a new password for <strong>{sessionStorage.getItem("forgotEmail")}</strong></p>
-              {modalMsg && <div className="mb-2 text-sm text-red-600">{modalMsg}</div>}
-              <form onSubmit={handleResetPassword}>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New password" className="w-full border rounded px-3 py-2 mb-2" />
-                <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" className="w-full border rounded px-3 py-2 mb-4" />
-                <div className="flex gap-2">
-                  <button type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-orange-500 text-white rounded">
-                    {loading ? "Saving..." : "Save new password"}
-                  </button>
-                  <button type="button" onClick={() => setStep("enter")} className="px-4 py-2 border rounded">Cancel</button>
-                </div>
-              </form>
-            </>
-          )}
-        </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="  flex-1 px-4 py-3 cursor-pointer
+  bg-primary 
+  text-white 
+  rounded-full 
+  text-sm font-semibold 
+  disabled:opacity-60 
+  hover:bg-[#e96f2c] 
+  transition-colors"
+                >
+                  {loading ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
