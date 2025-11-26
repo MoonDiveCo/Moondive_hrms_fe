@@ -120,10 +120,10 @@ export default function Signup() {
           <Image src={logo} alt="Brand Logo" width={150} height={150} />
         </div>
 
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-snug mb-2">
+        <h3 className=" font-semibold text-gray-900 leading-snug mb-2">
           {SIGNUP_HEADING_LINE1}
           <br /> {SIGNUP_HEADING_LINE2}
-        </h1>
+        </h3>
 
         <p className="text-sm text-gray-500 mb-2">{SIGNUP_DESCRIPTION}</p>
 

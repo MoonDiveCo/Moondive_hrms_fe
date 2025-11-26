@@ -159,7 +159,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
         </div>
         <main className="flex-1 flex items-center">
           <div className="w-full max-w-md">
-            <h1 className="text-2xl md:text-3xl font-semibold leading-snug text-gray-900">
+            <h3 className="text-2xl md:text-3xl font-semibold leading-snug text-gray-900">
               {LOGIN_HEADING_LINE1}
               <br />
               <span>
@@ -167,7 +167,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
                   ? LOGIN_HEADING_EMAIL_SUB
                   : LOGIN_HEADING_PASSWORD_SUB}
               </span>
-            </h1>
+            </h3>
 
             <p className="mt-3 text-sm text-gray-500">{LOGIN_DESCRIPTION}</p>
 
