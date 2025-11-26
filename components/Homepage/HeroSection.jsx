@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import HeroCursorRight from "../../public/Homepage/HeroCursorRight.png";
 import HeroCursorLeft from "../../public/Homepage/HeroCursorLeft.png";
 import Image from "next/image";
+import HeroImage from "../../public/Homepage/HeroSectionImg.png"
 
-
-const heroImageUrl = "/mnt/data/60c846e8-00f3-481c-8065-b790d43e5f61.png";
+const GRID_BG = "/Homepage/bg.png"; 
 
 export function HeroSection() {
   const names = [
@@ -151,10 +151,21 @@ const [imgOffsetInParent, setImgOffsetInParent] = useState(0);
       </p>
 
     
-      <div className="relative w-full max-w-6xl px-6" style={{ minHeight: 420 }}>
-        <div className="w-full rounded overflow-hidden shadow" ref={imgRef}>
+      <div className="relative w-full  px-6" style={{ minHeight: 420 }}>
+          <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,                     
+            pointerEvents: "none",
+            backgroundImage: `url("${GRID_BG}")`,
+            backgroundRepeat: "repeat",
+          }}
+        />
+        <div className="w-full rounded overflow-hidden relative container " ref={imgRef} style={{ zIndex: 10 }}>
       
-          <img src="/Homepage/HeroSectionImg.png" alt="hero image" style={{ width: "100%", height: "auto", display: "block" }} />
+          <Image src={HeroImage} alt="hero image" style={{ width: "100%", height: "auto", display: "block" }} />
         </div>
 
         <div style={leftStyle} aria-hidden>
@@ -165,13 +176,6 @@ const [imgOffsetInParent, setImgOffsetInParent] = useState(0);
           <Image src={HeroCursorRight} alt="right cursor" width={56} height={56} />
         </div>
       </div>
-
-   
-      <div className="mt-6 text-sm text-gray-500">
-        <div>Left cursor row: {leftRow + 1} / {rows}</div>
-        <div>Right cursor row: {rightRow + 1} / {rows}</div>
-      </div>
-
     </div>
   );
 }
