@@ -143,7 +143,7 @@ export default function Signup() {
                 onChange={handleChange}
                 type="text"
                 placeholder={SIGNUP_PLACEHOLDER_FIRSTNAME}
-                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800 focus:border-[#FF7B30]  transition-colors duration-200"
+                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800 focus:border-primary  transition-colors duration-200"
               />
               {errors.firstName && (
                 <p className="mt-1 text-xs text-red-600">
@@ -162,7 +162,7 @@ export default function Signup() {
                 onChange={handleChange}
                 type="text"
                 placeholder={SIGNUP_PLACEHOLDER_LASTNAME}
-                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800   focus:border-[#FF7B30] transition-colors duration-200"
+                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800   focus:border-primary transition-colors duration-200"
               />
               {errors.lastName && (
                 <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
@@ -181,7 +181,7 @@ export default function Signup() {
                 onChange={handleChange}
                 type="email"
                 placeholder={SIGNUP_PLACEHOLDER_EMAIL}
-                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800 focus:border-[#FF7B30]  transition-colors duration-200"
+                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800 focus:border-primary  transition-colors duration-200"
               />
               {errors.email && (
                 <p className="mt-1 text-xs text-red-600">{errors.email}</p>
@@ -198,7 +198,7 @@ export default function Signup() {
                 onChange={handleChange}
                 type="password"
                 placeholder={SIGNUP_PLACEHOLDER_PASSWORD}
-                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800 focus:border-[#FF7B30]  transition-colors duration-200"
+                className="w-full rounded-full px-3 py-2 text-sm outline-none border border-gray-800 focus:border-primary  transition-colors duration-200"
               />
               {errors.password && (
                 <p className="mt-1 text-xs text-red-600">{errors.password}</p>
@@ -210,7 +210,7 @@ export default function Signup() {
             <label className="text-sm text-gray-700 font-medium mb-1 block">
               {SIGNUP_LABEL_PHONE} <span className="text-red-800">*</span>
             </label>
-            <div className="flex items-center w-full rounded-full border border-gray-800 px-2 py-2 focus-within:border-[#FF7B30]  transition-colors duration-200">
+            <div className="flex items-center w-full rounded-full border border-gray-800 px-2 py-2 focus-within:border-primary  transition-colors duration-200">
               <select
                 name="countryCode"
                 className="bg-transparent outline-none text-sm px-2 cursor-pointer"
@@ -273,7 +273,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#FF7B30] text-white rounded-full px-4 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-60"
+              className="w-full bg-primary text-white rounded-full px-4 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-60"
             >
               {isSubmitting ? "Creating..." : "Get Started"}
             </button>

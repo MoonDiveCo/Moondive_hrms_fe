@@ -271,14 +271,14 @@ export default function ForgotModal({ email, onClose, setEmail }) {
             </p>
             <form onSubmit={handleSendOtp} className="space-y-3">
               <input
-                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none  focus-within:border-[#FF7B30] "
+                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none  focus-within:border-primary "
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 type="email"
               />
               <button
-                className="w-full cursor-pointer px-4 py-2 bg-[#FF7B30] mt-4 text-white rounded-full text-sm font-semibold disabled:opacity-60 hover:bg-[#FF7B30] transition-colors"
+                className="w-full cursor-pointer px-4 py-2 bg-primary mt-4 text-white rounded-full text-sm font-semibold disabled:opacity-60 hover:bg-primary transition-colors"
                 disabled={sending}
               >
                 {sending ? "Sending..." : "Send code"}
@@ -315,8 +315,8 @@ export default function ForgotModal({ email, onClose, setEmail }) {
                       maxLength={1}
                       aria-label={`OTP ${i + 1}`}
                       className={`w-12 h-12 text-center rounded-full text-lg font-semibold border-2 outline-none transition-all
-                      ${isFilled ? "border-[#FF7B30]" : "border-gray-300"}
-                      focus:border-[#FF7B30]`}
+                      ${isFilled ? "border-primary" : "border-gray-300"}
+                      focus:border-primary`}
                     />
                   );
                 })}
@@ -326,7 +326,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 px-4 py-3 cursor-pointer bg-[#FF7B30] text-white rounded-full text-sm font-semibold disabled:opacity-60 hover:bg-[#FF7B30] transition-colors"
+                  className="flex-1 px-4 py-3 cursor-pointer bg-primary text-white rounded-full text-sm font-semibold disabled:opacity-60 hover:bg-primary transition-colors"
                 >
                   {loading ? "Verifying..." : "Verify"}
                 </button>
@@ -360,7 +360,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="New password"
                 className="w-full border border-gray-300 rounded-full px-4 py-3 mb-2 text-sm 
-             focus:outline-none focus:border-[#FF7B30] focus:ring-0"
+             focus:outline-none focus:border-primary focus:ring-0"
               />
               <input
                 type="password"
@@ -368,7 +368,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Confirm password"
                 className="w-full border border-gray-300 rounded-full px-4 py-3 mb-4 text-sm 
-             focus:outline-none focus:border-[#FF7B30] focus:ring-0"
+             focus:outline-none focus:border-primary focus:ring-0"
               />
 
               <div className="flex gap-2">
@@ -376,7 +376,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
                   type="submit"
                   disabled={loading}
                   className="  flex-1 px-4 py-3 cursor-pointer
-  bg-[#FF7B30] 
+  bg-primary 
   text-white 
   rounded-full 
   text-sm font-semibold 

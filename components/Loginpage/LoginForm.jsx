@@ -222,7 +222,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
 
                 <button
                   type="submit"
-                  className="w-full mt-6 cursor-pointer rounded-full bg-[#FF7B30] hover:bg-[#FF7B30] text-white text-sm font-medium py-2.5"
+                  className="w-full mt-6 cursor-pointer rounded-full bg-primary hover:bg-primary text-white text-sm font-medium py-2.5"
                 >
                   {LOGIN_BTN_SIGNIN}
                 </button>
@@ -284,7 +284,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full cursor-pointer rounded-full bg-[#FF7B30] text-white px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
+                  className="w-full cursor-pointer rounded-full bg-primary text-white px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
                 >
                   {loading ? LOGIN_BTN_LOADING : LOGIN_BTN_SIGNIN}
                 </button>

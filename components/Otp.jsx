@@ -252,7 +252,7 @@ return (
                 className="
                   w-full md:w-[360px] lg:w-[400px]
                   cursor-pointer rounded-full
-                  bg-[#FF7B30] hover:bg-[#e96f2c]
+                  bg-primary hover:bg-[#e96f2c]
                   text-white text-sm font-medium
                   py-3
                   transition disabled:opacity-60
