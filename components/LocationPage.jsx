@@ -66,7 +66,7 @@ const AddLocationForm = ({ onClose, onSubmit }) => {
         const response = await axios.get('https://countriesnow.space/api/v0.1/countries/states');
         console.log('Fetched states:', response.data);
         
-        if (response.data && response.data.data) {
+        if ( response.data.data) {
           const allStates = response.data.data.flatMap(country => 
             country.states.map(state => ({
               name: state.name,

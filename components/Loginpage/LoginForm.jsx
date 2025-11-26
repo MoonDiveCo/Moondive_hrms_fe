@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import ForgotFlowModal from "./ForgotFlowModal";
-import Login from "../public/signup/Sign.svg";
-import Google from "../public/signup/Google.png";
-import LinkedIn from "../public/signup/LinkedIn.png";
+import ForgotFlowModal from "./ForgotModal";
+import Login from "../../public/signup/Sign.svg";
+// import Google from "../public/signup/Google.png";
+import Google from "../../public/signup/Google.png";
+import LinkedIn from "../../public/signup/LinkedIn.png";
 import {
   LOGIN_BRAND_LETTER,
   LOGIN_BRAND_NAME,
@@ -27,63 +28,98 @@ import {
   LOGIN_FORGOT_PASSWORD,
   LOGIN_FOOTER_TEXT,
   LOGIN_SIGNUP_LINK_TEXT,
-} from "../text";
+} from "../../text";
+import { userService } from "@/services/userService";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "@/lib/slices/user/userSlice";
+export default function LoginForm({ email, setEmail, setShowForgotModal,handleGoogleSignup }) {
+  const dispatch = useDispatch();
 
-export default function LoginPage() {
   const router = useRouter();
   const [step, setStep] = useState("email");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showForgotModal, setShowForgotModal] = useState(false);
+
+  const isValidEmail = (value) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  };
+
   const handleEmailSubmit = (e) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
+
     if (!email.trim()) {
-      setErrorMsg(data?.responseMessage);
+      setErrorMsg("Please enter your email.");
+      return;
+    }
+
+    if (!isValidEmail(email.trim())) {
+      setErrorMsg("Please enter a valid email address.");
       return;
     }
     setStep("password");
   };
+
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
 
-    // if (!password) {
-    //   setErrorMsg(data?.responseMessage);
-    //   return;
-    // }
+    if (!password) {
+      setErrorMsg("Please enter your password.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters long.");
+      return;
+    }
+
     setLoading(true);
+
     try {
-      const res = await axios.post(
-        "http://localhost:2000/api/v1/user/login",
-        { email, password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      const data = res.data;
-      if (data.responseMessage===success) {
-        setSuccessMsg(data?.responseMessage || "Logged in successfully");
-        setTimeout(() => router.push("/dashboard"), 600);
-      } else {
-        const server = err?.response?.data.responseMessage;
-        setErrorMsg(server);
+      const res = await userService.login({ email, password });
+      if (res?.data?.responseCode !== 202) {
+        setErrorMsg(res.data.responseMessage);
+        return;
       }
+
+      dispatch(login(res.result));
+      console.log(res?.data);
+      if (res?.data) {
+      }
+      setPassword("");
     } catch (err) {
-      console.error("Login error:", err);
+      setErrorMsg(
+        server?.message ||
+          "Login failed. Please check your credentials and try again."
+      );
     } finally {
       setLoading(false);
     }
-    // setTimeout(() => router.push("/dashboard"), 600);
   };
+  // const handleGoogleSignup = async () => {
+  //   try {
+  //     const result = await signInWithPopup(auth, googleProvider);
+  //     const user = result.user; 
+  //   } catch (error) {
+  //     console.error("Google Sign-in Error:", error);
+  //   }
+  // };
+
   const handleForgotPassword = async () => {
     if (!email) {
       setErrorMsg("Please enter email first.");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setErrorMsg("Please enter a valid email.");
       return;
     }
 
@@ -101,19 +137,20 @@ export default function LoginPage() {
       const data = res.data;
       setSuccessMsg(data?.message || "Password reset link sent.");
     } catch (err) {
-      console.error("Forgot password error:", err);
-      const server = err?.response?.data;
-      setErrorMsg(server?.message || "Something went wrong");
+      setErrorMsg("Something went wrong");
     } finally {
       setForgotLoading(false);
     }
   };
+
   const handleEditEmail = () => {
     setErrorMsg("");
     setSuccessMsg("");
     setStep("email");
     setPassword("");
   };
+ 
+
   return (
     <div className="min-h-screen flex bg-white">
       <div className="w-full md:w-1/2 flex flex-col">
@@ -139,16 +176,12 @@ export default function LoginPage() {
             </h3>
 
             <p className="mt-3 text-sm text-gray-500">{LOGIN_DESCRIPTION}</p>
-
-            {/* Messages */}
             {errorMsg && (
               <div className="mt-3 text-sm text-red-600">{errorMsg}</div>
             )}
             {successMsg && (
               <div className="mt-3 text-sm text-green-600">{successMsg}</div>
             )}
-
-            {/* STEP 1: EMAIL */}
             {step === "email" ? (
               <form onSubmit={handleEmailSubmit} className="mt-8 space-y-4">
                 <div>
@@ -158,7 +191,6 @@ export default function LoginPage() {
                   >
                     {LOGIN_LABEL_EMAIL}
                   </label>
-
                   <input
                     id="email"
                     type="email"
@@ -172,7 +204,10 @@ export default function LoginPage() {
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <span>{LOGIN_SIGNIN_WITH}</span>
 
-                  <button className="flex items-center justify-center border border-gray-300 rounded-md p-1.5">
+                  <button
+                    type="button"
+                    className="flex items-center justify-center border border-gray-300 rounded-md p-1.5"
+                  >
                     <Image
                       src={LinkedIn}
                       width={18}
@@ -181,7 +216,11 @@ export default function LoginPage() {
                     />
                   </button>
 
-                  <button className="flex items-center justify-center border border-gray-300 rounded-md p-1.5">
+                  <button
+                    type="button"
+                    className="flex items-center justify-center border border-gray-300 rounded-md p-1.5"
+                    onClick={handleGoogleSignup}
+                  >
                     <Image src={Google} width={18} height={18} alt="Google" />
                   </button>
                 </div>
@@ -238,11 +277,9 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    // store email so /forgot page can prefill it
-                    if (email) sessionStorage.setItem("forgotEmail", email);
-                    router.push("/forgot"); // navigate to forgot page
+                    setShowForgotModal(true);
                   }}
-                  className="text-sm text-blue-500 font-bold"
+                  className="text-sm cursor-pointer text-blue-500 font-bold"
                 >
                   {LOGIN_FORGOT_PASSWORD}
                 </button>
@@ -261,12 +298,6 @@ export default function LoginPage() {
       <div className="hidden md:block md:w-1/2 relative ">
         <Image src={Login} alt="bg" fill priority className="object-cover" />
       </div>
-      {showForgotModal && (
-        <ForgotFlowModal
-          initialEmail={email}
-          onClose={() => setShowForgotModal(false)}
-        />
-      )}
     </div>
   );
 }

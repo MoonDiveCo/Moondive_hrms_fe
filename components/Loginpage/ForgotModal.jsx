@@ -2,12 +2,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { userService } from "@/services/userService";
 const OTP_LEN = 6;
 const RESEND_COOLDOWN = 60;
 
-export default function ForgotFlowModal({ initialEmail = "", onClose }) {
+export default function ForgotModal({ email, onClose,setEmail }) {
   const router = useRouter();
-  const [email, setEmail] = useState(initialEmail || sessionStorage.getItem("forgotEmail") || "");
+
   const [pageMsg, setPageMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [step, setStep] = useState("enter");
@@ -34,13 +35,14 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
   async function handleSendOtp(e) {
     e?.preventDefault();
     setPageMsg("");
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) { setPageMsg("Please enter a valid email."); return; }
+ setModalMsg("");
 
+    if (!validateEmailOrShow()) return;
     setSending(true);
     try {
-      const res = await axios.put("http://localhost:2000/api/v1/user/sendForgot-PasswordOtp", { email });
+      const res = await userService.sendForgotOtp(email)
+   
       const msg = res?.data?.responseMessage || res?.data?.message || "OTP sent";
-      sessionStorage.setItem("forgotEmail", email);
       setPageMsg(msg);
       setStep("verify");
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
@@ -53,6 +55,24 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
       setSending(false);
     }
   }
+
+  function isValidEmail(value) {
+    return /^\S+@\S+\.\S+$/.test(String(value || "").trim());
+  }
+
+  function validateEmailOrShow() {
+    if (!email || !String(email).trim()) {
+      setPageMsg("Please enter your email.");
+      return false;
+    }
+    if (!isValidEmail(email)) {
+      setPageMsg("Please enter a valid email address.");
+      return false;
+    }
+    setPageMsg("");
+    return true;
+  }
+
   function setOtpDigit(idx, val) {
     const d = val.replace(/\D/g, "").slice(-1);
     setOtp((p) => { const n = [...p]; n[idx] = d; return n; });
@@ -85,14 +105,20 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
 
     setLoading(true);
     try {
-      const storedEmail = sessionStorage.getItem("forgotEmail") || email;
-      const res = await axios.post("http://localhost:2000/api/v1/user/verifyotp", { email: storedEmail, otp: code });
+      const res = await  userService.verifyOtp(email, code);
       const data = res.data ?? {};
-      const msg = data.responseMessage || data.message;
-      if (data.resetToken) sessionStorage.setItem("resetToken", data.resetToken);
-      setModalMsg(msg || "OTP verified");
-      setOtp(new Array(OTP_LEN).fill(""));
-      setTimeout(() => setStep("reset"), 400);
+       const msg = data.responseMessage || data.message;
+
+      if(!data.responseCode)
+        {
+  console.log(msg)
+      setModalMsg(msg);
+   setOtp(new Array(OTP_LEN).fill(""));
+     setStep("reset") 
+      }
+       setModalMsg(msg);
+      return
+   
     } catch (err) {
       console.error("verifyOtp error:", err);
       const server = err?.response?.data;
@@ -105,8 +131,7 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
     if (cooldown > 0) return;
     setPageMsg("");
     try {
-      const storedEmail = sessionStorage.getItem("forgotEmail") || email;
-      const res = await axios.post("http://localhost:2000/api/v1/user/resendotp", { email: storedEmail });
+      const res = await userService.resendOtp(email);
       const msg = res?.data?.responseMessage || res?.data?.message || "OTP resent";
       setPageMsg(msg);
       startCooldown();
@@ -126,18 +151,10 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
 
     setLoading(true);
     try {
-      const storedEmail = sessionStorage.getItem("forgotEmail");
-      const resetToken = sessionStorage.getItem("resetToken") || "";
-      if (!storedEmail) { setModalMsg("Session expired. Start again."); return; }
-      const res = await axios.put("http://localhost:2000/api/v1/user/forgot-password", {
-        email: storedEmail,
-        confirmNewPassword:confirm,
-        newPassword:password
-      });
+      const res = await userService.resetPassword(email,confirm,password) 
 
       const msg = res?.data?.responseMessage || res?.data?.message || "Password reset successful";
-      sessionStorage.removeItem("forgotEmail");
-      sessionStorage.removeItem("resetToken");
+
       if (onClose) onClose();
       router.push("/login?reset=success");
     } catch (err) {
@@ -148,6 +165,7 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
       setLoading(false);
     }
   }
+
 
   function handleOtpPaste(e) {
     e.preventDefault();
@@ -166,8 +184,6 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
   }
 
   function closeAll() {
-    sessionStorage.removeItem("forgotEmail");
-    sessionStorage.removeItem("resetToken");
     if (onClose) onClose();
   }
 
@@ -224,7 +240,12 @@ export default function ForgotFlowModal({ initialEmail = "", onClose }) {
                   <button type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-orange-500 text-white rounded">
                     {loading ? "Verifying..." : "Verify"}
                   </button>
-                  <button type="button" onClick={() => setStep("enter")} className="px-4 py-2 border rounded">Change email</button>
+                  <button type="button" 
+                  onClick={() => {setStep("enter")
+                  setOtp(new Array(OTP_LEN).fill(""));
+                  setModalMsg(""); 
+                   setPageMsg("");                     
+                }} className="px-4 py-2 border rounded">Change email</button>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-sm">
