@@ -12,18 +12,28 @@ import TrustedBySlider from "@/components/Homepage/TrustedBy";
 export default function Page() {
   return (
     <div>
-      {/* <div className="relative container w-full ">
-   <Image
-        src={BgLine}
-        alt="Background Left"
-        className="pointer-events-none absolute left-0 top-0 "
-      />
-       <Image
-        src={BgLine}
-        alt="Background Right"
-        className="pointer-events-none absolute right-0 top-0"
-      />
-      </div> */}
+   {/* <div aria-hidden className="pointer-events-none z-[1] fixed inset-0">
+    <div
+    className="hidden md:block absolute left-0 top-0 h-full"
+    style={{
+      width: 220,
+      backgroundImage: `url("/Homepage/LeftDashedLine.png")`,
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "left top",
+      backgroundSize: "contain",
+    }}
+  />
+  <div
+    className="hidden md:block absolute right-0 top-0 h-full"
+    style={{
+      width: 220,
+      backgroundImage: `url("/Homepage/RightDashedLine.png")`, 
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "right top",
+      backgroundSize: "contain",
+    }}
+  />
+</div> */}
      
 
       <Navbar/>
