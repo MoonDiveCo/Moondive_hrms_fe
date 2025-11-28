@@ -29,14 +29,8 @@ import {
   LOGIN_FOOTER_TEXT,
   LOGIN_SIGNUP_LINK_TEXT,
 } from "../../text";
-import { userService } from "@/services/userService";
-import { useDispatch, useSelector } from "react-redux";
-import { login } from "@/lib/slices/user/userSlice";
-
 
 export default function LoginForm({ email, setEmail, setShowForgotModal}){
-  const dispatch = useDispatch();
-
   const router = useRouter();
   const [step, setStep] = useState("email");
   const [password, setPassword] = useState("");
