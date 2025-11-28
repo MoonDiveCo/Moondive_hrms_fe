@@ -1,9 +1,12 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+<<<<<<< HEAD
 import StoreProvider from "./StoreProvider"
 import { AuthProvider } from "@/context/authContext";
 import { RBACProvider } from "@/context/rbacContext";
 
+=======
+>>>>>>> 4ad0f18b127eb06a3e2a24aa8de86e58523cb5dc
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

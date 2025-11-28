@@ -28,7 +28,6 @@ import {
   SIGNUP_PLACEHOLDER_PHONE,
   SIGNUP_SOCIAL_TEXT,
 } from "../text";
-import { userService } from "@/services/userService";
 
 const initialFormState = {
   firstName: "",
