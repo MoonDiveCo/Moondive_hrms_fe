@@ -99,7 +99,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
      if(res?.data){
 
      }
-     router.push('/hrms')
+    //  router.push('/hrms')
       setPassword("");
     } catch (err) {
       setErrorMsg(server?.message || "Login failed. Please check your credentials and try again.");

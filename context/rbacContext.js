@@ -6,10 +6,10 @@ import { AuthContext } from "./authContext";
 export const RBACContext = createContext();
 
 const ROLE_MODULE_MAP = {
-  HRMS_MANAGER: ["HRMS", "CRM", "CMS"],
-  EMPLOYEE: ["HRMS"],
-  CMS_MANAGER: ["CMS"],
-  CRM_EXECUTIVE: ["CRM"],
+//   HRMS: ["HRMS", "CRM", "CMS"],
+  HRMS: ["HRMS"],
+  CMS: ["CMS"],
+  CRM: ["CRM"],
 };
 
 export function RBACProvider({ children }) {
@@ -25,6 +25,8 @@ export function RBACProvider({ children }) {
       const allowed = ROLE_MODULE_MAP[role];
       if (allowed) allowed.forEach((m) => moduleSet.add(m));
     });
+
+    console.log(moduleSet)
 
     setModules(Array.from(moduleSet));
   }, [roles]);
