@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -31,12 +31,13 @@ import {
 } from "../../text";
 import { userService } from "@/services/userService";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "@/lib/slices/user/userSlice";
+import { AuthContext } from "@/context/authContext";
+import { RBACContext } from "@/context/rbacContext";
+import apiClient from "@/lib/axiosClient";
 
 
 export default function LoginForm({ email, setEmail, setShowForgotModal}){
-  const dispatch = useDispatch();
-
+  const { login } = useContext(AuthContext);
   const router = useRouter();
   const [step, setStep] = useState("email");
   const [password, setPassword] = useState("");
@@ -71,33 +72,34 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
-
+    
     if (!password) {
       setErrorMsg("Please enter your password.");
       return;
     }
-
+    
     if (password.length < 8) {
       setErrorMsg("Password must be at least 8 characters long.");
       return;
     }
-
+    
     setLoading(true);
-
+    
     try {
-     
-      const res = await userService.login({ email, password });
-      if(res?.data?.responseCode!==202){
+      
+      const res = await apiClient.post(`/user/login`,{ email, password });
+      if(res?.data?.responseCode!==200){
         setErrorMsg(res.data.responseMessage);
         return
       }
-       
-   
-      dispatch(login(res.result));
-      console.log(res?.data)
+      login({
+        user: res?.data?.result,
+        roles: res?.data?.result?.permissions,
+      });
      if(res?.data){
 
      }
+     router.push('/hrms')
       setPassword("");
     } catch (err) {
       setErrorMsg(server?.message || "Login failed. Please check your credentials and try again.");
