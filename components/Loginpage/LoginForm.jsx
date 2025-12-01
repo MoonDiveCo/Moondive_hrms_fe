@@ -1,12 +1,12 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import axios from "axios";
 import ForgotFlowModal from "./ForgotModal";
 import Login from "../../public/signup/Sign.svg";
 import Google from "../../public/signup/Google.png";
 import LinkedIn from "../../public/signup/LinkedIn.png";
+import { useRouter } from "next/navigation";
 import logo from "../../public/signup/logo.png";
 import {
   LOGIN_BRAND_LETTER,
@@ -29,6 +29,7 @@ import {
   LOGIN_FOOTER_TEXT,
   LOGIN_SIGNUP_LINK_TEXT,
 } from "../../text";
+import apiClient from "@/lib/axiosClient";
 
 export default function LoginForm({ email, setEmail, setShowForgotModal}){
   const router = useRouter();
@@ -44,8 +45,10 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   };
 
-  const handleEmailSubmit = (e) => {
-    e.preventDefault();
+  const handleEmailSubmit = async(e) => {
+    try {
+     
+       e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
 
@@ -58,7 +61,17 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
       setErrorMsg("Please enter a valid email address.");
       return;
     }
-    setStep("password");
+    const payload = {email}
+const res =await apiClient.post("user/verifyEmail",payload)
+if(res?.data?.responseCode == 200){
+setStep("password");
+return
+}
+    setErrorMsg(res?.data?.responseMessage)
+    } catch (error) {
+      setErrorMsg("Invalid Email");
+    }
+   
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -79,20 +92,16 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
     setLoading(true);
 
     try {
-     
-      const res = await userService.login({ email, password });
-      if(res?.data?.responseCode!==202){
+     const payload = {email,password}
+      const res = await apiClient.post("user/login",payload)
+      if(res?.data?.responseCode!==200){
         setErrorMsg(res.data.responseMessage);
         return
       }
-       
-   
-      dispatch(login(res.result));
-      console.log(res?.data)
-     if(res?.data){
-
-     }
+       router.push("/hrms/dashboard");
       setPassword("");
+         
+
     } catch (err) {
       setErrorMsg(server?.message || "Login failed. Please check your credentials and try again.");
     } finally {
@@ -192,26 +201,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <p>{LOGIN_SIGNIN_WITH}</p>
 
-                  <button
-                    type="button"
-                    className="flex cursor-pointer items-center justify-center border border-gray-300 rounded-md p-1.5"
-                  >
-                    <Image
-                      src={LinkedIn}
-                      width={18}
-                      height={18}
-                      alt="LinkedIn"
-                    />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="flex cursor-pointer items-center justify-center border border-gray-300 rounded-md p-1.5"
-                  >
-                    <Image src={Google} width={18} height={18} alt="Google" />
-                  </button>
                 </div>
 
                 <button
@@ -221,18 +211,9 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
                   {LOGIN_BTN_SIGNIN}
                 </button>
 
-                <div className="text-sm mt-4">
-                  {LOGIN_NO_ACCOUNT}
-                  <span
-                    onClick={() => router.push("/signup")}
-                    className="text-blue-600 font-semibold cursor-pointer"
-                  >
-                    {LOGIN_SIGNUP_LINK_TEXT}
-                  </span>
-                </div>
+
               </form>
             ) : (
-              // PASSWORD STEP
               <form onSubmit={handlePasswordSubmit} className="mt-8 space-y-4">
                 <div className="flex items-center font-bold gap-4">
                   <div className="text-md text-gray-700">{email}</div>
