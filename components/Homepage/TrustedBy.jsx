@@ -1,16 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import DhlLogo from "../../public/Homepage/DhlLogo.png";
+// import DhlLogo from "../../public/Homepage/DhlLogo.png";
 import CocaColaLogo from "../../public/Homepage/CocaColaLogo.png";
 import ErgoLogo from "../../public/Homepage/ErgoLogo.png";
 import TalentMagnetLogo from "../../public/Homepage/TalentMagnetLogo.png";
 import MercedesLogo from "../../public/Homepage/MercedesLogo.png";
 import SamavaLogo from "../../public/Homepage/SamavaLogo.png";
 
-export default function TrustedBySlider({
-  interval = 2500,
-  visible = 6,
-}) {
+export default function TrustedBySlider({ interval = 2500, visible = 6 }) {
   const containerRef = useRef(null);
   const itemRef = useRef(null);
   const autoplayRef = useRef(null);
@@ -18,7 +15,7 @@ export default function TrustedBySlider({
 
   // base set in the order requested
   const baseLogos = [
-    { id: "dhl", src: DhlLogo, alt: "DHL" },
+    // { id: "dhl", src: DhlLogo, alt: "DHL" },
     { id: "coca", src: CocaColaLogo, alt: "Coca-Cola" },
     { id: "ergo", src: ErgoLogo, alt: "ERGO" },
     { id: "talent", src: TalentMagnetLogo, alt: "TalentMagnet" },
@@ -81,13 +78,24 @@ export default function TrustedBySlider({
         <div className="relative">
           <div
             ref={containerRef}
-            className="overflow-x-auto custom-scrollbar"
+            className="overflow-x-auto" 
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             onFocus={() => setIsPaused(true)}
             onBlur={() => setIsPaused(false)}
-            style={{ WebkitOverflowScrolling: "touch", paddingBottom: 6 }}
+            style={{
+              WebkitOverflowScrolling: "touch",
+              paddingBottom: 6,
+              scrollbarWidth: "none", 
+              msOverflowStyle: "none", 
+            }}
           >
+            <style jsx>{`
+              div::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+
             <div className="flex items-center gap-6 py-6 px-2">
               {logos.map((logo, idx) => (
                 <div
@@ -111,9 +119,7 @@ export default function TrustedBySlider({
             </div>
           </div>
         </div>
-
       </div>
-
     </section>
   );
 }

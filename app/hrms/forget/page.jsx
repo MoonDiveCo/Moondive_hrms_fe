@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ForgotFlowModal from "../../components/Loginpage/ForgotModal"; 
+import ForgotFlowModal from "../../../components/Loginpage/ForgotModal"; 
 
 export default function ForgotPage() {
   const router = useRouter();
@@ -15,14 +15,12 @@ export default function ForgotPage() {
   }, []);
 
   function handleClose() {
-    // clear any temporary storage and navigate back to login
     sessionStorage.removeItem("forgotEmail");
     sessionStorage.removeItem("resetToken");
     setShowModal(false);
     router.push("/login");
   }
 
-  // local dev image path you provided earlier
   const bgImage = "/mnt/data/f74cd845-284d-46a6-b45b-6b71300493c8.png";
 
   return (

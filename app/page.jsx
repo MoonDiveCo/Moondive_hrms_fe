@@ -8,6 +8,8 @@ import MoreFeature from "@/components/Homepage/MoreFeature";
 import Navbar from "@/components/Homepage/Navbar";
 import TrustedBySlider from "@/components/Homepage/TrustedBy";
 
+import PlatformSection from "@/components/Homepage/PlatformSection";
+
 
 export default function Page() {
   return (
@@ -39,6 +41,7 @@ export default function Page() {
       <Navbar/>
       <HeroSection/>
       <TrustedBySlider/>
+      <PlatformSection/>
       <FeatuedTools/>
       <LeaveBalances/>
       <MoreFeature/>

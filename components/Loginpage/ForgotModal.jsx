@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { userService } from "@/services/userService";
-
+import apiClient from "@/lib/axiosClient";
 const OTP_LEN = 6;
 const RESEND_COOLDOWN = 60;
 
@@ -51,7 +50,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
     if (!validateEmailOrShow()) return;
     setSending(true);
     try {
-      const res = await userService.sendForgotOtp(email);
+      const res = await apiClient.put("user/sendForgot-PasswordOtp", { email });
 
       const msg =
         res?.data?.responseMessage || res?.data?.message || "OTP sent";
@@ -134,7 +133,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
 
     setLoading(true);
     try {
-      const res = await userService.verifyOtp(email, code);
+      const res = await apiClient.post("user/verifyotp", { email, otp });
       const data = res.data ?? {};
       const msg = data.responseMessage || data.message || "";
       if (data.responseCode === 200 || data.responseCode === "200") {
@@ -160,7 +159,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
     if (cooldown > 0) return;
     setPageMsg("");
     try {
-      const res = await userService.resendOtp(email);
+      const res = await apiClient.post("user/resendotp", { email });
       const msg =
         res?.data?.responseMessage || res?.data?.message || "OTP resent";
       setPageMsg(msg);
@@ -197,11 +196,11 @@ export default function ForgotModal({ email, onClose, setEmail }) {
 
     setLoading(true);
     try {
-      const res = await userService.resetPassword(
-        emailToUse,
-        confirm,
-        password
-      );
+      const res = await apiClient.put("user/forgot-password", {
+      email,
+       confirmNewPassword:confirm,
+      newPassword:password
+    });
       console.log("✅ resetPassword response", res.data);
 
       const msg =
