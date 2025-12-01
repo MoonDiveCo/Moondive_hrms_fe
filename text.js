@@ -61,3 +61,13 @@ export const OTP_ERROR_NETWORK = "Network error or backend not running.";
 export const OTP_SUCCESS_VERIFIED = "OTP verified";
 export const OTP_SUCCESS_RESENT = "OTP resent successfully";
 export const OTP_FOOTER ="© 2025 Moondive Pvt. Ltd. – MoonDive Private Limited, All Rights Reserved.";
+
+
+//ROLE ACCESS MAP
+export const ROLE_CONTENT_WRITER = "Content Writer"
+export const ROLE_HR = "HR"
+export const ROLE_SALES = "Sales"
+export const ROLE_EMPLOYEE = "Employee"
+export const ROLE_SUPERADMIN = "SuperAdmin"
+export const ROLE_ADMIN = "Admin"
+export const ROLE_ACCOUNTANT = "Accountant"
