@@ -5,36 +5,72 @@ import { AuthContext } from "./authContext";
 
 export const RBACContext = createContext();
 
-const ROLE_MODULE_MAP = {
-//   HRMS: ["HRMS", "CRM", "CMS"],
-  HRMS: ["HRMS"],
-  CMS: ["CMS"],
-  CRM: ["CRM"],
-};
-
 export function RBACProvider({ children }) {
-  const { roles } = useContext(AuthContext);
-  const [modules, setModules] = useState([]);
+  const { permissions: userPermissions } = useContext(AuthContext);
 
-  console.log(roles)
+  const [modules, setModules] = useState([]);
+  const [submodules, setSubmodules] = useState([]);
+  const [actions, setActions] = useState([]);
 
   useEffect(() => {
-    const moduleSet = new Set();
+    if (!userPermissions || userPermissions.length === 0) {
+      setModules([]);
+      setSubmodules([]);
+      setActions([]);
+      return;
+    }
 
-    roles.forEach((role) => {
-      const allowed = ROLE_MODULE_MAP[role];
-      if (allowed) allowed.forEach((m) => moduleSet.add(m));
+    if (userPermissions.includes("*")) {
+      setModules(["*"]);
+      setSubmodules(["*"]);
+      setActions(["*"]);
+      return;
+    }
+
+    const modSet = new Set();
+    const subSet = new Set();
+    const actionSet = new Set();
+
+    userPermissions.forEach((p) => {
+      const parts = p.split(":");
+      const [module, submodule, action] = parts;
+
+      if (module) modSet.add(module);
+      if (submodule) subSet.add(`${module}:${submodule}`);
+      if (action) actionSet.add(`${module}:${submodule}:${action}`);
     });
 
-    console.log(moduleSet)
+    setModules([...modSet]);
+    setSubmodules([...subSet]);
+    setActions([...actionSet]);
 
-    setModules(Array.from(moduleSet));
-  }, [roles]);
+  }, [userPermissions]);
 
-  const canAccessModule = (module) => modules.includes(module);
+  const canAccessModule = (module) =>
+    modules.includes("*") || modules.includes(module);
+
+  const canAccessSubmodule = (submodule) =>
+    submodules.includes("*") || submodules.includes(submodule);
+
+  const canPerform = (action, module, submodule) => {
+    if (actions.includes("*")) return true;
+
+    const full = `${module}:${submodule}:${action}`;
+    return actions.includes(full);
+  };
 
   return (
-    <RBACContext.Provider value={{ modules, canAccessModule }}>
+    <RBACContext.Provider
+      value={{
+        permissions: userPermissions,
+        modules,
+        submodules,
+        actions,
+        canAccessModule,
+        canAccessSubmodule,
+        canPerform,
+      }}
+    >
       {children}
     </RBACContext.Provider>
   );

@@ -7,19 +7,20 @@ export const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [user, setUser] = useState(null);
-  const [roles, setRoles] = useState([]);   
-
-  console.log(user, roles)
+  const [roles, setRoles] = useState([]); 
+  const [permissions, setPermissions] = useState([])  
 
   const login = (data) => {
     setUser(data.user);
     setRoles(data.roles);
+    setPermissions(data.permissions)
     setIsSignedIn(true);
   };
 
   const logout = () => {
     setUser(null);
     setRoles([]);
+    setPermissions([])
     setIsSignedIn(false);
   };
 
@@ -29,6 +30,7 @@ export function AuthProvider({ children }) {
         isSignedIn,
         user,
         roles,
+        permissions,
         login,
         logout,
       }}

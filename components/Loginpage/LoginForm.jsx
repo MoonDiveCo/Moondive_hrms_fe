@@ -29,7 +29,6 @@ import {
   LOGIN_FOOTER_TEXT,
   LOGIN_SIGNUP_LINK_TEXT,
 } from "../../text";
-import { userService } from "@/services/userService";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthContext } from "@/context/authContext";
 import { RBACContext } from "@/context/rbacContext";
@@ -37,7 +36,7 @@ import apiClient from "@/lib/axiosClient";
 
 
 export default function LoginForm({ email, setEmail, setShowForgotModal}){
-  const { login } = useContext(AuthContext);
+  const { login, setIsSignedIn } = useContext(AuthContext);
   const router = useRouter();
   const [step, setStep] = useState("email");
   const [password, setPassword] = useState("");
@@ -93,13 +92,15 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
         return
       }
       login({
-        user: res?.data?.result,
-        roles: res?.data?.result?.permissions,
+        user: res?.data?.result?.user,
+        roles: res?.data?.result?.user?.userRole,
+        permissions: res?.data?.result?.userPermissions
       });
+      
      if(res?.data){
 
      }
-    //  router.push('/hrms')
+     router.push('/hrms')
       setPassword("");
     } catch (err) {
       setErrorMsg(server?.message || "Login failed. Please check your credentials and try again.");
