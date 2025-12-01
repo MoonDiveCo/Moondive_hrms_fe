@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Image from "next/image";
 import axios from "axios";
 import ForgotFlowModal from "./ForgotModal";
@@ -29,9 +29,12 @@ import {
   LOGIN_FOOTER_TEXT,
   LOGIN_SIGNUP_LINK_TEXT,
 } from "../../text";
+import { AuthContext } from "@/context/authContext";
 import apiClient from "@/lib/axiosClient";
 
+
 export default function LoginForm({ email, setEmail, setShowForgotModal}){
+  const { login, setIsSignedIn } = useContext(AuthContext);
   const router = useRouter();
   const [step, setStep] = useState("email");
   const [password, setPassword] = useState("");
@@ -78,19 +81,19 @@ return
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
-
+    
     if (!password) {
       setErrorMsg("Please enter your password.");
       return;
     }
-
+    
     if (password.length < 8) {
       setErrorMsg("Password must be at least 8 characters long.");
       return;
     }
-
+    
     setLoading(true);
-
+    
     try {
      const payload = {email,password}
       const res = await apiClient.post("user/login",payload)
@@ -98,7 +101,16 @@ return
         setErrorMsg(res.data.responseMessage);
         return
       }
-       router.push("/hrms/dashboard");
+      login({
+        user: res?.data?.result?.user,
+        roles: res?.data?.result?.user?.userRole,
+        permissions: res?.data?.result?.userPermissions
+      });
+      
+     if(res?.data){
+
+     }
+     router.push('/hrms/dashboard')
       setPassword("");
          
 
