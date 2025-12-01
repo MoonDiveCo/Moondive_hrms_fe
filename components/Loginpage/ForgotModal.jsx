@@ -133,7 +133,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
 
     setLoading(true);
     try {
-      const res = await apiClient.post("user/verifyotp", { email, otp });
+      const res = await apiClient.post("user/verifyotp", { email, otp:otp.join("")});
       const data = res.data ?? {};
       const msg = data.responseMessage || data.message || "";
       if (data.responseCode === 200 || data.responseCode === "200") {
@@ -201,21 +201,18 @@ export default function ForgotModal({ email, onClose, setEmail }) {
        confirmNewPassword:confirm,
       newPassword:password
     });
-      console.log("✅ resetPassword response", res.data);
 
       const msg =
         res?.data?.responseMessage ||
-        res?.data?.message ||
         "Password reset successful";
 
       setModalMsg(msg);
       if (onClose) onClose();
-      router.push("/login?reset=success");
+      router.push("/hrms/login");
     } catch (err) {
-      console.error("resetPassword error:", err);
-      const server = err?.response?.data;
+    
       setModalMsg(
-        server?.responseMessage || server?.message || "Reset failed."
+        res?.data?.responseMessage || "Reset failed."
       );
     } finally {
       setLoading(false);
