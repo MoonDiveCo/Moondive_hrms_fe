@@ -6,17 +6,29 @@ import { AuthContext } from "./authContext";
 export const RBACContext = createContext();
 
 export function RBACProvider({ children }) {
-  const { permissions: userPermissions } = useContext(AuthContext);
+  const { permissions: userPermissions,isSignedIn , loading: authLoading } = useContext(AuthContext);
 
   const [modules, setModules] = useState([]);
   const [submodules, setSubmodules] = useState([]);
   const [actions, setActions] = useState([]);
+  const [rbacLoading, setRbacLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
+
+     if (!isSignedIn) {
+      setModules([]);
+      setSubmodules([]);
+      setActions([]);
+      setRbacLoading(false);
+      return;
+    }
+
     if (!userPermissions || userPermissions.length === 0) {
       setModules([]);
       setSubmodules([]);
       setActions([]);
+      setRbacLoading(false);
       return;
     }
 
@@ -24,6 +36,7 @@ export function RBACProvider({ children }) {
       setModules(["*"]);
       setSubmodules(["*"]);
       setActions(["*"]);
+      setRbacLoading(false);
       return;
     }
 
@@ -43,9 +56,9 @@ export function RBACProvider({ children }) {
     setModules([...modSet]);
     setSubmodules([...subSet]);
     setActions([...actionSet]);
+    setRbacLoading(false);
 
-  }, [userPermissions]);
-
+  }, [userPermissions, isSignedIn, authLoading]);  
   const canAccessModule = (module) =>
     modules.includes("*") || modules.includes(module);
 
@@ -69,6 +82,7 @@ export function RBACProvider({ children }) {
         canAccessModule,
         canAccessSubmodule,
         canPerform,
+        rbacLoading,
       }}
     >
       {children}

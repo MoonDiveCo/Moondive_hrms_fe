@@ -13,7 +13,7 @@ const page = () => {
         email={email}
         setEmail={setEmail}
         setShowForgotModal={setShowForgotModal}
-        redirectTo = "/hrms/dashboard"
+        redirectTo = "/crm"
       />
       {
 

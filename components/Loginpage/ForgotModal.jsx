@@ -50,7 +50,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
     if (!validateEmailOrShow()) return;
     setSending(true);
     try {
-      const res = await axios.put("/hrms/user/sendForgot-PasswordOtp", { email });
+      const res = await axios.put("/user/sendForgot-PasswordOtp", { email });
 
       const msg =
         res?.data?.responseMessage || res?.data?.message || "OTP sent";
@@ -133,7 +133,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
 
     setLoading(true);
     try {
-      const res = await axios.post("/hrms/user/verifyotp", { email, otp:otp.join("")});
+      const res = await axios.post("/user/verifyotp", { email, otp:otp.join("")});
       const data = res.data ?? {};
       const msg = data.responseMessage || data.message || "";
       if (data.responseCode === 200 || data.responseCode === "200") {
@@ -159,7 +159,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
     if (cooldown > 0) return;
     setPageMsg("");
     try {
-      const res = await axios.post("/hrms/user/resendotp", { email });
+      const res = await axios.post("/user/resendotp", { email });
       const msg =
         res?.data?.responseMessage || res?.data?.message || "OTP resent";
       setPageMsg(msg);
@@ -196,7 +196,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
 
     setLoading(true);
     try {
-      const res = await axios.put("/hrms/user/forgot-password", {
+      const res = await axios.put("/user/forgot-password", {
       email,
        confirmNewPassword:confirm,
       newPassword:password
