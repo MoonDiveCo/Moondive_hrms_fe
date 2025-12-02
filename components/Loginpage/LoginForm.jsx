@@ -24,7 +24,7 @@ import { AuthContext } from "@/context/authContext";
 import axios from "axios";
 import { useRouter } from "next/navigation";
  
-export default function LoginForm({ email, setEmail, setShowForgotModal }) {
+export default function LoginForm({ email, setEmail, setShowForgotModal, redirectTo }) {
   const { login, setIsSignedIn } = useContext(AuthContext);
   const router = useRouter();
  
@@ -64,21 +64,18 @@ export default function LoginForm({ email, setEmail, setShowForgotModal }) {
     setLoading(true);
     try {
       const payload = { email, password };
-      const res = await axios.post("/hrms/user/login", payload,{
-        withCredentials:true
-      });
- 
+      const res = await axios.post("/user/login", payload,{withCredentials: true});
       if (res?.data?.responseCode !== 200) {
         setErrorMsg(res?.data?.responseMessage || "Login failed.");
         return;
       }
- 
+      
       login({
         user: res?.data?.result?.user,
         roles: res?.data?.result?.user?.userRole,
         permissions: res?.data?.result?.userPermissions,
       });
-      router.push("/hrms/dashboard");
+      router.push(redirectTo);
       setPassword("");
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || err?.message || "Login failed. Please check your credentials and try again.");
@@ -103,7 +100,8 @@ export default function LoginForm({ email, setEmail, setShowForgotModal }) {
     setForgotLoading(true);
  
     try {
-      const res = await axios.put("/hrms/user/forgot-password", { email });
+      const res = await axios.put("/user/forgot-password", { email });
+      
       const data = res.data;
       setSuccessMsg(data?.message || "Password reset link sent.");
     } catch (err) {

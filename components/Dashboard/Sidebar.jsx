@@ -20,13 +20,13 @@ import AnalyticsIcon from "../../public/Dashboard/Analytics.png";
 import SettingIcon from "../../public/Dashboard/Setting.png";
 
 const TOP_ITEMS = [
-  { label: "Overview", icon: OverviewIcon, href: "/dashboard" },
-  { label: "Candidate", icon: CandidateIcon, href: "/dashboard/candidate" },
-  { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/dashboard/leave-tracker" },
-  { label: "Attendance", icon: AttendanceIcon, href: "/dashboard/attendance" },
-  { label: "Time Tracker", icon: TimeTrackerIcon, href: "/dashboard/time-tracker" },
-  { label: "Performance", icon: PerformanceIcon, href: "/dashboard/performance" },
-  { label: "Documents", icon: DocumentsIcon, href: "/dashboard/documents" },
+  { label: "Overview", icon: OverviewIcon, href: "/crm/dashboard" },
+  { label: "Leads", icon: CandidateIcon, href: "/crm/dashboard/leads" },
+  { label: "In Process", icon: LeaveTrackerIcon, href: "/crm/dashboard/leave-tracker" },
+  { label: "Metting Scheduling", icon: AttendanceIcon, href: "/crm/dashboard/attendance" },
+  { label: "Final Scheduling", icon: TimeTrackerIcon, href: "/dashboard/time-tracker" },
+  { label: "Win/Lose Status", icon: PerformanceIcon, href: "/dashboard/performance" },
+  // { label: "Documents", icon: DocumentsIcon, href: "/dashboard/documents" },
 ];
 
 const BOTTOM_ITEMS = [

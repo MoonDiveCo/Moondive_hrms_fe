@@ -112,7 +112,7 @@ export function HeroSection() {
   const handleCrmClick = () => {
     setLoading(true);
     setTimeout(() => {
-      router.push("/cms/login");
+      router.push("/crm/login");
     }, 1000);
   };
   const handleCmsClick = () => {

@@ -2,32 +2,70 @@
 
 import axios from "axios";
 import Cookies from "js-cookie";
-axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
+import { createContext, useEffect, useState } from "react";
 import { createContext, useEffect, useState } from "react";
 import {fetchIPData, getGeolocationData} from '@/helper/tracking'
+axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
+
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [user, setUser] = useState(null);
-  const [roles, setRoles] = useState([]); 
-  const [permissions, setPermissions] = useState([])  
+  const [permissions, setPermissions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const token = Cookies.get('token');
-  axios.defaults.headers.common["token"] = token;
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-  const login = (data) => {
-    setUser(data.user);
-    setRoles(data.roles);
-    setPermissions(data.permissions)
+    axios.defaults.headers.common["token"] = token;
+    fetchUser(token);
+  }, []);
+
+  const fetchUser = async (token) => {
+    try {
+      const res = await axios.get("/user/get-profile",{
+        withCredentials: true,
+        headers: {token}
+      });
+      const data = res?.data?.result
+      setUser(data?.user);
+      setPermissions(data?.userPermissions);
+      setIsSignedIn(true);
+      localStorage.setItem("user", JSON.stringify(data?.user));
+    } catch(err) {
+      Cookies.remove("token");
+      localStorage.removeItem("user");
+      setIsSignedIn(false);
+      setUser(null);
+      setPermissions([]);
+      console.log(err)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = (payload) => {
+    const token = Cookies.get("token")
+    axios.defaults.headers.common["token"] = token;
+    setUser(payload.user);
+    setPermissions(payload.permissions);
     setIsSignedIn(true);
+
+    localStorage.setItem("user", JSON.stringify(payload.user));
   };
 
   const logout = () => {
-    setUser(null);
-    setRoles([]);
-    setPermissions([])
+    Cookies.remove("token");
+    localStorage.removeItem("user");
+
     setIsSignedIn(false);
+    setUser(null);
+    setPermissions([]);
   };
 
   const getSessionTrackingInfo=async()=>{
@@ -44,10 +82,10 @@ export function AuthProvider({ children }) {
       value={{
         isSignedIn,
         user,
-        roles,
         permissions,
         login,
         logout,
+        loading,
       }}
     >
       {children}
