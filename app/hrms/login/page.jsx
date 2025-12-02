@@ -10,6 +10,7 @@ const page = () => {
   return (
     <div className='relative'>
     <LoginForm
+
         email={email}
         setEmail={setEmail}
         setShowForgotModal={setShowForgotModal}
