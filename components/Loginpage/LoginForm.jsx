@@ -64,7 +64,9 @@ export default function LoginForm({ email, setEmail, setShowForgotModal }) {
     setLoading(true);
     try {
       const payload = { email, password };
-      const res = await axios.post("/hrms/user/login", payload);
+      const res = await axios.post("/hrms/user/login", payload,{
+        withCredentials:true
+      });
  
       if (res?.data?.responseCode !== 200) {
         setErrorMsg(res?.data?.responseMessage || "Login failed.");

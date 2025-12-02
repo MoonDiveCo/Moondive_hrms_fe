@@ -3,7 +3,8 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
+import {fetchIPData, getGeolocationData} from '@/helper/tracking'
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -28,6 +29,15 @@ export function AuthProvider({ children }) {
     setPermissions([])
     setIsSignedIn(false);
   };
+
+  const getSessionTrackingInfo=async()=>{
+    fetchIPData()
+    getGeolocationData()
+  }
+
+  useEffect(()=>{
+    getSessionTrackingInfo()
+  },[])
 
   return (
     <AuthContext.Provider
