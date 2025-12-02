@@ -7,8 +7,9 @@ import { useRouter } from "next/navigation";
 import CmsImage from "../../public/Homepage/Document.svg";
 import CrmImage from "../../public/Homepage/Chart.svg";
 import HrmsImage from "../../public/Homepage/Tick.svg";
-
+ 
 const GRID_BG = "/Homepage/bg.png";
+ 
 export function HeroSection() {
   const names = [
     "Nimble",
@@ -31,19 +32,19 @@ export function HeroSection() {
   const initialLeftIndex = 8;
   const initialRightIndex = 8;
   const router = useRouter();
-
+ 
   const imgRef = useRef(null);
   const [imgTopDoc, setImgTopDoc] = useState(0);
   const [imgHeight, setImgHeight] = useState(0);
   const [rowHeight, setRowHeight] = useState(0);
   const [imgOffsetInParent, setImgOffsetInParent] = useState(0);
   const [loading, setLoading] = useState(false); // Loading state
-
+ 
   const initialLeftRef = useRef(initialLeftIndex);
   const initialRightRef = useRef(initialRightIndex);
   const [leftRow, setLeftRow] = useState(initialLeftIndex);
   const [rightRow, setRightRow] = useState(initialRightIndex);
-
+ 
   useEffect(() => {
     const measure = () => {
       const el = imgRef.current;
@@ -56,20 +57,20 @@ export function HeroSection() {
       setRowHeight(rh);
       setImgOffsetInParent(el.offsetTop || 0);
     };
-
+ 
     measure();
     window.addEventListener("resize", measure);
     window.addEventListener("load", measure);
-
+ 
     return () => {
       window.removeEventListener("resize", measure);
       window.removeEventListener("load", measure);
     };
   }, [rows]);
-
+ 
   useEffect(() => {
     let ticking = false;
-
+ 
     const onScroll = () => {
       if (!imgRef.current) return;
       if (ticking) return;
@@ -78,30 +79,49 @@ export function HeroSection() {
         const viewportHeight = window.innerHeight;
         const imgRect = imgRef.current.getBoundingClientRect();
         const imgTopViewport = imgRect.top;
-
+ 
         const startAt = viewportHeight * 0.9;
         const endAt = viewportHeight * 0.15;
         let progress = (startAt - imgTopViewport) / (startAt - endAt);
         progress = Math.max(0, Math.min(1, isFinite(progress) ? progress : 0));
-
+ 
         const computeTargetRow = (initialIdx) => {
           const moveUp = Math.round(progress * initialIdx);
           return Math.max(0, initialIdx - moveUp);
         };
-
+ 
         setLeftRow(computeTargetRow(initialLeftRef.current));
         setRightRow(computeTargetRow(initialRightRef.current));
-
+ 
         ticking = false;
       });
     };
-
+ 
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-
+ 
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
+ 
+  const handleHrmsClick = () => {
+    setLoading(true);
+    setTimeout(() => {
+      router.push("/hrms/login");
+    }, 1000);
+  };
+  const handleCrmClick = () => {
+    setLoading(true);
+    setTimeout(() => {
+      router.push("/cms/login");
+    }, 1000);
+  };
+  const handleCmsClick = () => {
+    setLoading(true);
+    setTimeout(() => {
+      router.push("/cms/login");
+    }, 1000);
+  };
+ 
   const computeCursorTop = (rowIndex) => {
     if (!rowHeight || !imgHeight) return 0;
     const insideY = rowIndex * rowHeight + rowHeight * 0.5;
@@ -109,7 +129,7 @@ export function HeroSection() {
       imgOffsetInParent + Math.min(Math.max(0, insideY), imgHeight);
     return topWithinParent;
   };
-
+ 
   const leftCursorLeft = 240;
   const rightCursorRight = 240;
   const leftStyle = {
@@ -128,7 +148,7 @@ export function HeroSection() {
     transition: "top 280ms ease-out",
     zIndex: 40,
   };
-
+ 
   return (
     <div className="w-full flex flex-col items-center text-center py-6 bg-[#FFF9F0]">
       <div className="text-8xl font-bold text-[#0A0F1C] leading-[1.02] tracking-tighter mb-8">
@@ -139,7 +159,7 @@ export function HeroSection() {
           <span className="relative z-20 text-center py-2  inline-block bg-gradient-to-r from-[#3562F1] via-[#A25DE2] to-[#F2326F] text-transparent bg-clip-text px-1 rotate-[-3deg] animate-gradient font-bold ">
             Growth
           </span>
-
+ 
           <svg
             width="346"
             className="pointer-events-none absolute -left-2 -right-2 -top-3 -bottom-3 rotate-[-3deg] z-10"
@@ -189,13 +209,64 @@ export function HeroSection() {
           </svg>
         </span>
       </div>
-
+ 
       <p className=" text-primaryText max-w-4xl text-2xl mb-8">
         Give your HR team the clarity, automation, and speed they need to
         elevate employee experiences - across every department.
       </p>
-
-
+ 
+   
+      <div className="w-full cursor-pointer max-w-6xl grid grid-cols-1 sm:grid-cols-3 gap-10 mb-4">
+        <div
+          className="bg-[#0A0F1C] text-white rounded-lg px-5 py-3 flex items-center gap-4 shadow-xl"
+          onClick={handleCmsClick}
+        >
+          <img
+           src={CmsImage.src}
+           alt="cms"
+           className="w-14 h-14 object-contain"
+          />
+          <div>
+            <h4 className="text-lg font-semibold text-left">CMS</h4>
+            <p className="text-sm text-gray-300 leading-tight text-left">
+              Content Management System
+            </p>
+          </div>
+        </div>
+        <div
+          className="bg-[#0A0F1C] cursor-pointer text-white rounded-lg px-5 py-3 flex items-center gap-4 shadow-xl"
+          onClick={handleCrmClick}
+        >
+        <img
+           src={CrmImage.src}
+           alt="crm"
+           className="w-14 h-14 object-contain"
+          />
+          <div>
+            <h4 className="text-lg font-semibold text-left">CRM</h4>
+            <p className="text-sm text-gray-300 leading-tight text-left">
+              Customer Relationship Management
+            </p>
+          </div>
+        </div>
+        <div
+          className="bg-[#0A0F1C] cursor-pointer text-white rounded-lg px-5 py-3 flex items-center gap-4 shadow-xl"
+          onClick={handleHrmsClick}
+        >
+           <img
+           src={HrmsImage.src}
+           alt="hrms"
+           className="w-14 h-14 object-contain"
+          />
+          <div>
+            <h4 className="text-lg font-semibold  text-left">HRMS</h4>
+            <p className="text-sm text-gray-300 leading-tight text-left">
+              Human Resource Management System
+            </p>
+          </div>
+        </div>
+      </div>
+ 
       <div className="relative w-full px-6" style={{ minHeight: 420 }}>
         <div
           aria-hidden
@@ -219,7 +290,7 @@ export function HeroSection() {
             style={{ width: "100%", height: "auto", display: "block" }}
           />
         </div>
-
+ 
         <div style={leftStyle} aria-hidden>
           <Image
             src={HeroCursorLeft}
@@ -228,7 +299,7 @@ export function HeroSection() {
             height={56}
           />
         </div>
-
+ 
         <div style={rightStyle} aria-hidden>
           <Image
             src={HeroCursorRight}
@@ -241,3 +312,5 @@ export function HeroSection() {
     </div>
   );
 }
+ 
+ 
