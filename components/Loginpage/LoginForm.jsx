@@ -63,7 +63,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal, redirec
  
     setLoading(true);
     try {
-      const payload = { email, password };
+      const payload = { email, password, module: redirectTo };
       const res = await axios.post("/user/login", payload,{withCredentials: true});
       if (res?.data?.responseCode !== 200) {
         setErrorMsg(res?.data?.responseMessage || "Login failed.");
@@ -75,7 +75,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal, redirec
         roles: res?.data?.result?.user?.userRole,
         permissions: res?.data?.result?.userPermissions,
       });
-      router.push(redirectTo);
+      router.push(`/${redirectTo}/dashboard`);
       setPassword("");
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || err?.message || "Login failed. Please check your credentials and try again.");
