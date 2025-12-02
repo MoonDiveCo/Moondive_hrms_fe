@@ -20,12 +20,6 @@ export const userService ={
   resendOtp: async (email) => {
     return await apiClient.post("user/resendotp", { email });
   },
-  registerWithGoogle: async(payload)=>{
-     const res = await apiClient.post("user/google-signup",payload)
-        return res;
-
-  },
-
   resetPassword: async (email, confirm, password) => {
     return await apiClient.put("user/forgot-password", {
       email,
