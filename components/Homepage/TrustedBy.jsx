@@ -1,6 +1,8 @@
+
+'use client'
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-// import DhlLogo from "../../public/Homepage/DhlLogo.png";
+import DhlLogo from "../../public/Homepage/DHL.png";
 import CocaColaLogo from "../../public/Homepage/CocaColaLogo.png";
 import ErgoLogo from "../../public/Homepage/ErgoLogo.png";
 import TalentMagnetLogo from "../../public/Homepage/TalentMagnetLogo.png";
@@ -12,10 +14,15 @@ export default function TrustedBySlider({ interval = 2500, visible = 6 }) {
   const itemRef = useRef(null);
   const autoplayRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // base set in the order requested
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const baseLogos = [
-    // { id: "dhl", src: DhlLogo, alt: "DHL" },
+    { id: "dhl", src: DhlLogo, alt: "DHL" },
     { id: "coca", src: CocaColaLogo, alt: "Coca-Cola" },
     { id: "ergo", src: ErgoLogo, alt: "ERGO" },
     { id: "talent", src: TalentMagnetLogo, alt: "TalentMagnet" },
@@ -29,6 +36,8 @@ export default function TrustedBySlider({ interval = 2500, visible = 6 }) {
   });
 
   useEffect(() => {
+    if (!isClient) return; 
+    
     const container = containerRef.current;
     if (!container) return;
 
@@ -66,10 +75,19 @@ export default function TrustedBySlider({ interval = 2500, visible = 6 }) {
       window.removeEventListener("resize", measure);
       if (autoplayRef.current) clearInterval(autoplayRef.current);
     };
-  }, [interval, isPaused]);
+  }, [interval, isPaused, isClient]);
+
+  
+  const scrollbarHideStyle = `
+    .scrollbar-hide-inline::-webkit-scrollbar {
+      display: none;
+    }
+  `;
 
   return (
     <section className="py-8" aria-label="Trusted by section">
+      <style dangerouslySetInnerHTML={{ __html: scrollbarHideStyle }} />
+      
       <div className="max-w-6xl mx-auto px-6">
         <h2 className="text-center text-[40px] font-bold text-[#0A0F1C] mb-6">
           Trusted by
@@ -78,7 +96,7 @@ export default function TrustedBySlider({ interval = 2500, visible = 6 }) {
         <div className="relative">
           <div
             ref={containerRef}
-            className="overflow-x-auto" 
+            className="overflow-x-auto scrollbar-hide-inline" 
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             onFocus={() => setIsPaused(true)}
@@ -86,16 +104,10 @@ export default function TrustedBySlider({ interval = 2500, visible = 6 }) {
             style={{
               WebkitOverflowScrolling: "touch",
               paddingBottom: 6,
-              scrollbarWidth: "none", 
+              scrollbarWidth: "none",
               msOverflowStyle: "none", 
             }}
           >
-            <style jsx>{`
-              div::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
-
             <div className="flex items-center gap-6 py-6 px-2">
               {logos.map((logo, idx) => (
                 <div
@@ -123,3 +135,5 @@ export default function TrustedBySlider({ interval = 2500, visible = 6 }) {
     </section>
   );
 }
+
+
