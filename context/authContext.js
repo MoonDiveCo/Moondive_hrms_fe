@@ -58,6 +58,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(payload.user));
   };
 
+
   const logout = () => {
     Cookies.remove("token");
     localStorage.removeItem("user");
