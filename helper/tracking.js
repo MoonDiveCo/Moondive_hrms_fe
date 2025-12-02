@@ -1,86 +1,115 @@
-import {UAParser} from "ua-parser-js";
+import { UAParser } from "ua-parser-js";
 import Cookies from "js-cookie";
 import axios from "axios";
-import bcrypt from 'bcryptjs'
-import { resolve } from "styled-jsx/css";
+import { v4 as uuidv4 } from "uuid";
 
 
-const generateMachineId = (payload) => {
-  return bcrypt.hashSync(payload)
-}
+const generateMachineId = () => {
+  try {
+    return uuidv4();
+  } catch (err) {
+    console.error("Machine ID generation failed:", err);
+    return "unknown-machine-id";
+  }
+};
 
-const getGeolocationData=async ()=>{
-    function success(position){
-        const coordinates = position.coords
-        Cookies.set('__lat',`${coordinates.latitude}`)
-        Cookies.set('__long',`${coordinates.longitude}`)
-        Cookies.set('_accuracy',`${coordinates.accuracy}`)
+
+const getGeolocation = () =>
+  new Promise((resolve, reject) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      return reject(new Error("Geolocation not supported"));
     }
-    function failure(err){
-        console.warn(`Error while fetching location error code-${err.code}: ${err.message} `)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+
+
+        Cookies.set("__lat", String(latitude));
+        Cookies.set("__long", String(longitude));
+        Cookies.set("__accuracy", String(accuracy));
+
+        resolve({ latitude, longitude, accuracy });
+      },
+      (err) => {
+        console.warn(
+          `Geolocation error (code ${err.code}): ${err.message}`
+        );
+        reject(err);
+      },
+      { timeout: 10000 }
+    );
+  });
+
+const fetchIPData = async () => {
+  try {
+
+    const response = await fetch("https://api.ipify.org/?format=json");
+
+    if (!response.ok) {
+      throw new Error(`IP API failed with status: ${response.status}`);
     }
-    if(typeof navigator!=='undefined'){
-        navigator.geolocation.getCurrentPosition(success,failure)
+
+    const data = await response.json();
+
+    if (!data.ip) {
+      throw new Error("Invalid IP response");
     }
-}
 
-const fetchIPData=async ()=>{
-    try{
-        const response=await fetch("https://api.ipify.org/?format=json")
-        const data=await response.json()
-        if(data && data.ip){
-            axios.defaults.headers.common["ipaddress"]=data.ip
-            Cookies.set('ipaddress',data.ip)
-
-            const existingMachineId=Cookies.get('machineid')
-
-            if(!existingMachineId){
-                const machineId=generateMachineId(data.ip)
-                Cookies.set('machineid',machineId)
-                axios.defaults.headers.common["machineid"]=machineId
-            }else{
-                axios.defaults.headers.common["machineid"]=existingMachineId
-            }
-
-            const geoLocationData=await new Promise((resolve,reject)=>{
-                if(typeof navigator==='undefined'){
-                    reject(new Error('Navigator not available'))
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                    (position)=>{
-                        const coordinates=position.coords
-                        Cookies.set('__lat',`${coordinates.latitude}`)
-                        Cookies.set('__long',`${coordinates.longitude}`)
-                        Cookies.set('__accuracy',`${coordinates.accuracy}`)
-                        resolve({
-                            latitude:coordinates.latitude,
-                            longitude:coordinates.longitude,
-                            accuracy:coordinates.accuracy
-                        })
-                    },(err)=>{
-                        console.warn(`geolocation err : error code ${err.code}: ${err.message}`)
-                    },{
-                        timeout:10000,
-                    }
-                )
-            })
-            axios.defaults.headers.common["latitude"]=geoLocationData.latitude
-            axios.defaults.headers.common["longitude"]=geoLocationData.longitude
-            axios.defaults.headers.common["accuracy"]=geoLocationData.accuracy
+    const userIP = data.ip;
 
 
-            return {...data,geoLocation:geoLocationData}
-        }
-    }catch(err){
-        console.error("error in fetchIPData: ",err)
+    Cookies.set("ipaddress", userIP);
+    axios.defaults.headers.common["ipaddress"] = userIP;
+
+
+    let machineId = Cookies.get("machineid");
+
+    if (!machineId) {
+      machineId = generateMachineId(userIP);
+      Cookies.set("machineid", machineId);
     }
-}
 
-const getBrowserDetails=()=>{
-    const parser=new UAParser();
-    return parser.getResult()
-}
+    axios.defaults.headers.common["machineid"] = machineId;
 
 
-export {getGeolocationData,fetchIPData}
+    let geoLocation = null;
+    try {
+      geoLocation = await getGeolocation();
+
+      axios.defaults.headers.common["latitude"] = geoLocation.latitude;
+      axios.defaults.headers.common["longitude"] = geoLocation.longitude;
+      axios.defaults.headers.common["accuracy"] = geoLocation.accuracy;
+    } catch (geoErr) {
+      console.warn("Geolocation unavailable:", geoErr.message);
+      geoLocation = {
+        latitude: null,
+        longitude: null,
+        accuracy: null,
+      };
+    }
+
+    return { ip: userIP, geoLocation };
+  } catch (err) {
+    console.error("Error in fetchIPData:", err);
+
+    return {
+      ip: null,
+      geoLocation: null,
+      error: err.message,
+    };
+  }
+};
+
+
+const getBrowserDetails = () => {
+  try {
+    const parser = new UAParser();
+    return parser.getResult();
+  } catch (err) {
+    console.error("UAParser error:", err);
+    return {};
+  }
+};
+
+export { getGeolocation, fetchIPData, getBrowserDetails };

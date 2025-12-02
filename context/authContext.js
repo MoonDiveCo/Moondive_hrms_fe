@@ -68,8 +68,12 @@ export function AuthProvider({ children }) {
   };
 
   const getSessionTrackingInfo=async()=>{
-    fetchIPData()
-    getGeolocationData()
+     try { 
+      await fetchIPData()  
+    } catch (error) 
+    {  console.error('Failed to initialize session tracking:', error) 
+      
+     }
   }
 
   useEffect(()=>{
