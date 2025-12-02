@@ -14,7 +14,6 @@ const page = () => {
         email={email}
         setEmail={setEmail}
         setShowForgotModal={setShowForgotModal}
-        handleGoogleSignup={handleGoogleSignup}
       />
       {
 

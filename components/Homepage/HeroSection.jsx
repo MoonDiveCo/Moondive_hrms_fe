@@ -9,7 +9,6 @@ import CrmImage from "../../public/Homepage/Chart.svg";
 import HrmsImage from "../../public/Homepage/Tick.svg";
 
 const GRID_BG = "/Homepage/bg.png";
-
 export function HeroSection() {
   const names = [
     "Nimble",
@@ -102,25 +101,6 @@ export function HeroSection() {
 
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  const handleHrmsClick = () => {
-    setLoading(true);
-    setTimeout(() => {
-      router.push("/hrms/login");
-    }, 1000);
-  };
-  const handleCrmClick = () => {
-    setLoading(true);
-    setTimeout(() => {
-      router.push("/cms/login");
-    }, 1000);
-  };
-  const handleCmsClick = () => {
-    setLoading(true);
-    setTimeout(() => {
-      router.push("/cms/login");
-    }, 1000);
-  };
 
   const computeCursorTop = (rowIndex) => {
     if (!rowHeight || !imgHeight) return 0;
@@ -215,57 +195,6 @@ export function HeroSection() {
         elevate employee experiences - across every department.
       </p>
 
-    
-      <div className="w-full cursor-pointer max-w-6xl grid grid-cols-1 sm:grid-cols-3 gap-10 mb-4">
-        <div
-          className="bg-[#0A0F1C] text-white rounded-xl px-5 py-4 flex items-center gap-4 shadow-xl h-20"
-          onClick={handleCmsClick}
-        >
-          <img
-           src={CmsImage.src}
-           alt="cms"
-           className="w-14 h-14 object-contain"
-          />
-          <div>
-            <h4 className="text-lg font-semibold text-left">CMS</h4>
-            <p className="text-sm text-gray-300 leading-tight text-left">
-              Content Management System
-            </p>
-          </div>
-        </div>
-        <div
-          className="bg-[#0A0F1C] cursor-pointer text-white rounded-xl px-5 py-4 flex items-center gap-4 shadow-xl h-20"
-          onClick={handleCrmClick}
-        >
-        <img
-           src={CrmImage.src}
-           alt="crm"
-           className="w-14 h-14 object-contain"
-          />
-          <div>
-            <h4 className="text-lg font-semibold text-left">CRM</h4>
-            <p className="text-sm text-gray-300 leading-tight text-left">
-              Customer Relationship Management
-            </p>
-          </div>
-        </div>
-        <div
-          className="bg-[#0A0F1C] cursor-pointer text-white rounded-xl px-5 py-4 flex items-center gap-4 shadow-xl h-20"
-          onClick={handleHrmsClick}
-        >
-           <img
-           src={HrmsImage.src}
-           alt="hrms"
-           className="w-14 h-14 object-contain"
-          />
-          <div>
-            <h4 className="text-lg font-semibold  text-left">HRMS</h4>
-            <p className="text-sm text-gray-300 leading-tight text-left">
-              Human Resource Management System
-            </p>
-          </div>
-        </div>
-      </div>
 
       <div className="relative w-full px-6" style={{ minHeight: 420 }}>
         <div
