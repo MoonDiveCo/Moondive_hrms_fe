@@ -2,12 +2,10 @@ import ProtectedRoute from "@/lib/routeProtection/ProtectedRoute";
 
 export default function HRMSLayout({ children }) {
   return (
-    <html lang="en">
-      <body>
+   <div>
            <ProtectedRoute module="HRMS">
             {children}
             </ProtectedRoute> 
-      </body>
-    </html>
+   </div>
   );
 }
