@@ -69,7 +69,6 @@ const fetchIPData=async ()=>{
             axios.defaults.headers.common["longitude"]=geoLocationData.longitude
             axios.defaults.headers.common["accuracy"]=geoLocationData.accuracy
 
-            console.log("--------------------",axios.defaults.headers.common["machineid"])
 
             return {...data,geoLocation:geoLocationData}
         }
