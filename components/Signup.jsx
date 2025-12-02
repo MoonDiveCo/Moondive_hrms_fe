@@ -7,8 +7,6 @@ import Google from "../public/signup/Google.png";
 import LinkedIn from "../public/signup/LinkedIn.png";
 import logo from "../public/signup/logo.png";
 import { COUNTRY_CODES } from "../constants/CountryCodes";
-import { auth } from "@/lib/firebase.js";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import {
   SIGNUP_BRAND_LETTER,
   SIGNUP_BRAND_NAME,
@@ -61,22 +59,6 @@ export default function Signup() {
       api: "",
     }));
   }
-  const googleProvider = new GoogleAuthProvider();
-
-  const handleGoogleSignup = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      const payload = {
-        firstName: user.displayName?.split(" ")[0] || "",
-        lastName: user.displayName?.split(" ")[1] || "",
-        email: user.email,
-      };
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Google Sign-in Error:", error);
-    }
-  };
 
   function validate(values) {
     const newErrors = {};
@@ -307,7 +289,6 @@ export default function Signup() {
               </button>
               <button
                 type="button"
-                onClick={handleGoogleSignup}
                 className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-100 transition"
               >
                 <Image src={Google} width={18} height={18} alt="Google" />
