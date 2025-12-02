@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
   const [permissions, setPermissions] = useState([])  
 
   const token = Cookies.get('token');
-  console.log(token)
   axios.defaults.headers.common["token"] = token;
 
   const login = (data) => {
