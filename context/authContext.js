@@ -3,7 +3,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import { createContext, useEffect, useState } from "react";
-
+import {fetchIPData} from '@/helper/tracking'
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
 
 export const AuthContext = createContext();
@@ -66,6 +66,18 @@ export function AuthProvider({ children }) {
     setUser(null);
     setPermissions([]);
   };
+
+const getSessionTrackingInfo = async () => {
+    try {
+      await fetchIPData();  
+    } catch (error) {
+      console.error('Failed to initialize session tracking:', error);
+    }
+  };
+
+  useEffect(() => {
+    getSessionTrackingInfo();  
+  }, []);
 
   return (
     <AuthContext.Provider
