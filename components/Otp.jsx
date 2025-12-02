@@ -10,7 +10,6 @@ import {
   OTP_EMAIL_PREFIX,
 } from "../text";
 import axios from "axios";
-import apiClient from "@/lib/axiosClient";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -122,8 +121,8 @@ export default function OtpPage() {
     }
     setLoading(true);
     try {
-      const res = await apiClient.post(
-        "user/verifyotp",
+      const res = await axios.post(
+        "/hrms/user/verifyotp",
         {
           email,
           otp: code,
@@ -151,7 +150,7 @@ export default function OtpPage() {
     setResendLoading(true);
 
     try {
-      const res = await apiClient.post("user/resendotp", {
+      const res = await axios.post("/hrms/user/resendotp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
