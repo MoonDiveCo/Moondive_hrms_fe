@@ -76,7 +76,7 @@ export default function LoginForm({ email, setEmail, setShowForgotModal }) {
         roles: res?.data?.result?.user?.userRole,
         permissions: res?.data?.result?.userPermissions,
       });
-      router.push("/hrms/dashboard");
+      router.push("/crm/dashboard");
       setPassword("");
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || err?.message || "Login failed. Please check your credentials and try again.");
