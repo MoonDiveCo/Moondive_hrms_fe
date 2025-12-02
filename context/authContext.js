@@ -3,7 +3,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import { createContext, useEffect, useState } from "react";
-import {fetchIPData, getGeolocationData} from '@/helper/tracking'
+import {fetchIPData} from '@/helper/tracking'
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
 
 export const AuthContext = createContext();
