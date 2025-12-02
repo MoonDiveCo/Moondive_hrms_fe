@@ -67,18 +67,17 @@ export function AuthProvider({ children }) {
     setPermissions([]);
   };
 
-  const getSessionTrackingInfo=async()=>{
-     try { 
-      await fetchIPData()  
-    } catch (error) 
-    {  console.error('Failed to initialize session tracking:', error) 
-      
-     }
-  }
+const getSessionTrackingInfo = async () => {
+    try {
+      await fetchIPData();  
+    } catch (error) {
+      console.error('Failed to initialize session tracking:', error);
+    }
+  };
 
-  useEffect(()=>{
-    getSessionTrackingInfo()
-  },[])
+  useEffect(() => {
+    getSessionTrackingInfo();  
+  }, []);
 
   return (
     <AuthContext.Provider
