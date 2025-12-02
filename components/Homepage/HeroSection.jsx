@@ -215,9 +215,8 @@ export function HeroSection() {
         elevate employee experiences - across every department.
       </p>
 
-      {/* Three Section Cards */}
+    
       <div className="w-full cursor-pointer max-w-6xl grid grid-cols-1 sm:grid-cols-3 gap-10 mb-4">
-        {/* CMS */}
         <div
           className="bg-[#0A0F1C] text-white rounded-xl px-5 py-4 flex items-center gap-4 shadow-xl h-20"
           onClick={handleCmsClick}
@@ -234,8 +233,6 @@ export function HeroSection() {
             </p>
           </div>
         </div>
-
-        {/* CRM */}
         <div
           className="bg-[#0A0F1C] cursor-pointer text-white rounded-xl px-5 py-4 flex items-center gap-4 shadow-xl h-20"
           onClick={handleCrmClick}
@@ -252,8 +249,6 @@ export function HeroSection() {
             </p>
           </div>
         </div>
-
-        {/* HRMS */}
         <div
           className="bg-[#0A0F1C] cursor-pointer text-white rounded-xl px-5 py-4 flex items-center gap-4 shadow-xl h-20"
           onClick={handleHrmsClick}
