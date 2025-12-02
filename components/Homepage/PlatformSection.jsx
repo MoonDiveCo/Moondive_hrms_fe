@@ -10,7 +10,7 @@ export default function PlatformSection() {
     "to employee operations, everything is built to work",
     "together",
     "No scattered data, no complicated setups just",
-    "smooth, connected workflows."
+    "smooth, connected workflows"
   ];
 
   const linesWithWords = textLines.map(line => line.split(' '));
