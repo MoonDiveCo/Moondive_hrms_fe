@@ -122,7 +122,7 @@ export default function OtpPage() {
     setLoading(true);
     try {
       const res = await axios.post(
-        "/hrms/user/verifyotp",
+        "/user/verifyotp",
         {
           email,
           otp: code,
@@ -150,7 +150,7 @@ export default function OtpPage() {
     setResendLoading(true);
 
     try {
-      const res = await axios.post("/hrms/user/resendotp", {
+      const res = await axios.post("/user/resendotp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
