@@ -4,7 +4,6 @@ export default function PlatformSection() {
   const ref = useRef(null);
   const [coloredWords, setColoredWords] = useState([]);
   const [isAnimating, setIsAnimating] = useState(false);
-  const hasAnimatedRef = useRef(false); // Track if animation has played
   
   const textLines = [
     "One platform. Three powerful systems.",
@@ -21,53 +20,17 @@ export default function PlatformSection() {
     return wordsBefore + line.split(" ").length - 1;
   });
 
-  // Scroll lock effect
-  // useEffect(() => {
-  //   if (isAnimating) {
-  //     // Save current scroll position
-  //     const scrollY = window.scrollY;
-      
-  //     // Lock scroll
-  //     document.body.style.position = 'fixed';
-  //     document.body.style.top = `-${scrollY}px`;
-  //     document.body.style.width = '100%';
-  //     document.body.style.overflowY = 'scroll';
-      
-  //     return () => {
-  //       // Unlock scroll
-  //       document.body.style.position = '';
-  //       document.body.style.top = '';
-  //       document.body.style.width = '';
-  //       document.body.style.overflowY = '';
-        
-  //       // Restore scroll position
-  //       window.scrollTo(0, scrollY);
-  //     };
-  //   }
-  // }, [isAnimating]);
-
   useEffect(() => {
     let animationTimeouts = [];
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // Only trigger if it hasn't animated before
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.3 && !hasAnimatedRef.current) {
-            // Mark as animated
-            hasAnimatedRef.current = true;
-            
-            // Immediately freeze screen
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
             setIsAnimating(true);
-            
-            // Clear any existing timeouts
             animationTimeouts.forEach(timeout => clearTimeout(timeout));
             animationTimeouts = [];
-            
-            // Reset all words to default color
             setColoredWords(new Array(words.length).fill(false));
-            
-            // Animate each word
             words.forEach((_, index) => {
               const timeout = setTimeout(() => {
                 setColoredWords(prev => {
@@ -76,7 +39,6 @@ export default function PlatformSection() {
                   return newArray;
                 });
                 
-                // Unlock scroll after last word completes
                 if (index === words.length - 1) {
                   setTimeout(() => {
                     setIsAnimating(false);
@@ -85,6 +47,11 @@ export default function PlatformSection() {
               }, (index * 400));
               animationTimeouts.push(timeout);
             });
+            
+          } else if (!entry.isIntersecting) {
+            animationTimeouts.forEach(timeout => clearTimeout(timeout));
+            animationTimeouts = [];
+            setIsAnimating(false);
           }
         });
       },
@@ -109,7 +76,7 @@ export default function PlatformSection() {
   return (
     <section
       ref={ref}
-      className="bg-[#FFF9F0] flex items-center justify-center p-4 md:p-8 mb-16 min-h-[60vh]"
+      className="bg-[#FFF9F0] flex items-center justify-center p-4 md:p-8 mb-16 min-h-[0vh]"
     >
       <div className="w-full max-w-6xl mx-auto">
         <div className="text-center px-2 md:px-4">

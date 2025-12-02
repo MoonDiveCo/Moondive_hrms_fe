@@ -1,7 +1,6 @@
 "use client";
 import React, { useContext, useState } from "react";
 import Image from "next/image";
-import axios from "axios";
 import ForgotFlowModal from "./ForgotModal";
 import Login from "../../public/signup/Sign.svg";
 import Google from "../../public/signup/Google.png";
@@ -30,7 +29,7 @@ import {
   LOGIN_SIGNUP_LINK_TEXT,
 } from "../../text";
 import { AuthContext } from "@/context/authContext";
-import apiClient from "@/lib/axiosClient";
+import axios from "axios";
 
 
 export default function LoginForm({ email, setEmail, setShowForgotModal}){
@@ -65,11 +64,11 @@ export default function LoginForm({ email, setEmail, setShowForgotModal}){
       return;
     }
     const payload = {email}
-const res =await apiClient.post("user/verifyEmail",payload)
-if(res?.data?.responseCode == 200){
-setStep("password");
-return
-}
+    const res = await axios.post("/hrms/user/verifyEmail", payload)
+    if(res?.data?.responseCode == 200){
+    setStep("password");
+    return
+    }
     setErrorMsg(res?.data?.responseMessage)
     } catch (error) {
       setErrorMsg("Invalid Email");
@@ -96,7 +95,7 @@ return
     
     try {
      const payload = {email,password}
-      const res = await apiClient.post("user/login",payload)
+      const res = await axios.post("/hrms/user/login",payload)
       if(res?.data?.responseCode!==200){
         setErrorMsg(res.data.responseMessage);
         return;
@@ -139,11 +138,7 @@ return
     setForgotLoading(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:2000/api/v1/user/forgot-password",
-        { email },
-        { headers: { "Content-Type": "application/json" } }
-      );
+      const res = await axios.put("/hrms/user/forgot-password", { email });
 
       const data = res.data;
       setSuccessMsg(data?.message || "Password reset link sent.");

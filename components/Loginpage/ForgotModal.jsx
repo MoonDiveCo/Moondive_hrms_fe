@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import apiClient from "@/lib/axiosClient";
+import axios from "axios";
 const OTP_LEN = 6;
 const RESEND_COOLDOWN = 60;
 
@@ -50,7 +50,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
     if (!validateEmailOrShow()) return;
     setSending(true);
     try {
-      const res = await apiClient.put("user/sendForgot-PasswordOtp", { email });
+      const res = await axios.put("/hrms/user/sendForgot-PasswordOtp", { email });
 
       const msg =
         res?.data?.responseMessage || res?.data?.message || "OTP sent";
@@ -133,7 +133,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
 
     setLoading(true);
     try {
-      const res = await apiClient.post("user/verifyotp", { email, otp:otp.join("")});
+      const res = await axios.post("/hrms/user/verifyotp", { email, otp:otp.join("")});
       const data = res.data ?? {};
       const msg = data.responseMessage || data.message || "";
       if (data.responseCode === 200 || data.responseCode === "200") {
@@ -159,7 +159,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
     if (cooldown > 0) return;
     setPageMsg("");
     try {
-      const res = await apiClient.post("user/resendotp", { email });
+      const res = await axios.post("/hrms/user/resendotp", { email });
       const msg =
         res?.data?.responseMessage || res?.data?.message || "OTP resent";
       setPageMsg(msg);
@@ -196,7 +196,7 @@ export default function ForgotModal({ email, onClose, setEmail }) {
 
     setLoading(true);
     try {
-      const res = await apiClient.put("user/forgot-password", {
+      const res = await axios.put("/hrms/user/forgot-password", {
       email,
        confirmNewPassword:confirm,
       newPassword:password
