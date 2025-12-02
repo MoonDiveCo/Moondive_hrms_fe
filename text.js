@@ -71,3 +71,8 @@ export const ROLE_EMPLOYEE = "Employee"
 export const ROLE_SUPERADMIN = "SuperAdmin"
 export const ROLE_ADMIN = "Admin"
 export const ROLE_ACCOUNTANT = "Accountant"
+
+export const ENDPOINT_CONTACT_LEAD = '/admin/get-contact-leads'
+export const ENDPOINT_INDIRECT_LEAD = '/chat/get-leads'
+export const ENDPOINT_CONNECT_LEAD = '/admin/get-let-us-connect-leads'
+export const GET_REQUEST = 'get'
