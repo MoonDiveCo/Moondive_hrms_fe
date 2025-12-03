@@ -1,11 +1,13 @@
 // app/dashboard/page.jsx
+"use client"
 import React from "react";
 
+
 export default function DashboardPage() {
+    
   return (
     <div className="max-w-full mx-auto px-6 md:px-8 py-6">
       <h1 className="text-2xl font-semibold text-gray-900 mb-4">Overview</h1>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg border border-gray-100 p-6 shadow-sm">
           <h3 className="text-sm font-medium text-gray-600">Total Employees</h3>

@@ -19,24 +19,23 @@ import OperationsIcon from "../../public/Dashboard/Operations.png";
 import AnalyticsIcon from "../../public/Dashboard/Analytics.png";
 import SettingIcon from "../../public/Dashboard/Setting.png";
 
-// const TOP_ITEMS = [
-//    { label: "Overview", icon: OverviewIcon, href: "/dashboard" },
-//   { label: "Candidate", icon: CandidateIcon, href: "/dashboard/candidate" },
-//   { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/dashboard/leave-tracker" },
-//   { label: "Attendance", icon: AttendanceIcon, href: "/dashboard/attendance" },
-//   { label: "Time Tracker", icon: TimeTrackerIcon, href: "/dashboard/time-tracker" },
-//   { label: "Performance", icon: PerformanceIcon, href: "/dashboard/performance" },
-//   { label: "Documents", icon: DocumentsIcon, href: "/dashboard/documents" },
-// ];
+const TOP_ITEMS = [
+  { label: "Overview", icon: OverviewIcon, href: "/crm/dashboard" },
+  { label: "Leads", icon: CandidateIcon, href: "/crm/dashboard/leads" },
+  { label: "In Process", icon: LeaveTrackerIcon, href: "/crm/dashboard/leave-tracker" },
+  { label: "Metting Scheduling", icon: AttendanceIcon, href: "/crm/dashboard/attendance" },
+  { label: "Final Scheduling", icon: TimeTrackerIcon, href: "/dashboard/time-tracker" },
+  { label: "Win/Lose Status", icon: PerformanceIcon, href: "/dashboard/performance" },
+  { label: "Documents", icon: DocumentsIcon, href: "/dashboard/documents" },
+];
 
-// const BOTTOM_ITEMS = [
-//   { label: "Operations", icon: OperationsIcon },
-//   { label: "Analytics", icon: AnalyticsIcon },
-//   { label: "Setting", icon: SettingIcon },
-// ];
+const BOTTOM_ITEMS = [
+  { label: "Operations", icon: OperationsIcon },
+  { label: "Analytics", icon: AnalyticsIcon },
+  { label: "Setting", icon: SettingIcon },
+];
 
-export default function Sidebar({ topItems = [], bottomItems = [] }) {
-  
+export default function Sidebar() {
   return (
     <div className="h-screen flex flex-col justify-between">
       <div>
@@ -45,7 +44,7 @@ export default function Sidebar({ topItems = [], bottomItems = [] }) {
         </div>
         <nav className="px-2 py-4">
           <ul className="space-y-0">
-            {topItems.map((item) => (
+            {TOP_ITEMS.map((item) => (
               <li key={item.label}>
                 <Link
                   href={item.href}
@@ -63,7 +62,7 @@ export default function Sidebar({ topItems = [], bottomItems = [] }) {
       </div>
       <div className="px-2 py-6">
         <ul className="space-y-1">
-          {bottomItems.map((item) => (
+          {BOTTOM_ITEMS.map((item) => (
             <li key={item.label}>
               <Link
               href={`/dashboard/${item.label.toLowerCase()}`}
