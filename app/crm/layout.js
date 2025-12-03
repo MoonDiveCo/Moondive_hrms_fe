@@ -3,7 +3,7 @@ import { MenuProvider } from "@/constants/Sidebar";
 
 export default function CRMLayout({ children }) {
   return (
-      
+    
     <div><ProtectedRoute module="CRM">
       <MenuProvider>
            {children}

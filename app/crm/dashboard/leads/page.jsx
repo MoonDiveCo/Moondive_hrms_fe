@@ -6,7 +6,7 @@ import LeadStats from '../../../../components/CrmDashboard/LeadStats';
 // import { makeApiRequest } from '../../../../utils/utils';
 import { ENDPOINT_CONTACT_LEAD, ENDPOINT_INDIRECT_LEAD, ENDPOINT_CONNECT_LEAD } from '../../../../text';
 import { toast } from 'react-toastify';
-import FilterDropdown from '../../../../components/CrmDashboard/ui/FilterDropdoown';
+import FilterDropdown from '../../../../components/CrmDashboard/ui/FilterDropdown';
 
 export default function LeadDashboard() {
   const [stats, setStats] = useState(null);
