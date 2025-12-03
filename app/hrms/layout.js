@@ -4,9 +4,9 @@ import { MenuProvider } from "@/constants/Sidebar";
 export default function HRMSLayout({ children }) {
   return (
       <div>
-        <MenuProvider>{children}</MenuProvider>
-         {/* <ProtectedRoute module="HRMS">
-            </ProtectedRoute>  */}
+         <ProtectedRoute module="HRMS">
+          <MenuProvider>{children}</MenuProvider>
+            </ProtectedRoute> 
       </div>
   );
 }
