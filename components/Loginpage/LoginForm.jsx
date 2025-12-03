@@ -83,7 +83,7 @@ export default function LoginForm({
         roles: res?.data?.result?.user?.userRole,
         permissions: res?.data?.result?.userPermissions,
       });
-      router.push(`/${redirectTo}`);
+      router.push(`/${redirectTo}/dashboard`);
       setPassword('');
     } catch (err) {
       setErrorMsg(
