@@ -71,7 +71,7 @@ export default function LoginForm({
     try {
       const payload = { email, password, module: redirectTo };
       const res = await axios.post('/user/login', payload, {
-        withCredentials: true,
+        withCredentials: true, 
       });
       if (res?.data?.responseCode !== 200) {
         setErrorMsg(res?.data?.responseMessage || 'Login failed.');
@@ -83,7 +83,7 @@ export default function LoginForm({
         roles: res?.data?.result?.user?.userRole,
         permissions: res?.data?.result?.userPermissions,
       });
-      router.push(`/${redirectTo}/dashboard`);
+      router.push(`/${redirectTo}`);
       setPassword('');
     } catch (err) {
       setErrorMsg(

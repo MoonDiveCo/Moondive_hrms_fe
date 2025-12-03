@@ -33,7 +33,7 @@ export function MenuProvider({ children }) {
     const CRM = {
       top: [
         { label: "Overview", icon: OverviewIcon, href: "/crm/dashboard" },
-        { label: "Leads", icon: CandidateIcon, href: "/crm/dashboard/leads" },
+        { label: "Leads", icon: CandidateIcon, href: "/crm/leads" },
         { label: "In Process", icon: LeaveTrackerIcon, href: "/crm/dashboard/in-process" },
         { label: "Meeting Scheduling", icon: AttendanceIcon, href: "/crm/dashboard/meetings" },
         { label: "Final Scheduling", icon: TimeTrackerIcon, href: "/crm/dashboard/final-schedule" },
@@ -49,9 +49,13 @@ export function MenuProvider({ children }) {
 
     const CMS = {
       top: [
-        { label: "CMS Home", icon: OverviewIcon, href: "/cms" },
-        { label: "Pages", icon: DocumentsIcon, href: "/cms/pages" },
-        { label: "Media", icon: CandidateIcon, href: "/cms/media" },
+        { label: "CMS Home", icon: OverviewIcon, href: "/cms/dashboard" },
+        { label: "Manage Blog", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
+        { label: "Manage Testimonials", icon: DocumentsIcon, href: "/cms/dashboard/manage-testimonials" },
+        { label: "Manage Case Studies", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
+        { label: "Website Meta SEO", icon: DocumentsIcon, href: "/cms/dashboard/website-meta-seo" },
+        { label: "AI Content Performance", icon: DocumentsIcon, href: "/cms/dashboard/ai-content-performance" },
+        { label: "Inventory Management", icon: DocumentsIcon, href: "/cms/dashboard/inventory-management" },
       ],
       bottom: [{ label: "Settings", icon: SettingIcon, href: "/cms/settings" }]
     };

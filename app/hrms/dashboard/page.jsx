@@ -3,7 +3,7 @@
 import React from "react";
 
 
-export default function DashboardPage() {
+export default function HRMSDashboardPage() {
     
   return (
     <div className="max-w-full mx-auto px-6 md:px-8 py-6">
