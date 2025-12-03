@@ -20,15 +20,8 @@ const page = () => {
       }
     
          {showForgotModal && (
-          <div
-      className="absolute  w-full flex items-center justify-center"
-      style={{
-        backgroundImage: `url('${bgImage}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-      
-    >
+        
+  
         <ForgotModal
           email={email}
           onClose={() => {
@@ -36,7 +29,6 @@ const page = () => {
           }}
           setEmail={setEmail}
         />
-          </div>
       )}
   
    

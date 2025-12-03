@@ -69,7 +69,7 @@ export default function LoginForm({
 
     setLoading(true);
     try {
-      const payload = { email, password };
+      const payload = { email, password, module: redirectTo };
       const res = await axios.post('/user/login', payload, {
         withCredentials: true,
       });
@@ -83,7 +83,7 @@ export default function LoginForm({
         roles: res?.data?.result?.user?.userRole,
         permissions: res?.data?.result?.userPermissions,
       });
-      router.push(`${redirectTo}/dashboard`);
+      router.push(`/${redirectTo}/dashboard`);
       setPassword('');
     } catch (err) {
       setErrorMsg(
@@ -181,14 +181,50 @@ export default function LoginForm({
                       value={password}
                       placeholder={LOGIN_PLACEHOLDER_PASSWORD}
                       onChange={(e) => setPassword(e.target.value)}
-                      className='w-full rounded-full border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-orange-400  focus:ring-orange-400'
+                      className='w-full rounded-full border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-orange-400'
                     />
+
                     <button
                       type='button'
                       onClick={() => setShowPassword((p) => !p)}
-                      className='absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 cursor-pointer'
+                      className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer'
                     >
-                      {showPassword ? 'Hide' : 'Show'}
+                      {showPassword ? (
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          strokeWidth={1.5}
+                          stroke='currentColor'
+                          className='w-5 h-5 text-gray-600'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            d='M3 3l18 18M10.584 10.587a3 3 0 104.243 4.243M6.228 6.226C4.32 7.63 2.88 9.668 2 12c1.6 4 6 7 10 7 1.86 0 3.63-.5 5.2-1.39M12 5c3.998 0 8.4 3 10 7a13.133 13.133 0 01-4.104 5.396'
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          strokeWidth={1.5}
+                          stroke='currentColor'
+                          className='w-5 h-5 text-gray-600'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            d='M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z'
+                          />
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+                          />
+                        </svg>
+                      )}
                     </button>
                   </div>
                 </div>
