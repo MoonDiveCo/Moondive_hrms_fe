@@ -3,8 +3,8 @@
 import React from "react";
 import Sidebar from "./Sidebar";
 import MainNavbar from "./MainNavbar";
+
 export default function AppLayout({ children }) {
-  
   return (
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0">
