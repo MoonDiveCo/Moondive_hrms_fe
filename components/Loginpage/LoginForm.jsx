@@ -71,7 +71,7 @@ export default function LoginForm({
     try {
       const payload = { email, password, module: redirectTo };
       const res = await axios.post('/user/login', payload, {
-        withCredentials: true,
+        withCredentials: true, 
       });
       
       if (res?.data?.responseCode !== 200) {

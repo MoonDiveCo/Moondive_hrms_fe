@@ -1,12 +1,7 @@
 "use client"
 import AppLayout from "@/components/Dashboard/AppLayout";
-import { usePathname } from "next/navigation";
 import React from "react";
-export default function DashboardLayout({ children }) {
-  const pathname = usePathname() 
-       const isHrms = pathname.startsWith('/hrms');
-     const isCrm  = pathname.startsWith('/crm') 
-     const isCms  = pathname.startsWith('/cms') 
+export default function HRMSDashboardLayout({ children }) {
  
-  return <AppLayout isHrms={isHrms} isCms={isCms} isCrm={isCrm}>{children}</AppLayout>;
+  return <AppLayout module = "hrms">{children}</AppLayout>;
 }

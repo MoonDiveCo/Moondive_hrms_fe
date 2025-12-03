@@ -49,9 +49,13 @@ export function MenuProvider({ children }) {
 
     const CMS = {
       top: [
-        { label: "CMS Home", icon: OverviewIcon, href: "/cms" },
-        { label: "Pages", icon: DocumentsIcon, href: "/cms/pages" },
-        { label: "Media", icon: CandidateIcon, href: "/cms/media" },
+        { label: "CMS Home", icon: OverviewIcon, href: "/cms/dashboard" },
+        { label: "Manage Blog", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
+        { label: "Manage Testimonials", icon: DocumentsIcon, href: "/cms/dashboard/manage-testimonials" },
+        { label: "Manage Case Studies", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
+        { label: "Website Meta SEO", icon: DocumentsIcon, href: "/cms/dashboard/website-meta-seo" },
+        { label: "AI Content Performance", icon: DocumentsIcon, href: "/cms/dashboard/ai-content-performance" },
+        { label: "Inventory Management", icon: DocumentsIcon, href: "/cms/dashboard/inventory-management" },
       ],
       bottom: [{ label: "Settings", icon: SettingIcon, href: "/cms/settings" }]
     };
