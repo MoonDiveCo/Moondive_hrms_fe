@@ -3,29 +3,29 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
-export default function AppLayout({ isHrms, isCrm, isCms, children }) {
+export default function AppLayout({ module, children }) {
   const menus = useMenus();
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
   useEffect(() => {
-    if (isHrms) {
+    if (module === "hrms") {
       setTopItems(menus.hrms.top);
       setBottomItems(menus.hrms.bottom);
       return;
     }
-    if (isCms) {
+    if (module === "cms") {
       setTopItems(menus.cms.top);
       setBottomItems(menus.cms.bottom);
       return;
     }
-    if (isCrm) {
+    if (module === "crm") {
       setTopItems(menus.crm.top);
       setBottomItems(menus.crm.bottom);
       return;
     }
     setTopItems(menus.default.top);
     setBottomItems(menus.default.bottom);
-  }, [isHrms, isCrm, isCms, menus]);
+  }, [module, menus]);
 
   return (
     <div className="min-h-screen flex bg-gray-50">

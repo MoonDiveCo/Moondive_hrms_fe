@@ -5,8 +5,8 @@ import { Users, TrendingUp, Calendar, Target, Filter, Search, Download } from 'l
 // import LeadList from './LeadList';
 // import LeadStats from './LeadStats';
 // 🔧 TODO: When you wire APIs, bring these back and adjust paths accordingly
-import { makeApiRequest } from '../../../../utils/utils';
-import { ENDPOINT_CONTACT_LEAD, ENDPOINT_INDIRECT_LEAD, ENDPOINT_CONNECT_LEAD, GET_REQUEST } from '../../../../text';
+import { makeApiRequest } from '../../../utils/utils';
+import { ENDPOINT_CONTACT_LEAD, ENDPOINT_INDIRECT_LEAD, ENDPOINT_CONNECT_LEAD, GET_REQUEST } from '../../../text';
 import { toast } from 'react-toastify';
 // 🔧 TODO: FilterDropdown is in another place, so keep it commented for now in this project
 // import FilterDropdown from '../../UI/FilterDropdoown';
