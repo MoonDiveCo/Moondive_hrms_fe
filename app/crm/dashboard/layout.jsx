@@ -1,4 +1,4 @@
-import AppLayout from "@/components/CrmDashboard/AppLayout";
+import AppLayout from "@/components/Dashboard/AppLayout";
 import React from "react";
 
 export default function DashboardLayout({ children }) {
