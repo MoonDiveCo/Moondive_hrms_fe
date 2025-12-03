@@ -8,11 +8,8 @@ import Link from "next/link";
 import MoondiveNavbar from "../../public/Homepage/MoondiveNavbar.png"
 
 
-
-
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-
   return (
     <header className="w-full flex justify-center py-4 px-4">
       <div className="w-full container ">

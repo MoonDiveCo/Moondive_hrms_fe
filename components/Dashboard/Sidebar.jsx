@@ -3,10 +3,7 @@
 import Image from "next/image";
 import React from "react";
 import Link from "next/link";
-
-// Brand
 import MoondiveAdmin from "../../public/Dashboard/MoondiveAdmin.png";
-
 // TOP ICONS
 import OverviewIcon from "../../public/Dashboard/Overview.png";
 import CandidateIcon from "../../public/Dashboard/Candidate.png";
@@ -18,24 +15,8 @@ import DocumentsIcon from "../../public/Dashboard/Documents.png";
 import OperationsIcon from "../../public/Dashboard/Operations.png";
 import AnalyticsIcon from "../../public/Dashboard/Analytics.png";
 import SettingIcon from "../../public/Dashboard/Setting.png";
-
-const TOP_ITEMS = [
-  { label: "Overview", icon: OverviewIcon, href: "/dashboard" },
-  { label: "Candidate", icon: CandidateIcon, href: "/dashboard/candidate" },
-  { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/dashboard/leave-tracker" },
-  { label: "Attendance", icon: AttendanceIcon, href: "/dashboard/attendance" },
-  { label: "Time Tracker", icon: TimeTrackerIcon, href: "/dashboard/time-tracker" },
-  { label: "Performance", icon: PerformanceIcon, href: "/dashboard/performance" },
-  { label: "Documents", icon: DocumentsIcon, href: "/dashboard/documents" },
-];
-
-const BOTTOM_ITEMS = [
-  { label: "Operations", icon: OperationsIcon },
-  { label: "Analytics", icon: AnalyticsIcon },
-  { label: "Setting", icon: SettingIcon },
-];
-
-export default function Sidebar() {
+export default function Sidebar({ topItems = [], bottomItems = [] }) {
+  
   return (
     <div className="h-screen flex flex-col justify-between">
       <div>
@@ -44,7 +25,7 @@ export default function Sidebar() {
         </div>
         <nav className="px-2 py-4">
           <ul className="space-y-0">
-            {TOP_ITEMS.map((item) => (
+            {topItems.map((item) => (
               <li key={item.label}>
                 <Link
                   href={item.href}
@@ -62,7 +43,7 @@ export default function Sidebar() {
       </div>
       <div className="px-2 py-6">
         <ul className="space-y-1">
-          {BOTTOM_ITEMS.map((item) => (
+          {bottomItems.map((item) => (
             <li key={item.label}>
               <Link
               href={`/dashboard/${item.label.toLowerCase()}`}
