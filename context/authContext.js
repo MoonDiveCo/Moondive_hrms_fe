@@ -23,6 +23,7 @@ export function AuthProvider({ children }) {
 
     axios.defaults.headers.common["token"] = token;
     fetchUser(token);
+    getSessionTrackingInfo()
   }, []);
 
   const fetchUser = async (token) => {
@@ -74,10 +75,6 @@ const getSessionTrackingInfo = async () => {
       console.error('Failed to initialize session tracking:', error);
     }
   };
-
-  useEffect(() => {
-    getSessionTrackingInfo();  
-  }, []);
 
   return (
     <AuthContext.Provider
