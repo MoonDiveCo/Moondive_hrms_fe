@@ -5,8 +5,9 @@ export default function HRMSLayout({ children }) {
   return (
       <div>
          <ProtectedRoute module="HRMS">
-        <MenuProvider>{children}</MenuProvider>
+ <MenuProvider>{children}</MenuProvider>
             </ProtectedRoute> 
+
       </div>
   );
 }

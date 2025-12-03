@@ -1,12 +1,17 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
+import { RBACContext } from "@/context/rbacContext";
+import { AuthContext } from "@/context/authContext";
 export default function AppLayout({ isHrms, isCrm, isCms, children }) {
+  const { modules, submodules, actions, canAccessModule, canAccessSubmodule, canPerform } = useContext(RBACContext)
+  const { user, permissions } = useContext(AuthContext)
   const menus = useMenus();
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
+  console.log("RBAC CONTEXT IN APPLAYOUT", { modules, submodules, actions, permissions })
   useEffect(() => {
     if (isHrms) {
       setTopItems(menus.hrms.top);
