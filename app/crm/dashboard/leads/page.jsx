@@ -60,7 +60,7 @@ export default function LeadDashboard() {
   const fetchDirectLeads = async () => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_CRM}${ENDPOINT_CONTACT_LEAD}`,
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}${ENDPOINT_CONTACT_LEAD}`,
         {
           method: 'GET',
           headers: {
