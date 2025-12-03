@@ -1,15 +1,12 @@
 'use client';
-
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, Calendar, Target, Filter, Search, Download } from 'lucide-react';
-// import LeadList from './LeadList';
-// import LeadStats from './LeadStats';
-// 🔧 TODO: When you wire APIs, bring these back and adjust paths accordingly
-import { makeApiRequest } from '../../../../utils/utils';
-import { ENDPOINT_CONTACT_LEAD, ENDPOINT_INDIRECT_LEAD, ENDPOINT_CONNECT_LEAD, GET_REQUEST } from '../../../../text';
+import { Search, Download } from 'lucide-react';
+import LeadList from '../../../../components/CrmDashboard/LeadList';
+import LeadStats from '../../../../components/CrmDashboard/LeadStats';
+// import { makeApiRequest } from '../../../../utils/utils';
+import { ENDPOINT_CONTACT_LEAD, ENDPOINT_INDIRECT_LEAD, ENDPOINT_CONNECT_LEAD } from '../../../../text';
 import { toast } from 'react-toastify';
-// 🔧 TODO: FilterDropdown is in another place, so keep it commented for now in this project
-// import FilterDropdown from '../../UI/FilterDropdoown';
+import FilterDropdown from '../../../../components/CrmDashboard/ui/FilterDropdoown';
 
 export default function LeadDashboard() {
   const [stats, setStats] = useState(null);
@@ -37,7 +34,6 @@ export default function LeadDashboard() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [emailModal, setEmailModal] = useState({ open: false, recipients: [], type: 'bulk' });
 
-  // Fetch all leads (currently just sets empty/default values, APIs are commented)
   useEffect(() => {
     fetchAllLeads();
   }, [filters, filters.time, filters.score]);
@@ -60,15 +56,21 @@ export default function LeadDashboard() {
     }
   };
 
+  // CONTACT LEADS (Contact form)
   const fetchDirectLeads = async () => {
     try {
-      // 🔧 TODO: Use your Direct Leads API here (e.g. Contact Form submissions)
-      // Example:
-      // const response = await fetch('<YOUR_CONTACT_LEADS_URL>');
-      // const data = await response.json();
-      // const results = data?.result || [];
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_CRM}${ENDPOINT_CONTACT_LEAD}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      const results = []; // placeholder while API is not wired
+      const data = await response.json();
+      const results = data?.result || [];
 
       const leadsWithSource = results.map(lead => ({
         ...lead,
@@ -85,41 +87,67 @@ export default function LeadDashboard() {
 
       setDirectLeads(leadsWithSource);
       return leadsWithSource;
+
     } catch (error) {
-      console.error('Failed to fetch direct leads:', error);
+      console.error('❌ Failed to fetch direct leads:', error);
       setDirectLeads([]);
       return [];
     }
   };
 
+  // SDR LEADS – currently using /leads and treating ALL as SDR (you can filter later)
   const fetchSdrLeads = async () => {
     try {
-      // 🔧 TODO: Use your SDR Leads API here
-      // Example:
-      // const response = await fetch('/leads/get-sdr-leads');
-      // const data = await response.json();
-      // const results = data?.result || [];
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      const results = []; // placeholder while API is not wired
+      const data = await response.json();
+      console.log('SDR /leads response:', data);
 
-      setSdrLeads(results);
-      return results;
+      const allLeads = Array.isArray(data?.result?.leads)
+        ? data.result.leads
+        : Array.isArray(data?.result)
+          ? data.result
+          : [];
+
+      // TODO: when you know SDR flag, filter here instead of returning all
+      const sdrOnly = allLeads; // for now, use all leads
+
+      setSdrLeads(sdrOnly);
+      return sdrOnly;
+
     } catch (error) {
-      console.error('Failed to fetch SDR leads:', error);
+      console.error('❌ Failed to fetch SDR leads:', error);
       setSdrLeads([]);
       return [];
     }
   };
 
+  // CHATBOT LEADS
   const fetchChatbotLeads = async () => {
     try {
-      // 🔧 TODO: Use your Chatbot Leads API here
-      // Example:
-      // const response = await fetch('<YOUR_CHATBOT_LEADS_URL>');
-      // const data = await response.json();
-      // const results = data?.results || [];
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-      const results = []; // placeholder while API is not wired
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}${ENDPOINT_INDIRECT_LEAD}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      const data = await response.json();
+      const results = data?.results || [];
 
       const normalizedLeads = results.map(lead => ({
         ...lead,
@@ -136,22 +164,27 @@ export default function LeadDashboard() {
 
       setChatbotLeads(normalizedLeads);
       return normalizedLeads;
+
     } catch (error) {
-      console.error('Failed to fetch chatbot leads:', error);
+      console.error('❌ Failed to fetch chatbot leads:', error);
       setChatbotLeads([]);
       return [];
     }
   };
 
+  // SCHEDULE MEETING LEADS
   const fetchScheduleMeetingLeads = async () => {
     try {
-      // 🔧 TODO: Use your Schedule Meeting Leads API here
-      // Example:
-      // const response = await fetch('<YOUR_SCHEDULE_MEETING_LEADS_URL>');
-      // const data = await response.json();
-      // const results = data?.result || [];
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}${ENDPOINT_CONNECT_LEAD}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
-      const results = []; // placeholder while API is not wired
+      const data = await response.json();
+      const results = data?.result || [];
 
       const leadsWithSource = results.map(lead => ({
         ...lead,
@@ -168,13 +201,15 @@ export default function LeadDashboard() {
 
       setScheduleMeetingLeads(leadsWithSource);
       return leadsWithSource;
+
     } catch (error) {
-      console.error('Failed to fetch schedule meeting leads:', error);
+      console.error('❌ Failed to fetch schedule meeting leads:', error);
       setScheduleMeetingLeads([]);
       return [];
     }
   };
 
+  // LEAD SCORING LEADS – from /leads with sort/search params
   const fetchLeadScoringLeads = async () => {
     try {
       const params = new URLSearchParams();
@@ -199,31 +234,42 @@ export default function LeadDashboard() {
         params.append('sortOrder', 'asc');
       }
 
-      // 🔧 TODO: Use your Lead Scoring API here
-      // Example:
-      // const response = await fetch(`${process.env.NEXT_PUBLIC_API}/leads?${params.toString()}`);
-      // const data = await response.json();
-      // if (data.responseCode === 200 || data.success) {
-      //   const results = data.result.leads || [];
-      //   ...
-      // }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
-      const results = []; // placeholder while API is not wired
+      const data = await response.json();
 
-      const leadsWithSource = results.map(lead => ({
-        ...lead,
-        status: lead.status || 'New',
-        leadGrade: lead.leadGrade || 'Cold',
-        leadScore: lead.leadScore || 0,
-        companyName: lead.company || lead.companyName || '',
-        _sourceType: 'scoring',
-        _sourceLabel: lead.source || 'Lead Scoring'
-      }));
+      if (data.responseCode === 200 || data.success) {
+        const results = Array.isArray(data?.result?.leads)
+          ? data.result.leads
+          : Array.isArray(data?.result)
+            ? data.result
+            : [];
 
-      setLeadScoringLeads(leadsWithSource);
-      return leadsWithSource;
+        const leadsWithSource = results.map(lead => ({
+          ...lead,
+          status: lead.status || 'New',
+          leadGrade: lead.leadGrade || 'Cold',
+          leadScore: lead.leadScore || 0,
+          companyName: lead.company || lead.companyName || '',
+          _sourceType: 'scoring',
+          _sourceLabel: lead.source || 'Lead Scoring'
+        }));
+
+        setLeadScoringLeads(leadsWithSource);
+        return leadsWithSource;
+      }
+
+      setLeadScoringLeads([]);
+      return [];
+
     } catch (error) {
-      console.error('Failed to fetch lead scoring leads:', error);
+      console.error('❌ Failed to fetch lead scoring leads:', error);
       setLeadScoringLeads([]);
       return [];
     }
@@ -245,24 +291,28 @@ export default function LeadDashboard() {
     } else if (filters.leadType === 'sdrLeads') {
       combined = [...sdrLeads];
     } else {
-      combined = [...directLeads, ...chatbotLeads, ...scheduleMeetingLeads, ...leadScoringLeads, ...sdrLeads];
+      combined = [
+        ...directLeads,
+        ...chatbotLeads,
+        ...scheduleMeetingLeads,
+        ...leadScoringLeads,
+        ...sdrLeads
+      ];
     }
 
-    // Apply grade filter
-    if (filters.grade && filters.grade !== '') {
+    // Grade filter
+    if (filters.grade) {
       combined = combined.filter(lead =>
         lead.leadGrade?.toLowerCase() === filters.grade.toLowerCase()
       );
     }
 
-    // Apply status filter
-    if (filters.status && filters.status !== '') {
-      combined = combined.filter(lead =>
-        lead.status === filters.status
-      );
+    // Status filter
+    if (filters.status) {
+      combined = combined.filter(lead => lead.status === filters.status);
     }
 
-    // Apply search filter
+    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       combined = combined.filter(lead =>
@@ -275,60 +325,44 @@ export default function LeadDashboard() {
       );
     }
 
-    if (filters.time) {
-      if (filters.time === 'newest') {
-        combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      } else if (filters.time === 'oldest') {
-        combined.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-      }
+    // Time sort
+    if (filters.time === 'newest') {
+      combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (filters.time === 'oldest') {
+      combined.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
 
-    if (filters.score) {
-      if (filters.score === 'highest') {
-        combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
-      } else if (filters.score === 'lowest') {
-        combined.sort((a, b) => (a.leadScore || 0) - (b.leadScore || 0));
-      }
+    // Score sort
+    if (filters.score === 'highest') {
+      combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
+    } else if (filters.score === 'lowest') {
+      combined.sort((a, b) => (a.leadScore || 0) - (b.leadScore || 0));
     } else {
       combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     }
 
-    // Mismatch check (still kept for debugging)
-    const mismatches = combined.filter(lead => {
-      const score = lead.leadScore || 0;
-      const grade = lead.leadGrade;
-
-      if (score >= 80 && grade !== 'Hot') return true;
-      if (score >= 60 && score < 80 && grade !== 'Warm') return true;
-      if (score >= 40 && score < 60 && grade !== 'Cold') return true;
-      if (score < 40 && grade !== 'Frozen' && grade !== 'Cold') return true;
-
-      return false;
-    });
-
-    if (mismatches.length > 0) {
-      console.warn('⚠️ Found', mismatches.length, 'leads with score/grade mismatches:');
-      mismatches.slice(0, 5).forEach(lead => {
-        console.warn(`- ${lead.firstName} ${lead.lastName} (${lead.email}): Score ${lead.leadScore}/100 but Grade is "${lead.leadGrade}" [Source: ${lead._sourceLabel}]`);
-      });
-    }
-
     setAllLeads(combined);
     setTopLeads(combined.slice(0, 10));
-  }, [directLeads, chatbotLeads, scheduleMeetingLeads, leadScoringLeads, filters, loading]);
+  }, [directLeads, chatbotLeads, scheduleMeetingLeads, leadScoringLeads, sdrLeads, filters, loading]);
 
+  // Stats from backend
   const fetchStats = async () => {
     try {
-      // 🔧 TODO: Use your stats API here
-      // Example:
-      // const response = await fetch(`${process.env.NEXT_PUBLIC_API}/leads/stats`);
-      // const data = await response.json();
-      // if (data.responseCode === 200 || data.success) {
-      //   setStats(data.result);
-      //   return;
-      // }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/stats`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
-      setStats(getDefaultStats());
+      const data = await response.json();
+
+      if (data.responseCode === 200 || data.success) {
+        setStats(data.result);
+      } else {
+        setStats(getDefaultStats());
+      }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
       setStats(getDefaultStats());
@@ -350,25 +384,16 @@ export default function LeadDashboard() {
     convertedLeads: 0
   });
 
+  // Recalculate stats from combined leads when loading finishes
   useEffect(() => {
     if (!loading) {
-      const allCombined = [...directLeads, ...chatbotLeads, ...scheduleMeetingLeads, ...leadScoringLeads, ...sdrLeads];
-
-      const emailMap = new Map();
-      const duplicates = [];
-
-      allCombined.forEach(lead => {
-        if (lead.email) {
-          if (emailMap.has(lead.email)) {
-            duplicates.push({
-              email: lead.email,
-              sources: [emailMap.get(lead.email), lead._sourceLabel]
-            });
-          } else {
-            emailMap.set(lead.email, lead._sourceLabel);
-          }
-        }
-      });
+      const allCombined = [
+        ...directLeads,
+        ...chatbotLeads,
+        ...scheduleMeetingLeads,
+        ...leadScoringLeads,
+        ...sdrLeads
+      ];
 
       if (allCombined.length > 0) {
         const hotCount = allCombined.filter(l => l.leadGrade === 'Hot').length;
@@ -378,18 +403,20 @@ export default function LeadDashboard() {
         const avgScore = allCombined.reduce((sum, l) => sum + (l.leadScore || 0), 0) / allCombined.length;
 
         setStats(prev => ({
-          ...prev,
+          ...(prev || getDefaultStats()),
           totalLeads: allCombined.length,
           hotLeads: hotCount,
           warmLeads: warmCount,
           coldLeads: coldCount,
           frozenLeads: frozenCount,
           averageScore: avgScore,
-          hotLeadsPercentage: allCombined.length > 0 ? Math.round((hotCount / allCombined.length) * 100) : 0
+          hotLeadsPercentage: allCombined.length > 0
+            ? Math.round((hotCount / allCombined.length) * 100)
+            : 0
         }));
       }
     }
-  }, [directLeads, chatbotLeads, scheduleMeetingLeads, leadScoringLeads, loading]);
+  }, [directLeads, chatbotLeads, scheduleMeetingLeads, leadScoringLeads, sdrLeads, loading]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -398,39 +425,6 @@ export default function LeadDashboard() {
     } else {
       setFilters(prev => ({ ...prev, grade: tab.charAt(0).toUpperCase() + tab.slice(1), page: 1 }));
     }
-  };
-
-  // These handlers will be used when you plug FilterDropdown back in
-  const handleSourceFilterChange = (e) => {
-    const value = e.target.value;
-    setFilters(prev => {
-      const newFilters = { ...prev, leadType: value, page: 1 };
-      return newFilters;
-    });
-  };
-
-  const handleTimeFilterChange = (e) => {
-    const value = e.target.value;
-    setFilters(prev => {
-      const newFilters = { ...prev, time: value, page: 1 };
-      return newFilters;
-    });
-  };
-
-  const handleScoreFilterChange = (e) => {
-    const value = e.target.value;
-    setFilters(prev => {
-      const newFilters = { ...prev, score: value, page: 1 };
-      return newFilters;
-    });
-  };
-
-  const handleStatusFilterChange = (e) => {
-    const value = e.target.value;
-    setFilters(prev => {
-      const newFilters = { ...prev, status: value, page: 1 };
-      return newFilters;
-    });
   };
 
   const handleExport = async () => {
@@ -475,25 +469,24 @@ export default function LeadDashboard() {
   const sendEmail = async (emailData) => {
     setSendingEmail(true);
     try {
-      // 🔧 TODO: Wire up your Email API here
-      // Example:
-      const response = await fetch(`http://localhost:2000/api/v1/crm/leads/send-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailData)
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/send-email`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(emailData),
+        }
+      );
+
       const data = await response.json();
+
       if (data.responseCode === 200 || data.success) {
         toast.success('Email sent successfully!');
         setEmailModal({ open: false, recipients: [], type: 'bulk' });
         fetchAllLeads();
       } else {
-        toast.error('Failed to send email: ' + data.responseMessage);
+        toast.error('Failed to send email: ' + (data.responseMessage || 'Unknown error'));
       }
-
-      console.log('sendEmail called with (no API wired yet):', emailData);
-      toast.info('Email API is not configured yet. Implement sendEmail in LeadDashboard.');
-      setEmailModal({ open: false, recipients: [], type: 'bulk' });
     } catch (error) {
       console.error('Failed to send email:', error);
       toast.error('Failed to send email. Check console for details.');
@@ -511,7 +504,7 @@ export default function LeadDashboard() {
   }
 
   return (
-    <div className="w-full p-6">
+    <div className="max-w-full mx-auto px-6 md:px-8 py-6">
       <div className="w-full">
         {/* Header */}
         <div className="mb-6 flex justify-between items-center">
@@ -613,7 +606,7 @@ export default function LeadDashboard() {
           />
         </div>
 
-        {/* Tabs and Filters */}
+        {/* Tabs and Filters + Lead List */}
         <div className="bg-white rounded-lg shadow-sm mb-6">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6" aria-label="Tabs">
@@ -659,72 +652,71 @@ export default function LeadDashboard() {
                 </div>
               </div>
 
-              {/* 🔧 TODO: When you add FilterDropdown component in this project, uncomment these */}
-              {/*
               <FilterDropdown
                 label="Sort by Time"
                 value={filters.time}
                 options={[
-                  { value: "newest", label: "Newest" },
-                  { value: "oldest", label: "Oldest" }
+                  { value: 'newest', label: 'Newest' },
+                  { value: 'oldest', label: 'Oldest' }
                 ]}
-                onChange={(val) => setFilters({ ...filters, time: val })}
+                onChange={(val) => setFilters(prev => ({ ...prev, time: val, page: 1 }))}
               />
 
               <FilterDropdown
                 label="Sort by Score"
                 value={filters.score}
                 options={[
-                  { value: "highest", label: "Highest" },
-                  { value: "lowest", label: "Lowest" }
+                  { value: 'highest', label: 'Highest' },
+                  { value: 'lowest', label: 'Lowest' }
                 ]}
-                onChange={(val) => setFilters({ ...filters, score: val })}
+                onChange={(val) => setFilters(prev => ({ ...prev, score: val, page: 1 }))}
               />
 
               <FilterDropdown
                 label="All Sources"
                 value={filters.leadType}
                 options={[
-                  { value: "", label: "All Sources" },
-                  { value: "direct", label: "Contact Form" },
-                  { value: "chatbot", label: "Chatbot" },
-                  { value: "schedule", label: "Schedule Meeting" },
-                  { value: "sdrLeads", label: "SDR Leads" },
-                  // { value: "scoring", label: "Lead Scoring System" }
+                  { value: '', label: 'All Sources' },
+                  { value: 'direct', label: 'Contact Form' },
+                  { value: 'chatbot', label: 'Chatbot' },
+                  { value: 'schedule', label: 'Schedule Meeting' },
+                  { value: 'sdrLeads', label: 'SDR Leads' },
+                  // { value: 'scoring', label: 'Lead Scoring System' },
                 ]}
-                onChange={(val) => setFilters({ ...filters, leadType: val })}
+                onChange={(val) => setFilters(prev => ({ ...prev, leadType: val, page: 1 }))}
               />
 
               <FilterDropdown
                 label="All Statuses"
                 value={filters.status}
                 options={[
-                  { value: "", label: "All Statuses" },
-                  { value: "New", label: "New" },
-                  { value: "Contacted", label: "Contacted" },
-                  { value: "Archived", label: "Archived" },
+                  { value: '', label: 'All Statuses' },
+                  { value: 'New', label: 'New' },
+                  { value: 'Contacted', label: 'Contacted' },
+                  { value: 'Archived', label: 'Archived' },
                 ]}
-                onChange={(val) => setFilters({ ...filters, status: val })}
+                onChange={(val) => setFilters(prev => ({ ...prev, status: val, page: 1 }))}
               />
-              */}
             </div>
           </div>
 
-          {/* Lead List (you said you'll handle this component separately) */}
-          {/* <LeadList
-            leads={allLeads}
-            loading={loading}
-            onSelectLead={setSelectedLead}
-            onRefresh={fetchAllLeads}
-            currentPage={filters.page}
-            leadsPerPage={filters.limit}
-            sendEmail={handleSendIndividualEmail}
-            onPageChange={(newPage) => setFilters(prev => ({ ...prev, page: newPage }))}
-          /> */}
+          {/* Lead List inside scrollable area */}
+          <div className="p-6 overflow-x-auto">
+            <LeadList
+              leads={allLeads}
+              loading={loading}
+              onSelectLead={setSelectedLead}
+              onRefresh={fetchAllLeads}
+              currentPage={filters.page}
+              leadsPerPage={filters.limit}
+              sendEmail={handleSendIndividualEmail}
+              onPageChange={(newPage) => setFilters(prev => ({ ...prev, page: newPage }))}
+            />
+          </div>
         </div>
 
-        {/* Lead Stats Section (you’ll implement LeadStats in this project) */}
-        {/* <LeadStats stats={stats} /> */}
+        {/* Lead Stats Section */}
+        <LeadStats stats={stats} />
       </div>
 
       {/* Email Modal */}
@@ -741,21 +733,12 @@ export default function LeadDashboard() {
   );
 }
 
-function StatCard({ icon, label, value, change, changeLabel, color, isPercentage = false }) {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    red: 'bg-red-50 text-red-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600'
-  };
-
+function StatCard({ label, value, change, changeLabel, color, isPercentage = false }) {
   const displayValue = value ?? 0;
   const displayChange = change ?? 0;
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex items-center justify-between mb-4">
-      </div>
       <div className="text-2xl font-bold text-primary-500 mb-1">{displayValue}</div>
       <div className="text-sm text-primary-600 mb-2">{label}</div>
       <div className="text-xs text-primary-500">
