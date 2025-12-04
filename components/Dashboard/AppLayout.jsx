@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
-export default function AppLayout({ module, children }) {
+export default function AppLayout({ module, children, showMainNavbar = true }) {
   const menus = useMenus();
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
@@ -33,9 +33,9 @@ export default function AppLayout({ module, children }) {
         <Sidebar topItems={topItems} bottomItems={bottomItems} />
       </aside>
       <div className="flex-1 flex flex-col w-full">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center">
+        {showMainNavbar && <header className="bg-white border-b border-gray-200 h-16 flex items-center">
           <MainNavbar />
-        </header>
+        </header>}
         <main className="flex-1 overflow-hidden">{children}</main>
       </div>
     </div>
