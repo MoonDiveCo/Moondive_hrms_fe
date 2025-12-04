@@ -25,6 +25,7 @@
     "react-redux": "^9.2.0",
     "react-tag-input-component": "^2.0.2",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.5.1",
     "ua-parser-js": "^2.0.6",
     "uuid": "^13.0.0"
   },

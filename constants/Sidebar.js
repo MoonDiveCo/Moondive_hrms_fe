@@ -33,8 +33,8 @@ export function MenuProvider({ children }) {
     const CRM = {
       top: [
         { label: "Overview", icon: OverviewIcon, href: "/crm/dashboard" },
-        { label: "Leads", icon: CandidateIcon, href: "/crm/leads" },
-        { label: "In Process", icon: LeaveTrackerIcon, href: "/crm/dashboard/in-process" },
+        { label: "Leads", icon: CandidateIcon, href: "/crm/dashboard/leads" },
+        { label: "In Process", icon: LeaveTrackerIcon, href: "/crm/dashboard/InProcess" },
         { label: "Meeting Scheduling", icon: AttendanceIcon, href: "/crm/dashboard/meetings" },
         { label: "Final Scheduling", icon: TimeTrackerIcon, href: "/crm/dashboard/final-schedule" },
         { label: "Win/Lose Status", icon: PerformanceIcon, href: "/crm/dashboard/status" },
