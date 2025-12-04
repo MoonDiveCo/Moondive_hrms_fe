@@ -185,7 +185,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-start">
+        <div className="bg-linear-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl font-bold">
@@ -329,7 +329,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
               )}
 
               {/* Follow-up Reminder */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+              {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">⏰ Follow-up Reminder</h3>
                 {lead.followUpDate && (
                   <div className="mb-4 p-3 bg-white rounded border-l-4 border-blue-500">
@@ -377,7 +377,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
                     {savingFollowUp ? 'Saving...' : (lead.followUpDate ? 'Update Follow-up' : 'Set Follow-up')}
                   </button>
                 </form>
-              </div>
+              </div> */}
             </div>
           )}
 
@@ -390,7 +390,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
                 <div className="space-y-4">
                   {activities.map((activity) => (
                     <div key={activity._id} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                      <div className="shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
                         {getActivityIcon(activity.activityType)}
                       </div>
                       <div className="flex-1">
