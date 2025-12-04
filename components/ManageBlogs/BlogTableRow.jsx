@@ -28,7 +28,7 @@ const BlogTableRow = ({ blog, openEditModal  }) => {
 
       {/* Category */}
       <td className="p-3">
-        <span className="bg-primary text-whiteText px-3 py-1 rounded-lg text-sm">
+        <span className="bg-primary/50 border border-primary text-blackText px-3 py-1 rounded-lg text-sm">
           {blog?.category || "General"}
         </span>
       </td>
@@ -57,11 +57,11 @@ const BlogTableRow = ({ blog, openEditModal  }) => {
             onClick={() =>
                 window.open(`https://moondive.co/blog/${blog?.slug}`, "_blank")
               }>
-            <Eye className="w-4 h-4 text-blue-600 cursor-pointer" />
+            <Eye className="w-4 h-4 text-primaryText cursor-pointer" />
           </button>
 
           <button onClick={() => openEditModal(blog)}>
-            <Edit className="w-4 h-4 text-yellow-600 cursor-pointer" />
+            <Edit className="w-4 h-4 text-primaryText cursor-pointer" />
           </button>
 
           <button onClick={() => console.log("Delete", blog._id)}>
