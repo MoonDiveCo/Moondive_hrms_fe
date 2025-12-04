@@ -33,20 +33,20 @@ const [editBlog, setEditBlog] = useState(null);
       
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Manage Blogs</h2>
+        <h4 className="text-primaryText font-semibold">Manage Blogs</h4>
 
         <div className="flex gap-3">
           <input
             type="text"
             placeholder="Search blogs..."
-            className="border border-gray-300 rounded-lg px-3 py-2"
+            className="rounded-full border border-gray-300 bg-transparent px-4 py-2 text-sm outline-none focus:border-primary focus:ring-primary"
             onChange={(e) => setSearchQuery(e.target.value)}
           />
 
           <select
             value={selectedFilter}
             onChange={(e) => setSelectedFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2"
+            className="rounded-full border border-gray-300 bg-transparent px-4 py-2 text-sm outline-none focus:border-primary focus:ring-primary"
           >
             <option value="">All</option>
             <option value="published">Published</option>
@@ -54,7 +54,7 @@ const [editBlog, setEditBlog] = useState(null);
           </select>
 
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+            className="bg-primary text-white rounded-full px-4 py-2"
             onClick={() => { setEditBlog(null); setOpenModal(true); }}
           >
             Add Blog
@@ -65,7 +65,7 @@ const [editBlog, setEditBlog] = useState(null);
       {/* Table */}
       <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-200">
         <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 border-b border-gray-200 text-primaryText">
             <tr>
               <th className="p-3 w-[120px]">Image</th>
               <th className="p-3">Title</th>
