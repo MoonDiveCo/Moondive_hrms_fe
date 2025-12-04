@@ -65,10 +65,10 @@ export const OTP_FOOTER ="© 2025 Moondive Pvt. Ltd. – MoonDive Private Limite
 
 export const TEXT_ADMIN = 'Admin'
 export const TEXT_BLOG = 'Blogs'
-export const TEXT_START_WRITING = 'Start writing below'
-export const TEXT_ADD_META_DESCRIPTION = 'Add meta description'
+export const TEXT_START_WRITING = 'Start Writing Below'
+export const TEXT_ADD_META_DESCRIPTION = 'Add Meta Description'
 export const TEXT_EDIT_URL =
-  'Edit the URL ( default is slugified title of the blog )'
+  'Edit The URL ( default is slugified title of the blog )'
 export const TEXT_EDIT_OPEN_GRAPH_IMAGE = 'Edit open graph image'
 export const TEXT_ENTER_OPEN_GRAPH_TITLE =
   'Enter open graph title (default is blog title)'
