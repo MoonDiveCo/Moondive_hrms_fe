@@ -129,12 +129,12 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
     try {
       if (isEditing) {
         await axios.put(
-          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/${initialData._id}`,
+          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/publish-blog/${initialData._id}`,
           payload
         );
       } else {
         await axios.post(
-          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs`,
+          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/publish-blog`,
           payload
         );
       }
