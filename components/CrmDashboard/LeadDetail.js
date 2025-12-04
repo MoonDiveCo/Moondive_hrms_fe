@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useCallback  } from 'react';
 import { X, Mail, Phone, Building, Calendar, TrendingUp, MessageSquare, FileText, ExternalLink, Clock, MapPin, Globe } from 'lucide-react';
 
 export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
   const [lead, setLead] = useState(leadData || null);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(!leadData);
-  const [activeTab, setActiveTab] = useState('overview'); // overview, activity, emails, notes, chat
+  const [activeTab, setActiveTab] = useState('overview'); 
   const [newNote, setNewNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -15,23 +15,12 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
   const [followUpNotes, setFollowUpNotes] = useState('');
   const [savingFollowUp, setSavingFollowUp] = useState(false);
 
-  useEffect(() => {
-    if (!leadData) {
-      fetchLeadDetails();
-    }
-    fetchActivities();
-  }, [leadId, leadData]);
 
-  useEffect(() => {
-    if (lead) {
-      setFollowUpDate(lead.followUpDate ? new Date(lead.followUpDate).toISOString().split('T')[0] : '');
-      setFollowUpNotes(lead.followUpNotes || '');
-    }
-  }, [lead]);
-
-  const fetchLeadDetails = async () => {
+   const fetchLeadDetails = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/${leadId}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/${leadId}`
+      );
       const data = await response.json();
       if (data.responseCode === 200 || data.success) {
         setLead(data.result);
@@ -41,11 +30,14 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [leadId]); // depends on leadId
 
-  const fetchActivities = async () => {
+  // 2️⃣ Wrap fetchActivities in useCallback
+  const fetchActivities = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/${leadId}/activities`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/${leadId}/activities`
+      );
       const data = await response.json();
       if (data.responseCode === 200 || data.success) {
         setActivities(data.result);
@@ -53,7 +45,28 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
     } catch (error) {
       console.error('Failed to fetch activities:', error);
     }
-  };
+  }, [leadId]); // depends on leadId
+
+  // 3️⃣ Effect that uses both fetch functions
+  useEffect(() => {
+    if (!leadData) {
+      fetchLeadDetails();
+    }
+    fetchActivities();
+  }, [leadId, leadData, fetchLeadDetails, fetchActivities]);
+
+  // 4️⃣ Effect that syncs follow-up fields when `lead` changes
+  useEffect(() => {
+    if (lead) {
+      setFollowUpDate(
+        lead.followUpDate
+          ? new Date(lead.followUpDate).toISOString().split('T')[0]
+          : ''
+      );
+      setFollowUpNotes(lead.followUpNotes || '');
+    }
+  }, [lead]);
+
 
   const handleAddNote = async (e) => {
     e.preventDefault();
@@ -418,9 +431,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
                   </div>
                 )}
 
-                {/* Debug: Show behavior structure */}
-                {console.log('🔍 Lead behavior data:', lead.behavior)}
-                {console.log('🔍 Full lead data:', lead)}
+               
 
                 {lead.behavior?.interactions && Array.isArray(lead.behavior.interactions) && lead.behavior.interactions.length > 0 ? (
                   <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">

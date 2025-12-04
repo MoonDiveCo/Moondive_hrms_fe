@@ -47,9 +47,11 @@ export default function LeadList({ leads, loading, onSelectLead,sendEmail, onRef
 
       if (response.ok) {
         toast.success("Status updated successfully")
+        onRefresh && onRefresh();
       }
     } catch (error) {
       console.error('Failed to update status:', error);
+       toast.error('Failed to update status');
     } finally {
       setUpdatingStatus(false);
     }
@@ -66,9 +68,12 @@ export default function LeadList({ leads, loading, onSelectLead,sendEmail, onRef
 
       if (response.ok) {
         toast.success("Tab updated successfully")
+        onRefresh && onRefresh();
+
       }
     } catch (error) {
-      console.error('Failed to update status:', error);
+      console.error('Failed to update tab:', error);
+       toast.error('Failed to update tab');
     } finally {
       setUpdatingStatus(false);
     }
@@ -139,7 +144,7 @@ export default function LeadList({ leads, loading, onSelectLead,sendEmail, onRef
 
   return (
     <>
-      <div className="overflow-x-hidden bg-red-90">
+      <div className="overflow-x-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -251,13 +256,13 @@ export default function LeadList({ leads, loading, onSelectLead,sendEmail, onRef
                     >
                       <Eye className="w-4 h-4" />
                     </button>
-                    <a
+                    <button
                       onClick={() => sendEmail(lead)}
                       className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
                       title="Send Email"
                     >
                       <Mail className="w-4 h-4" />
-                    </a>
+                    </button>
                     {lead.phone && (
                       <a
                         href={`tel:${lead.phone}`}
@@ -288,7 +293,7 @@ export default function LeadList({ leads, loading, onSelectLead,sendEmail, onRef
                       </button>
 
                       {activeMenu === lead._id && (
-                        <div ref={menuRef} className="absolute right-8 mt-2 w-32 w-fit bg-white shadow-lg border rounded-md z-50 py-1 text-sm">
+                        <div ref={menuRef} className="absolute right-8 mt-2 w-fit bg-white shadow-lg border rounded-md z-50 py-1 text-sm">
                           <button
                             onClick={() => {
                               handleTabUpdate(lead._id, "In Process");

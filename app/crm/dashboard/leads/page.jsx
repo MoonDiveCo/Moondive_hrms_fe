@@ -510,7 +510,7 @@ export default function LeadDashboard() {
         <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-primary-100">Lead Management</h1>
-            <p className="text-primary-100/80 mt-1">Track, manage, and convert your leads</p>
+            
           </div>
           <button
             onClick={handleExport}
@@ -524,8 +524,8 @@ export default function LeadDashboard() {
         {/* Top Leads Metrics */}
         {topLeads.length > 0 && (
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-primary-100">Top Leads Overview</h2>
+            <div className="flex items-center justify-end mb-4">
+             
               <button
                 onClick={() => handleSendBulkEmail(topLeads)}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
