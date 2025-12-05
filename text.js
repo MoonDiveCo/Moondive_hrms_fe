@@ -26,6 +26,7 @@ export const SIGNUP_FOOTER ="© 2025 MoonDive Pvt. Ltd. – MoonDive Private Lim
 export const SIGNUP_ERROR_REQUIRED = "Please fill all required fields.";
 export const SIGNUP_ERROR_NETWORK ="Network error or backend not running.";
 export const SIGNUP_SUCCESS_REGISTERED = "Registered successfully";
+
 export const LOGIN_BRAND_LETTER = "M";
 export const LOGIN_BRAND_NAME = "MoonDive";
 export const LOGIN_HEADING_LINE1 = "Welcome to MoonDive’s CRM.";
@@ -62,6 +63,34 @@ export const OTP_SUCCESS_VERIFIED = "OTP verified";
 export const OTP_SUCCESS_RESENT = "OTP resent successfully";
 export const OTP_FOOTER ="© 2025 Moondive Pvt. Ltd. – MoonDive Private Limited, All Rights Reserved.";
 
+export const TEXT_ADMIN = 'Admin'
+export const TEXT_BLOG = 'Blogs'
+export const TEXT_START_WRITING = 'Start Writing Below'
+export const TEXT_ADD_META_DESCRIPTION = 'Add Meta Description'
+export const TEXT_EDIT_URL =
+  'Edit The URL ( default is slugified title of the blog )'
+export const TEXT_EDIT_OPEN_GRAPH_IMAGE = 'Edit open graph image'
+export const TEXT_ENTER_OPEN_GRAPH_TITLE =
+  'Enter open graph title (default is blog title)'
+export const TEXT_WORD_COUNT = 'Word Count'
+export const TEXT_ESTIMATED_READING_TIME = 'Estimated Reading Time'
+export const TEXT_OPEN_GRAPH_PREVIEW = 'Open graph card preview'
+export const TEXT_UPLOAD_OPEN_GRAPH_IMAGE = 'Upload open graph image'
+export const TEXT_ENTER_DESIGNATION = 'Enter Designation'
+export const TEXT_ENTER_LINK = 'Enter Link'
+export const TEXT_ENTER_NAME = 'Enter Name'
+export const TEXT_ENTER_OG_TITLE = 'Enter Og Title'
+export const TEXT_ENTER_OG_DESCRIPTION = 'Enter Og Description'
+export const TEXT_ENTER_TESTIMONIAL = 'Enter Testimonial'
+export const TEXT_ENTER_WEBSITE_NAME = 'Enter Website Name'
+export const TEXT_HOME_PAGE_META_DESCRIPTION = 'Meta Description'
+export const TEXT_HOME_PAGE_META_TITLE = 'Meta Title'
+export const TEXT_SMALL_TESTIMONIAL = 'testimonial'
+export const TEXT_TESTIMONIAL = 'Testimonials'
+export const TEXT_TESTIMONIAL_CONFIRM = "Are you sure you want to delete this testimonial?"
+
+export const POST_REQUEST = 'post'
+
 
 //ROLE ACCESS MAP
 export const ROLE_CONTENT_WRITER = "Content Writer"
@@ -72,7 +101,85 @@ export const ROLE_SUPERADMIN = "SuperAdmin"
 export const ROLE_ADMIN = "Admin"
 export const ROLE_ACCOUNTANT = "Accountant"
 
+
+//ENDPOINTS
 export const ENDPOINT_CONTACT_LEAD = '/admin/get-contact-leads'
 export const ENDPOINT_INDIRECT_LEAD = '/chat/get-leads'
 export const ENDPOINT_CONNECT_LEAD = '/admin/get-let-us-connect-leads'
-export const GET_REQUEST = 'get'
+export const ROUTE_ALL_BLOGS_ADMIN = '/blogs/get-all-blogs-admin'
+export const ROUTE_CREATE_BLOG = '/admin/create-blog'
+export const ENDPOINT_EDIT_WEB_LINK = '/admin/edit-section/-1/'
+export const ENDPOINT_CREATE_TESTIMONIAL = '/admin/create/testimonial'
+export const ENDPOINT_DELETE_TESTIMONIAL = '/admin/delete/moderations'
+export const ENDPOINT_EDIT_TESTIMONIAL = '/admin/edit-section'
+
+//BUTTONS
+export const BTN_ADD = 'Add'
+export const BTN_PUBLISH = 'Publish'
+export const BTN_DRAFT = 'Save as Draft'
+export const BTN_DONE = 'Done'
+export const BTN_EDIT = 'Edit'
+export const BTN_UPDATE = 'Update'
+export const BTN_UPLOAD_PROFILE_IMAGE = "Upload Profile Image"
+export const BTN_UPLOAD_OG_IMAGE = "Upload OG Image"
+
+//PLACEHOLDERS
+export const PLACEHOLDER_TITLE = 'Title'
+export const PLACEHOLDER_WRITE_SOMETHING = 'Write something...'
+export const PLACEHOLDER_META_DESCRIPTION = 'Meta Description'
+
+// Labels and Headings
+export const LABEL_SELECT_INDUSTRY = 'Select Industry'
+export const LABEL_UPLOAD_HERO_IMAGE = 'Upload Hero Image'
+export const LABEL_HERO_IMAGE_ALT_TEXT = 'Hero Image Alt Text'
+export const LABEL_ENABLE_CTA_SECTION = 'Enable CTA Section'
+export const LABEL_CTA_TITLE = 'CTA Title'
+export const LABEL_CTA_DESCRIPTION = 'CTA Description'
+export const LABEL_BUTTON_TEXT = 'Button Text'
+export const LABEL_BUTTON_LINK = 'Button Link'
+
+
+// Note
+export const NOTE_DEFAULT_META_DESCRIPTION =
+  '170 characters from the starting of the blog content will be taken as the default meta description'
+export const NOTE_BETTER_SEO =
+  'For better SEO the title should not be more than 60 characters.'
+
+export const INDUSTRY_OPTIONS = [
+  'Technology',
+  'Healthcare',
+  'Finance',
+  'Education',
+  'E-commerce',
+  'Manufacturing',
+  'Real Estate',
+  'Hospitality',
+  'Transportation',
+  'Entertainment',
+  'Non-profit',
+  'Government',
+  'Energy',
+  'Agriculture',
+  'Construction',
+  'Consulting',
+  'Marketing',
+  'Other',
+]
+export const DEFAULT_TAG_VALUES = ['Latest']
+
+// Default CTA Values
+export const CTA_DEFAULT_TITLE = 'Ready to Transform Your Business?'
+export const CTA_DEFAULT_DESCRIPTION =
+  "Let's discuss how we can help you achieve your goals with our innovative solutions."
+export const CTA_DEFAULT_BUTTON_TEXT = 'Get Started Today'
+export const CTA_DEFAULT_BUTTON_LINK = '/contact'
+export const CTA_DEFAULT_BACKGROUND = 'gradient'
+
+// Numbers and Constants
+export const WORDS_PER_MINUTE_READING = 200
+export const MAX_TAGS_ALLOWED = 10
+export const META_DESCRIPTION_MAX_LENGTH = 170
+export const META_DESCRIPTION_PREVIEW_LENGTH = 170
+
+// Toast/Validation Messages
+export const MSG_MAX_TAGS_LIMIT = 'You cannot add more than 10 tags.'

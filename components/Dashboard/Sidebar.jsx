@@ -3,10 +3,7 @@
 import Image from "next/image";
 import React from "react";
 import Link from "next/link";
-
-// Brand
 import MoondiveAdmin from "../../public/Dashboard/MoondiveAdmin.png";
-
 // TOP ICONS
 import OverviewIcon from "../../public/Dashboard/Overview.png";
 import CandidateIcon from "../../public/Dashboard/Candidate.png";
@@ -18,23 +15,6 @@ import DocumentsIcon from "../../public/Dashboard/Documents.png";
 import OperationsIcon from "../../public/Dashboard/Operations.png";
 import AnalyticsIcon from "../../public/Dashboard/Analytics.png";
 import SettingIcon from "../../public/Dashboard/Setting.png";
-
-// const TOP_ITEMS = [
-//    { label: "Overview", icon: OverviewIcon, href: "/dashboard" },
-//   { label: "Candidate", icon: CandidateIcon, href: "/dashboard/candidate" },
-//   { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/dashboard/leave-tracker" },
-//   { label: "Attendance", icon: AttendanceIcon, href: "/dashboard/attendance" },
-//   { label: "Time Tracker", icon: TimeTrackerIcon, href: "/dashboard/time-tracker" },
-//   { label: "Performance", icon: PerformanceIcon, href: "/dashboard/performance" },
-//   { label: "Documents", icon: DocumentsIcon, href: "/dashboard/documents" },
-// ];
-
-// const BOTTOM_ITEMS = [
-//   { label: "Operations", icon: OperationsIcon },
-//   { label: "Analytics", icon: AnalyticsIcon },
-//   { label: "Setting", icon: SettingIcon },
-// ];
-
 export default function Sidebar({ topItems = [], bottomItems = [] }) {
   
   return (

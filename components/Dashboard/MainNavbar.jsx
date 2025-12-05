@@ -1,4 +1,3 @@
-// components/MainNavbar.jsx
 "use client";
 import React from "react";
 import Toggle from "../../public/Dashboard/Toggle.png"

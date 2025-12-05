@@ -1,0 +1,32 @@
+.parent{
+    display: flex;
+    border-radius: 0.5rem;
+    text-align: center;  
+ }
+ .dashed {
+     width: 100%;
+     border-radius: 8px;
+ }
+ 
+ .customScroll {
+   overflow: auto;
+   -ms-overflow-style: none;
+   scrollbar-width: none;
+ }
+ 
+ .customScroll::-webkit-scrollbar {
+   display: none;
+ }
+ 
+ @media screen and (min-width: 767px) and (max-width: 1068px) {
+     .dashed {
+         width: 100%;
+         border-radius: 8px;
+     }
+ }
+ @media screen and (min-width: 350px) and (max-width: 768px) {
+ .parent{
+    display: block;
+    height: 250px;
+ }
+ }
