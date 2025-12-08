@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Search, Download } from "lucide-react";
+import { Search, Download ,MoreVertical } from "lucide-react";
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import LeadStats from "../../../../components/CrmDashboard/LeadStats";
 // import { makeApiRequest } from '../../../../utils/utils';
+import { useRouter } from "next/navigation";
 import {
   ENDPOINT_CONTACT_LEAD,
   ENDPOINT_INDIRECT_LEAD,
@@ -13,6 +14,7 @@ import { toast } from "react-toastify";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
 
 export default function LeadDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState(null);
   const [allLeads, setAllLeads] = useState([]);
   const [directLeads, setDirectLeads] = useState([]);
@@ -23,6 +25,9 @@ export default function LeadDashboard() {
   const [topLeads, setTopLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+
   const [filters, setFilters] = useState({
     grade: "",
     status: "",
@@ -41,6 +46,76 @@ export default function LeadDashboard() {
     recipients: [],
     type: "bulk",
   });
+
+  // Toggle single lead
+const handleToggleLeadSelect = (leadId) => {
+  setSelectedLeadIds((prev) =>
+    prev.includes(leadId)
+      ? prev.filter((id) => id !== leadId)
+      : [...prev, leadId]
+  );
+};
+
+// Toggle "select all" for current page
+const handleToggleSelectAll = (pageLeadIds) => {
+  setSelectedLeadIds((prev) => {
+    const allOnPageSelected = pageLeadIds.every((id) => prev.includes(id));
+
+    if (allOnPageSelected) {
+      // unselect all from this page
+      return prev.filter((id) => !pageLeadIds.includes(id));
+    } else {
+      // select all from this page (keep others)
+      const set = new Set(prev);
+      pageLeadIds.forEach((id) => set.add(id));
+      return Array.from(set);
+    }
+  });
+};
+// Generic bulk status update
+const bulkUpdateStatus = async (newStatus) => {
+  if (selectedLeadIds.length === 0) {
+    toast.info("Please select at least one lead");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/bulk-update-status`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadIds: selectedLeadIds,
+          status: newStatus,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok && (data.success || data.responseCode === 200)) {
+      toast.success(
+        `Updated ${selectedLeadIds.length} lead(s) to "${newStatus}"`
+      );
+
+      setSelectedLeadIds([]);
+      setShowStatusMenu(false); // close dropdown
+      fetchAllLeads(); // refresh list
+    } else {
+      toast.error(data.responseMessage || "Failed to update leads");
+    }
+  } catch (err) {
+    
+    console.error(err);
+    toast.error("Something went wrong while updating leads");
+  }
+};
+
+// Specific actions
+const handleMoveSelectedToInProcess = () => bulkUpdateStatus("In Process");
+const handleMoveSelectedToArchived = () => bulkUpdateStatus("Archived");
+
 
   useEffect(() => {
     fetchAllLeads();
@@ -117,8 +192,6 @@ export default function LeadDashboard() {
       );
 
       const data = await response.json();
-      console.log("SDR /leads response:", data);
-
       const allLeads = Array.isArray(data?.result?.leads)
         ? data.result.leads
         : Array.isArray(data?.result)
@@ -131,7 +204,7 @@ export default function LeadDashboard() {
       setSdrLeads(sdrOnly);
       return sdrOnly;
     } catch (error) {
-      console.error("❌ Failed to fetch SDR leads:", error);
+      
       setSdrLeads([]);
       return [];
     }
@@ -281,84 +354,91 @@ export default function LeadDashboard() {
     }
   };
 
-  // Combine and filter leads (client-side)
-  useEffect(() => {
-    let combined = [];
+// Combine and filter leads (client-side)
+useEffect(() => {
+  let combined = [];
 
-    // Select source type
-    if (filters.leadType === "direct") {
-      combined = [...directLeads];
-    } else if (filters.leadType === "chatbot") {
-      combined = [...chatbotLeads];
-    } else if (filters.leadType === "schedule") {
-      combined = [...scheduleMeetingLeads];
-    } else if (filters.leadType === "scoring") {
-      combined = [...leadScoringLeads];
-    } else if (filters.leadType === "sdrLeads") {
-      combined = [...sdrLeads];
-    } else {
-      combined = [
-        ...directLeads,
-        ...chatbotLeads,
-        ...scheduleMeetingLeads,
-        ...leadScoringLeads,
-        ...sdrLeads,
-      ];
-    }
+  // Select source type
+  if (filters.leadType === "direct") {
+    combined = [...directLeads];
+  } else if (filters.leadType === "chatbot") {
+    combined = [...chatbotLeads];
+  } else if (filters.leadType === "schedule") {
+    combined = [...scheduleMeetingLeads];
+  } else if (filters.leadType === "scoring") {
+    combined = [...leadScoringLeads];
+  } else if (filters.leadType === "sdrLeads") {
+    combined = [...sdrLeads];
+  } else {
+    combined = [
+      ...directLeads,
+      ...chatbotLeads,
+      ...scheduleMeetingLeads,
+      ...leadScoringLeads,
+      ...sdrLeads,
+    ];
+  }
 
-    // Grade filter
-    if (filters.grade) {
-      combined = combined.filter(
-        (lead) => lead.leadGrade?.toLowerCase() === filters.grade.toLowerCase()
-      );
-    }
+  // Grade filter
+  if (filters.grade) {
+    combined = combined.filter(
+      (lead) =>
+        lead.leadGrade?.toLowerCase() === filters.grade.toLowerCase()
+    );
+  }
 
-    // Status filter
-    if (filters.status) {
-      combined = combined.filter((lead) => lead.status === filters.status);
-    }
+  // Status filter from tabs 
+  if (filters.status) {
+    combined = combined.filter((lead) => lead.status === filters.status);
+  }
+combined = combined.filter(
+  (lead) => lead.status !== "In Process" && lead.status !== "In_Process"
+);
+if (filters.status !== "Archived") {
+  combined = combined.filter((lead) => lead.status !== "Archived");
+}
 
-    // Search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      combined = combined.filter(
-        (lead) =>
-          lead.fullName?.toLowerCase().includes(searchLower) ||
-          lead.firstName?.toLowerCase().includes(searchLower) ||
-          lead.lastName?.toLowerCase().includes(searchLower) ||
-          lead.email?.toLowerCase().includes(searchLower) ||
-          lead.company?.toLowerCase().includes(searchLower) ||
-          lead.companyName?.toLowerCase().includes(searchLower)
-      );
-    }
+  // Search filter
+  if (filters.search) {
+    const searchLower = filters.search.toLowerCase();
+    combined = combined.filter(
+      (lead) =>
+        lead.fullName?.toLowerCase().includes(searchLower) ||
+        lead.firstName?.toLowerCase().includes(searchLower) ||
+        lead.lastName?.toLowerCase().includes(searchLower) ||
+        lead.email?.toLowerCase().includes(searchLower) ||
+        lead.company?.toLowerCase().includes(searchLower) ||
+        lead.companyName?.toLowerCase().includes(searchLower)
+    );
+  }
 
-    // Time sort
-    if (filters.time === "newest") {
-      combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (filters.time === "oldest") {
-      combined.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    }
+  // Time sort
+  if (filters.time === "newest") {
+    combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (filters.time === "oldest") {
+    combined.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }
 
-    // Score sort
-    if (filters.score === "highest") {
-      combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
-    } else if (filters.score === "lowest") {
-      combined.sort((a, b) => (a.leadScore || 0) - (b.leadScore || 0));
-    } else {
-      combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
-    }
+  // Score sort (default: highest first)
+  if (filters.score === "highest") {
+    combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
+  } else if (filters.score === "lowest") {
+    combined.sort((a, b) => (a.leadScore || 0) - (b.leadScore || 0));
+  } else {
+    combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
+  }
 
-    setAllLeads(combined);
-    setTopLeads(combined.slice(0, 10));
-  }, [
-    directLeads,
-    chatbotLeads,
-    scheduleMeetingLeads,
-    leadScoringLeads,
-    sdrLeads,
-    filters,
-    loading,
-  ]);
+  setAllLeads(combined);
+  setTopLeads(combined.slice(0, 10));
+}, [
+  directLeads,
+  chatbotLeads,
+  scheduleMeetingLeads,
+  leadScoringLeads,
+  sdrLeads,
+  filters,
+  loading,
+]);
 
   // Stats from backend
   const fetchStats = async () => {
@@ -583,26 +663,29 @@ export default function LeadDashboard() {
     <div className="w-full p-6">
       <div className="w-full">
         {/* Header */}
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h4 className="text-primary-100">Lead Management</h4>
-          </div>
-          <button
-            onClick={handleExport}
-            className="
-    flex items-center justify-center gap-2
-    cursor-pointer
-    rounded-full
-    bg-primary
-    text-white
-    px-6 py-2.5
-    text-sm font-semibold
-  "
-          >
-            <Download className="w-3 h-3 text-white" />
-            Export CSV
-          </button>
-        </div>
+     <div className="mb-6 flex justify-between items-center">
+  <div>
+    <h4 className="text-primary-100">Lead Management</h4>
+  </div>
+
+  <div className="flex items-center gap-3">
+    <button
+      onClick={handleExport}
+      className="
+        flex items-center justify-center gap-2
+        cursor-pointer
+        rounded-full
+        bg-primary
+        text-white
+        px-6 py-2.5
+        text-sm font-semibold
+      "
+    >
+      <Download className="w-3 h-3 text-white" />
+      Export CSV
+    </button>
+  </div>
+</div>
 
         {/* Top Leads Metrics */}
         {/* {topLeads.length > 0 && (
@@ -739,85 +822,118 @@ export default function LeadDashboard() {
                 </button>
               ))}
             </nav>
-          </div>
+          </div> 
 
           {/* Filters & Search */}
-          <div className="p-3 border-b border-gray-200 ">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              {/* Big search box */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search leads"
-                    value={filters.search}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        search: e.target.value,
-                        page: 1,
-                      }))
-                    }
-                    className="
-  w-full pl-10 pr-4 py-2 rounded-full border
-  bg-whiteBg
-  text-blackText
-  border-gray-300
-  text-xs md:text-sm        /* ✅ smaller text like FilterDropdown */
+       <div className="p-3 border-b border-gray-200">
+  <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
+    {/* LEFT SIDE → Search */}
+    <div className="flex-1">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search leads"
+          value={filters.search}
+          onChange={(e) =>
+            setFilters((prev) => ({
+              ...prev,
+              search: e.target.value,
+              page: 1,
+            }))
+          }
+          className="w-full pl-10 pr-4 py-2 rounded-full border bg-whiteBg text-blackText border-gray-300 text-xs md:text-sm hover:border-primary focus:border-primary focus:ring-0 focus:outline-none"
+        />
+      </div>
+    </div>
 
-  hover:border-primary
-  focus:border-primary
-  focus:ring-0
-  focus:outline-none
-"
-                  />
-                </div>
-              </div>
+    {/* MIDDLE → Filters */}
+    <div className="flex flex-wrap items-center gap-3 justify-end">
+      <FilterDropdown
+        label="Sort by Time"
+        value={filters.time}
+        options={[
+          { value: "newest", label: "Newest" },
+          { value: "oldest", label: "Oldest" },
+        ]}
+        onChange={(val) =>
+          setFilters((prev) => ({ ...prev, time: val, page: 1 }))
+        }
+      />
 
-              {/* Filters aligned to the right */}
-              <div className="flex flex-wrap items-center justify-end gap-3  ">
-                <FilterDropdown
-                  label="Sort by Time"
-                  value={filters.time}
-                  options={[
-                    { value: "newest", label: "Newest" },
-                    { value: "oldest", label: "Oldest" },
-                  ]}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, time: val, page: 1 }))
-                  }
-                />
+      <FilterDropdown
+        label="Sort by Score"
+        value={filters.score}
+        options={[
+          { value: "highest", label: "Highest" },
+          { value: "lowest", label: "Lowest" },
+        ]}
+        onChange={(val) =>
+          setFilters((prev) => ({ ...prev, score: val, page: 1 }))
+        }
+      />
 
-                <FilterDropdown
-                  label="Sort by Score"
-                  value={filters.score}
-                  options={[
-                    { value: "highest", label: "Highest" },
-                    { value: "lowest", label: "Lowest" },
-                  ]}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, score: val, page: 1 }))
-                  }
-                />
+      <FilterDropdown
+        label="All Sources"
+        value={filters.leadType}
+        options={[
+          { value: "", label: "All Sources" },
+          { value: "direct", label: "Contact Form" },
+          { value: "chatbot", label: "Chatbot" },
+          { value: "schedule", label: "Schedule Meeting" },
+          { value: "sdrLeads", label: "SDR Leads" },
+        ]}
+        onChange={(val) =>
+          setFilters((prev) => ({ ...prev, leadType: val, page: 1 }))
+        }
+      />
+    </div>
 
-                <FilterDropdown
-                  label="All Sources"
-                  value={filters.leadType}
-                  options={[
-                    { value: "", label: "All Sources" },
-                    { value: "direct", label: "Contact Form" },
-                    { value: "chatbot", label: "Chatbot" },
-                    { value: "schedule", label: "Schedule Meeting" },
-                    { value: "sdrLeads", label: "SDR Leads" },
-                  ]}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, leadType: val, page: 1 }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
+    {/* ✅ RIGHT SIDE → Selection Count + Move Button */}
+{selectedLeadIds.length > 0 && (
+  <div className="flex items-center gap-3 ml-auto">
+    <FilterDropdown
+      label="Select"
+      value=""
+      align="right"  
+      options={[
+        { value: "in_process", label: "Move In-Process" },
+        { value: "archived", label: "Move Archived" },
+      ]}
+      onChange={(val) => {
+        if (val === "in_process") handleMoveSelectedToInProcess();
+        if (val === "archived") handleMoveSelectedToArchived();
+      }}
+      renderTrigger={({ open, toggle }) => (
+        <button
+          onClick={toggle}
+          className="
+            h-9 px-3 border-gray-200
+            flex items-center gap-2
+            rounded-full border
+            bg-white
+            focus:border-primary
+            cursor-pointer
+            text-xs md:text-sm font-semibold
+          "
+        >
+          <span className="py-0.5 px-2 rounded-full bg-gray-100 text-gray-700 text-[10px] md:text-xs font-semibold">
+            {selectedLeadIds.length}
+          </span>
+          <span>Select</span>
+          <MoreVertical
+            className={`w-4 h-4 transition-transform ${
+              open ? "rotate-90" : ""
+            }`}
+          />
+        </button>
+      )}
+    />
+  </div>
+)}
+  </div>
+</div>
+
 
           {/* Lead List */}
           <div className="xl:max-w-[75vw] 2xl:max-w-[82vw]">
@@ -832,6 +948,9 @@ export default function LeadDashboard() {
               onPageChange={(newPage) =>
                 setFilters((prev) => ({ ...prev, page: newPage }))
               }
+               selectedLeadIds={selectedLeadIds}
+               onToggleLeadSelect={handleToggleLeadSelect}
+                onToggleSelectAll={handleToggleSelectAll}
             />
           </div>
         </div>

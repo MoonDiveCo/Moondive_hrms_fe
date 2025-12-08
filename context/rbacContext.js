@@ -65,7 +65,7 @@ export function RBACProvider({ children }) {
   const canAccessSubmodule = (submodule) =>
     submodules.includes("*") || submodules.includes(submodule);
 
-  const canPerform = (action, module, submodule) => {
+  const canPerform= (action, module, submodule) => {
     if (actions.includes("*")) return true;
 
     const full = `${module}:${submodule}:${action}`;
