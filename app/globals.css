@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 :root {
-  --font-size-base: clamp(0.6rem, 0.9rem + 0.2vw, 1.125rem);
+  --font-size-base: clamp(0.6rem, 0.8rem + 0.2vw, 1.125rem);
   --font-size-h1: clamp(2.5rem, 2rem + 2vw, 3.5rem);
   --font-size-h2: clamp(1.5rem, 1.7rem + 2vw, 2.75rem);
   --font-size-h3: clamp(1.5rem, 1.3rem + 1vw, 2rem);
@@ -119,6 +119,15 @@ li {
   p{
     font-size: 0.9rem;
   }
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;     
+  -ms-overflow-style: none;     
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;              
 }
 
 

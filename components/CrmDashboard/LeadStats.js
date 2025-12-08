@@ -42,12 +42,12 @@ export default function LeadStats({ stats }) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-primary-100/80">Analytics & Insights</h2>
+      <h4 className="font-bold text-primary-100/80">Analytics & Insights</h4>
 
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {/* Lead Grade Distribution */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Grade Distribution</h3>
+          <h4 className=" font-semibold text-gray-900 mb-4">Lead Grade Distribution</h4>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -79,7 +79,7 @@ export default function LeadStats({ stats }) {
 
         {/* Lead Source Distribution */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Sources</h3>
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">Lead Sources</h4>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={sourceDistribution}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -93,7 +93,7 @@ export default function LeadStats({ stats }) {
 
         {/* Weekly Trend */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Lead Trend</h3>
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">Weekly Lead Trend</h4>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={weeklyTrend}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -108,7 +108,7 @@ export default function LeadStats({ stats }) {
 
         {/* Lead Status Distribution */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Status</h3>
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">Lead Status</h4>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={statusDistribution} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
@@ -123,7 +123,7 @@ export default function LeadStats({ stats }) {
 
       {/* Conversion Funnel */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Conversion Funnel</h3>
+        <h4 className="text-lg font-semibold text-gray-900 mb-6">Conversion Funnel</h4>
         <div className="space-y-4">
           {conversionFunnel.map((stage, index) => (
             <div key={stage.stage}>
@@ -161,8 +161,8 @@ export default function LeadStats({ stats }) {
       </div>
 
       {/* Key Insights */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Insights</h3>
+      <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+        <h4 className="text-lg font-semibold text-gray-900 mb-4">Key Insights</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <InsightCard
             title="Conversion Rate"
