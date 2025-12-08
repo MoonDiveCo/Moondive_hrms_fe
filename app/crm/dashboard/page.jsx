@@ -1,7 +1,7 @@
 // app/dashboard/page.jsx
 import React from "react";
 
-export default function DashboardPage() {
+export default function CRMDashboardPage() {
   return (
     <div className="max-w-full mx-auto px-6 md:px-8 py-6">
       <h1 className="text-2xl font-semibold text-gray-900 mb-4">Overview</h1>

@@ -5,36 +5,95 @@ import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
-export default function AppLayout({ isHrms, isCrm, isCms, children }) {
-  const { modules, submodules, actions, canAccessModule, canAccessSubmodule, canPerform } = useContext(RBACContext)
-  const { user, permissions } = useContext(AuthContext)
+
+ export default function AppLayout({ module, children }) {
+   const { canAccessModule, canAccessSubmodule, authLoading,rbacLoading } = useContext(RBACContext)
+   const {isSignedIn} = useContext(AuthContext)
   const menus = useMenus();
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
-  console.log("RBAC CONTEXT IN APPLAYOUT", { modules, submodules, actions, permissions })
-  useEffect(() => {
-    if (isHrms) {
-      setTopItems(menus.hrms.top);
-      setBottomItems(menus.hrms.bottom);
-      return;
+  const accessPermissions = menus.rules ?? [];
+   const subSet = new Set();
+   
+useEffect(() => {
+  if (authLoading || rbacLoading) return;
+
+  const moduleName = module ? module.toUpperCase() : "";
+
+  const isModuleAccessible = canAccessModule(moduleName);
+
+  if (!isSignedIn || !isModuleAccessible) {
+    setTopItems([]);
+    setBottomItems([]);
+    return;
+  }
+
+  const keyOf = (item) =>
+    (item && (item.href || item.label)) || JSON.stringify(item);
+
+  const mergeUnique = (existing = [], additions = []) => {
+    const seen = new Set(existing.map((it) => keyOf(it)));
+    const merged = [...existing];
+
+    for (const it of additions || []) {
+      const k = keyOf(it);
+      if (!seen.has(k)) {
+        seen.add(k);
+        merged.push(it);
+      }
     }
-    if (isCms) {
-      setTopItems(menus.cms.top);
-      setBottomItems(menus.cms.bottom);
-      return;
+    return merged;
+  };
+
+  let computedTop = [];
+  let computedBottom = [];
+
+  if (menus && menus[moduleName.toLowerCase()]) {
+    computedTop = [...(menus[moduleName.toLowerCase()].top || [])];
+    computedBottom = [...(menus[moduleName.toLowerCase()].bottom || [])];
+  }
+
+  const moduleRules = accessPermissions.filter(
+    (rule) => rule.module?.toUpperCase() === moduleName
+  );
+
+  moduleRules.forEach((permission) => {
+    if (!permission) return;
+
+    const prefixes = Array.isArray(permission.requiredPermissionPrefixes)
+      ? permission.requiredPermissionPrefixes
+      : [permission.requiredPermissionPrefixes];
+
+    const isSubmodulesAccessible = prefixes.some((p) =>
+      canAccessSubmodule(p.toUpperCase())
+    );
+
+    if (isSubmodulesAccessible) {
+      computedTop = mergeUnique(computedTop, permission.menu?.top || []);
+      computedBottom = mergeUnique(
+        computedBottom,
+        permission.menu?.bottom || []
+      );
     }
-    if (isCrm) {
-      setTopItems(menus.crm.top);
-      setBottomItems(menus.crm.bottom);
-      return;
-    }
-    setTopItems(menus.default.top);
-    setBottomItems(menus.default.bottom);
-  }, [isHrms, isCrm, isCms, menus]);
+  });
+
+  setTopItems(computedTop);
+  setBottomItems(computedBottom);
+}, [
+  module,
+  menus,
+  accessPermissions,
+  canAccessModule,
+  canAccessSubmodule,
+  authLoading,
+  rbacLoading,
+  isSignedIn,
+]);
+
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0">
+      <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start hidden md:block">
         <Sidebar topItems={topItems} bottomItems={bottomItems} />
       </aside>
       <div className="flex-1 flex flex-col w-full">
