@@ -10,11 +10,11 @@ export default function Sidebar({ topItems = [], bottomItems = [] }) {
 
   return (
     <div className="h-screen flex flex-col">
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col ">
         <div className="px-4 py-5 flex items-center gap-3">
           <Image src={MoondiveAdmin} alt="Moondive Admin" />
         </div>
-        <nav className="px-2 pb-4 flex-1 min-h-0 overflow-y-auto">
+        <nav className="px-2 pb-4 flex-1 min-h-0 overflow-y-auto hide-scrollbar">
           <ul className="space-y-0">
             {topItems.map((item) => {
               const isActive =

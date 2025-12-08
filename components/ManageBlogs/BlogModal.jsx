@@ -88,7 +88,7 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
 
     try {
       const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/upload/blog`,
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/upload-open-graph-image`,
         fd,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -129,12 +129,12 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
     try {
       if (isEditing) {
         await axios.put(
-          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/${initialData._id}`,
+          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/publish-blog/${initialData._id}`,
           payload
         );
       } else {
         await axios.post(
-          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs`,
+          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/publish-blog`,
           payload
         );
       }
@@ -153,9 +153,9 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
         
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold">
+          <h4 className="">
             {isEditing ? "Edit Blog" : "Create New Blog"}
-          </h2>
+          </h4>
 
           <button onClick={onClose}>
             <X className="w-6 h-6 text-gray-600 hover:text-black" />
@@ -167,7 +167,7 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
 
           {/* TITLE */}
           <input
-            className="w-full border-b text-3xl font-medium outline-none"
+            className="w-full border-b border-gray-300 focus:border-primary font-medium outline-none"
             placeholder={PLACEHOLDER_TITLE}
             value={title}
             onChange={(e) => {
@@ -184,7 +184,7 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
             <label className="text-gray-500">{LABEL_SELECT_INDUSTRY}</label>
             <select
               value={industry}
-              className="mt-1 w-full p-3 border rounded-lg"
+              className="mt-1 w-full p-3 border rounded-full border-gray-300 focus:border-primary"
               onChange={(e) => setIndustry(e.target.value)}
             >
               <option value="">Select Industry</option>
@@ -202,15 +202,16 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
 
           {/* HERO IMAGE */}
           <div>
+            <div className="gap-2 flex ">
             <p className="text-gray-500">{LABEL_UPLOAD_HERO_IMAGE}</p>
             <ImageUploader
               onFileSelect={(files) => uploadImage(files, setHeroImage)}
               photoURLs={heroImage}
               deletePhoto={() => setHeroImage([])}
-            />
+            /></div>
 
             <input
-              className="mt-2 w-full border p-3 rounded-lg"
+              className="mt-2 w-full border p-3 rounded-full border-gray-300 focus:border-primary"
               placeholder={LABEL_HERO_IMAGE_ALT_TEXT}
               value={heroAltText}
               onChange={(e) => setHeroAltText(e.target.value)}
@@ -219,18 +220,18 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
 
           {/* EDITOR */}
           <div>
-            <h4 className="text-gray-500 mb-2">{TEXT_START_WRITING}</h4>
+            <label className="text-gray-600 mb-2">{TEXT_START_WRITING}</label>
             <ReactQuill
               theme="snow"
               placeholder={PLACEHOLDER_WRITE_SOMETHING}
               value={body}
               onChange={setBody}
-              className="min-h-[250px]"
+              className="min-h-[100px]"
             />
           </div>
 
           {/* CTA */}
-          <div className="border p-4 rounded-lg bg-gray-50">
+          <div className="border border-gray-300 p-4 rounded-lg bg-gray-50">
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={ctaEnabled} onChange={(e) => setCtaEnabled(e.target.checked)} />
               <label>{LABEL_ENABLE_CTA_SECTION}</label>
@@ -238,22 +239,22 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
 
             {ctaEnabled && (
               <div className="grid grid-cols-2 gap-4 mt-4">
-                <input className="border p-3 rounded-lg" placeholder={LABEL_CTA_TITLE} value={ctaTitle} onChange={(e) => setCtaTitle(e.target.value)} />
-                <input className="border p-3 rounded-lg" placeholder={LABEL_BUTTON_TEXT} value={ctaButtonText} onChange={(e) => setCtaButtonText(e.target.value)} />
-                <textarea className="border p-3 rounded-lg col-span-2" placeholder={LABEL_CTA_DESCRIPTION} rows={3} value={ctaDescription} onChange={(e) => setCtaDescription(e.target.value)} />
-                <input className="border p-3 rounded-lg col-span-2" placeholder={LABEL_BUTTON_LINK} value={ctaButtonLink} onChange={(e) => setCtaButtonLink(e.target.value)} />
+                <input className="border border-gray-300 focus:border-primary focus:ring-0 focus:outline-none p-3 rounded-full" placeholder={LABEL_CTA_TITLE} value={ctaTitle} onChange={(e) => setCtaTitle(e.target.value)} />
+                <input className="border border-gray-300 focus:border-primary focus:ring-0 focus:outline-none p-3 rounded-full" placeholder={LABEL_BUTTON_TEXT} value={ctaButtonText} onChange={(e) => setCtaButtonText(e.target.value)} />
+                <textarea className="border border-gray-300 focus:border-primary focus:ring-0 focus:outline-none p-3 rounded-lg col-span-2" placeholder={LABEL_CTA_DESCRIPTION} rows={3} value={ctaDescription} onChange={(e) => setCtaDescription(e.target.value)} />
+                <input className="border border-gray-300 focus:border-primary focus:ring-0 focus:outline-none p-3 rounded-full col-span-2" placeholder={LABEL_BUTTON_LINK} value={ctaButtonLink} onChange={(e) => setCtaButtonLink(e.target.value)} />
               </div>
             )}
           </div>
 
           {/* META DESCRIPTION */}
           <div>
-            <h4 className="text-gray-500 mb-1">{TEXT_ADD_META_DESCRIPTION}</h4>
+            <label className="text-gray-600 mb-1">{TEXT_ADD_META_DESCRIPTION}</label>
             <MDNote type="warning">{NOTE_DEFAULT_META_DESCRIPTION}</MDNote>
 
             <textarea
               rows={3}
-              className="border p-4 w-full rounded-lg mt-2"
+              className="border border-gray-300 focus:border-primary focus:ring-0 focus:outline-none  p-4 w-full rounded-lg mt-2"
               placeholder={PLACEHOLDER_META_DESCRIPTION}
               value={metaDescription}
               onChange={(e) => setMetaDescription(e.target.value)}
@@ -261,18 +262,18 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
           </div>
 
           {/* SLUG */}
-          <div>
-            <h4 className="text-gray-500">{TEXT_EDIT_URL}</h4>
+          <div className="gap-2 flex items-center">
+            <label className="text-gray-600">{TEXT_EDIT_URL}</label>
             <input
-              className="border p-2 rounded-lg mt-1"
+              className="border border-gray-300 focus:border-primary focus:ring-0 focus:outline-none  p-2 rounded-full mt-1"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
             />
           </div>
 
           {/* OG IMAGE */}
-          <div>
-            <h4 className="text-gray-500">{TEXT_UPLOAD_OPEN_GRAPH_IMAGE}</h4>
+          <div className="gap-2 flex">
+            <label className="text-gray-600">{TEXT_UPLOAD_OPEN_GRAPH_IMAGE}</label>
             <ImageUploader
               onFileSelect={(files) => uploadImage(files, setOgImage)}
               photoURLs={ogImage}
@@ -281,10 +282,10 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
           </div>
 
           {/* OG TITLE */}
-          <div>
-            <h4 className="text-gray-500">{TEXT_ENTER_OPEN_GRAPH_TITLE}</h4>
+          <div className="gap-2 flex items-center">
+            <label className="text-gray-600">{TEXT_ENTER_OPEN_GRAPH_TITLE}</label>
             <input
-              className="border p-2 rounded-lg mt-1"
+              className="border  border-gray-300 focus:border-primary focus:ring-0 focus:outline-none  p-2 rounded-full mt-1"
               value={ogTitle}
               onChange={(e) => setOgTitle(e.target.value)}
             />
@@ -293,7 +294,7 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
           {/* OG PREVIEW */}
           {ogImage?.length > 0 && (
             <div>
-              <h4 className="text-gray-500 mb-2">{TEXT_OPEN_GRAPH_PREVIEW}</h4>
+              <label className="text-gray-600 mb-2">{TEXT_OPEN_GRAPH_PREVIEW}</label>
               <OpenGraphPreviewCard
                 title={ogTitle || title}
                 description={metaDescription}
@@ -309,7 +310,7 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
           <button
             disabled={loading}
             onClick={() => handleSubmit("draft")}
-            className="px-5 py-2 bg-gray-800 text-white rounded-lg"
+            className="px-4 py-2 border border-primary text-blackText rounded-full"
           >
             {BTN_DRAFT}
           </button>
@@ -317,7 +318,7 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
           <button
             disabled={loading}
             onClick={() => handleSubmit("published")}
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg"
+            className="px-4 py-2 bg-primary text-whiteText rounded-full"
           >
             {BTN_PUBLISH}
           </button>

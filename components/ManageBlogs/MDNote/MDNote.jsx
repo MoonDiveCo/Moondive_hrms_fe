@@ -47,8 +47,8 @@ const MDNote = ({ type, icon, children, textStyle, animation, inlineCSS }) => {
     backgroundColor: inlineCSS && inlineCSS.backgroundColor ? inlineCSS.backgroundColor : defaultBgColors[type],
     height: inlineCSS && inlineCSS.height ? inlineCSS.height : 'auto',
     width: inlineCSS && inlineCSS.width ? inlineCSS.width : '100%',
-    border: inlineCSS && inlineCSS.border ? inlineCSS.border : `0.1px solid ${defaultBorderColor}`, // Default border
-    borderRadius: inlineCSS && inlineCSS.borderRadius ? inlineCSS.borderRadius : '5px',
+    border: inlineCSS && inlineCSS.border ? inlineCSS.border : `0.1px solid ${defaultBorderColor}`, 
+    borderRadius: inlineCSS && inlineCSS.borderRadius ? inlineCSS.borderRadius : '50px',
     justifyContent: inlineCSS && inlineCSS.justifyContent ? inlineCSS.justifyContent : 'start',
     fontSize: inlineCSS && inlineCSS.textSize ? inlineCSS.textSize : '15px',
     padding: inlineCSS && inlineCSS.padding ? inlineCSS.padding : '10px',

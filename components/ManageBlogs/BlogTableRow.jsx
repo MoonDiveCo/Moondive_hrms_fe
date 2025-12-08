@@ -2,8 +2,10 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, Edit, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const BlogTableRow = ({ blog, openEditModal  }) => {
+  const router =  useRouter()
   return (
     <tr className="border-b border-gray-200 hover:bg-gray-50">
       
@@ -12,21 +14,21 @@ const BlogTableRow = ({ blog, openEditModal  }) => {
         <Image
           src={blog?.featuredImage?.[0]?.url || blog.heroImage[0]?.url}
           alt="Featured"
-          width={120}
-          height={80}
-          className="rounded-md object-cover w-[120px] h-[80px]"
+          width={100}
+          height={50}
+          className="rounded-md object-cover w-[100px] h-[50px]"
           unoptimized
         />
       </td>
 
       {/* Title */}
-      <td className="p-3 font-medium text-gray-900">
-        {blog?.title}
+      <td className="p-3 text-gray-900">
+        <p>{blog?.title}</p>
       </td>
 
       {/* Category */}
       <td className="p-3">
-        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-sm">
+        <span className="bg-primary/50 border border-primary text-blackText px-3 py-1 rounded-lg text-sm">
           {blog?.category || "General"}
         </span>
       </td>
@@ -34,16 +36,16 @@ const BlogTableRow = ({ blog, openEditModal  }) => {
       {/* Status */}
       <td className="p-3">
         {blog?.status === "published" ? (
-          <span className="text-green-600 font-medium">Published</span>
+          <p className=" text-green-600">Published</p>
         ) : (
-          <span className="text-red-600 font-medium">Draft</span>
+          <p className="text-primary">Draft</p>
         )}
       </td>
 
       {/* Published Date */}
       <td className="p-3 text-gray-700">
-        {blog?.publishedAt
-          ? new Date(blog.publishedAt).toLocaleDateString()
+        {blog?.updatedAt
+          ? new Date(blog.updatedAt).toLocaleDateString()
           : "—"}
       </td>
 
@@ -51,16 +53,19 @@ const BlogTableRow = ({ blog, openEditModal  }) => {
       <td className="p-3 text-center">
         <div className="flex justify-center gap-3">
           
-          <Link href={`/admin/blogs/${blog?.slug}`} target="_blank">
-            <Eye className="w-5 h-5 text-blue-600 cursor-pointer" />
-          </Link>
+          <button  
+            onClick={() =>
+                window.open(`https://moondive.co/blog/${blog?.slug}`, "_blank")
+              }>
+            <Eye className="w-4 h-4 text-primaryText cursor-pointer" />
+          </button>
 
           <button onClick={() => openEditModal(blog)}>
-            <Edit className="w-5 h-5 text-yellow-600 cursor-pointer" />
+            <Edit className="w-4 h-4 text-primaryText cursor-pointer" />
           </button>
 
           <button onClick={() => console.log("Delete", blog._id)}>
-            <Trash2 className="w-5 h-5 text-red-600 cursor-pointer" />
+            <Trash2 className="w-4 h-4 text-red-600 cursor-pointer" />
           </button>
 
         </div>

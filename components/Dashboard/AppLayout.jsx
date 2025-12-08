@@ -6,7 +6,7 @@ import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
 
- export default function AppLayout({ module, children }) {
+ export default function AppLayout({ module, children,showMainNavbar = true }) {
    const { canAccessModule, canAccessSubmodule, authLoading,rbacLoading } = useContext(RBACContext)
    const {isSignedIn} = useContext(AuthContext)
   const menus = useMenus();
@@ -97,9 +97,9 @@ useEffect(() => {
         <Sidebar topItems={topItems} bottomItems={bottomItems} />
       </aside>
       <div className="flex-1 flex flex-col w-full">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center">
+        {showMainNavbar && <header className="bg-white border-b border-gray-200 h-16 flex items-center">
           <MainNavbar />
-        </header>
+        </header>}
         <main className="flex-1 overflow-hidden">{children}</main>
       </div>
     </div>
