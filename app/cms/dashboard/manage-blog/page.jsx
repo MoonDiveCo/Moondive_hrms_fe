@@ -12,19 +12,23 @@ const Blog = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [openModal, setOpenModal] = useState(false);
 const [editBlog, setEditBlog] = useState(null);
+const [loading, setLoading] = useState(false)
 
   const fetchBlogs = async () => {
     try {
       const { data } = await axios.get(
         `${process.env.NEXT_PUBLIC_MOONDIVE_API}/${ROUTE_ALL_BLOGS_ADMIN}?status=${selectedFilter}&search=${searchQuery}`
       );
+      setLoading(false)
       setBlogs(data?.data || []);
     } catch (error) {
+      setLoading(false)
       console.error("Error fetching blogs:", error);
     }
   };
-
+  
   useEffect(() => {
+    setLoading(true)
     fetchBlogs();
   }, [selectedFilter, searchQuery]);
 
@@ -85,7 +89,13 @@ const [editBlog, setEditBlog] = useState(null);
             ) : (
               <tr>
                 <td className="p-6 text-center text-gray-500" colSpan={6}>
-                  No blogs found
+                   {loading ? (
+                    <div className="animate-pulse flex justify-center">
+                      <div className="h-4 w-24 bg-gray-300 rounded"></div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-500">No blogs found</span>
+                  )}
                 </td>
               </tr>
             )}
