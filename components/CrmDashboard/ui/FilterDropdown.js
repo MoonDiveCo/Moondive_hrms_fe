@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function FilterDropdown({ label, value, options, onChange }) {
+export default function FilterDropdown({
+  label,
+  value,
+  options,
+  onChange,
+  renderTrigger,
+  align = "left",     
+}) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-   useEffect(() => {
+  useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpen(false);
@@ -16,19 +23,49 @@ export default function FilterDropdown({ label, value, options, onChange }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Display selected label or fallback
   const selectedLabel =
     options.find((opt) => opt.value === value)?.label || label;
 
+  const toggle = () => setOpen((prev) => !prev);
+
   return (
-    <div  ref={dropdownRef} className="relative inline-block text-left">
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="px-4 py-2 bg-primary-100/80 text-primary-50/80 rounded-lg border border-gray-700 hover:border-primary-500 hover:text-primary-400 transition-all w-full text-center"
-      >
-        {selectedLabel}
-      </button>
+    <div ref={dropdownRef} className="relative inline-block text-left">
+      {renderTrigger ? (
+        renderTrigger({ open, selectedLabel, toggle })
+      ) : (
+        <button
+          onClick={toggle}
+          className="
+            px-6 py-2
+            rounded-full border w-full
+            bg-whiteBg
+            text-blackText
+            border-gray-300
+            hover:border-primary
+            focus:border-primary
+            focus:outline-none
+            focus:ring-0
+            flex items-center justify-between gap-2
+          "
+        >
+          <span className="text-xs md:text-sm">{selectedLabel}</span>
+          <svg
+            className={`w-4 h-4 transition-transform duration-200 ${
+              open ? "rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      )}
 
       <AnimatePresence>
         {open && (
@@ -37,7 +74,17 @@ export default function FilterDropdown({ label, value, options, onChange }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="absolute left-0 mt-2 w-fit min-w-full max-h-[200px] overflow-y-auto hide-scrollbar bg-primary-100/80 backdrop-blur-md border border-primary-600/30 rounded-lg shadow-xl shadow-primary-500/20 z-50 text-primary-50/80"
+            className={`
+              absolute mt-2
+              ${align === "right" ? "right-0 left-auto" : "left-0"}
+              w-fit min-w-full max-h-[200px] overflow-y-auto hide-scrollbar
+              bg-white/95 backdrop-blur-md
+              border border-gray-200
+              rounded-2xl
+              shadow-xl
+              z-50
+              text-gray-800
+            `}
           >
             {options.map((option, index) => (
               <button
@@ -46,7 +93,13 @@ export default function FilterDropdown({ label, value, options, onChange }) {
                   onChange(option.value);
                   setOpen(false);
                 }}
-                className="w-full whitespace-nowrap text-left block px-5 py-3 text-primary-50/80 text-sm font-medium hover:bg-primary-600/20 hover:text-primary-400 transition rounded-md"
+                className="
+                  w-full whitespace-nowrap text-left block
+                  px-5 py-2.5
+                  text-sm font-medium
+                  hover:bg-gray-100
+                  transition
+                "
               >
                 {option.label}
               </button>
