@@ -3,15 +3,19 @@ import React from "react";
 import Toggle from "../../public/Dashboard/Toggle.png"
 import Notification from "../../public/Dashboard/Notification.png"
 import Image from "next/image";
-export default function MainNavbar() {
+import { usePathname } from "next/navigation";
+export default function MainNavbar({params}) {
+  const pathname = usePathname()
+  const parts = pathname.split("/").filter(Boolean);
+  console.log(parts)
   return (
     <div className="w-full px-6 md:px-8">
       <div className="flex items-center justify-between h-16">
         <div className="flex items-center gap-4">
             <Image src={Toggle} alt="Toggle"/>
-          <div className="text-sm text-gray-500">Settings</div>
+          <div className="text-sm text-gray-500">{parts[2]?.toUpperCase()}</div>
           <div className="text-sm text-gray-400">/</div>
-          <div className="text-sm font-semibold text-gray-900">Manage Accounts</div>
+          <div className="text-sm font-semibold text-gray-900">{parts[3]?.toUpperCase()}</div>
         </div>
 
         <div className="flex items-center gap-4">
