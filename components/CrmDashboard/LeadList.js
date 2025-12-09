@@ -20,9 +20,12 @@ export default function LeadList({
   onSelectLead,
   sendEmail,
   onRefresh,
-  currentPage = 1,
-  leadsPerPage = 10,
+  currentPage,
+  leadsPerPage,
   onPageChange,
+  selectedLeadIds = [],
+  onToggleLeadSelect,
+  onToggleSelectAll,
 }) {
   const [selectedLead, setSelectedLead] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -34,6 +37,9 @@ export default function LeadList({
   const startIndex = (currentPage - 1) * leadsPerPage;
   const endIndex = startIndex + leadsPerPage;
   const paginatedLeads = leads.slice(startIndex, endIndex);
+  const allOnPageSelected =
+    paginatedLeads.length > 0 &&
+    paginatedLeads.every((lead) => selectedLeadIds.includes(lead._id));
   const [gradePopupLead, setGradePopupLead] = useState(null);
 
   useEffect(() => {
@@ -176,7 +182,8 @@ export default function LeadList({
   <table className="w-full">
     <thead className="bg-gray-50 border-b border-gray-200">
       <tr>
-        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th className="px-6 py-3 w-10"></th>
+        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
           Lead
         </th>
         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -202,12 +209,30 @@ export default function LeadList({
 
     <tbody className="bg-white divide-y divide-gray-200">
       {paginatedLeads.map((lead, index) => (
-        <tr
-          key={lead._id ? `${lead._id}-${index}` : `lead-${index}`}
-          className="hover:bg-gray-50 transition-colors"
-        >
-          {/* Lead */}
-          <td className="px-6 py-4 whitespace-nowrap">
+    <tr
+      key={`${lead._id || "no-id"}-${startIndex + index}`} 
+      className="hover:bg-gray-50 transition-colors rounded-full"
+    >
+    <td className="px-4 py-4">
+  <input
+  type="checkbox"
+  checked={selectedLeadIds.includes(lead._id)}
+  onChange={() =>
+    onToggleLeadSelect && onToggleLeadSelect(lead._id)
+  }
+  className="
+    w-4 h-4
+    cursor-pointer
+    bg-white
+    border
+    border-primary
+    accent-primary
+  "
+/>
+
+
+</td>
+          <td className=" py-4 whitespace-nowrap">
             <div className="flex items-center">
               <div className="shrink-0 h-10 w-10">
                 <div className="h-10 w-10 rounded-full bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
