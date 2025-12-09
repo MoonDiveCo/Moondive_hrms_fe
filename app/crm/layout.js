@@ -3,14 +3,12 @@ import { MenuProvider } from "@/constants/Sidebar";
 
 export default function CRMLayout({ children }) {
   return (
-      <div>
-        <MenuProvider>
+    
+    <div><ProtectedRoute module="CRM">
+      <MenuProvider>
            {children}
              </MenuProvider>
-      </div>
-    
-    // <div><ProtectedRoute module="CRM">
-    //           </ProtectedRoute> 
-    // </div>
+              </ProtectedRoute> 
+    </div>
   );
 }
