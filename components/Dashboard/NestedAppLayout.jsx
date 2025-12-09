@@ -16,8 +16,8 @@ export default function NestedAppLayout({ children }) {
     MANAGE_ACCOUNTS_HEADER.find((h) => h.key === headerKey) || MANAGE_ACCOUNTS_HEADER[0];
 
   return (
-    <div className="px-6 md:px-8 py-6">
-      <div className="h-[calc(100vh-4rem)] flex flex-col gap-4 ">
+    <div className="px-6 md:px-8 py-6 hide-scrollbar">
+      <div className="h-[calc(100vh-4rem)] flex flex-col gap-4">
         <div className="bg-white rounded-2xl border-[0.5px] border-[#D0D5DD] p-4 sticky top-0">
           <div className="flex items-center justify-between ">
             <div >
@@ -53,10 +53,10 @@ export default function NestedAppLayout({ children }) {
             </div>
           </div>
         </div>
-        <div className="flex-1 flex gap-6 ">
+        <div className="flex-1 flex gap-6">
           <aside className="w-64 sticky top-30 h-120">
             <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4 overflow-auto">
-              <ul className="space-y-3 text-sm">
+              <ul className="space-y-0 text-sm">
                 {activeHeader.sections.map((section) => {
                   const href = `${activeHeader.basePath}/${section.slug}`;
                   const isActive = pathname.startsWith(href);
@@ -65,13 +65,16 @@ export default function NestedAppLayout({ children }) {
                     <li key={section.slug}>
                       <Link
                         href={href}
-                        className={`block px-3 py-2 rounded text-primaryText ${
+                        className={`block px-3 py-2 rounded text-primaryText  ${
                           isActive
                             ? "bg-gray-100 font-semibold"
                             : "hover:bg-gray-50"
                         }`}
                       >
-                        {section.label}
+                        <span className="text-sm">
+                          {section.label}
+                        </span>
+                        
                       </Link>
                     </li>
                   );
@@ -80,7 +83,7 @@ export default function NestedAppLayout({ children }) {
             </div>
           </aside>
 
-          <section className="flex-1 overflow-auto sticky top-30 h-120">{children}</section>
+          <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-120">{children}</section>
         </div>
       </div>
     </div>

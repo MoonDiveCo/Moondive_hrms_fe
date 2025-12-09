@@ -32,7 +32,6 @@ export default function OrganizationDetails() {
     console.log("==============================", organization)
   }, [organization])
 
-  // Generalized handleChange for top-level fields
   const handleTopLevelChange = (e) => {
     const { name, value } = e.target
     if (!modified) {
@@ -41,7 +40,6 @@ export default function OrganizationDetails() {
     setOrganization((prev) => ({ ...prev, [name]: value }))
   }
 
-  // For contact nested fields
   const handleContactChange = (field, value) => {
     if (!modified) {
       setModified(true)
@@ -52,7 +50,6 @@ export default function OrganizationDetails() {
     }))
   }
 
-  // For addresses[0] nested fields (assuming single primary address)
   const handleAddressChange = (field, value) => {
     if (!modified) {
       setModified(true)
@@ -88,39 +85,53 @@ export default function OrganizationDetails() {
     }
   }
 
+  // Handle contact person name changes
+  const handleContactPersonChange = (e) => {
+    const fullName = e.target.value
+    const parts = fullName.trim().split(' ')
+    const firstName = parts[0] || ''
+    const lastName = parts.slice(1).join(' ') || ''
+    
+    if (!modified) {
+      setModified(true)
+    }
+    
+    setOrganization((prev) => ({
+      ...prev,
+      contact: {
+        ...prev.contact,
+        firstName,
+        lastName
+      }
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!modified) return
 
-    const formData = new FormData()
-    // Append top-level fields
-    const topLevelFields = ['name', 'website', 'industry', 'about']
-    topLevelFields.forEach(key => {
-      if (organization[key] !== undefined && organization[key] !== null) {
-        formData.append(key, organization[key])
+    const payload = {
+      name: organization.name,
+      website: organization.website,
+      industry: organization.industry,
+      about: organization.about,
+      logoUrl: organization.logoUrl,
+      contact: organization.contact,
+      addresses: organization.addresses
+    }
+
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === undefined || payload[key] === null) {
+        delete payload[key]
       }
     })
-    // Append logoUrl if changed
-    if (organization.logoUrl) {
-      formData.append('logoUrl', organization.logoUrl)
-    }
-    // Append contact as JSON string or individual fields – adjust based on backend
-    if (organization.contact) {
-      formData.append('contact', JSON.stringify(organization.contact))
-    }
-    // Append addresses as JSON string
-    if (organization.addresses && organization.addresses.length > 0) {
-      formData.append('addresses', JSON.stringify(organization.addresses))
-    }
 
     try {
-      await axios.put('hrms/organization/update-organization', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      await axios.put('hrms/organization/update-organization', payload, {
+        headers: { 'Content-Type': 'application/json' }
       })
       setModified(false)
-      alert('Organization updated successfully!')
     } catch (err) {
-
       console.log('Update error:', err)
       setError('Failed to update organization')
     }
@@ -140,6 +151,7 @@ export default function OrganizationDetails() {
 
   const addr = organization?.addresses?.[0] || {}
   const contact = organization?.contact || {}
+  const contactPersonFullName = `${contact.firstName || ''} ${contact.lastName || ''}`.trim()
 
   return (
     <div className="w-full w-100">
@@ -148,7 +160,6 @@ export default function OrganizationDetails() {
           <h4 className="text-sm font-bold mb-4">Basic Organization Details</h4>
 
           <form onSubmit={handleSubmit} className="border-[0.3px] border-[#D0D5DD] w-full p-4 space-y-4">
-            {/* Logo Section */}
             <div className="flex flex-col items-start">
               <label className="mb-2 text-sm font-medium">Organization Logo</label>
               <div className="relative inline-block">
@@ -196,7 +207,6 @@ export default function OrganizationDetails() {
               />
             </div>
 
-            {/* Row 1: Name & Website */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
@@ -223,7 +233,6 @@ export default function OrganizationDetails() {
               </div>
             </div>
 
-            {/* Row 2: Contact Person & Contact Number */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
@@ -231,12 +240,8 @@ export default function OrganizationDetails() {
                   type="text"
                   id="contactPerson"
                   name="contactPerson"
-                  value={`${contact.firstName || ''} ${contact.lastName || ''}`.trim()}
-                  onChange={(e) => {
-                    const [first, ...rest] = e.target.value.split(' ')
-                    handleContactChange('firstName', first || '')
-                    handleContactChange('lastName', rest.join(' ') || '')
-                  }}
+                  value={contactPersonFullName}
+                  onChange={handleContactPersonChange}
                   className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
                 />
               </div>
@@ -253,7 +258,6 @@ export default function OrganizationDetails() {
               </div>
             </div>
 
-            {/* Row 3: Contact Email & Industry */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">Contact Email *</label>
@@ -280,12 +284,10 @@ export default function OrganizationDetails() {
                   <option value="IT">IT</option>
                   <option value="Healthcare">Healthcare</option>
                   <option value="Finance">Finance</option>
-                  {/* Add more options as needed */}
                 </select>
               </div>
             </div>
 
-            {/* Primary Address Section */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Primary Address</label>
               <div className="space-y-2">
@@ -295,7 +297,7 @@ export default function OrganizationDetails() {
                     type="text"
                     id="address1"
                     placeholder="Address 1"
-                    value={addr.addressLabel || ''}  // Using addressLabel as full address
+                    value={addr.addressLabel || ''}
                     onChange={(e) => handleAddressChange('addressLabel', e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
                   />
@@ -306,7 +308,7 @@ export default function OrganizationDetails() {
                     type="text"
                     id="address2"
                     placeholder="Address 2"
-                    value={addr.description || ''}  // Using description if no separate Address 2
+                    value={addr.description || ''}
                     onChange={(e) => handleAddressChange('description', e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
                   />
@@ -325,7 +327,6 @@ export default function OrganizationDetails() {
                       <option value="Uttar Pradesh">Uttar Pradesh</option>
                       <option value="Delhi">Delhi</option>
                       <option value="Gurugram">Gurugram</option>
-
                     </select>
                   </div>
                   <div>
@@ -333,7 +334,7 @@ export default function OrganizationDetails() {
                     <select
                       id="country"
                       name="country"
-                      value={addr.country || 'India'}  // Default to India based on data
+                      value={addr.country || 'India'}
                       onChange={(e) => handleAddressChange('country', e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
                     >
@@ -379,7 +380,6 @@ export default function OrganizationDetails() {
                 className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
               />
             </div>
-
 
             {modified && (<div className="flex justify-end space-x-2 pt-4">
               <button
