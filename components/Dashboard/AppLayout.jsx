@@ -92,12 +92,12 @@ useEffect(() => {
 
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start hidden md:block">
+    <div className="min-h-screen flex bg-gray-50 ">
+      <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start hidden md:block ">
         <Sidebar topItems={topItems} bottomItems={bottomItems} />
       </aside>
       <div className="flex-1 flex flex-col w-full">
-        {showMainNavbar && <header className="bg-white border-b border-gray-200 h-16 flex items-center">
+        {showMainNavbar && <header className="bg-white border-b border-gray-200 h-16 flex items-center sticky top-0">
           <MainNavbar />
         </header>}
         <main className="flex-1 overflow-hidden">{children}</main>

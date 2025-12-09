@@ -1,3 +1,404 @@
+'use client'
+import { useState, useEffect } from "react"
+import axios from "axios"
+import Image from "next/image"
+
 export default function OrganizationDetails() {
-    return <div>Organization Setup Component</div>;
+  const [organization, setOrganization] = useState(null)
+  const [modified, setModified] = useState(false)
+  const [error, setError] = useState(null)
+  const [hovered, setHovered] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [logoPreview, setLogoPreview] = useState(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get('hrms/organization/view-organization')
+        const orgData = res.data.result
+        setOrganization(orgData)
+        setLogoPreview(orgData?.logoUrl || null)
+      } catch (err) {
+        setError(err.message || 'Failed to load data')
+        console.error("error in organization-setup while fetching organization data", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  useEffect(() => {
+    console.log("==============================", organization)
+  }, [organization])
+
+  // Generalized handleChange for top-level fields
+  const handleTopLevelChange = (e) => {
+    const { name, value } = e.target
+    if (!modified) {
+      setModified(true)
+    }
+    setOrganization((prev) => ({ ...prev, [name]: value }))
+  }
+
+  // For contact nested fields
+  const handleContactChange = (field, value) => {
+    if (!modified) {
+      setModified(true)
+    }
+    setOrganization((prev) => ({
+      ...prev,
+      contact: { ...prev.contact, [field]: value }
+    }))
+  }
+
+  // For addresses[0] nested fields (assuming single primary address)
+  const handleAddressChange = (field, value) => {
+    if (!modified) {
+      setModified(true)
+    }
+    setOrganization((prev) => ({
+      ...prev,
+      addresses: [{
+        ...prev.addresses?.[0] || {},
+        [field]: value
+      }]
+    }))
+  }
+
+  const handleLogoChange = async (e) => {
+    const imageFile = e.target.files[0]
+    if (!imageFile) return
+
+    const formData = new FormData()
+    formData.append('logoImage', imageFile)
+    try {
+      const { data } = await axios.post('hrms/organization/aws-Logo', formData)
+      if (data?.result?.logoUrl) {
+        const newLogoUrl = data.result.logoUrl
+        if (!modified) {
+          setModified(true)
+        }
+        setOrganization((prev) => ({ ...prev, logoUrl: newLogoUrl }))
+        setLogoPreview(newLogoUrl)
+      }
+    } catch (err) {
+      console.error("error while changing organization logo", err)
+      setError('Failed to upload logo')
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!modified) return
+
+    const formData = new FormData()
+    // Append top-level fields
+    const topLevelFields = ['name', 'website', 'industry', 'about']
+    topLevelFields.forEach(key => {
+      if (organization[key] !== undefined && organization[key] !== null) {
+        formData.append(key, organization[key])
+      }
+    })
+    // Append logoUrl if changed
+    if (organization.logoUrl) {
+      formData.append('logoUrl', organization.logoUrl)
+    }
+    // Append contact as JSON string or individual fields – adjust based on backend
+    if (organization.contact) {
+      formData.append('contact', JSON.stringify(organization.contact))
+    }
+    // Append addresses as JSON string
+    if (organization.addresses && organization.addresses.length > 0) {
+      formData.append('addresses', JSON.stringify(organization.addresses))
+    }
+
+    try {
+      await axios.put('hrms/organization/update-organization', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      setModified(false)
+      alert('Organization updated successfully!')
+    } catch (err) {
+
+      console.log('Update error:', err)
+      setError('Failed to update organization')
+    }
+  }
+
+  const handleReset = () => {
+    window.location.reload()
+  }
+
+  if (loading) {
+    return <div className="p-4">Loading...</div>
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-500">{error}</div>
+  }
+
+  const addr = organization?.addresses?.[0] || {}
+  const contact = organization?.contact || {}
+
+  return (
+    <div className="w-full w-100">
+      <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4">
+        <div className="w-full mx-1 p-4">
+          <h4 className="text-sm font-bold mb-4">Basic Organization Details</h4>
+
+          <form onSubmit={handleSubmit} className="border-[0.3px] border-[#D0D5DD] w-full p-4 space-y-4">
+            {/* Logo Section */}
+            <div className="flex flex-col items-start">
+              <label className="mb-2 text-sm font-medium">Organization Logo</label>
+              <div className="relative inline-block">
+                <div
+                  className="relative w-16 h-16 rounded border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center cursor-pointer"
+                  onMouseEnter={() => setHovered(true)}
+                  onMouseLeave={() => setHovered(false)}
+                >
+                  {logoPreview ? (
+                    <Image
+                      src={logoPreview}
+                      alt="Organization logo"
+                      fill
+                      className="object-cover rounded"
+                    />
+                  ) : (
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                  <div
+                    className={`
+                      absolute inset-0 bg-black/20 flex items-center justify-center rounded
+                      transition-opacity duration-200 ease-in-out
+                      ${hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                    `}
+                  >
+                    <label
+                      htmlFor="logo-upload"
+                      className="bg-blue-500 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-600 cursor-pointer"
+                    >
+                      Edit
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Upload Image</p>
+              <input
+                id="logo-upload"
+                type="file"
+                name="logo"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoChange}
+              />
+            </div>
+
+            {/* Row 1: Name & Website */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={organization?.name || ''}
+                  onChange={handleTopLevelChange}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                />
+              </div>
+              <div>
+                <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <input
+                  type="url"
+                  id="website"
+                  name="website"
+                  value={organization?.website || ''}
+                  onChange={handleTopLevelChange}
+                  className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                />
+              </div>
+            </div>
+
+            {/* Row 2: Contact Person & Contact Number */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+                <input
+                  type="text"
+                  id="contactPerson"
+                  name="contactPerson"
+                  value={`${contact.firstName || ''} ${contact.lastName || ''}`.trim()}
+                  onChange={(e) => {
+                    const [first, ...rest] = e.target.value.split(' ')
+                    handleContactChange('firstName', first || '')
+                    handleContactChange('lastName', rest.join(' ') || '')
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                />
+              </div>
+              <div>
+                <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                <input
+                  type="tel"
+                  id="contactNumber"
+                  name="contactNumber"
+                  value={contact.mobileNumber || ''}
+                  onChange={(e) => handleContactChange('mobileNumber', e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Contact Email & Industry */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">Contact Email *</label>
+                <input
+                  type="email"
+                  id="contactEmail"
+                  name="contactEmail"
+                  value={contact.email || ''}
+                  onChange={(e) => handleContactChange('email', e.target.value)}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400 focus:ring-orange-400"
+                />
+              </div>
+              <div>
+                <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                <select
+                  id="industry"
+                  name="industry"
+                  value={organization?.industry || ''}
+                  onChange={handleTopLevelChange}
+                  className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                >
+                  <option value="">Select Industry</option>
+                  <option value="IT">IT</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Finance">Finance</option>
+                  {/* Add more options as needed */}
+                </select>
+              </div>
+            </div>
+
+            {/* Primary Address Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Primary Address</label>
+              <div className="space-y-2">
+                <div>
+                  <label htmlFor="address1" className="block text-sm text-gray-500 mb-1">Address 1</label>
+                  <input
+                    type="text"
+                    id="address1"
+                    placeholder="Address 1"
+                    value={addr.addressLabel || ''}  // Using addressLabel as full address
+                    onChange={(e) => handleAddressChange('addressLabel', e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="address2" className="block text-sm text-gray-500 mb-1">Address 2</label>
+                  <input
+                    type="text"
+                    id="address2"
+                    placeholder="Address 2"
+                    value={addr.description || ''}  // Using description if no separate Address 2
+                    onChange={(e) => handleAddressChange('description', e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="state" className="block text-sm text-gray-500 mb-1">State</label>
+                    <select
+                      id="state"
+                      name="state"
+                      value={addr.state || ''}
+                      onChange={(e) => handleAddressChange('state', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                    >
+                      <option value="">Select State</option>
+                      <option value="Uttar Pradesh">Uttar Pradesh</option>
+                      <option value="Delhi">Delhi</option>
+                      <option value="Gurugram">Gurugram</option>
+
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="country" className="block text-sm text-gray-500 mb-1">Country</label>
+                    <select
+                      id="country"
+                      name="country"
+                      value={addr.country || 'India'}  // Default to India based on data
+                      onChange={(e) => handleAddressChange('country', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                    >
+                      <option value="India">India</option>
+                      <option value="USA">USA</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="city" className="block text-sm text-gray-500 mb-1">City</label>
+                    <input
+                      type="text"
+                      id="city"
+                      value={addr.city || ''}
+                      onChange={(e) => handleAddressChange('city', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="zip" className="block text-sm text-gray-500 mb-1">ZIP/PIN Code</label>
+                    <input
+                      type="text"
+                      id="zip"
+                      placeholder="ZIP/PIN Code"
+                      value={addr.postalCode || ''}
+                      onChange={(e) => handleAddressChange('postalCode', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="about" className="block text-sm font-medium text-gray-700 mb-1">About</label>
+              <textarea
+                id="about"
+                name="about"
+                rows={3}
+                value={organization?.about || ''}
+                onChange={handleTopLevelChange}
+                className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
+              />
+            </div>
+
+
+            {modified && (<div className="flex justify-end space-x-2 pt-4">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded hover:bg-orange-600 disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>)}
+          </form>
+        </div>
+      </div>
+    </div>
+  )
 }
