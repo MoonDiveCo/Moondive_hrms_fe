@@ -76,32 +76,60 @@ export function MenuProvider({ children }) {
           bottom: [],
         },
       },
-
-      CRM: {
+   CRM: {
         SALES: {
-          top: [{ label: "Sales Dashboard", icon: OverviewIcon, href: "/crm/dashboard/sales" }],
+          top: [
+            {
+              label: "Sales Dashboard",
+              icon: OverviewIcon,
+              href: "/crm/dashboard/sales",
+            },
+          ],
           bottom: [],
         },
         ACCOUNTS: {
-          top: [{ label: "Manage Leads", icon: CandidateIcon, href: "/crm/dashboard/leads" }],
+          top: [
+            // {
+            //   label: "Manage Leads",
+            //   icon: CandidateIcon,
+            //   href: "/crm/dashboard/leads",
+            // },
+          ],
           bottom: [],
         },
-             SUPER_ADMIN:{
-            top: [
-    { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard" },
-    { label: "Manage Blog", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
-    { label: "Manage Testimonials", icon: DocumentsIcon, href: "/cms/dashboard/manage-testimonials" },
-    { label: "Manage Case Studies", icon: DocumentsIcon, href: "/cms/dashboard/manage-case-studies" },
-    { label: "Manage Comparisions", icon: DocumentsIcon, href: "/cms/dashboard/manage-comparisons" },
-    { label: "Manage Summaries", icon: DocumentsIcon, href: "/cms/dashboard/manage-summaries" },
-    { label: "Manage Industries", icon: DocumentsIcon, href: "/cms/dashboard/manage-industries" },
-    { label: "Website Meta SEO", icon: DocumentsIcon, href: "/cms/dashboard/website-meta-seo" },
-    { label: "AI Content Performance", icon: DocumentsIcon, href: "/cms/dashboard/ai-content-performance" },
-    { label: "Gen AI Visibility", icon: DocumentsIcon, href: "/cms/dashboard/gen-ai-visibility" },
-    { label: "Inventory Management", icon: DocumentsIcon, href: "/cms/dashboard/inventory-management" },
-  ],
-          bottom: [] },
+        SUPER_ADMIN: {
+          top: [
+            { label: "Overview", icon: OverviewIcon, href: "/crm/dashboard" },
+            {
+              label: "Leads",
+              icon: CandidateIcon,
+              href: "/crm/dashboard/leads",
+            },
+            {
+              label: "In Process",
+              icon: LeaveTrackerIcon,
+              href: "/crm/dashboard/InProcess",
+            },
+            {
+              label: "Meeting Scheduling",
+              icon: AttendanceIcon,
+              href: "/crm/dashboard/MeetingSchedule",
+            },
+            {
+              label: "Final Scheduling",
+              icon: TimeTrackerIcon,
+              href: "/crm/dashboard/final-schedule",
+            },
+            {
+              label: "Win/Lose Status",
+              icon: PerformanceIcon,
+              href: "/crm/dashboard/status",
+            },
+          ],
+          bottom: [],
+        },
       },
+ 
     };
 
     const rules = [];
