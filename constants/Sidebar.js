@@ -21,6 +21,11 @@ export function MenuProvider({ children }) {
       HRMS: {
         SUPER_ADMIN: {
           top: [
+                 {
+              label: 'Overview',
+              icon: OverviewIcon,
+              href: '/hrms/dashboard',
+            },
             {
               label: 'Manage Accounts',
               icon: OverviewIcon,
@@ -212,11 +217,12 @@ export function MenuProvider({ children }) {
     };
 
     const rules = [];
-
-    Object.entries(MENU).forEach(([moduleName, roles]) => {
-      Object.entries(roles).forEach(([roleName, menuObj]) => {
-        const requiredPermissionPrefixes =
-          roleName === 'SUPER_ADMIN' ? ['*'] : [`${moduleName}:${roleName}`];
+Object.entries(MENU).forEach(([moduleName, roles]) => {
+  Object.entries(roles).forEach(([roleName, menuObj]) => {
+    const requiredPermissionPrefixes =
+      roleName === "SUPER_ADMIN"
+        ? ["*"] 
+        : [`${moduleName}:${roleName}`];
 
         rules.push({
           requiredPermissionPrefixes,
