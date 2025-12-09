@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, AlertCircle, CheckCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import axios from 'axios';
+import FilterDropdown from '../UI/FilterDropdown';
 
 const Modal = ({ isOpen, onClose, onConfirm, message, title, isConfirming }) => {
   if (!isOpen) return null;
@@ -162,11 +163,11 @@ const handleConfirmAnalysis  = async () => {
     <div className="space-y-4 sm:space-y-6">
       {/* Content Health Score Section */}
       {!loadingHealth && healthData && healthData.totalPages > 0 && (
-        <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-xl p-6 border-2 border-blue-200 shadow-lg">
+        <div className="bg-gradient-to-br from-blue-50 via-primary/20 to-pink-50 rounded-xl p-6 border border-primary shadow-lg">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div className="flex-1">
               <div className="flex items-center justify-between gap-4 mb-2">
-                <h3 className="text-xl font-bold text-gray-900">Overall Content Health Score</h3>
+                <h4 className=" text-primaryText">Overall Content Health Score</h4>
                 <button
                   onClick={handleRefresh}
                   disabled={reanalyzing || !canRefresh}
@@ -176,7 +177,7 @@ const handleConfirmAnalysis  = async () => {
                       : 'bg-blue-600 text-white'
                   }  ${
                     canRefresh
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-primary text-white'
                       : 'bg-gray-400 cursor-not-allowed text-white'
                   }` }
                 >
@@ -187,10 +188,10 @@ const handleConfirmAnalysis  = async () => {
                     </>
                   ) : (
                     <>
-                      <RefreshCw className="w-4 h-4" />
+                      <span className='flex text-xs item-center gap-2'><RefreshCw className="w-4 h-4" />
                        {canRefresh
                         ? 'Update Metrics'
-                        : `Available in ${remainingHours} hour${remainingHours === 1 ? '' : 's'}`}
+                        : `Available in ${remainingHours} hour${remainingHours === 1 ? '' : 's'}`}</span>
                     </>
                   )}
                 </button>
@@ -251,7 +252,7 @@ const handleConfirmAnalysis  = async () => {
 
           {/* Coverage Metrics */}
           <div className="bg-white rounded-xl p-5 mb-6 shadow-sm">
-            <h4 className="text-sm font-bold text-gray-900 mb-4">📊 Coverage Metrics</h4>
+            <h4 className="text-sm font-bold text-gray-900 mb-4">Coverage Metrics</h4>
             <div className="space-y-3">
               <div>
                 <div className="flex justify-between text-sm mb-2">
@@ -324,7 +325,7 @@ const handleConfirmAnalysis  = async () => {
         <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-orange-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-orange-600" />
-            📈 Top 5 Pages to Optimize Today
+            Top 5 Pages to Optimize Today
           </h3>
           <div className="space-y-3">
             {healthData.topPagesToOptimize.map((page, index) => (
@@ -372,16 +373,22 @@ const handleConfirmAnalysis  = async () => {
       {/* Time Filter */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
         <label className="text-sm font-medium text-gray-700">Time Period:</label>
-        <select
+        <FilterDropdown
+          label="Last 7 days"
           value={filters.days}
-          onChange={(e) => setFilters({ ...filters, days: parseInt(e.target.value) })}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 bg-white"
-        >
-          <option value={7}>Last 7 days</option>
-          <option value={30}>Last 30 days</option>
-          <option value={90}>Last 90 days</option>
-          <option value={365}>Last year</option>
-        </select>
+          options={[
+            { label: "Last 7 days", value: 7 },
+            { label: "Last 30 days", value: 30 },
+            { label: "Last 90 days", value: 90 },
+            { label: "Last year", value: 365 },
+          ]}
+          onChange={(value) =>
+            setFilters((prev) => ({
+              ...prev,
+              days: Number(value),
+            }))
+          }
+        />
       </div>
 
       {/* Charts Grid */}

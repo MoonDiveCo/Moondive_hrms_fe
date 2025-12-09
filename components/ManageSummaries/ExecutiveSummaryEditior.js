@@ -20,9 +20,6 @@ export default function ExecSummaryEditor({ title, categoryKey, moderation }) {
     );
   }, [moderation, categoryKey]);
 
-  // ---------------------------------------------------
-  // SAVE
-  // ---------------------------------------------------
   const onSave = async () => {
     try {
       setSaving(true);
@@ -61,9 +58,6 @@ export default function ExecSummaryEditor({ title, categoryKey, moderation }) {
     }
   };
 
-  // ---------------------------------------------------
-  // GENERATE
-  // ---------------------------------------------------
   const onGenerate = async () => {
     try {
       setGenerating(true);
@@ -104,34 +98,31 @@ Context: ${ctx}`;
     }
   };
 
-  // ---------------------------------------------------
-  // UI
-  // ---------------------------------------------------
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">
+        <h4 className="text-primaryText">
           {title} — Executive Summary
-        </h3>
+        </h4>
 
         <div className="flex items-center gap-3">
           <button
             onClick={onGenerate}
             disabled={generating}
-            className="px-4 py-2 text-sm rounded-full border border-primary text-primary hover:bg-primary hover:text-white transition disabled:opacity-60"
+            className="px-3 py-2 text-sm rounded-full border border-primary text-primary hover:bg-primary hover:text-white transition disabled:opacity-60"
           >
-            {generating ? "Generating…" : "Auto-Generate"}
+            <span className="text-xs flex items-center">{generating ? "Generating…" : "Auto-Generate"}</span>
           </button>
 
           <button
             onClick={onSave}
             disabled={saving}
-            className="px-4 py-2 text-sm rounded-full bg-primary text-white hover:bg-primary/90 transition disabled:opacity-60"
+            className="px-3 py-2 text-sm rounded-full bg-primary text-white hover:bg-primary/90 transition disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save"}
+            <span className="text-xs flex items-center">{saving ? "Saving…" : "Save"}</span>
           </button>
 
           {saved && (

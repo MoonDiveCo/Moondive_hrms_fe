@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ExternalLink, Eye, Plus, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import FilterDropdown from '../UI/FilterDropdown';
 
 export default function ContentScoresTab({ contentScores, filters, setFilters, pagination, setPagination, onRefresh, onViewDetails }) {
     const [canRefresh, setCanRefresh] = useState(true);
@@ -56,28 +57,35 @@ export default function ContentScoresTab({ contentScores, filters, setFilters, p
           placeholder="Min Score"
           value={filters.minScore}
           onChange={(e) => setFilters({ ...filters, minScore: e.target.value })}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 bg-white"
+          className="px-3 py-2 text-xs border border-gray-300 rounded-full focus:ring-1 focus:ring-primary focus:border-transparent text-sm text-gray-900 bg-white"
         />
         <input
           type="number"
           placeholder="Max Score"
           value={filters.maxScore}
           onChange={(e) => setFilters({ ...filters, maxScore: e.target.value })}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 bg-white"
+          className="px-3 py-2 border text-xs border-gray-300 rounded-full focus:ring-1 focus:ring-primary focus:border-transparent text-sm text-gray-900 bg-white"
         />
-        <select
+       <FilterDropdown
+          label="All Status"
           value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 bg-white"
-        >
-          <option value="" className="text-gray-900">All Status</option>
-          <option value="completed" className="text-gray-900">Completed</option>
-          <option value="analyzing" className="text-gray-900">Analyzing</option>
-          <option value="error" className="text-gray-900">Error</option>
-        </select>
+          options={[
+            { label: "All Status", value: "" },
+            { label: "Completed", value: "completed" },
+            { label: "Analyzing", value: "analyzing" },
+            { label: "Error", value: "error" },
+          ]}
+          onChange={(value) =>
+            setFilters((prev) => ({
+              ...prev,
+              status: value,
+            }))
+          }
+        />
+
         <button
           onClick={exportToCSV}
-          className="px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+          className="px-3 py-2 text-xs bg-primary text-white rounded-lg transition-colors text-sm flex items-center gap-2"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -85,9 +93,9 @@ export default function ContentScoresTab({ contentScores, filters, setFilters, p
         <button
         onClick={handleRefresh}
         disabled={!canRefresh}
-        className={`px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
+        className={`px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs ${
           canRefresh
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-white text-primary border border-primary'
             : 'bg-gray-400 cursor-not-allowed text-white'
         }`}
       >
@@ -99,19 +107,15 @@ export default function ContentScoresTab({ contentScores, filters, setFilters, p
 
       {/* Add New Analysis Button */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900">Content Scores</h3>
+        <h4 className=" text-primaryText">Content Scores</h4>
         <button
           onClick={() => {
             const url = prompt('Enter URL to analyze:');
-            if (url) {
-              // This would trigger the analyze function from parent
-              console.log('Analyze URL:', url);
-            }
           }}
-          className="flex items-center justify-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+          className="flex items-center justify-center gap-2 bg-primary text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm"
         >
           <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">Analyze New Content</span>
+          <span className="hidden sm:inline text-xs">Analyze New Content</span>
           <span className="sm:hidden">Analyze</span>
         </button>
       </div>
