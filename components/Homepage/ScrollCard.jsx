@@ -297,10 +297,16 @@ const OverlappingCards = () => {
                         alt={card.heading}
                         className="w-full h-full object-contain"
                         onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
+                          const imgEl = e.currentTarget;
+                          imgEl.style.display = "none";
+
+                          const fallback = imgEl.nextElementSibling;
+                          if (fallback) {
+                            fallback.style.display = "flex";
+                          }
                         }}
                       />
+
                       <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white hidden items-center justify-center p-12">
                         <div className="text-center">
                           <div
