@@ -106,6 +106,7 @@ export function MenuProvider({ children }) {
 
     const rules = [];
 
+   
 Object.entries(MENU).forEach(([moduleName, roles]) => {
   Object.entries(roles).forEach(([roleName, menuObj]) => {
     const requiredPermissionPrefixes =
