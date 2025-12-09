@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useRef } from "react";
 import Lead1 from "../../public/Homepage/Leads1.png";
 import Lead2 from "../../public/Homepage/Leads1.png";
