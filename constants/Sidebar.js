@@ -58,6 +58,7 @@ export function MenuProvider({ children }) {
         { label: "Manage Industries", icon: DocumentsIcon, href: "/cms/dashboard/manage-industries" },
         { label: "Website Meta SEO", icon: DocumentsIcon, href: "/cms/dashboard/website-meta-seo" },
         { label: "AI Content Performance", icon: DocumentsIcon, href: "/cms/dashboard/ai-content-performance" },
+        { label: "Gen AI Visibility", icon: DocumentsIcon, href: "/cms/dashboard/gen-ai-visibility" },
         { label: "Inventory Management", icon: DocumentsIcon, href: "/cms/dashboard/inventory-management" },
       ],
       bottom: [{ label: "Settings", icon: SettingIcon, href: "/cms/settings" }]
