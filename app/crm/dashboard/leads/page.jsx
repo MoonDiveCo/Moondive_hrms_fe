@@ -6,6 +6,7 @@ import LeadStats from "../../../../components/CrmDashboard/LeadStats";
 import { toast } from "react-toastify";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
 import { getLeadsFromAllSources } from "../../../../services/leadService";
+import axios from "axios";
 
 export default function LeadDashboard() {
   const [stats, setStats] = useState(null);
@@ -28,7 +29,7 @@ export default function LeadDashboard() {
     leadType: "",
     search: "",
     page: 1,
-    limit: 20,
+    limit: 10,
   });
   const [activeTab, setActiveTab] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
@@ -57,42 +58,41 @@ export default function LeadDashboard() {
   };
 
   // Generic bulk status update
-  const bulkUpdateStatus = async (newStatus) => {
-    if (selectedLeadIds.length === 0) {
-      toast.info("Please select at least one lead");
-      return;
-    }
+const bulkUpdateStatus = async (newStatus) => {
+  if (selectedLeadIds.length === 0) {
+    toast.info("Please select at least one lead");
+    return;
+  }
 
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/bulk-update-status`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            leadIds: selectedLeadIds,
-            status: newStatus,
-          }),
-        }
+  try {
+    const response = await axios.patch(
+      `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/bulk-update-status`,
+      {
+        leadIds: selectedLeadIds,
+        status: newStatus,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const data = response.data;
+
+    if (data?.success || data?.responseCode === 200) {
+      toast.success(
+        `Updated ${selectedLeadIds.length} lead(s) to "${newStatus}"`
       );
 
-      const data = await response.json();
-
-      if (response.ok && (data.success || data.responseCode === 200)) {
-        toast.success(
-          `Updated ${selectedLeadIds.length} lead(s) to "${newStatus}"`
-        );
-
-        setSelectedLeadIds([]);
-        fetchAllLeads(); 
-      } else {
-        toast.error(data.responseMessage || "Failed to update leads");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong while updating leads");
+      setSelectedLeadIds([]);
+      fetchAllLeads();
+    } else {
+      toast.error(data?.responseMessage || "Failed to update leads");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Something went wrong while updating leads");
+  }
+};
 
   // Specific actions
   const handleMoveSelectedToInProcess = () => bulkUpdateStatus("In Process");
@@ -124,7 +124,7 @@ export default function LeadDashboard() {
 
       setLeadScoringLeads(sdrFromService);
       setSdrLeads(sdrFromService);
-      await fetchStats();
+      // await fetchStats();
     } catch (error) {
       console.error("Error fetching leads:", error);
       setDirectLeads([]);
@@ -233,29 +233,29 @@ export default function LeadDashboard() {
     loading,
   ]);
 
-  // Stats from backend
-  const fetchStats = async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/stats`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.responseCode === 200 || data.success) {
-        setStats(data.result);
-      } else {
-        setStats(getDefaultStats());
+// Stats from backend
+const fetchStats = async () => {
+  try {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/stats`,
+      {
+        headers: { "Content-Type": "application/json" },
       }
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
+    );
+
+    const data = response.data;
+
+    if (data?.responseCode === 200 || data?.success) {
+      setStats(data.result);
+    } else {
       setStats(getDefaultStats());
     }
-  };
+  } catch (error) {
+    console.error("Failed to fetch stats:", error);
+    setStats(getDefaultStats());
+  }
+};
+
 
   const getDefaultStats = () => ({
     totalLeads: 0,
@@ -277,7 +277,7 @@ export default function LeadDashboard() {
         ...directLeads,
         ...chatbotLeads,
         ...scheduleMeetingLeads,
-        ...leadScoringLeads,
+        // ...leadScoringLeads,
         ...sdrLeads,
       ];
 

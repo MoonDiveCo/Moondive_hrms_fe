@@ -168,11 +168,11 @@ export function MenuProvider({ children }) {
         },
         ACCOUNTS: {
           top: [
-            {
-              label: "Manage Leads",
-              icon: CandidateIcon,
-              href: "/crm/dashboard/leads",
-            },
+            // {
+            //   label: "Manage Leads",
+            //   icon: CandidateIcon,
+            //   href: "/crm/dashboard/leads",
+            // },
           ],
           bottom: [],
         },
