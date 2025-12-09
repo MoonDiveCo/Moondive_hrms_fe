@@ -90,6 +90,7 @@ export const TEXT_TESTIMONIAL = 'Testimonials'
 export const TEXT_TESTIMONIAL_CONFIRM = "Are you sure you want to delete this testimonial?"
 
 export const POST_REQUEST = 'post'
+export const GET_REQUEST = 'get'
 
 
 //ROLE ACCESS MAP

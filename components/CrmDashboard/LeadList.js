@@ -26,21 +26,27 @@ export default function LeadList({
   selectedLeadIds = [],
   onToggleLeadSelect,
   onToggleSelectAll,
+  showContactActions = true, // controls Email + Phone icons
+  showSelection = true, // controls checkboxes column
 }) {
   const [selectedLead, setSelectedLead] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [gradePopupLead, setGradePopupLead] = useState(null);
+
   const menuRef = useRef(null);
+
   const totalLeads = leads.length;
   const totalPages = Math.ceil(totalLeads / leadsPerPage);
   const startIndex = (currentPage - 1) * leadsPerPage;
   const endIndex = startIndex + leadsPerPage;
   const paginatedLeads = leads.slice(startIndex, endIndex);
+
   const allOnPageSelected =
+    showSelection &&
     paginatedLeads.length > 0 &&
     paginatedLeads.every((lead) => selectedLeadIds.includes(lead._id));
-  const [gradePopupLead, setGradePopupLead] = useState(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -178,250 +184,244 @@ export default function LeadList({
 
   return (
     <>
-<div className="overflow-x-auto">
-  <table className="w-full">
-    <thead className="bg-gray-50 border-b border-gray-200">
-      <tr>
-          <th className="px-6 py-3 w-10"></th>
-        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-          Lead
-        </th>
-        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Company
-        </th>
-        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          LeadScore
-        </th>
-        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Status
-        </th> */}
-        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Source
-        </th>
-        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Last Activity
-        </th>
-        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Actions
-        </th>
-      </tr>
-    </thead>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              {showSelection && (
+                <th className="px-6 py-3 w-10">
+                </th>
+              )}
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Lead
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Company
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                LeadScore
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Source
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Last Activity
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
 
-    <tbody className="bg-white divide-y divide-gray-200">
-      {paginatedLeads.map((lead, index) => (
-    <tr
-      key={`${lead._id || "no-id"}-${startIndex + index}`} 
-      className="hover:bg-gray-50 transition-colors rounded-full"
-    >
-    <td className="px-4 py-4">
+          <tbody className="bg-white divide-y divide-gray-200">
+            {paginatedLeads.map((lead, index) => (
+              <tr
+                key={`${lead._id || "no-id"}-${startIndex + index}`}
+                className="hover:bg-gray-50 transition-colors rounded-full"
+              >
+                {showSelection && (
+                  <td className="px-4 py-4">
+<label className="relative flex items-center cursor-pointer">
   <input
-  type="checkbox"
-  checked={selectedLeadIds.includes(lead._id)}
-  onChange={() =>
-    onToggleLeadSelect && onToggleLeadSelect(lead._id)
-  }
-  className="
-    w-4 h-4
-    cursor-pointer
-    bg-white
-    border
-    border-primary
-    accent-primary
-  "
-/>
+    type="checkbox"
+    checked={selectedLeadIds.includes(lead._id)}
+    onChange={() =>
+      onToggleLeadSelect && onToggleLeadSelect(lead._id)
+    }
+    className="sr-only"
+  />
 
-
-</td>
-          <td className=" py-4 whitespace-nowrap">
-            <div className="flex items-center">
-              <div className="shrink-0 h-10 w-10">
-                <div className="h-10 w-10 rounded-full bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
-                  {lead.firstName?.[0]}
-                  {lead.lastName?.[0]}
-                </div>
-              </div>
-              <div className="ml-4">
-                <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                  {lead.firstName} {lead.lastName}
-                  {lead.lastEmailSent && (
-                    <span
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
-                      title={`Last email: ${new Date(
-                        lead.lastEmailSent
-                      ).toLocaleDateString()}`}
-                    >
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                      </svg>
-                      Contacted
-                    </span>
-                  )}
-                </div>
-
-                <div className="text-sm text-gray-500 flex items-center gap-1">
-                  <Mail className="w-3 h-3" />
-                  {lead.email}
-                </div>
-
-                {lead.phone && (
-                  <div className="text-sm text-gray-500 flex items-center gap-1">
-                    <Phone className="w-3 h-3" />
-                    {lead.phone}
-                  </div>
+  <div
+    className={`
+      w-4 h-4 rounded border-2 flex items-center justify-center
+      ${
+        selectedLeadIds.includes(lead._id)
+          ? "bg-white border-primary"
+          : "bg-white border-gray-400"
+      }
+    `}
+  >
+    {selectedLeadIds.includes(lead._id) && (
+      <svg
+        className="w-3 h-3 text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+    )}
+  </div>
+</label>
+                  </td>
                 )}
-              </div>
-            </div>
-          </td>
-          <td className="px-6 py-4 whitespace-nowrap">
-            <div className="text-sm text-gray-900">
-              {lead.companyName || "—"}
-            </div>
-            {lead.companySize && (
-              <div className="text-xs text-gray-500">
-                {lead.companySize} employees
-              </div>
-            )}
-          </td>
 
-          {/* Score (grade + numeric) with popup trigger */}
-          <td className="px-6 py-4 whitespace-nowrap">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setGradePopupLead(lead)}
-                className={`px-3 py-1 rounded-full border text-xs font-semibold cursor-pointer ${getGradeColor(
-                  lead.leadGrade || "Frozen"
-                )}`}
-                title="View grade criteria"
-              >
-                {lead.leadGrade || lead.leadType || "Frozen"}
-              </button>
-              {/* <div className="text-sm font-medium text-gray-900">
-                {lead.leadScore || 0}/100
-              </div> */}
-            </div>
-          </td>
+                <td className="py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
+                        {lead.firstName?.[0]}
+                        {lead.lastName?.[0]}
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                        {lead.firstName} {lead.lastName}
+                        {lead.lastEmailSent && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
+                            title={`Last email: ${new Date(
+                              lead.lastEmailSent
+                            ).toLocaleDateString()}`}
+                          >
+                            <svg
+                              className="w-3 h-3"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                            Contacted
+                          </span>
+                        )}
+                      </div>
 
-          {/* Status */}
-          {/* <td className="px-6 py-4 whitespace-nowrap">
-            <span
-              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                lead.status
-              )}`}
-            >
-              {lead.status}
-            </span>
-          </td> */}
+                      <div className="text-sm text-gray-500 flex items-center gap-1">
+                        <Mail className="w-3 h-3" />
+                        {lead.email}
+                      </div>
 
-          {/* Source */}
-          <td className="px-6 py-4 whitespace-nowrap">
-            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-700">
-              {lead._sourceLabel || lead.source || "Unknown"}
-            </span>
-          </td>
+                      {lead.phone && (
+                        <div className="text-sm text-gray-500 flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {lead.phone}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </td>
 
-          {/* Last Activity */}
-          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            <div>
-              {formatDate(
-                lead.lastActivityAt ||
-                  lead.createdAt ||
-                  lead.lastEmailSent
-              )}
-            </div>
-            <div className="text-xs text-gray-400">
-              {lead.pagesVisited?.length || 0} pages viewed
-            </div>
-          </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {lead.companyName || "—"}
+                  </div>
+                  {lead.companySize && (
+                    <div className="text-xs text-gray-500">
+                      {lead.companySize} employees
+                    </div>
+                  )}
+                </td>
 
-          {/* Actions */}
-          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <div className="flex items-center justify-end gap-2 relative">
-              <button
-                onClick={() => handleViewLead(lead)}
-                className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
-                title="View Details"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
+                {/* Score (grade + popup trigger) */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setGradePopupLead(lead)}
+                      className={`px-3 py-1 rounded-full border text-xs font-semibold cursor-pointer ${getGradeColor(
+                        lead.leadGrade || "Frozen"
+                      )}`}
+                      title="View grade criteria"
+                    >
+                      {lead.leadGrade || lead.leadType || "Frozen"}
+                    </button>
+                  </div>
+                </td>
 
-              <button
-                onClick={() => sendEmail(lead)}
-                className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
-                title="Send Email"
-              >
-                <Mail className="w-4 h-4" />
-              </button>
+                {/* Source */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-700">
+                    {lead._sourceLabel || lead.source || "Unknown"}
+                  </span>
+                </td>
 
-              {lead.phone && (
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
-                  title="Call"
-                >
-                  <Phone className="w-4 h-4" />
-                </a>
-              )}
+                {/* Last Activity */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div>
+                    {formatDate(
+                      lead.lastActivityAt ||
+                        lead.createdAt ||
+                        lead.lastEmailSent
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {lead.pagesVisited?.length || 0} pages viewed
+                  </div>
+                </td>
 
-              {lead.companyWebsite && (
-                <a
-                  href={lead.companyWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
-                  title="Visit Website"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
+                {/* Actions */}
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex items-center justify-end gap-2 relative">
+                    {/* Always visible: View */}
+                    <button
+                      onClick={() => handleViewLead(lead)}
+                      className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
 
-              <button
-                onClick={() =>
-                  setActiveMenu(activeMenu === lead._id ? null : lead._id)
-                }
-                className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
-                title="More Actions"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
+                    {/* Conditionally visible: Email + Phone */}
+                    {showContactActions && (
+                      <>
+                        <button
+                          onClick={() => sendEmail(lead)}
+                          className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
+                          title="Send Email"
+                        >
+                          <Mail className="w-4 h-4" />
+                        </button>
 
-              {activeMenu === lead._id && (
-                <div
-                  ref={menuRef}
-                  className="absolute right-0 top-8 w-44 bg-white shadow-lg border rounded-md z-50 py-1 text-sm"
-                >
-                  <button
-                    onClick={() => {
-                      handleTabUpdate(lead._id, "In Process");
-                      setActiveMenu(null);
-                    }}
-                    className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900"
-                  >
-                    Move to In Process
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleStatusUpdate(lead._id, "Archived");
-                      setActiveMenu(null);
-                    }}
-                    className="block w-full text-left px-3 py-2 hover:bg-red-50 text-red-600"
-                  >
-                    Archive Lead
-                  </button>
-                </div>
-              )}
-            </div>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+                        {lead.phone && (
+                          <a
+                            href={`tel:${lead.phone}`}
+                            className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
+                            title="Call"
+                          >
+                            <Phone className="w-4 h-4" />
+                          </a>
+                        )}
+                      </>
+                    )}
+                    {activeMenu === lead._id && (
+                      <div
+                        ref={menuRef}
+                        className="absolute right-0 top-8 w-44 bg-white shadow-lg border rounded-md z-50 py-1 text-sm"
+                      >
+                        <button
+                          onClick={() => {
+                            handleTabUpdate(lead._id, "In Process");
+                            setActiveMenu(null);
+                          }}
+                          className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-900"
+                        >
+                          Move to In Process
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleStatusUpdate(lead._id, "Archived");
+                            setActiveMenu(null);
+                          }}
+                          className="block w-full text-left px-3 py-2 hover:bg-red-50 text-red-600"
+                        >
+                          Archive Lead
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
@@ -475,14 +475,13 @@ export default function LeadList({
                   </svg>
                 </button>
 
-                {/* Page numbers */}
                 {[...Array(totalPages)].map((_, index) => {
                   const pageNum = index + 1;
-                  // Show first page, last page, current page, and pages around current
                   if (
                     pageNum === 1 ||
                     pageNum === totalPages ||
-                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    (pageNum >= currentPage - 1 &&
+                      pageNum <= currentPage + 1)
                   ) {
                     return (
                       <button
@@ -546,7 +545,8 @@ export default function LeadList({
           onUpdate={onRefresh}
         />
       )}
-       {gradePopupLead && (
+
+      {gradePopupLead && (
         <LeadGradePopup
           lead={gradePopupLead}
           onClose={() => setGradePopupLead(null)}
@@ -554,10 +554,11 @@ export default function LeadList({
       )}
     </>
   );
-}function LeadGradePopup({ lead, onClose }) {
+}
+
+function LeadGradePopup({ lead, onClose }) {
   const score = lead.leadScore || 0;
 
-  // Prefer backend grade; fall back to computed from score
   let grade = "Frozen";
 
   if (lead.leadGrade) {
@@ -568,7 +569,6 @@ export default function LeadList({
     else if (g === "cold") grade = "Cold";
     else grade = "Frozen";
   } else {
-    // Fallback: compute from score using your criteria
     if (score >= 80) {
       grade = "Hot";
     } else if (score >= 60) {
