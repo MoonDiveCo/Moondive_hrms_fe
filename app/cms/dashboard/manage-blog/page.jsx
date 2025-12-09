@@ -12,7 +12,7 @@ const Blog = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [openModal, setOpenModal] = useState(false);
 const [editBlog, setEditBlog] = useState(null);
-const [loading, setLoading] = useState(false)
+const [loading, setLoading] = useState(true)
 
   const fetchBlogs = async () => {
     try {
@@ -28,7 +28,6 @@ const [loading, setLoading] = useState(false)
   };
   
   useEffect(() => {
-    setLoading(true)
     fetchBlogs();
   }, [selectedFilter, searchQuery]);
 
