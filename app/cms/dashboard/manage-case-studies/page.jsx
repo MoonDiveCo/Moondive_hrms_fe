@@ -1197,7 +1197,7 @@ const handleFileSelect = async (e) => {
             </h4>
             <button
               onClick={handleGenerateCaseStudy}
-              className="flex rounded-full bg-primary px-4 py-2 text-primaryText transition-colors mr-4"
+              className="flex rounded-full bg-primary px-4 py-2 text-white transition-colors mr-4"
             >
               Generate Case Study
             </button>
@@ -1210,7 +1210,7 @@ const handleFileSelect = async (e) => {
             />
             <button
               onClick={handleAddNew}
-              className="flex items-center rounded-full bg-primary px-4 py-2 text-primaryText transition-colors"
+              className="flex items-center rounded-full bg-primary px-4 py-2 text-white transition-colors"
             >
               <Plus className="mr-2 h-4 w-4" /> {TEXT_ADD_NEW_CASE_STUDIES}
             </button>
