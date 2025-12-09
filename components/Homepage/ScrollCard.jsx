@@ -20,8 +20,6 @@ const OverlappingCards = () => {
         { text: "Email & SMS Integration", icon: "/Homepage/Star1.svg" },
         { text: "Smart Lead Scoring", icon: "/Homepage/Star1.svg" },
       ],
-      color: "from-orange-500 to-red-500",
-      bgColor: "bg-orange-50",
       image: Lead1.src,
     },
     {
@@ -35,8 +33,7 @@ const OverlappingCards = () => {
         { text: "Email & SMS Integration", icon: "/Homepage/Star1.svg" },
         { text: "Smart Lead Scoring", icon: "/Homepage/Star1.svg" },
       ],
-      color: "from-orange-500 to-red-500",
-      bgColor: "bg-orange-50",
+
       image: Lead2.src,
     },
     {
@@ -50,8 +47,7 @@ const OverlappingCards = () => {
         { text: "Email & SMS Integration", icon: "/Homepage/Star1.svg" },
         { text: "Smart Lead Scoring", icon: "/Homepage/Star1.svg" },
       ],
-      color: "from-orange-500 to-red-500",
-      bgColor: "bg-orange-50",
+
       image: Lead3.src,
     },
   ];
@@ -115,64 +111,50 @@ const OverlappingCards = () => {
     const isPrevious = index < activeCard;
     const isFuture = index > activeCard;
 
-    // Stacking configuration
-    const cardPeek = 30; // How much of each card shows at bottom
-    const stackSpacing = 20; // Space between stacked cards
+    const cardPeek = 30;
+    const stackSpacing = 20;
 
-    // Scale with smooth transition
     let scale;
     if (isActive) {
       scale = 1;
     } else if (isPrevious) {
-      scale = 0.96 - (activeCard - index) * 0.02; // Previous cards get smaller
+      scale = 0.97 - (activeCard - index) * 0.01;
     } else {
       scale = 0.98;
     }
 
-    // Rotation for flip effect
     let rotateX;
     if (isActive) {
       rotateX = 0;
     } else if (isPrevious) {
-      // Previous cards tilt back as they go up
       rotateX = -5;
     } else {
-      // Future cards have slight forward tilt
       rotateX = 2 * (1 - clampedProgress);
     }
 
-    // Y position - cards flip up from bottom
     let translateY;
     if (isPrevious) {
-      // Previous cards move up with smooth animation
       const distanceFromActive = activeCard - index;
-      translateY = -60 * distanceFromActive;
+      translateY = -14 - (distanceFromActive - 1) * 6;
     } else if (isActive) {
-      // Active card at top
       translateY = 0;
     } else {
-      // Future cards stacked at bottom
       const distanceFromActive = index - activeCard;
       translateY = 480 - cardPeek + (distanceFromActive - 1) * stackSpacing;
     }
 
-    // Opacity
     let opacity;
+
     if (isActive) {
       opacity = 1;
     } else if (isPrevious) {
-      // Previous cards fade but show shadow
-      const distanceFromActive = activeCard - index;
-      opacity = distanceFromActive === 1 ? 0.15 : 0; // Show shadow of immediate previous card
+      opacity = 1;
     } else if (index === activeCard + 1) {
-      opacity = 0.95;
-    } else if (index === activeCard + 2) {
-      opacity = 0.85;
+      opacity = 1;
     } else {
-      opacity = 0.6;
+      opacity = 0;
     }
 
-    // Z-index for proper layering
     let zIndex;
     if (isActive) {
       zIndex = 100;
@@ -182,15 +164,14 @@ const OverlappingCards = () => {
       zIndex = 90 - (index - activeCard);
     }
 
-    // Box shadow - stronger for active card, subtle for others
     let boxShadow;
+
     if (isActive) {
-      boxShadow = "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 10px 20px -5px rgba(0, 0, 0, 0.1)";
-    } else if (isPrevious && activeCard - index === 1) {
-      // Shadow effect for immediate previous card
-      boxShadow = "0 -10px 30px -5px rgba(0, 0, 0, 0.3)";
+      boxShadow = "0 10px 24px rgba(0,0,0,0.08)";
+    } else if (isPrevious) {
+      boxShadow = "0 4px 12px rgba(0,0,0,0.06)";
     } else {
-      boxShadow = "0 10px 30px -10px rgba(0, 0, 0, 0.15)";
+      boxShadow = "none";
     }
 
     return {
@@ -210,7 +191,7 @@ const OverlappingCards = () => {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-[300vh] bg-gradient-to-b py-20"
+      className="relative min-h-[300vh] bg-gradient-to-b py-10"
     >
       {/* Header */}
       <div className="max-w-7xl mx-auto px-6 mb-8 text-center mt-12">
@@ -232,7 +213,7 @@ const OverlappingCards = () => {
                 onClick={() => scrollToCard(index)}
                 className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
                   activeCard === index
-                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-200"
+                    ? "bg-gradient-to-r from-orange-400 to-orange-400 text-white shadow-lg shadow-orange-200"
                     : "bg-white text-gray-600 border border-gray-200 hover:border-orange-300 hover:text-orange-600 hover:shadow-md"
                 }`}
               >
@@ -245,11 +226,11 @@ const OverlappingCards = () => {
 
       {/* Cards Container */}
       <div className="sticky top-24 max-w-7xl mx-auto px-6 py-8">
-        <div 
-          className="relative h-[520px]" 
-          style={{ 
+        <div
+          className="relative h-[520px]"
+          style={{
             perspective: "1500px",
-            perspectiveOrigin: "center center"
+            perspectiveOrigin: "center center",
           }}
         >
           {cards.map((card, index) => (
@@ -264,7 +245,7 @@ const OverlappingCards = () => {
                   {/* Left Side - Content */}
                   <div className="p-12 flex flex-col justify-center bg-white">
                     <div
-                      className={`inline-block px-4 py-2 rounded-full bg-gradient-to-r ${card.color} text-white text-sm font-semibold mb-6 w-fit`}
+                      className={`inline-block px-4 py-2 rounded-full  text-white text-sm font-semibold mb-6 w-fit`}
                     >
                       Step {card.id} of 3
                     </div>
@@ -288,7 +269,9 @@ const OverlappingCards = () => {
                               activeCard === index
                                 ? "translateX(0px)"
                                 : "translateX(-20px)",
-                            transition: `all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${idx * 100}ms`,
+                            transition: `all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${
+                              idx * 100
+                            }ms`,
                           }}
                         >
                           <img
@@ -316,11 +299,10 @@ const OverlappingCards = () => {
                           e.target.nextSibling.style.display = "flex";
                         }}
                       />
-                      {/* Fallback */}
                       <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white hidden items-center justify-center p-12">
                         <div className="text-center">
                           <div
-                            className={`w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center`}
+                            className={`w-24 h-24 mx-auto mb-6 rounded-2xl  flex items-center justify-center`}
                           >
                             <span className="text-4xl text-white">
                               {index === 0 ? "🎯" : index === 1 ? "📊" : "🤝"}
@@ -329,9 +311,6 @@ const OverlappingCards = () => {
                           <h4 className="text-2xl font-bold text-gray-800 mb-3">
                             {card.heading}
                           </h4>
-                          <p className="text-gray-600 text-sm">
-                            Add your image
-                          </p>
                         </div>
                       </div>
                     </div>
