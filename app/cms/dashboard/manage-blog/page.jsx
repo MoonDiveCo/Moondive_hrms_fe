@@ -5,6 +5,8 @@ import axios from 'axios';
 import BlogTableRow from '@/components/ManageBlogs/BlogTableRow';
 import { ROUTE_ALL_BLOGS_ADMIN } from '@/text';
 import BlogModal from '@/components/ManageBlogs/BlogModal';
+import FilterDropdown from '@/components/UI/FilterDropdown';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const Blog = () => {
   const [blogs, setBlogs] = useState([]);
@@ -31,6 +33,19 @@ const [loading, setLoading] = useState(true)
     fetchBlogs();
   }, [selectedFilter, searchQuery]);
 
+  if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="p-6">
       
@@ -42,25 +57,26 @@ const [loading, setLoading] = useState(true)
           <input
             type="text"
             placeholder="Search blogs..."
-            className="rounded-full border border-gray-300 bg-transparent px-4 py-2 text-sm outline-none focus:border-primary focus:ring-primary"
+            className="rounded-full border border-gray-300 bg-transparent px-3 py-1 text-xs outline-none focus:border-primary focus:ring-primary"
             onChange={(e) => setSearchQuery(e.target.value)}
           />
 
-          <select
+          <FilterDropdown
+            label="Filter"
             value={selectedFilter}
-            onChange={(e) => setSelectedFilter(e.target.value)}
-            className="rounded-full border border-gray-300 bg-transparent px-4 py-2 text-sm outline-none focus:border-primary focus:ring-primary"
-          >
-            <option value="">All</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-          </select>
+            options={[
+              { label: "All", value: "" },
+              { label: "Published", value: "published" },
+              { label: "Draft", value: "draft" },
+            ]}
+            onChange={(v) => setSelectedFilter(v)}
+          />
 
           <button
-            className="bg-primary text-white rounded-full px-4 py-2"
+            className="bg-primary text-white rounded-full px-3 py-1"
             onClick={() => { setEditBlog(null); setOpenModal(true); }}
           >
-            Add Blog
+            <span className='text-xs'>Add Blog</span>
           </button>
         </div>
       </div>

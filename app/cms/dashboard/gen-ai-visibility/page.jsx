@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import AdvancedGenAI from '@/components/GenAIVisibility/AdvancedGenAI';
 import axios from 'axios';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const GenAIVisibility = () => {
   const [loading, setLoading] = useState(true);
@@ -168,10 +169,19 @@ const GenAIVisibility = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  if (loading) {
-    return <EnhancedTableShimmer />;
-  }
 
+  if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
   if (!dashboardData) {
     return (
       <div className="p-8 text-center">
@@ -201,14 +211,14 @@ const GenAIVisibility = () => {
         <div className="flex gap-3">
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 bg-primary text-white rounded-full font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors"
+            className="px-3 py-1 bg-primary text-white rounded-full font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors"
           >
-            Export CSV
+            <span className='text-xs'>Export CSV</span>
           </button>
           <select
             value={selectedDays}
             onChange={(e) => setSelectedDays(Number(e.target.value))}
-            className="px-4 py-2 border border-primary rounded-full bg-white text-gray-900 font-medium focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+            className="px-3 py-1 text-xs border border-primary rounded-full bg-white text-gray-900 font-medium focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
           >
             <option value={7}>Last 7 days</option>
             <option value={30}>Last 30 days</option>

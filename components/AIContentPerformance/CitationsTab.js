@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, Calendar, TrendingUp, MessageSquare, BarChart3, Clock } from 'lucide-react';
 import axios from 'axios';
+import FilterDropdown from '../UI/FilterDropdown';
 
 // Citation Card Component
 function CitationCard({ citation }) {
@@ -166,33 +167,46 @@ export default function CitationsTab({ citations, filters, setFilters, onRefresh
       {/* Filters and View Toggle */}
       <div className="flex flex-wrap gap-4 items-center justify-between">
         <div className="flex gap-4 items-center">
-          <select
+          <FilterDropdown
+            label="Last 7 days"
             value={filters.days}
-            onChange={(e) => setFilters({ ...filters, days: parseInt(e.target.value) })}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 bg-white"
-          >
-            <option value={7} className="text-gray-900">Last 7 days</option>
-            <option value={30} className="text-gray-900">Last 30 days</option>
-            <option value={90} className="text-gray-900">Last 90 days</option>
-          </select>
-          <select
+            options={[
+              { label: "Last 7 days", value: 7 },
+              { label: "Last 30 days", value: 30 },
+              { label: "Last 90 days", value: 90 },
+            ]}
+            onChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                days: parseInt(value),
+              }))
+            }
+          />
+
+          <FilterDropdown
+            label="All Platforms"
             value={filters.platform}
-            onChange={(e) => setFilters({ ...filters, platform: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 bg-white"
-          >
-            <option value="" className="text-gray-900">All Platforms</option>
-            <option value="ChatGPT" className="text-gray-900">ChatGPT</option>
-            <option value="Claude" className="text-gray-900">Claude</option>
-            <option value="Gemini" className="text-gray-900">Gemini</option>
-            <option value="Perplexity" className="text-gray-900">Perplexity</option>
-          </select>
+            options={[
+              { label: "All Platforms", value: "" },
+              { label: "ChatGPT", value: "ChatGPT" },
+              { label: "Claude", value: "Claude" },
+              { label: "Gemini", value: "Gemini" },
+              { label: "Perplexity", value: "Perplexity" },
+            ]}
+            onChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                platform: value,
+              }))
+            }
+          />
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('list')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-full text-xs transition-colors ${
               viewMode === 'list'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -200,9 +214,9 @@ export default function CitationsTab({ citations, filters, setFilters, onRefresh
           </button>
           <button
             onClick={() => setViewMode('timeline')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-3 text-xs py-2 rounded-full transition-colors ${
               viewMode === 'timeline'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -211,9 +225,9 @@ export default function CitationsTab({ citations, filters, setFilters, onRefresh
            <button
         onClick={handleRefresh}
         disabled={!canRefresh}
-        className={`px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm ${
+        className={`px-3 text-xs py-2 rounded-lg transition-colors text-sm ${
           canRefresh
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-white text-primary border border-primary'
             : 'bg-gray-400 cursor-not-allowed text-white'
         }`}
       >

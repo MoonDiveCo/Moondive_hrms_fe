@@ -347,8 +347,8 @@ export default function ComparisonForm({ comparisonId = null, onClose = () => {}
   const updateFaq = (index, field, value) => setFormData(prev => ({ ...prev, faqs: prev.faqs.map((f,i)=> i===index ? { ...f, [field]: value } : f) }));
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 p-4">
-      <div ref={containerRef} className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div ref={containerRef} className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[92vh] hide-scrollbar overflow-y-auto">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
