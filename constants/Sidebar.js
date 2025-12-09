@@ -212,10 +212,13 @@ export function MenuProvider({ children }) {
 
     const rules = [];
 
-    Object.entries(MENU).forEach(([moduleName, roles]) => {
-      Object.entries(roles).forEach(([roleName, menuObj]) => {
-        const requiredPermissionPrefixes =
-          roleName === "SUPER_ADMIN" ? ["*"] : [`${moduleName}:${roleName}`];
+   
+Object.entries(MENU).forEach(([moduleName, roles]) => {
+  Object.entries(roles).forEach(([roleName, menuObj]) => {
+    const requiredPermissionPrefixes =
+      roleName === "SUPER_ADMIN"
+        ? ["*"] 
+        : [`${moduleName}:${roleName}`];
 
         rules.push({
           requiredPermissionPrefixes,

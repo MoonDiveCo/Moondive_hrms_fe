@@ -9,6 +9,11 @@ const nextConfig = {
         hostname: 'moondive-bucket-s3.s3.amazonaws.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'hrms-bucket-s3.s3.ap-south-1.amazonaws.com',
+        pathname: '/**',
+      }
     ]
   }
 };
