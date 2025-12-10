@@ -45,8 +45,7 @@ const [receiptFiles, setReceiptFiles] = useState([]);
       `${process.env.NEXT_PUBLIC_API}/cms/inventory/product-receipt-upload`,
       fd
     );
-    console.log(response)
-    const url = response?.data?.result?.brochureUrl;
+    const url = response?.data?.result;
 
     setUploadedUrls(prev => ({ ...prev, receiptUrl: url }));
     setReceiptFiles([url]);
@@ -102,8 +101,19 @@ const handleAutoGenerate = async () => {
   } 
 };
   
-const handleSubmit = () => {
+const handleSubmit =async () => {
+
   const fd = new FormData();
+
+  fd.append("category", category);
+  Object.keys(form).forEach((key) => fd.append(`specs.${key}`, form[key]));
+  if (uploadedUrls.productImageUrl) fd.append("productImage", uploadedUrls.productImageUrl);
+  if (uploadedUrls.receiptUrl) fd.append("receipt", uploadedUrls.receiptUrl);
+
+
+  const isValid = await onSave(fd);
+
+  if (!isValid) return;
 
   fd.append("category", category);
 
@@ -117,7 +127,7 @@ const handleSubmit = () => {
   if (uploadedUrls.receiptUrl)
     fd.append("receipt", uploadedUrls.receiptUrl);
 
-  onSave(fd);
+  onclose
   setForm({});
   setCategory("");
   setUploadedUrls({ productImageUrl: "", receiptUrl: "" });
@@ -222,7 +232,7 @@ const handleSubmit = () => {
           </button>
           <button
             className="px-4 py-2 bg-primary hover:bg-indigo-700 text-white rounded-full"
-            onClick={handleSubmit || onclose}
+            onClick={handleSubmit}
           >
             {mode==='add'?'Add':'Edit'} {category}
           </button>
