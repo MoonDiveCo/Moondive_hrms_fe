@@ -9,6 +9,7 @@ import Navbar from "@/components/Homepage/Navbar";
 import TrustedBySlider from "@/components/Homepage/TrustedBy";
 
 import PlatformSection from "@/components/Homepage/PlatformSection";
+import ScrollCards from "@/components/Homepage/ScrollCard";
 
 
 export default function Page() {
@@ -42,6 +43,7 @@ export default function Page() {
       <HeroSection/>
       <TrustedBySlider/>
       <PlatformSection/>
+      <ScrollCards/>
       <FeatuedTools/>
       <LeaveBalances/>
       <MoreFeature/>

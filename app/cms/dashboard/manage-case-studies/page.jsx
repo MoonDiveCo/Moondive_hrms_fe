@@ -42,6 +42,8 @@ import ChallengesTab from '@/components/ManageCaseStudies/ChallengesTab'
 import MediaTab from '@/components/ManageCaseStudies/MediaTab'
 import LayoutTab from '@/components/ManageCaseStudies/LayoutTab'
 import CtaTab from '@/components/ManageCaseStudies/CtaTab'
+import FilterDropdown from '@/components/UI/FilterDropdown'
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 // Available sections for case study
 const AVAILABLE_SECTIONS = [
@@ -218,6 +220,7 @@ const ManageCaseStudies = () => {
   const fullImage2InputRef = useRef(null)
   const challengeImageInputRef = useRef(null)
   const solutionImageInputRef = useRef(null)
+  const [fetchingCasestudies, setFetchingCasestudies] = useState(true)
   // const quillRef = useRef(null)
   const [uploading, setUploading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('')
@@ -292,7 +295,9 @@ const fetchCaseStudies = async () => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/get-case-study?status=${selectedFilter}`)
         setCaseStudiesData(response.data)
+        setFetchingCasestudies(false)
       } catch (error) {
+        setFetchingCasestudies(false)
         toast.error('Failed to load case studies. Please try again later.')
       }
     }
@@ -1083,10 +1088,15 @@ const fetchCaseStudies = async () => {
     }
   }
 
-   const handleStatusChange = async (Id, newStatus) => {
+   const handleStatusChange = async (Id, study, newStatus) => {
       try {
+         const editingCaseStudy = {
+      ...study,    
+      status: newStatus, 
+    };
+    console.log(editingCaseStudy)
         const response = await axios.put(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/edit-case-study/${Id}`, {
-          status: newStatus,
+          editingCaseStudy,
         })
         await fetchCaseStudies()
         toast.success(
@@ -1187,6 +1197,20 @@ const handleFileSelect = async (e) => {
       toast.error('Failed to upload full image 1')
     }
   }
+
+  if(fetchingCasestudies){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-transparent relative max-w-[80vw]">
       <main className="flex-1 overflow-hidden p-4">
@@ -1197,9 +1221,9 @@ const handleFileSelect = async (e) => {
             </h4>
             <button
               onClick={handleGenerateCaseStudy}
-              className="flex rounded-full bg-primary px-4 py-2 text-primaryText transition-colors mr-4"
+              className="flex item-center rounded-full bg-primary px-3 py-2 text-white transition-colors mr-4"
             >
-              Generate Case Study
+              <span className='text-xs'>Generate Case Study</span>
             </button>
              <input
               type="file"
@@ -1210,36 +1234,37 @@ const handleFileSelect = async (e) => {
             />
             <button
               onClick={handleAddNew}
-              className="flex items-center rounded-full bg-primary px-4 py-2 text-primaryText transition-colors"
+              className="flex items-center rounded-full bg-primary px-3 py-2 text-white transition-colors"
             >
-              <Plus className="mr-2 h-4 w-4" /> {TEXT_ADD_NEW_CASE_STUDIES}
+              <span className='text-xs flex items-center'><Plus className="mr-2 h-4 w-4" /> {TEXT_ADD_NEW_CASE_STUDIES}</span>
             </button>
           </div>
 
-          <div className="flex h-full w-full flex-col rounded-lg bg-transparent shadow border ">
+          <div className="flex h-full w-full flex-col rounded-lg bg-transparent shadow-sm border border-gray-300 ">
             <div className="border-b p-4 flex justify-between">
               <div className="relative w-full sm:max-w-xs">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"
-                  size={18}
+                  size={12}
                 />
                 <input
                   type="text"
                   placeholder="Search case studies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-md border py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  className="w-full rounded-full border border-gray-300 py-2 text-xs pl-10 pr-2 focus:outline-none focus:ring-1 focus:ring-primary text-black"
                 />
               </div>
-                 <select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              className="border border-gray-300 relative rounded-lg px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All</option>
-              <option value="published">Published</option>
-              <option value="draft">Draft</option>
-            </select>
+                 <FilterDropdown
+                  label="Filter"
+                  value={selectedFilter}
+                  options={[
+                    { label: "All", value: "" },
+                    { label: "Published", value: "published" },
+                    { label: "Draft", value: "draft" },
+                  ]}
+                  onChange={(v) => setSelectedFilter(v)}
+                />
             </div>
 
             <div className="flex-1 overflow-auto">
@@ -1304,12 +1329,12 @@ const handleFileSelect = async (e) => {
                           {study.client}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
-                          <span className="inline-flex rounded-full bg-primary/80 border border-primary px-2 text-xs font-semibold leading-5 text-primaryText">
+                          <span className="inline-flex rounded-full bg-primary/80 border border-primary px-2 text-xs font-semibold leading-5 text-white">
                             {study.industry}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-6 py-4">
-                          <span className="inline-flex rounded-full bg-gray-100 px-2 text-xs font-semibold leading-5 text-gray-800">
+                          <span className="inline-flex rounded-full bg-white border border-primary px-2 text-xs font-semibold leading-5 text-primary">
                             {study.category}
                           </span>
                         </td>
@@ -1344,6 +1369,7 @@ const handleFileSelect = async (e) => {
                                 onClick={() =>
                                   handleStatusChange(
                                     study._id,
+                                    study,
                                     study.status === 'published' ? 'draft' : 'published'
                                   )
                                 }
@@ -1378,7 +1404,7 @@ const handleFileSelect = async (e) => {
       </main>
 
       {editingCaseStudy && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm bg-opacity-50">
 
           <div className="max-h-[90vh] hide-scrollbar w-full max-w-6xl overflow-y-auto rounded-lg bg-white shadow-xl">
             <div className="relative border-b p-6">

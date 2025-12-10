@@ -12,6 +12,8 @@ import ApproachTab from '@/components/ManageIndustries/ApproachTab';
 import TechnologiesTab from '@/components/ManageIndustries/TechnologiesTab';
 import PlatformsTab from '@/components/ManageIndustries/PlatformsTab';
 import SectionsTab from '@/components/ManageIndustries/SectionsTab';
+import FilterDropdown from '@/components/UI/FilterDropdown';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), {
   ssr: false,
@@ -98,8 +100,10 @@ const ManageIndustries = () => {
 
       const response = await axios.get(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/get-industry-pages?${params}`)
       setIndustryPages(response.data.data)
+      setIsLoading(false)
       // setPagination(response.data.pagination)
     } catch (error) {
+      setIsLoading(false)
       toast.error('Failed to load industry pages')
     } finally {
       setIsLoading(false)
@@ -501,6 +505,20 @@ const ManageIndustries = () => {
     )
     : industryPages
 
+    
+  if(isLoading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-transparent">
       <main className="flex-1 overflow-hidden p-4">
@@ -512,9 +530,9 @@ const ManageIndustries = () => {
               </h4>
               <button
                 onClick={handleAddNew}
-                className="flex items-center rounded-full bg-primary px-4 py-2 text-white transition-colors "
+                className="flex items-center rounded-full bg-primary px-3 py-2 text-white transition-colors "
               >
-                <Plus className="mr-2 h-4 w-4" /> Add New Industry Page
+                <span className='flex text-xs items-center'><Plus className="mr-1 h-3 w-3" /> Add New Industry Page</span>
               </button>
             </div>
 
@@ -581,47 +599,53 @@ const ManageIndustries = () => {
             {/* Filters and Search */}
             <div className="border-b p-4">
               <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="relative flex-1">
+                <div className="relative flex items-center">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 transform text-primaryText"
-                    size={18}
+                    size={12}
                   />
                   <input
                     type="text"
                     placeholder="Search industry pages..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-md border py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-primaryText bg-transparent"
+                    className="w-full text-xs rounded-full border border-gray-300 py-2 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-primary text-primaryText bg-transparent"
                   />
                 </div>
-                <select
+               <FilterDropdown
+                  label="All Status"
                   value={filters.status}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, status: e.target.value }))
-                  }
-                  className="rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                >
-                  <option value="all">All Status</option>
-                  <option value="live">Published</option>
-                  <option value="draft">Draft</option>
-                </select>
-                <select
-                  value={filters.industry}
-                  onChange={(e) =>
+                  options={[
+                    { label: "All Status", value: "all" },
+                    { label: "Published", value: "live" },
+                    { label: "Draft", value: "draft" },
+                  ]}
+                  onChange={(value) =>
                     setFilters((prev) => ({
                       ...prev,
-                      industry: e.target.value,
+                      status: value,
                     }))
                   }
-                  className="rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                >
-                  <option value="all">All Industries</option>
-                  {INDUSTRY_OPTIONS.map((industry) => (
-                    <option key={industry} value={industry}>
-                      {industry}
-                    </option>
-                  ))}
-                </select>
+                />
+
+                <FilterDropdown
+                  label="All Industries"
+                  value={filters.industry}
+                  options={[
+                    { label: "All Industries", value: "all" },
+                    ...INDUSTRY_OPTIONS.map((industry) => ({
+                      label: industry,
+                      value: industry,
+                    })),
+                  ]}
+                  onChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      industry: value,
+                    }))
+                  }
+                />
+
               </div>
             </div>
 
@@ -687,8 +711,8 @@ const ManageIndustries = () => {
                           <td className="px-6 py-4">
                             <span
                               className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${page.status === 'live'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-yellow-100 text-yellow-800'
+                                ? 'bg-green-100 text-green-800 border border-green-800'
+                                : 'bg-yellow-100 text-yellow-800 border border-yellow-800'
                                 }`}
                             >
                               {page.status === 'live' ? 'Published' : 'Draft'}
@@ -804,7 +828,7 @@ const ManageIndustries = () => {
         </div>
       </main>
       {editingPage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm bg-opacity-50">
           <div className="max-h-[80vh] hide-scrollbar w-full max-w-6xl overflow-y-auto rounded-lg bg-white shadow-xl">
             <div className="relative border-b p-6">
               <h2 className="text-xl font-semibold text-primary-50/80">

@@ -14,7 +14,7 @@ const isLinkActive = (href) => {
   const cleanHref = href.replace(/\/$/, "");
 
   const exactDashboardRoutes = [
-    "/crms/dashboard",
+    "/crm/dashboard",
     "/hrms/dashboard",
     "/cms/dashboard",
   ];
