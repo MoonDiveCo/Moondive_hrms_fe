@@ -25,7 +25,7 @@ export default function EmployeeModal({ employee, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-[9999999999px]"
+      className="fixed inset-0 z-50 flex items-center justify-center "
       aria-modal="true"
       role="dialog"
       aria-labelledby="employee-modal-title"
