@@ -158,11 +158,7 @@ export function MenuProvider({ children }) {
       CRM: {
         SALES: {
           top: [
-            {
-              label: "Sales Dashboard",
-              icon: OverviewIcon,
-              href: "/crm/dashboard/sales",
-            },
+           
           ],
           bottom: [],
         },
