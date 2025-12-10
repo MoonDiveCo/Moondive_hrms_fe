@@ -6,89 +6,89 @@ import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
 
- export default function AppLayout({ module, children,showMainNavbar = true }) {
-   const { canAccessModule, canAccessSubmodule, authLoading,rbacLoading } = useContext(RBACContext)
-   const {isSignedIn} = useContext(AuthContext)
+export default function AppLayout({ module, children, showMainNavbar = true }) {
+  const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
+  const { isSignedIn } = useContext(AuthContext)
   const menus = useMenus();
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
   const accessPermissions = menus.rules ?? [];
-   const subSet = new Set();
-   
-useEffect(() => {
-  if (authLoading || rbacLoading) return;
+  const subSet = new Set();
 
-  const moduleName = module ? module.toUpperCase() : "";
+  useEffect(() => {
+    if (authLoading || rbacLoading) return;
 
-  const isModuleAccessible = canAccessModule(moduleName);
+    const moduleName = module ? module.toUpperCase() : "";
 
-  if (!isSignedIn || !isModuleAccessible) {
-    setTopItems([]);
-    setBottomItems([]);
-    return;
-  }
+    const isModuleAccessible = canAccessModule(moduleName);
 
-  const keyOf = (item) =>
-    (item && (item.href || item.label)) || JSON.stringify(item);
-
-  const mergeUnique = (existing = [], additions = []) => {
-    const seen = new Set(existing.map((it) => keyOf(it)));
-    const merged = [...existing];
-
-    for (const it of additions || []) {
-      const k = keyOf(it);
-      if (!seen.has(k)) {
-        seen.add(k);
-        merged.push(it);
-      }
+    if (!isSignedIn || !isModuleAccessible) {
+      setTopItems([]);
+      setBottomItems([]);
+      return;
     }
-    return merged;
-  };
 
-  let computedTop = [];
-  let computedBottom = [];
+    const keyOf = (item) =>
+      (item && (item.href || item.label)) || JSON.stringify(item);
 
-  if (menus && menus[moduleName.toLowerCase()]) {
-    computedTop = [...(menus[moduleName.toLowerCase()].top || [])];
-    computedBottom = [...(menus[moduleName.toLowerCase()].bottom || [])];
-  }
+    const mergeUnique = (existing = [], additions = []) => {
+      const seen = new Set(existing.map((it) => keyOf(it)));
+      const merged = [...existing];
 
-  const moduleRules = accessPermissions.filter(
-    (rule) => rule.module?.toUpperCase() === moduleName
-  );
+      for (const it of additions || []) {
+        const k = keyOf(it);
+        if (!seen.has(k)) {
+          seen.add(k);
+          merged.push(it);
+        }
+      }
+      return merged;
+    };
 
-  moduleRules.forEach((permission) => {
-    if (!permission) return;
+    let computedTop = [];
+    let computedBottom = [];
 
-    const prefixes = Array.isArray(permission.requiredPermissionPrefixes)
-      ? permission.requiredPermissionPrefixes
-      : [permission.requiredPermissionPrefixes];
+    if (menus && menus[moduleName.toLowerCase()]) {
+      computedTop = [...(menus[moduleName.toLowerCase()].top || [])];
+      computedBottom = [...(menus[moduleName.toLowerCase()].bottom || [])];
+    }
 
-    const isSubmodulesAccessible = prefixes.some((p) =>
-      canAccessSubmodule(p.toUpperCase())
+    const moduleRules = accessPermissions.filter(
+      (rule) => rule.module?.toUpperCase() === moduleName
     );
 
-    if (isSubmodulesAccessible) {
-      computedTop = mergeUnique(computedTop, permission.menu?.top || []);
-      computedBottom = mergeUnique(
-        computedBottom,
-        permission.menu?.bottom || []
-      );
-    }
-  });
+    moduleRules.forEach((permission) => {
+      if (!permission) return;
 
-  setTopItems(computedTop);
-  setBottomItems(computedBottom);
-}, [
-  module,
-  menus,
-  accessPermissions,
-  canAccessModule,
-  canAccessSubmodule,
-  authLoading,
-  rbacLoading,
-  isSignedIn,
-]);
+      const prefixes = Array.isArray(permission.requiredPermissionPrefixes)
+        ? permission.requiredPermissionPrefixes
+        : [permission.requiredPermissionPrefixes];
+
+      const isSubmodulesAccessible = prefixes.some((p) =>
+        canAccessSubmodule(p.toUpperCase())
+      );
+
+      if (isSubmodulesAccessible) {
+        computedTop = mergeUnique(computedTop, permission.menu?.top || []);
+        computedBottom = mergeUnique(
+          computedBottom,
+          permission.menu?.bottom || []
+        );
+      }
+    });
+
+    setTopItems(computedTop);
+    setBottomItems(computedBottom);
+  }, [
+    module,
+    menus,
+    accessPermissions,
+    canAccessModule,
+    canAccessSubmodule,
+    authLoading,
+    rbacLoading,
+    isSignedIn,
+  ]);
 
 
   return (
@@ -103,5 +103,5 @@ useEffect(() => {
         <main className="flex-1 w-[80vw] max-w-full hide-scrollbar overflow-hidden">{children}</main>
       </div>
     </div>
-  );
+  );  
 }
