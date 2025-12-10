@@ -71,7 +71,6 @@ const [receiptFiles, setReceiptFiles] = useState([]);
       `${process.env.NEXT_PUBLIC_API}/cms/inventory/product-image-add`,
       fd
     );
-    console.log(response.data)
 
     const url = response?.data?.result?.imageUrls?.[0];
     setUploadedUrls(prev => ({ ...prev, productImageUrl: url }));
@@ -130,7 +129,7 @@ const handleSubmit = () => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-[850px] shadow-lg text-black max-h-[90vh] hide-scrollbar overflow-y-auto">
 
         {/* HEADER */}
@@ -197,10 +196,11 @@ const handleSubmit = () => {
             className="
                px-2 py-1
               text-xs font-semibold
-              bg-primary-400 text-primary-100
+              bg-primary text-white
               rounded-md
               hover:bg-primary-600
               transition
+              cursor-pointer
             "
           >
             Auto Generate

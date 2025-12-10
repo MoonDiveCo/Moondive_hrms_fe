@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import axios from 'axios';
+import FilterDropdown from '../UI/FilterDropdown';
 
 const RealTimeQueryAnalysis = () => {
   const [loading, setLoading] = useState(true);
@@ -83,17 +84,19 @@ const RealTimeQueryAnalysis = () => {
           <p className="text-gray-600 mt-1">Live insights into AI query patterns</p>
         </div>
         <div className="flex items-center gap-4">
-          <select
-            value={selectedHours}
-            onChange={(e) => setSelectedHours(parseInt(e.target.value))}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value={1}>Last Hour</option>
-            <option value={6}>Last 6 Hours</option>
-            <option value={24}>Last 24 Hours</option>
-            <option value={48}>Last 48 Hours</option>
-            <option value={168}>Last 7 Days</option>
-          </select>
+          <FilterDropdown
+          label="Select Duration"
+          value={selectedHours}
+          options={[
+            { label: "Last Hour", value: 1 },
+            { label: "Last 6 Hours", value: 6 },
+            { label: "Last 24 Hours", value: 24 },
+            { label: "Last 48 Hours", value: 48 },
+            { label: "Last 7 Days", value: 168 },
+          ]}
+          onChange={(value) => setSelectedHours(parseInt(value))}
+        />
+
           <button
             onClick={fetchAnalysis}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

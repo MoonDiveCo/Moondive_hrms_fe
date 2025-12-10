@@ -4,6 +4,7 @@ import axios from "axios";
 
 import EditWebLink from "@/components/WebsiteMetaSEO/EditWebLink";
 import { InputFieldsShimmer } from "@/components/UI/ShimmerComponents";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function WebsiteMetaSeo() {
   const [modData, setModData] = useState({});
@@ -33,8 +34,13 @@ export default function WebsiteMetaSeo() {
 
   if (loading) {
     return (
-      <div className="p-10">
-        <InputFieldsShimmer />
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
       </div>
     );
   }
@@ -65,11 +71,13 @@ export default function WebsiteMetaSeo() {
         </p>
       </div>
 
-      <div className=" grid grid-cols-2 gap-8">
+      <div   className="grid grid-cols-2 gap-8 items-start"
+          style={{ gridAutoRows: "auto" }}>
         {seoSections.map((section) => (
           <div
             key={section.key}
             className="bg-white w-fit rounded-xl p-5 shadow-md border border-gray-200"
+              style={{ alignSelf: "start" }}
           >
             <EditWebLink
               webLink={seoValues[section.key] || ""}

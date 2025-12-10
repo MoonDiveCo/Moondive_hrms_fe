@@ -114,6 +114,7 @@ export const TEXT_WE_HAVE_WORKED_WITH_INNOVATIVE_IDEAS = 'We have worked with so
 export const CONNECT_US_SUBTITLE = 'Let’s collaborate and take your business to the next level. Get in touch with our team today!';
 
 export const POST_REQUEST = 'post'
+export const GET_REQUEST = 'get'
 
 
 //ROLE ACCESS MAP
