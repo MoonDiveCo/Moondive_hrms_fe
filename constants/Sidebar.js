@@ -52,7 +52,7 @@ export function MenuProvider({ children }) {
       CMS: {
         SUPER_ADMIN:{
             top: [
-    { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard" },
+    { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard/" },
     { label: "Manage Blog", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
     { label: "Manage Testimonials", icon: DocumentsIcon, href: "/cms/dashboard/manage-testimonials" },
     { label: "Manage Case Studies", icon: DocumentsIcon, href: "/cms/dashboard/manage-case-studies" },
