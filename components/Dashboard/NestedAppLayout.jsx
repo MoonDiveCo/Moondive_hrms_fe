@@ -54,7 +54,7 @@ export default function NestedAppLayout({ children }) {
           </div>
         </div>
         <div className="flex-1 flex gap-6">
-          <aside className="w-64 sticky top-30 h-120">
+          <aside className="w-64 sticky top-30 h-[65vh]">
             <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4 overflow-auto">
               <ul className="space-y-0 text-sm">
                 {activeHeader.sections.map((section) => {
@@ -83,7 +83,7 @@ export default function NestedAppLayout({ children }) {
             </div>
           </aside>
 
-          <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-120">{children}</section>
+          <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-[65vh]">{children}</section>
         </div>
       </div>
     </div>
