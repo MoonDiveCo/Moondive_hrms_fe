@@ -73,7 +73,7 @@ label,
 ul,
 li {
   font-size: var(--font-size-base);
-  font-weight: 400;
+  font-weight: 350;
 }
 
 
@@ -117,7 +117,7 @@ li {
     width: 90%;
   }
   p{
-    font-size: 0.9rem;
+    font-size: 0.6rem;
   }
 }
 
