@@ -23,7 +23,7 @@ export default function Departments(){
             }
         }
         fetchData()
-    },)
+    },[])
 
 
     if (loading) {

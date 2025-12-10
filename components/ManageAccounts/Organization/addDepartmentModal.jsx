@@ -31,7 +31,7 @@ export default function AddDepartmentModal({ departments,setDepartments,isVisibl
     }
     try {
         const res=await axios.post("hrms/organization/add-department",department)
-        // setDepartments((prev)=>([...prev,res.data.result]))
+        setDepartments((prev)=>([...prev,res.data.result]))
 
         setDepartment({
             name: "",
