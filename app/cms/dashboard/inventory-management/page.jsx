@@ -6,6 +6,7 @@ import AddInventoryModal from "@/components/InventoryManagement/AddInventoryModa
 import EditInventoryModal from "@/components/InventoryManagement/EditInventoryModal";
 import { toast } from "react-toastify";
 import FilterDropdown from "@/components/UI/FilterDropdown";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const categories = ["Laptop", "Monitor", "Mouse", "Keyboard", "Accessories", "OfficeInventory"];
 
@@ -26,30 +27,39 @@ function InventoryManagement() {
   const [limit] = useState(12); 
   const [totalPages, setTotalPages] = useState(1);
   const [issues, setIssues] = useState(0);
-  const fetchData = async () => {
-      let filter = "";
+  const [loading, setLoading] = useState(true)
+const fetchData = async () => {
+  try {
+    setLoading(true);
 
-      if (activeCategory === "Laptop") {
-        filter =
-          isAssigned === "isassigned"
-            ? "true"
-            : isAssigned === "Unassigned"
-            ? "false"
-            : "";
-      }
+    let filter = "";
+    if (activeCategory === "Laptop") {
+      filter =
+        isAssigned === "isassigned"
+          ? "true"
+          : isAssigned === "Unassigned"
+          ? "false"
+          : "";
+    }
 
-      let qr = quantityRange; 
+    let qr = quantityRange;
 
-      const res = await axios.get(
+    const res = await axios.get(
       `/cms/inventory/inventory-status/?category=${activeCategory}&filter=${filter}&range=${qr}&condition=${laptopCondition}&status=${laptopStatus}&page=${page}&limit=${limit}&userId=${userFilter || ""}`
     );
 
-      setInventory(res.data.inventory || []);
-      setUsers(res.data.users || []);
-      setOverall(res.data.total || 0);
-      setIssues(res.data.issues || 0);
-      setTotalPages(res.data.totalPages || 1);
-    };
+    setInventory(res.data.inventory || []);
+    setUsers(res.data.users || []);
+    setOverall(res.data.total || 0);
+    setIssues(res.data.issues || 0);
+    setTotalPages(res.data.totalPages || 1);
+  } catch (error) {
+    console.error("Error fetching inventory:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     const laptopTotal = inventory.length;
     const laptopAssigned = inventory.filter(i => i.isAssigned).length;
@@ -171,6 +181,20 @@ const handleEditItem = async (formData, id) => {
     (i) => i.category?.toLowerCase() === activeCategory.toLowerCase()
   );
 
+    if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
+
+
   return (
     <div className="p-6">
 
@@ -199,8 +223,8 @@ const handleEditItem = async (formData, id) => {
         {categories.map((cat) => (
           <button
             key={cat}
-            className={`pb-2 ${
-              activeCategory === cat ? "border-b-4 border-primary font-semibold" : "text-gray-500"
+            className={`pb-1 ${
+              activeCategory === cat ? "border-b-2 border-primary text-primary font-semibold" : "text-gray-500"
             }`}
             onClick={() => setActiveCategory(cat)}
           >
@@ -209,10 +233,10 @@ const handleEditItem = async (formData, id) => {
         ))}
 
         <button
-          className="ml-auto bg-primary text-white px-2 py-1 rounded-full mb-2"
+          className="ml-auto bg-primary text-xs flex justify-center items-center text-white px-3 py-2 rounded-full mb-2"
           onClick={() => setAddOpen(true)}
         >
-          + Add Item
+            + Add Item
         </button>
       </div>
 
