@@ -91,11 +91,11 @@ export default function OrganizationDetails() {
     const parts = fullName.trim().split(' ')
     const firstName = parts[0] || ''
     const lastName = parts.slice(1).join(' ') || ''
-    
+
     if (!modified) {
       setModified(true)
     }
-    
+
     setOrganization((prev) => ({
       ...prev,
       contact: {
@@ -157,7 +157,26 @@ export default function OrganizationDetails() {
     <div className="w-full w-100">
       <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4">
         <div className="w-full mx-1 p-4">
-          <h4 className="text-sm font-bold mb-4">Basic Organization Details</h4>
+          <div className="flex flex-row justify-between items-center my-3">
+            <h4 className="text-sm font-bold">Basic Organization Details</h4>
+            <div className="flex justify-center items-center space-x-4">
+              <button
+                type="button"
+                disabled={!modified}
+                onClick={handleReset}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                disabled={!modified}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save
+              </button>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="border-[0.3px] border-[#D0D5DD] w-full p-4 space-y-4">
             <div className="flex flex-col items-start">
@@ -381,21 +400,6 @@ export default function OrganizationDetails() {
               />
             </div>
 
-            {modified && (<div className="flex justify-end space-x-2 pt-4">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
-              >
-                Reset
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded hover:bg-orange-600 disabled:opacity-50"
-              >
-                Save
-              </button>
-            </div>)}
           </form>
         </div>
       </div>

@@ -9,7 +9,7 @@ export default function MainNavbar({params}) {
   const parts = pathname.split("/").filter(Boolean);
   console.log(parts)
   return (
-    <div className="w-full px-6 md:px-8">
+    <div className="w-full px-6 md:px-8 z-2">
       <div className="flex items-center justify-between h-16">
         <div className="flex items-center gap-4">
           
