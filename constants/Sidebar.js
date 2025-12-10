@@ -91,34 +91,34 @@ export function MenuProvider({ children }) {
           top: [
             { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard" },
             {
-              label: "Manage Blog",
+              label: "Blogs",
               icon: DocumentsIcon,
-              href: "/cms/dashboard/manage-blog",
+              href: "/cms/dashboard/blogs",
             },
             {
-              label: "Manage Testimonials",
+              label: "Testimonials",
               icon: DocumentsIcon,
-              href: "/cms/dashboard/manage-testimonials",
+              href: "/cms/dashboard/testimonials",
             },
             {
-              label: "Manage Case Studies",
+              label: "Case Studies",
               icon: DocumentsIcon,
-              href: "/cms/dashboard/manage-case-studies",
+              href: "/cms/dashboard/case-studies",
             },
             {
-              label: "Manage Comparisions",
+              label: "Comparisions",
               icon: DocumentsIcon,
-              href: "/cms/dashboard/manage-comparisons",
+              href: "/cms/dashboard/comparisons",
             },
             {
-              label: "Manage Summaries",
+              label: "Summaries",
               icon: DocumentsIcon,
-              href: "/cms/dashboard/manage-summaries",
+              href: "/cms/dashboard/summaries",
             },
             {
-              label: "Manage Industries",
+              label: "Industries",
               icon: DocumentsIcon,
-              href: "/cms/dashboard/manage-industries",
+              href: "/cms/dashboard/industries",
             },
             {
               label: "Website Meta SEO",
@@ -126,7 +126,7 @@ export function MenuProvider({ children }) {
               href: "/cms/dashboard/website-meta-seo",
             },
             {
-              label: "AI Content Performance",
+              label: "Content Performance",
               icon: DocumentsIcon,
               href: "/cms/dashboard/ai-content-performance",
             },
