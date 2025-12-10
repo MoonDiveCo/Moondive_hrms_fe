@@ -12,6 +12,16 @@ import DocumentsIcon from "../public/Dashboard/Documents.png";
 import OperationsIcon from "../public/Dashboard/Operations.png";
 import AnalyticsIcon from "../public/Dashboard/Analytics.png";
 import SettingIcon from "../public/Dashboard/Setting.png";
+import SeoIcon from "@/public/CMS/CMSSeo.svg"
+import InventoryManagement from "@/public/CMS/CMSInventoryManagement.svg"
+import Industry from "@/public/CMS/CMSIndustry.svg"
+import GenAI from "@/public/CMS/CMSGenAI.svg"
+import CaseStudies from "@/public/CMS/CMSCaseStudies.svg"
+import Testimonial from "@/public/CMS/CMSTestimonial.svg"
+import Blog from "@/public/CMS/CMSBlog.svg"
+import Comparisons from "@/public/CMS/CMSComparisons.svg"
+import Summaries from "@/public/CMS/CMSSummaries.svg"
+import ContentPerformance from "@/public/CMS/CMSContentPerformace.svg"
 
 const MenuContext = createContext(null);
 
@@ -92,52 +102,52 @@ export function MenuProvider({ children }) {
             { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard" },
             {
               label: "Blogs",
-              icon: DocumentsIcon,
+              icon: Blog,
               href: "/cms/dashboard/blogs",
             },
             {
               label: "Testimonials",
-              icon: DocumentsIcon,
+              icon: Testimonial,
               href: "/cms/dashboard/testimonials",
             },
             {
               label: "Case Studies",
-              icon: DocumentsIcon,
+              icon: CaseStudies,
               href: "/cms/dashboard/case-studies",
             },
             {
               label: "Comparisions",
-              icon: DocumentsIcon,
+              icon: Comparisons,
               href: "/cms/dashboard/comparisons",
             },
             {
               label: "Summaries",
-              icon: DocumentsIcon,
+              icon: Summaries,
               href: "/cms/dashboard/summaries",
             },
             {
               label: "Industries",
-              icon: DocumentsIcon,
+              icon: Industry,
               href: "/cms/dashboard/industries",
             },
             {
               label: "Website Meta SEO",
-              icon: DocumentsIcon,
+              icon: SeoIcon,
               href: "/cms/dashboard/website-meta-seo",
             },
             {
               label: "Content Performance",
-              icon: DocumentsIcon,
+              icon: ContentPerformance,
               href: "/cms/dashboard/ai-content-performance",
             },
             {
               label: "Gen AI Visibility",
-              icon: DocumentsIcon,
+              icon: GenAI,
               href: "/cms/dashboard/gen-ai-visibility",
             },
             {
               label: "Inventory Management",
-              icon: DocumentsIcon,
+              icon: InventoryManagement,
               href: "/cms/dashboard/inventory-management",
             },
           ],
@@ -145,7 +155,13 @@ export function MenuProvider({ children }) {
         },
 
         ADMIN: {
-          top: [],
+          top: [
+             {
+              label: "Inventory Management",
+              icon: DocumentsIcon,
+              href: "/cms/dashboard/inventory-management",
+            },
+          ],
           bottom: [],
         },
 
