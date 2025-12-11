@@ -69,17 +69,16 @@ const handleConfirmCall = async (e) => {
 
   try {
     const leadId = callLead._id;
+    console.log("Scheduling meeting for lead ID:", leadId);
     
-    await axios.put(
+    const res=await axios.put(
       `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/${leadId}/schedule-meeting`
     );
-
+    console.log("Meeting scheduled successfully:", res.data);
     // Close modal and reset state
     setShowCallModal(false);
     setCallLead(null);
     
-    // Refresh the leads list
-    toast.success("Meeting scheduled successfully");
     onRefresh && onRefresh();
     
   } catch (error) {
