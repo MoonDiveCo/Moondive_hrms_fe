@@ -121,16 +121,9 @@ export default function LeadList({
     }
   };
 
-  const getGradeColor = (grade) => {
-    const colors = {
-      Hot: "bg-red-100 text-red-700 border-red-200",
-      Warm: "bg-orange-100 text-orange-700 border-orange-200",
-      Cold: "bg-blue-100 text-blue-700 border-blue-200",
-      Frozen: "bg-gray-100 text-gray-700 border-gray-200",
-    };
-    return colors[grade] || colors["Frozen"];
-  };
-
+ const getGradeColor = () => {
+  return "bg-primary text-white  border-primary";
+};
   const getStatusColor = (status) => {
     const colors = {
       New: "bg-green-100 text-green-700",
@@ -332,7 +325,8 @@ export default function LeadList({
 
                   {/* Source */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-700">
+      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-whiteBackground text-[#FF7B30] border border-primary">
+
                       {lead._sourceLabel || lead.source || "Unknown"}
                     </span>
                   </td>
@@ -587,7 +581,7 @@ function LeadGradePopup({ lead, onClose }) {
             ✕
           </button>
         </div>
-
+        
         {/* Lead info */}
         <div className="mb-4">
           <div className="text-sm text-gray-500">Lead</div>
