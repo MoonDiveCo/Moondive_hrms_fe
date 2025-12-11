@@ -1212,7 +1212,7 @@ const handleFileSelect = async (e) => {
   }
 
   return (
-    <div className="flex h-screen bg-transparent relative max-w-[80vw]">
+    <div className="flex h-screen bg-transparent relative max-w-full">
       <main className="flex-1 overflow-hidden p-4">
         <div className="">
           <div className="mb-8 flex w-full flex-col sm:flex-row sm:items-center sm:justify-between">

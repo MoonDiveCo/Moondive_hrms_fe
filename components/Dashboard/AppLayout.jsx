@@ -92,9 +92,9 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
 
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start overflow-hidden md:block ">
-        <Sidebar topItems={topItems } bottomItems={bottomItems} />
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden flex bg-gray-50">
+      <aside className="w-[19vw] max-w-full bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start overflow-hidden md:block ">
+        <Sidebar topItems={topItems} bottomItems={bottomItems} />
       </aside>
       <div className="grid grid-cols-1  w-full z-10">
         <div className="sticky top-0">
@@ -102,7 +102,7 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
             <MainNavbar />
           </header>}
         </div>
-        <main className="flex-1 hide-scrollbar overflow-hidden sticky top-2">{children}</main>
+        <main className="flex-1 hide-scrollbar w-[80vw] max-w-full overflow-hidden sticky top-2">{children}</main>
       </div>
     </div>
   );  

@@ -188,7 +188,7 @@ export default function ManageComparisons() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto w-full">
+    <div className="p-6 mx-auto w-[100%] max-w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -288,7 +288,7 @@ export default function ManageComparisons() {
 
 
       {/* Table Container */}
-      <div className="bg-white w-full rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white w-[100%]  max-w-full rounded-lg border border-gray-200 shadow-sm ">
         {loading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
@@ -304,9 +304,9 @@ export default function ManageComparisons() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-            <table className="w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto w-full ">
+            <table className="max-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 w-full">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                   <th className="px-6 py-3 text-left  text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
@@ -314,16 +314,16 @@ export default function ManageComparisons() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
-                  <th className="px-6 py-3 text-righttext-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
 
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200 w-full">
                 {comparisons.map((c) => (
                   <tr key={c._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 align-top">
-                      <div className="text-sm font-medium text-gray-900 line-clamp-2 min-w-[220px]">{c.title}</div>
-                      <div className="text-sm text-gray-500">/{c.slug}</div>
+                      <div className="text-sm font-medium text-gray-900 line-clamp-2 min-w-[150px]">{c.title}</div>
+                      {/* <div className="text-sm text-gray-500">/{c.slug}</div> */}
                     </td>
 
                     <td className="px-6 py-4">

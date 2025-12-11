@@ -76,7 +76,7 @@ const [loading, setLoading] = useState(true)
             className="bg-primary text-white rounded-full px-3 py-1"
             onClick={() => { setEditBlog(null); setOpenModal(true); }}
           >
-            <span className='text-xs'>Add Blog</span>
+            <span className='text-xs flex item-center'>Add Blog</span>
           </button>
         </div>
       </div>
