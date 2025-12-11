@@ -2,16 +2,26 @@
 
 import React, { createContext, useContext, useMemo } from 'react';
 
-import OverviewIcon from '../public/Dashboard/Overview.png';
-import CandidateIcon from '../public/Dashboard/Candidate.png';
-import LeaveTrackerIcon from '../public/Dashboard/LeaveTracker.png';
-import AttendanceIcon from '../public/Dashboard/Attendance.png';
-import TimeTrackerIcon from '../public/Dashboard/TimeTracker.png';
-import PerformanceIcon from '../public/Dashboard/Performance.png';
-import DocumentsIcon from '../public/Dashboard/Documents.png';
-import OperationsIcon from '../public/Dashboard/Operations.png';
-import AnalyticsIcon from '../public/Dashboard/Analytics.png';
-import SettingIcon from '../public/Dashboard/Setting.png';
+import OverviewIcon from "../public/Dashboard/Overview.png";
+import CandidateIcon from "../public/Dashboard/Candidate.png";
+import LeaveTrackerIcon from "../public/Dashboard/LeaveTracker.png";
+import AttendanceIcon from "../public/Dashboard/Attendance.png";
+import TimeTrackerIcon from "../public/Dashboard/TimeTracker.png";
+import PerformanceIcon from "../public/Dashboard/Performance.png";
+import DocumentsIcon from "../public/Dashboard/Documents.png";
+import OperationsIcon from "../public/Dashboard/Operations.png";
+import AnalyticsIcon from "../public/Dashboard/Analytics.png";
+import SettingIcon from "../public/Dashboard/Setting.png";
+import SeoIcon from "@/public/CMS/CMSSeo.svg"
+import InventoryManagement from "@/public/CMS/CMSInventoryManagement.svg"
+import Industry from "@/public/CMS/CMSIndustry.svg"
+import GenAI from "@/public/CMS/CMSGenAI.svg"
+import CaseStudies from "@/public/CMS/CMSCaseStudies.svg"
+import Testimonial from "@/public/CMS/CMSTestimonial.svg"
+import Blog from "@/public/CMS/CMSBlog.svg"
+import Comparisons from "@/public/CMS/CMSComparisons.svg"
+import Summaries from "@/public/CMS/CMSSummaries.svg"
+import ContentPerformance from "@/public/CMS/CMSContentPerformace.svg"
 
 const MenuContext = createContext(null);
 
@@ -48,24 +58,71 @@ export function MenuProvider({ children }) {
       },
 
       CMS: {
-        SUPER_ADMIN:{
-            top: [
-    { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard" },
-    { label: "Manage Blog", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
-    { label: "Manage Testimonials", icon: DocumentsIcon, href: "/cms/dashboard/manage-testimonials" },
-    { label: "Manage Case Studies", icon: DocumentsIcon, href: "/cms/dashboard/manage-case-studies" },
-    { label: "Manage Comparisions", icon: DocumentsIcon, href: "/cms/dashboard/manage-comparisons" },
-    { label: "Manage Summaries", icon: DocumentsIcon, href: "/cms/dashboard/manage-summaries" },
-    { label: "Manage Industries", icon: DocumentsIcon, href: "/cms/dashboard/manage-industries" },
-    { label: "Website Meta SEO", icon: DocumentsIcon, href: "/cms/dashboard/website-meta-seo" },
-    { label: "AI Content Performance", icon: DocumentsIcon, href: "/cms/dashboard/ai-content-performance" },
-    { label: "Gen AI Visibility", icon: DocumentsIcon, href: "/cms/dashboard/gen-ai-visibility" },
-    { label: "Inventory Management", icon: DocumentsIcon, href: "/cms/dashboard/inventory-management" },
-  ],
-          bottom: [] },
-      
+        SUPER_ADMIN: {
+          top: [
+            { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard" },
+            {
+              label: "Blogs",
+              icon: Blog,
+              href: "/cms/dashboard/blogs",
+            },
+            {
+              label: "Testimonials",
+              icon: Testimonial,
+              href: "/cms/dashboard/testimonials",
+            },
+            {
+              label: "Case Studies",
+              icon: CaseStudies,
+              href: "/cms/dashboard/case-studies",
+            },
+            {
+              label: "Comparisions",
+              icon: Comparisons,
+              href: "/cms/dashboard/comparisons",
+            },
+            {
+              label: "Summaries",
+              icon: Summaries,
+              href: "/cms/dashboard/summaries",
+            },
+            {
+              label: "Industries",
+              icon: Industry,
+              href: "/cms/dashboard/industries",
+            },
+            {
+              label: "Website Meta SEO",
+              icon: SeoIcon,
+              href: "/cms/dashboard/website-meta-seo",
+            },
+            {
+              label: "Content Performance",
+              icon: ContentPerformance,
+              href: "/cms/dashboard/ai-content-performance",
+            },
+            {
+              label: "Gen AI Visibility",
+              icon: GenAI,
+              href: "/cms/dashboard/gen-ai-visibility",
+            },
+            {
+              label: "Inventory Management",
+              icon: InventoryManagement,
+              href: "/cms/dashboard/inventory-management",
+            },
+          ],
+          bottom: [],
+        },
+
         ADMIN: {
-          top: [],
+          top: [
+             {
+              label: "Inventory Management",
+              icon: InventoryManagement,
+              href: "/cms/dashboard/inventory-management",
+            },
+          ],
           bottom: [],
         },
 
