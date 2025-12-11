@@ -4,7 +4,7 @@ import ProtectedRoute from "@/lib/routeProtection/ProtectedRoute";
 
 export default function CMSDashboardLayout({ children }) {
   return (
-    <div>
+    <div className="w-[100%] max-w-full">
         <AppLayout module="cms" showMainNavbar={false} >
           {children}
           </AppLayout> 

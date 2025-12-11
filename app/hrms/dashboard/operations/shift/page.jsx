@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Eye, Edit2, Trash2 } from 'lucide-react';
-import EntityTable from '../../../../components/Common/EntityTable';
-import ShiftModal from '../../../../components/Operations/Shift/ShiftModal';
+import EntityTable from '../../../../../components/Common/EntityTable';
+import ShiftModal from '../../../../../components/Operations/Shift/ShiftModal';
 
 export default function Shifts() {
   const [shifts, setShifts] = useState([]);
@@ -112,7 +112,7 @@ export default function Shifts() {
       key: 'actions',
       header: 'Actions',
       tdClassName:
-        'px-6 py-4 whitespace-nowrap text-right text-sm font-medium',
+        'px-6 py-4 whitespace-nowrap text-centre text-sm font-medium',
       render: (row) => (
         <div className="inline-flex items-center gap-2">
           <button
@@ -156,15 +156,15 @@ export default function Shifts() {
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (
-    <div className="container py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-[var(--font-size-h2)] font-extrabold text-[var(--color-blackText)]">
+    <div className="container">
+      <div className="flex items-center justify-between p-4 ">
+        <h3 className=" text-blackText">
           Shifts
-        </h1>
+        </h3>
         <div className="flex items-center gap-3">
           <button
             onClick={openAdd}
-            className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white font-medium shadow"
+            className="px-4 py-2 rounded-lg bg-primary text-white font-medium shadow"
           >
             Add Shift
           </button>
