@@ -38,7 +38,7 @@ export default function FileUploader({
         <input 
           type="file" 
           onChange={handleFileSelect}
-          className="w-full border p-2 rounded cursor-pointer"
+          className="flex border border-primary text-primary p-2 rounded-full cursor-pointer"
           accept="image/*,application/pdf"
         />
       </div>

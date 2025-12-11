@@ -148,7 +148,7 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center">
       <div className="bg-white w-[90%] max-w-6xl h-[90vh] rounded-xl overflow-hidden shadow-lg flex flex-col">
         
         {/* HEADER */}

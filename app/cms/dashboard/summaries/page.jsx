@@ -2,6 +2,7 @@
 import ExecSummaryEditor from '@/components/ManageSummaries/ExecutiveSummaryEditior'
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 function ManageSummaries() {
  const [modData, setModData] = useState({});
@@ -25,6 +26,20 @@ function ManageSummaries() {
   useEffect(() => {
     fetchAllModerations();
   }, []);
+
+  
+  if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
 
 
     return (

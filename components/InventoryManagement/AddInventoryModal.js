@@ -45,8 +45,7 @@ const [receiptFiles, setReceiptFiles] = useState([]);
       `${process.env.NEXT_PUBLIC_API}/cms/inventory/product-receipt-upload`,
       fd
     );
-    console.log(response)
-    const url = response?.data?.result?.brochureUrl;
+    const url = response?.data?.result;
 
     setUploadedUrls(prev => ({ ...prev, receiptUrl: url }));
     setReceiptFiles([url]);
@@ -71,7 +70,6 @@ const [receiptFiles, setReceiptFiles] = useState([]);
       `${process.env.NEXT_PUBLIC_API}/cms/inventory/product-image-add`,
       fd
     );
-    console.log(response.data)
 
     const url = response?.data?.result?.imageUrls?.[0];
     setUploadedUrls(prev => ({ ...prev, productImageUrl: url }));
@@ -103,8 +101,19 @@ const handleAutoGenerate = async () => {
   } 
 };
   
-const handleSubmit = () => {
+const handleSubmit =async () => {
+
   const fd = new FormData();
+
+  fd.append("category", category);
+  Object.keys(form).forEach((key) => fd.append(`specs.${key}`, form[key]));
+  if (uploadedUrls.productImageUrl) fd.append("productImage", uploadedUrls.productImageUrl);
+  if (uploadedUrls.receiptUrl) fd.append("receipt", uploadedUrls.receiptUrl);
+
+
+  const isValid = await onSave(fd);
+
+  if (!isValid) return;
 
   fd.append("category", category);
 
@@ -118,7 +127,7 @@ const handleSubmit = () => {
   if (uploadedUrls.receiptUrl)
     fd.append("receipt", uploadedUrls.receiptUrl);
 
-  onSave(fd);
+  onclose
   setForm({});
   setCategory("");
   setUploadedUrls({ productImageUrl: "", receiptUrl: "" });
@@ -130,7 +139,7 @@ const handleSubmit = () => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-[850px] shadow-lg text-black max-h-[90vh] hide-scrollbar overflow-y-auto">
 
         {/* HEADER */}
@@ -197,10 +206,11 @@ const handleSubmit = () => {
             className="
                px-2 py-1
               text-xs font-semibold
-              bg-primary-400 text-primary-100
+              bg-primary text-white
               rounded-md
               hover:bg-primary-600
               transition
+              cursor-pointer
             "
           >
             Auto Generate
@@ -222,7 +232,7 @@ const handleSubmit = () => {
           </button>
           <button
             className="px-4 py-2 bg-primary hover:bg-indigo-700 text-white rounded-full"
-            onClick={handleSubmit || onclose}
+            onClick={handleSubmit}
           >
             {mode==='add'?'Add':'Edit'} {category}
           </button>
