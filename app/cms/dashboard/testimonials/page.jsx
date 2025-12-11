@@ -19,6 +19,7 @@ import {
 import { formatDate } from "@/utils/utils";
 import EditModal from "@/components/ManageTestimonials/EditModal";
 import ConfirmationModal from "@/components/ConfirmationModal/ConfirmationModal";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function ManageTestimonials() {
     const [testimonials, setTestimonials] = useState([])
@@ -28,7 +29,7 @@ export default function ManageTestimonials() {
   const [modData, setModData] = useState({})
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchAllModerations()
@@ -73,6 +74,19 @@ export default function ManageTestimonials() {
     }
   };
 
+   if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
+
   return (
     <>
     <div className="p-6">
@@ -81,10 +95,10 @@ export default function ManageTestimonials() {
         <h4 className=" text-primaryText">{TEXT_TESTIMONIAL}</h4>
 
         <button
-          className="bg-primary text-whiteText px-8 py-2 rounded-full text-sm hover:bg-primary/90 transition"
+          className="bg-primary text-whiteText px-6 py-2 rounded-full text-sm hover:bg-primary/90 transition"
           onClick={handleAdd}
         >
-          {BTN_ADD}
+          <span className="flex item-center text-xs">{BTN_ADD}</span>
         </button>
       </div>
 

@@ -39,11 +39,11 @@ export default function InventoryCard({ item, onClick }) {
       </span>
 
       {/* ITEM TITLE */}
-      <h2 className="font-semibold text-lg text-gray-900 leading-tight">
+      <h5 className="font-semibold text-lg text-primaryText leading-tight">
         {item.specs?.modelName ||
           `${item.specs?.brand} ${item.specs?.type}` ||
           "Unnamed Item"}
-      </h2>
+      </h5>
 
       {/* ⚠ STATUS BADGE */}
       {isNotWorking && (

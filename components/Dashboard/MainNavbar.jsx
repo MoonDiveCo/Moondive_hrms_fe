@@ -9,13 +9,10 @@ export default function MainNavbar({params}) {
   const parts = pathname.split("/").filter(Boolean);
   console.log(parts)
   return (
-    <div className="w-full px-6 md:px-8">
+    <div className="w-full px-6 md:px-8 z-2">
       <div className="flex items-center justify-between h-16">
         <div className="flex items-center gap-4">
-            <Image src={Toggle} alt="Toggle"/>
-          <div className="text-sm text-gray-500">{parts[2]?.toUpperCase()}</div>
-          <div className="text-sm text-gray-400">/</div>
-          <div className="text-sm font-semibold text-gray-900">{parts[3]?.toUpperCase()}</div>
+          
         </div>
 
         <div className="flex items-center gap-4">

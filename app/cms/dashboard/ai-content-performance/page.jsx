@@ -21,6 +21,7 @@ import SnippetPreviewTab from '@/components/AIContentPerformance/SnippetPreviewT
 import CompetitorAnalysisTab from '@/components/AIContentPerformance/CompetitorAnalysisTab';
 import RealTimeQueryAnalysis from '@/components/AIContentPerformance/RealTimeQueryAnalysis';
 import axios from 'axios';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function AiContentPerformance() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -217,8 +218,13 @@ export default function AiContentPerformance() {
 
   if (loading && !dashboardData) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
       </div>
     );
   }
@@ -249,17 +255,17 @@ export default function AiContentPerformance() {
               {analyzing && (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               )}
-              <span className="hidden sm:inline">
+              <span className="hidden sm:inline text-xs">
                 {analyzing ? 'Analyzing...' : 'Analyze URL'}
               </span>
-              <span className="sm:hidden">
+              <span className="sm:hidden text-xs">
                 {analyzing ? 'Analyzing...' : 'Analyze'}
               </span>
             </button>
             <button
               onClick={analyzeAllPages}
               disabled={analyzing || analyzingAll}
-              className={`px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ${
+              className={`px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base ${
                 analyzing || analyzingAll
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-primary'
@@ -268,10 +274,10 @@ export default function AiContentPerformance() {
               {analyzingAll && (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               )}
-              <span className="hidden sm:inline">
+              <span className="hidden sm:inline text-xs">
                 {analyzingAll ? 'Analyzing All...' : 'Analyze All Pages'}
               </span>
-              <span className="sm:hidden">
+              <span className="sm:hidden text-xs">
                 {analyzingAll ? 'All...' : 'All'}
               </span>
             </button>
@@ -312,7 +318,7 @@ export default function AiContentPerformance() {
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm mb-4 sm:mb-6">
           <div className="border-b border-gray-200">
-            <nav className="flex overflow-x-auto scrollbar-hide px-3 sm:px-6" aria-label="Tabs">
+            <nav className="flex overflow-x-auto hide-scrollbar px-3 sm:px-6" aria-label="Tabs">
               {[
                 { id: 'overview', label: 'Overview', icon: BarChart3, shortLabel: 'Overview' },
                 { id: 'content', label: 'Content Scores', icon: FileText, shortLabel: 'Scores' },
@@ -328,9 +334,9 @@ export default function AiContentPerformance() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      py-3 sm:py-4 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm transition-colors flex items-center gap-1 sm:gap-2 whitespace-nowrap flex-shrink-0
+                      py-3 sm:py-2 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm transition-colors flex items-center gap-1 sm:gap-2 whitespace-nowrap flex-shrink-0
                       ${activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
+                        ? 'border-primary text-primary'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }
                     `}
