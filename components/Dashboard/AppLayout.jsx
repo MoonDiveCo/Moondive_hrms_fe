@@ -93,11 +93,11 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start overflow-hidden md:block ">
+      <aside className="w-64 bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen  self-start overflow-hidden md:block ">
         <Sidebar topItems={topItems } bottomItems={bottomItems} />
       </aside>
-      <div className="grid grid-cols-1  w-full ">
-        <div className="sticky top-0 ">
+      <div className="grid grid-cols-1  w-full z-10">
+        <div className="sticky top-0">
           {showMainNavbar && <header className="bg-white border-b border-gray-200 h-16 flex items-center  ">
             <MainNavbar />
           </header>}
