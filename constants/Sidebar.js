@@ -131,7 +131,7 @@ export function MenuProvider({ children }) {
           bottom: [],
         },
       },
-   CRM: {
+     CRM: {
         SALES: {
           top: [
             {
