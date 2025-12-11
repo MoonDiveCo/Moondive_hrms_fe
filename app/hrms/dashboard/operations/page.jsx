@@ -1,15 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import React, { useMemo, useState } from 'react';
 
-/**
- * Operations page UI
- * - Uses existing CSS variables for primary colors & fonts
- * - Replace `services` arrays with API data or route links as needed
- */
+
 
 const Icon = ({ name }) => {
-  // small set of inline icons — add cases for more icons as needed
   const stroke = 'currentColor';
   switch (name) {
     case 'onboarding':
@@ -88,18 +84,19 @@ function ServiceCard({ title, subtitle, icon, onClick, className = '' }) {
       title={title}
       type="button"
     >
-      <div className="text-[var(--color-primary)]">
+      <div className="text-primary">
         <Icon name={icon} />
       </div>
 
-      <div className="text-sm font-medium text-[var(--color-blackText)]">{title}</div>
-      {subtitle && <div className="text-xs text-[var(--color-primaryText)] mt-0.5">{subtitle}</div>}
+      <div className="text-sm font-medium text-black">{title}</div>
+      {subtitle && <div className="text-xs text-primaryText mt-0.5">{subtitle}</div>}
     </button>
   );
 }
 
 export default function Operations() {
   const [query, setQuery] = useState('');
+    const router = useRouter()
 
   const popular = useMemo(
     () => [
@@ -123,7 +120,7 @@ export default function Operations() {
 
   const allServices = useMemo(
     () => [
-      { id: 'onboarding', title: 'Onboarding', icon: 'onboarding' },
+      { id: 'manage-accounts/organization/organization-details', title: 'Manage Accounts', icon: 'onboarding' },
       { id: 'employeeInfo', title: 'Employee Info', icon: 'employee' },
       { id: 'leaveTracker', title: 'Leave Tracker', icon: 'leave' },
       { id: 'attendance', title: 'Attendance', icon: 'time' },
@@ -136,8 +133,7 @@ export default function Operations() {
   );
 
   function handleCardClick(id) {
-    // hook up routing or actions here (e.g. router.push(`/operations/${id}`))
-    console.log('clicked', id);
+    router.push(`/hrms/dashboard/operations/${id}`);
   }
 
   const filteredAll = allServices.filter((s) =>
@@ -146,9 +142,8 @@ export default function Operations() {
 
   return (
     <div className="container py-6 px-8 mx-auto bg-white">
-      {/* Popular Services */}
       <section className="mb-8 px-8">
-        <h5 className="text-base font-semibold text-[var(--color-blackText)] mb-4">Popular Services</h5>
+        <h5 className="text-base font-semibold text-blackText mb-4">Popular Services</h5>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {popular.map((s) => (
@@ -162,20 +157,16 @@ export default function Operations() {
           ))}
         </div>
       </section>
-
-      {/* Recently Used */}
       <section className="mb-8 px-8">
-        <h5 className="text-base font-semibold text-[var(--color-blackText)] mb-4">Recently Used</h5>
+        <h5 className="text-base font-semibold text-blackText mb-4">Recently Used</h5>
         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-4">
           {recentlyUsed.map((s) => (
             <ServiceCard key={s.id} title={s.title} icon={s.icon} onClick={() => handleCardClick(s.id)} />
           ))}
         </div>
       </section>
-
-      {/* All Services */}
       <section className='px-8'>
-        <h5 className="text-base font-semibold text-[var(--color-blackText)] mb-4">All Services</h5>
+        <h5 className="text-base font-semibold text-blackText mb-4">All Services</h5>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredAll.length ? (
@@ -183,7 +174,7 @@ export default function Operations() {
               <ServiceCard key={s.id} title={s.title} icon={s.icon} onClick={() => handleCardClick(s.id)} />
             ))
           ) : (
-            <div className="col-span-full py-12 text-center text-sm text-[var(--color-primaryText)]">No services found</div>
+            <div className="col-span-full py-12 text-center text-sm text-primaryText">No services found</div>
           )}
         </div>
       </section>
