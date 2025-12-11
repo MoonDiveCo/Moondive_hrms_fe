@@ -1,31 +1,64 @@
-"use client";
-import React from "react";
-import Toggle from "../../public/Dashboard/Toggle.png"
-import Notification from "../../public/Dashboard/Notification.png"
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-export default function MainNavbar({params}) {
-  const pathname = usePathname()
-  const parts = pathname.split("/").filter(Boolean);
-  console.log(parts)
+'use client';
+
+import React, { useRef, useState } from 'react';
+import Image from 'next/image';
+import ProfileSlideOver from './ProfileSlideOver'; // adjust path if needed
+
+export default function MainNavbar() {
+  const [openProfile, setOpenProfile] = useState(false);
+  const avatarRef = useRef(null);
+
+  // NOTE: Replace with actual logged-in user's avatar if you store it in context or props
+  const avatarUrl = '/avatar-placeholder.png'; // fallback
+
+  function openPanel() {
+    setOpenProfile(true);
+  }
+  function closePanel() {
+    setOpenProfile(false);
+    // return focus to avatar button
+    if (avatarRef.current) avatarRef.current.focus();
+  }
+
   return (
-    <div className="w-full px-6 md:px-8 z-2">
-      <div className="flex items-center justify-between h-16">
-        <div className="flex items-center gap-4">
-          
+    <div className='w-full px-6 md:px-8 z-20'>
+      <div className='flex items-center justify-between h-16'>
+        <div className='flex items-center gap-4'>
+          {/* left side - navigation/logo goes here */}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className='flex items-center gap-4'>
           <input
-            type="search"
-            placeholder="Search employee"
-            className="w-52 md:w-80 bg-[#0000000A]   rounded-4xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            type='search'
+            placeholder='Search employee'
+            className='w-52 md:w-80 bg-[#0000000A] rounded-4xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]'
           />
-          <div>         
-             <Image src={Notification} width={20}alt="Notification"/>
-</div>
-                </div>
+
+          {/* avatar button */}
+          <button
+            ref={avatarRef}
+            onClick={openPanel}
+            className='flex items-center gap-2 rounded-full px-1 py-1 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]'
+            aria-expanded={openProfile}
+            aria-controls='profile-slideover'
+          >
+            <img
+              src={'https://i.pravatar.cc/160?img=2'}
+              alt='Profile'
+              className='w-9 h-9 rounded-full object-cover border border-gray-100'
+            />
+          </button>
+        </div>
       </div>
+
+      <ProfileSlideOver
+        isOpen={openProfile}
+        onClose={closePanel}
+        onProfileUpdated={(updated) => {
+          // optional: update local state / show toast
+          console.log('profile updated', updated);
+        }}
+      />
     </div>
   );
 }
