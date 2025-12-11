@@ -144,7 +144,7 @@ const openPreview = (fileUrl) => {
             <option value="">Not Assigned</option>
             {users.map((u) => (
               <option key={u._id} value={u._id}>
-                {u.fullName}
+                {u.firstName} {u.lastName}
               </option>
             ))}
           </select>
@@ -244,7 +244,7 @@ const openPreview = (fileUrl) => {
             disabled={Number(item.specs?.quantity) <= 0}
           >
             <option value="">Select User</option>
-            {users.map((u) => <option key={u._id} value={u._id}>{u.fullName}</option>)}
+            {users.map((u) => <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>)}
           </select>
 
           {Number(item.specs?.quantity) <= 0 && (
