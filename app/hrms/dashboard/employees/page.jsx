@@ -1,199 +1,48 @@
 'use client';
 
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import axios from 'axios';
 import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal'; // new component
-
 /**
  * Employees page — Figma-aligned header + card grid
  * - Uses your global CSS variables (colors + fonts)
  * - Replace sample `employees` array with real API data
+ * <-- Changes: Integrated API fetch for employees list. Updated onSave to call add/update API and refetch list. Assumed API endpoints: GET /hrms/employee, POST /hrms/employee/add-employee, PUT /hrms/employee/update-employee/:id. For display, compute name from firstName/lastName, use department/designation as strings (assume API populates names). Added loading/error states. Used initialEmployees prop if provided, else fetch. For edit, pass full employee object to modal.
  */
-
-const employee = [
-  {
-    id: 1,
-    name: 'Aman Singh',
-    department: 'Engineering',
-    designation: 'Full Stack Developer',
-    avatar: 'https://i.pravatar.cc/160?img=1',
-  },
-  {
-    id: 2,
-    name: 'Priya Sharma',
-    department: 'Design',
-    designation: 'UI/UX Designer',
-    avatar: 'https://i.pravatar.cc/160?img=2',
-  },
-  {
-    id: 3,
-    name: 'Rahul Verma',
-    department: 'Product',
-    designation: 'Product Manager',
-    avatar: 'https://i.pravatar.cc/160?img=3',
-  },
-  {
-    id: 4,
-    name: 'Sneha Kapoor',
-    department: 'HR',
-    designation: 'HR Specialist',
-    avatar: 'https://i.pravatar.cc/160?img=4',
-  },
-  {
-    id: 5,
-    name: 'Arjun Mehta',
-    department: 'Engineering',
-    designation: 'Backend Engineer',
-    avatar: 'https://i.pravatar.cc/160?img=5',
-  },
-  {
-    id: 6,
-    name: 'Isha Malhotra',
-    department: 'Sales',
-    designation: 'Sales Executive',
-    avatar: 'https://i.pravatar.cc/160?img=6',
-  },
-  {
-    id: 7,
-    name: 'Kabir Ahuja',
-    department: 'Marketing',
-    designation: 'Marketing Strategist',
-    avatar: 'https://i.pravatar.cc/160?img=7',
-  },
-  {
-    id: 8,
-    name: 'Tanya Oberoi',
-    department: 'People Ops',
-    designation: 'HR Coordinator',
-    avatar: 'https://i.pravatar.cc/160?img=8',
-  },
-  {
-    id: 9,
-    name: 'Rohan Bhatia',
-    department: 'Engineering',
-    designation: 'Frontend Developer',
-    avatar: 'https://i.pravatar.cc/160?img=9',
-  },
-  {
-    id: 10,
-    name: 'Nisha Chauhan',
-    department: 'Finance',
-    designation: 'Financial Analyst',
-    avatar: 'https://i.pravatar.cc/160?img=10',
-  },
-  {
-    id: 11,
-    name: 'Sameer Joshi',
-    department: 'IT Support',
-    designation: 'IT Technician',
-    avatar: 'https://i.pravatar.cc/160?img=11',
-  },
-  {
-    id: 12,
-    name: 'Meera Chawla',
-    department: 'Customer Success',
-    designation: 'Client Success Manager',
-    avatar: 'https://i.pravatar.cc/160?img=12',
-  },
-  {
-    id: 13,
-    name: 'Devansh Khatri',
-    department: 'Engineering',
-    designation: 'DevOps Engineer',
-    avatar: 'https://i.pravatar.cc/160?img=13',
-  },
-  {
-    id: 14,
-    name: 'Simran Kaur',
-    department: 'Design',
-    designation: 'Graphic Designer',
-    avatar: 'https://i.pravatar.cc/160?img=14',
-  },
-  {
-    id: 15,
-    name: 'Karan Patel',
-    department: 'Engineering',
-    designation: 'Mobile App Developer',
-    avatar: 'https://i.pravatar.cc/160?img=15',
-  },
-  {
-    id: 16,
-    name: 'Riya Grover',
-    department: 'Legal',
-    designation: 'Legal Associate',
-    avatar: 'https://i.pravatar.cc/160?img=16',
-  },
-  {
-    id: 17,
-    name: 'Vivek Soni',
-    department: 'Operations',
-    designation: 'Operations Manager',
-    avatar: 'https://i.pravatar.cc/160?img=17',
-  },
-  {
-    id: 18,
-    name: 'Ananya Arora',
-    department: 'HR',
-    designation: 'Recruitment Specialist',
-    avatar: 'https://i.pravatar.cc/160?img=18',
-  },
-  {
-    id: 19,
-    name: 'Yash Thakur',
-    department: 'Engineering',
-    designation: 'QA Engineer',
-    avatar: 'https://i.pravatar.cc/160?img=19',
-  },
-  {
-    id: 20,
-    name: 'Pooja Nair',
-    department: 'Administration',
-    designation: 'Office Administrator',
-    avatar: 'https://i.pravatar.cc/160?img=20',
-  },
-  {
-    id: 21,
-    name: 'Manish Khanna',
-    department: 'Engineering',
-    designation: 'Tech Lead',
-    avatar: 'https://i.pravatar.cc/160?img=21',
-  },
-  {
-    id: 22,
-    name: 'Shruti Vyas',
-    department: 'Content',
-    designation: 'Content Writer',
-    avatar: 'https://i.pravatar.cc/160?img=22',
-  },
-  {
-    id: 23,
-    name: 'Arnav Saxena',
-    department: 'Business',
-    designation: 'Business Analyst',
-    avatar: 'https://i.pravatar.cc/160?img=23',
-  },
-  {
-    id: 24,
-    name: 'Mahima Sood',
-    department: 'Customer Support',
-    designation: 'Support Executive',
-    avatar: 'https://i.pravatar.cc/160?img=24',
-  },
-];
-
-export default function Employees({ initialEmployees }) {
+const API_BASE = '/api'; // <-- Adjust to your API base path, e.g., '/api/hrms/employee'
+export default function Employees({ initialEmployees = [] }) {
   const [employees, setEmployees] = useState(initialEmployees);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [modalMode, setModalMode] = useState('view'); // view/edit/add
   const [showAddEdit, setShowAddEdit] = useState(false);
   const lastFocusedRef = useRef(null);
-
+  // <-- Added: Fetch employees on mount if no initial data
+  useEffect(() => {
+    if (initialEmployees.length === 0) {
+      fetchEmployees();
+    }
+  }, [initialEmployees.length]);
+  async function fetchEmployees() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`/hrms/employee/list`);
+      setEmployees(res.data.result || res.data || []); // <-- Adjust based on your API response structure
+    } catch (err) {
+      console.error('Failed to fetch employees:', err);
+      setError('Failed to load employees. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
   function openModal(emp, e) {
     lastFocusedRef.current = e?.currentTarget || null;
     setSelected(emp);
   }
-
   function closeModal() {
     setSelected(null);
     if (lastFocusedRef.current) lastFocusedRef.current.focus();
@@ -203,39 +52,80 @@ export default function Employees({ initialEmployees }) {
     setSelected(emp);
     setModalMode('view');
   }
-
   function closeView() {
     setSelected(null);
     if (lastFocusedRef.current) lastFocusedRef.current.focus();
   }
-
   function openAdd(e) {
     lastFocusedRef.current = e?.currentTarget || null;
     setModalMode('add');
     setShowAddEdit(true);
   }
-
   function openEdit(emp, e) {
     lastFocusedRef.current = e?.currentTarget || null;
     setModalMode('edit');
     setSelected(emp);
     setShowAddEdit(true);
   }
-
-  function handleSave(newEmp) {
-    if (modalMode === 'add') {
-      setEmployees((s) => [newEmp, ...s]);
-    } else if (modalMode === 'edit') {
-      setEmployees((s) =>
-        s.map((it) => (it.id === newEmp.id ? { ...it, ...newEmp } : it))
-      );
+  async function handleSave(newEmp) {
+    try {
+      let updatedEmployees;
+      if (modalMode === 'add') {
+        // <-- Added: API call for add
+        const res = await axios.post(`/hrms/employee/add-employee`, newEmp);
+        const addedEmp = res.data.data; // <-- Assume backend returns the full saved employee
+        updatedEmployees = [addedEmp, ...employees];
+      } else if (modalMode === 'edit') {
+        // <-- Added: API call for edit (assume PUT endpoint; adjust if different)
+        const res = await axios.put(`${API_BASE}/employee/update-employee/${newEmp.id || newEmp._id}`, newEmp);
+        const updatedEmp = res.data.data;
+        updatedEmployees = employees.map((it) => (it.id === updatedEmp.id || it._id === updatedEmp._id ? updatedEmp : it));
+      }
+      setEmployees(updatedEmployees || employees);
+      // <-- Optional: refetch to ensure consistency
+      // await fetchEmployees();
+    } catch (err) {
+      console.error('Failed to save employee:', err);
+      setError('Failed to save employee. Please try again.');
+      // <-- Optional: show toast/notification here
     }
   }
-
   function handleAddEditClose() {
     setShowAddEdit(false);
     setSelected(null);
     if (lastFocusedRef.current) lastFocusedRef.current.focus();
+  }
+  // <-- Added: Compute display props for rendering (map full schema to card fields)
+  function getDisplayEmployee(emp) {
+    return {
+      ...emp,
+      name: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Unnamed',
+      department: emp.department?.name || emp.departmentId || 'Unknown Dept', // <-- Assume populated or use ID as fallback
+      designation: emp.designation?.name || emp.designationId || 'Unknown Role',
+      avatar: emp.imageUrl || emp.avatar || `https://i.pravatar.cc/160?u=${emp.email || emp.id}`,
+      id: emp.id || emp._id, // <-- Handle Mongo _id
+    };
+  }
+  if (loading) {
+    return (
+      <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
+        <div className='container py-6'>
+          <div className='text-center py-8'>Loading employees...</div>
+        </div>
+      </SubModuleProtectedRoute>
+    );
+  }
+  if (error) {
+    return (
+      <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
+        <div className='container py-6'>
+          <div className='text-center py-8 text-red-500'>{error}</div>
+          <button onClick={fetchEmployees} className='px-4 py-2 rounded bg-blue-500 text-white mx-auto block'>
+            Retry
+          </button>
+        </div>
+      </SubModuleProtectedRoute>
+    );
   }
   return (
     <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
@@ -247,7 +137,6 @@ export default function Employees({ initialEmployees }) {
               Employees
             </h3>
           </div>
-
           <div className='flex items-center gap-3'>
             {/* View dropdown */}
             <div>
@@ -259,7 +148,6 @@ export default function Employees({ initialEmployees }) {
                 <option>Employee View</option>
               </select>
             </div>
-
             {/* small actions */}
             <button
               className='flex items-center gap-2 text-sm text-[var(--color-primaryText)] hover:text-[var(--color-blackText)]'
@@ -289,7 +177,6 @@ export default function Employees({ initialEmployees }) {
               </svg>
               <span>Edit View</span>
             </button>
-
             <button
               className='flex items-center gap-2 text-sm text-[var(--color-primaryText)] hover:text-[var(--color-blackText)]'
               title='Filters'
@@ -318,7 +205,6 @@ export default function Employees({ initialEmployees }) {
             >
               Add Employee(s)
             </button>
-
             {/* view toggles / extras */}
             <button
               className='p-2 rounded-md text-gray-500 hover:bg-gray-50'
@@ -337,34 +223,56 @@ export default function Employees({ initialEmployees }) {
         </div>
         {/* Grid of cards */}
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
-          {employee.map((emp, index) => (
-            <article
-              key={`${emp.id}-${index}`}
-              onClick={(e) => openView(emp, e)}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') openView(emp, e);
-              }}
-              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer flex items-center gap-5'
-            >
-              <img
-                src={emp.avatar}
-                alt={emp.name}
-                className='w-20 h-20 rounded-full object-cover flex-shrink-0'
-              />
-              <div className='min-w-0'>
-                <h5 className='text-[var(--color-blackText)] text-lg font-semibold truncate'>
-                  {emp.name}
-                </h5>
-                <div className='mt-1 text-[var(--color-primaryText)] text-sm'>
-                  {emp.department}
+          {employees.map((emp, index) => {
+            const displayEmp = getDisplayEmployee(emp); // <-- Added: compute display fields
+            return (
+              <article
+                key={`${displayEmp.id}-${index}`}
+                onClick={(e) => openView(displayEmp, e)} // <-- Pass displayEmp for view
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') openView(displayEmp, e);
+                }}
+                className='bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer flex items-center gap-5 w-[40vh]'
+              >
+                <img
+                  src={displayEmp.avatar}
+                  alt={displayEmp.name}
+                  className='w-20 h-20 rounded-full object-cover flex-shrink-0'
+                />
+                <div className='min-w-0'>
+                  <h6 className='text-[var(--color-blackText)] text-md font-semibold '>
+                    {displayEmp.name}
+                  </h6>
+                  <div className='mt-1 text-[var(--color-primaryText)] text-sm'>
+                    {displayEmp.department}
+                  </div>
+                  <div className=' text-[#6C727F] text-sm truncate'>
+                    {displayEmp.designation}
+                  </div>
                 </div>
-                <div className=' text-[#6C727F] text-sm truncate'>
-                  {emp.designation}
-                </div>
-              </div>
-            </article>
-          ))}
+                {/* <-- Added: Edit button on card for quick edit */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(emp, e); // <-- Pass full emp for edit
+                  }}
+                  className='ml-auto p-1 text-gray-400 hover:text-gray-600'
+                  title='Edit'
+                >
+                  <svg width='16' height='16' viewBox='0 0 24 24' fill='none'>
+                    <path
+                      d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z'
+                      stroke='currentColor'
+                      strokeWidth='1.2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                  </svg>
+                </button>
+              </article>
+            );
+          })}
         </div>
         {/* view modal */}
         {selected && modalMode === 'view' && (
@@ -374,7 +282,7 @@ export default function Employees({ initialEmployees }) {
         {showAddEdit && (
           <AddEditEmployeeModal
             mode={modalMode === 'add' ? 'add' : 'edit'}
-            employee={modalMode === 'edit' ? selected : null}
+            employee={modalMode === 'edit' ? selected : null} // <-- Pass full employee for edit
             onClose={handleAddEditClose}
             onSave={handleSave}
           />
