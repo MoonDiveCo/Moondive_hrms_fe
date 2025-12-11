@@ -131,8 +131,7 @@ export function MenuProvider({ children }) {
           bottom: [],
         },
       },
-
-      CRM: {
+   CRM: {
         SALES: {
           top: [
            
@@ -159,6 +158,7 @@ export function MenuProvider({ children }) {
   ],
           bottom: [] },
       },
+ 
     };
 
     const rules = [];
