@@ -101,19 +101,8 @@ const handleAutoGenerate = async () => {
   } 
 };
   
-const handleSubmit =async () => {
-
+const handleSubmit = () => {
   const fd = new FormData();
-
-  fd.append("category", category);
-  Object.keys(form).forEach((key) => fd.append(`specs.${key}`, form[key]));
-  if (uploadedUrls.productImageUrl) fd.append("productImage", uploadedUrls.productImageUrl);
-  if (uploadedUrls.receiptUrl) fd.append("receipt", uploadedUrls.receiptUrl);
-
-
-  const isValid = await onSave(fd);
-
-  if (!isValid) return;
 
   fd.append("category", category);
 
@@ -127,7 +116,7 @@ const handleSubmit =async () => {
   if (uploadedUrls.receiptUrl)
     fd.append("receipt", uploadedUrls.receiptUrl);
 
-  onclose
+  onSave(fd);
   setForm({});
   setCategory("");
   setUploadedUrls({ productImageUrl: "", receiptUrl: "" });

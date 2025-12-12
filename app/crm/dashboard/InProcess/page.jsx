@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+
 
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
 
-// ✅ helper outside component
 function getDefaultStats() {
   return {
     totalLeads: 0,
@@ -29,6 +31,7 @@ export default function InProcessPage() {
   const [baseLeads, setBaseLeads] = useState([]); 
   const [allLeads, setAllLeads] = useState([]); 
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
 
   const [stats, setStats] = useState(getDefaultStats());
 
@@ -62,21 +65,18 @@ export default function InProcessPage() {
       );
 
       const data = response.data;
-      // console.log("stats API raw:", data);
 
       if (data?.responseCode === 200 || data?.success) {
         const result = data.result || {};
         const leadsFromApi = result.leads || [];
 
-        // normalize for LeadList (_sourceLabel)
+
         const normalized = leadsFromApi.map((l) => ({
           ...l,
           _sourceLabel: l._sourceLabel || l.source || "",
         }));
 
         setBaseLeads(normalized);
-
-        // merge stats with defaults but store normalized leads
         setStats({
           ...getDefaultStats(),
           ...result,
@@ -97,10 +97,10 @@ export default function InProcessPage() {
   };
 
   // apply filters on baseLeads
-  const applyFilters = () => {
+ const applyFilters = () => {
     let filtered = [...baseLeads];
 
-    // grade from tabs
+    // Tabs → grade filter (Hot/Warm/Cold)
     if (filters.grade) {
       filtered = filtered.filter(
         (lead) =>
@@ -108,21 +108,20 @@ export default function InProcessPage() {
       );
     }
 
-    // source filter
+    // Source filter
     if (filters.leadType) {
       if (filters.leadType === "direct") {
         filtered = filtered.filter((l) => l._sourceLabel === "Contact Form");
       } else if (filters.leadType === "chatbot") {
         filtered = filtered.filter((l) => l._sourceLabel === "Chatbot");
       } else if (filters.leadType === "schedule") {
-        filtered = filtered.filter(
-          (l) => l._sourceLabel === "Schedule Meeting"
-        );
+        filtered = filtered.filter((l) => l._sourceLabel === "Schedule Meeting");
       } else if (filters.leadType === "sdrLeads") {
         filtered = filtered.filter((l) => l._sourceLabel === "SDR Leads");
       }
     }
 
+    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(
@@ -136,14 +135,14 @@ export default function InProcessPage() {
       );
     }
 
-    // sort by time
+    // Sort by time
     if (filters.time === "newest") {
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (filters.time === "oldest") {
       filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
 
-    // sort by score
+    // Sort by score (default: highest)
     if (filters.score === "highest") {
       filtered.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     } else if (filters.score === "lowest") {
@@ -152,16 +151,28 @@ export default function InProcessPage() {
       filtered.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     }
 
-    const startIndex = (filters.page - 1) * filters.limit;
-    const pageSlice = filtered.slice(startIndex, startIndex + filters.limit);
-
-    setAllLeads(pageSlice);
+    setAllLeads(filtered);
+   
   };
 
   useEffect(() => {
     fetchStatsAndLeads();
   }, []);
 
+   const handlePageChange = (newPage) => {
+    setPageLoading(true);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      setFilters((prev) => ({ ...prev, page: newPage }));
+      setPageLoading(false);
+    }, 500);
+  };
+
+  // re-apply filters whenever baseLeads or filters change
   useEffect(() => {
     applyFilters();
   }, [baseLeads, filters]);
@@ -173,14 +184,17 @@ export default function InProcessPage() {
       const base = { ...prev, page: 1 };
 
       if (tab === "all") {
-        return { ...base, grade: "" };
+        return { ...base, grade: "" }; // all grades
       }
+
+      // hot / warm / cold tabs
       return {
         ...base,
-        grade: tab.charAt(0).toUpperCase() + tab.slice(1), // hot → Hot
+        grade: tab.charAt(0).toUpperCase() + tab.slice(1),
       };
     });
   };
+
 
   const handleSendEmail = (lead) => {
     setEmailModal({
@@ -219,6 +233,19 @@ export default function InProcessPage() {
       setSendingEmail(false);
     }
   };
+
+  if(loading || pageLoading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full p-6">
@@ -362,9 +389,7 @@ export default function InProcessPage() {
             onRefresh={fetchStatsAndLeads}
             currentPage={filters.page}
             leadsPerPage={filters.limit}
-            onPageChange={(newPage) =>
-              setFilters((prev) => ({ ...prev, page: newPage }))
-            }
+            onPageChange={handlePageChange}
             selectedLeadIds={[]}
             onToggleLeadSelect={undefined}
             onToggleSelectAll={undefined}
