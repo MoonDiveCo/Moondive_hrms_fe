@@ -122,12 +122,13 @@ export default function Operations() {
     () => [
       { id: 'manage-accounts/organization/organization-details', title: 'Manage Accounts', icon: 'onboarding' },
       { id: 'employeeInfo', title: 'Employee Info', icon: 'employee' },
+        { id: '/accounts', title: 'Accounts', icon: 'files' },
       { id: 'leaveTracker', title: 'Leave Tracker', icon: 'leave' },
       { id: 'attendance', title: 'Attendance', icon: 'time' },
       { id: 'shift', title: 'Shift', icon: 'employee' },
       { id: 'timeTracker', title: 'Time Tracker', icon: 'time' },
       { id: 'performance', title: 'Performance', icon: 'performance' },
-      { id: 'filesAll', title: 'Files', icon: 'files' },
+    
     ],
     []
   );
