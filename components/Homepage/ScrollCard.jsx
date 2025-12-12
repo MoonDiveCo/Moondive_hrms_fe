@@ -84,23 +84,24 @@ const OverlappingCards = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [cards.length]);
 
-  const scrollToCard = (index) => {
-    if (!containerRef.current) return;
+ const scrollToCard = (index) => {
+  if (!containerRef.current) return;
 
-    const container = containerRef.current;
-    const containerTop = container.offsetTop;
-    const windowHeight = window.innerHeight;
-    const containerHeight = container.offsetHeight;
+  const container = containerRef.current;
+  const containerTop = container.offsetTop;
+  const windowHeight = window.innerHeight;
+  const containerHeight = container.offsetHeight;
+  const startScroll = windowHeight * 0.1;
+  const endScroll = containerHeight - windowHeight * 0.7;
+  const scrollRange = endScroll - startScroll;
+  const targetProgress = index / cards.length;
+  const targetScroll = containerTop + startScroll + (scrollRange * targetProgress);
 
-    const targetProgress = index / cards.length;
-    const scrollTarget =
-      containerTop + (containerHeight - windowHeight) * targetProgress;
-
-    window.scrollTo({
-      top: scrollTarget,
-      behavior: "smooth",
-    });
-  };
+  window.scrollTo({
+    top: targetScroll,
+    behavior: "smooth",
+  });
+};
 
   const getCardTransform = (index) => {
     const cardsCount = cards.length;

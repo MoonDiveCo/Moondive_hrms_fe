@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Mail,
-  Phone,
-  Eye,
-} from "lucide-react";
+import { Mail, Phone, Eye } from "lucide-react";
 import LeadDetail from "./LeadDetail";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 export default function LeadList({
   leads,
@@ -29,6 +26,9 @@ export default function LeadList({
   const [activeMenu, setActiveMenu] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [gradePopupLead, setGradePopupLead] = useState(null);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [callLead, setCallLead] = useState(null);
+  const [callLoading, setCallLoading] = useState(false);
 
   const menuRef = useRef(null);
 
@@ -61,6 +61,34 @@ export default function LeadList({
     setIsDetailOpen(true);
     onSelectLead && onSelectLead(lead);
   };
+
+const handleConfirmCall = async (e) => {
+  e?.preventDefault();
+
+  setCallLoading(true);
+
+  try {
+    const leadId = callLead._id;
+    
+    await axios.put(
+      `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/${leadId}/schedule-meeting`
+    );
+
+    // Close modal and reset state
+    setShowCallModal(false);
+    setCallLead(null);
+    
+    // Refresh the leads list
+    toast.success("Meeting scheduled successfully");
+    onRefresh && onRefresh();
+    
+  } catch (error) {
+    console.error("Failed to schedule meeting:", error);
+    toast.error('Failed to schedule meeting. Please try again.');
+  } finally {
+    setCallLoading(false);
+  }
+};
 
   const handleStatusUpdate = async (leadId, newStatus) => {
     setUpdatingStatus(true);
@@ -121,16 +149,9 @@ export default function LeadList({
     }
   };
 
-  const getGradeColor = (grade) => {
-    const colors = {
-      Hot: "bg-red-100 text-red-700 border-red-200",
-      Warm: "bg-orange-100 text-orange-700 border-orange-200",
-      Cold: "bg-blue-100 text-blue-700 border-blue-200",
-      Frozen: "bg-gray-100 text-gray-700 border-gray-200",
-    };
-    return colors[grade] || colors["Frozen"];
-  };
-
+ const getGradeColor = () => {
+  return "bg-primary text-white  border-primary";
+};
   const getStatusColor = (status) => {
     const colors = {
       New: "bg-green-100 text-green-700",
@@ -332,7 +353,8 @@ export default function LeadList({
 
                   {/* Source */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-700">
+      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-whiteBackground text-[#FF7B30] border border-primary">
+
                       {lead._sourceLabel || lead.source || "Unknown"}
                     </span>
                   </td>
@@ -374,15 +396,18 @@ export default function LeadList({
                             <Mail className="w-4 h-4" />
                           </button>
 
-                          {lead.phone && (
-                            <a
-                              href={`tel:${lead.phone}`}
+                          
+                            <button
+                              onClick={() => {
+                                setCallLead(lead);
+                                setShowCallModal(true);
+                              }}
                               className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-colors"
                               title="Call"
                             >
                               <Phone className="w-4 h-4" />
-                            </a>
-                          )}
+                            </button>
+                        
                         </>
                       )}
 
@@ -469,8 +494,7 @@ export default function LeadList({
                     if (
                       pageNum === 1 ||
                       pageNum === totalPages ||
-                      (pageNum >= currentPage - 1 &&
-                        pageNum <= currentPage + 1)
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
                     ) {
                       return (
                         <button
@@ -525,6 +549,46 @@ export default function LeadList({
           </div>
         )}
       </div>
+
+      {showCallModal && callLead && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold mb-2">Schedule Meeting</h3>
+
+            <p className="text-sm text-gray-900 mb-5">
+              Are you sure you want to schedule a meeting with{" "}
+              <span className="font-medium">
+                {callLead.firstName} {callLead.lastName}
+              </span>
+              ?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCallModal(false);
+                  setCallLead(null);
+                }}
+                className="px-4 py-2 border rounded-md"
+              >
+                No
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmCall}
+                disabled={callLoading}
+                className={`px-4 py-2 rounded-md text-white ${
+                  callLoading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {callLoading ? "Processing..." : "Yes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lead Detail Modal */}
       {isDetailOpen && selectedLead && (
@@ -587,7 +651,7 @@ function LeadGradePopup({ lead, onClose }) {
             ✕
           </button>
         </div>
-
+        
         {/* Lead info */}
         <div className="mb-4">
           <div className="text-sm text-gray-500">Lead</div>
@@ -603,9 +667,7 @@ function LeadGradePopup({ lead, onClose }) {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <div className="text-xs text-gray-500">Score</div>
-            <div className="text-2xl font-bold text-gray-900">
-              {score}/100
-            </div>
+            <div className="text-2xl font-bold text-gray-900">{score}/100</div>
           </div>
           <div className="text-right">
             <div className="text-xs text-gray-500">Grade</div>
@@ -636,7 +698,9 @@ function LeadGradePopup({ lead, onClose }) {
           <ul className="space-y-1 text-sm">
             <li
               className={`flex justify-between ${
-                isCurrent("Hot") ? "font-semibold text-red-600" : "text-gray-700"
+                isCurrent("Hot")
+                  ? "font-semibold text-red-600"
+                  : "text-gray-700"
               }`}
             >
               <span>Hot</span>
