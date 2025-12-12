@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
@@ -29,6 +30,7 @@ export default function FinalizedPage() {
   const [baseLeads, setBaseLeads] = useState([]); 
   const [allLeads, setAllLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [stats, setStats] = useState(getDefaultStats());
 
   const [filters, setFilters] = useState({
@@ -148,6 +150,19 @@ export default function FinalizedPage() {
     applyFilters();
   }, [baseLeads, filters]);
 
+    const handlePageChange = (newPage) => {
+    setPageLoading(true);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      setFilters((prev) => ({ ...prev, page: newPage }));
+      setPageLoading(false);
+    }, 500);
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setFilters((prev) => {
@@ -156,6 +171,20 @@ export default function FinalizedPage() {
       return { ...base, grade: tab.charAt(0).toUpperCase() + tab.slice(1) };
     });
   };
+
+
+   if(loading || pageLoading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full p-6">
@@ -270,7 +299,7 @@ export default function FinalizedPage() {
             onRefresh={fetchStatsAndLeads}
             currentPage={filters.page}
             leadsPerPage={filters.limit}
-            onPageChange={(newPage) => setFilters((prev) => ({ ...prev, page: newPage }))}
+            onPageChange={handlePageChange}
             selectedLeadIds={[]}
             onToggleLeadSelect={undefined}
             onToggleSelectAll={undefined}
