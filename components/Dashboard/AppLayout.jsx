@@ -96,8 +96,8 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
       <aside className="w-[19vw] max-w-full bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start overflow-hidden md:block ">
         <Sidebar topItems={topItems} bottomItems={bottomItems} />
       </aside>
-      <div className="grid grid-cols-1  w-full z-10">
-        <div className="sticky top-0">
+      <div className="grid grid-cols-1  h-full w-full z-10">
+        <div className="sticky top-0 h-16">
           {showMainNavbar && <header className="bg-white border-b border-gray-200 h-16 flex items-center  ">
             <MainNavbar />
           </header>}
