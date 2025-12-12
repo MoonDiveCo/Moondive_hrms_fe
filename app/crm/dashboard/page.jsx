@@ -19,40 +19,45 @@ export default function LeadDashboard() {
   const [topLeads, setTopLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
-  useEffect(() => {
-    const fetchTopLeads = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads?page=1&limit=100`
-        );
-        const data = await res.json();
+useEffect(() => {
+  const fetchTopLeads = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads`,
+        {
+          params: { page: 1, limit: 100 },
+        }
+      );
 
-        const results = Array.isArray(data?.result?.leads)
-          ? data.result.leads
-          : Array.isArray(data?.result)
-          ? data.result
-          : [];
+      const data = res.data;
 
-        const combined = results.map((lead) => ({
-          ...lead,
-          leadScore: lead.leadScore || 0,
-          firstName: lead.fullName?.split(" ")[0] || lead.firstName || "",
-          lastName:
-            lead.fullName?.split(" ").slice(1).join(" ") || lead.lastName || "",
-        }));
+      const results = Array.isArray(data?.result?.leads)
+        ? data.result.leads
+        : Array.isArray(data?.result)
+        ? data.result
+        : [];
 
-        const sortedTop = [...combined]
-          .sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0))
-          .slice(0, 10);
+      const combined = results.map((lead) => ({
+        ...lead,
+        leadScore: lead.leadScore || 0,
+        firstName: lead.fullName?.split(" ")[0] || lead.firstName || "",
+        lastName:
+          lead.fullName?.split(" ").slice(1).join(" ") || lead.lastName || "",
+      }));
 
-        setTopLeads(sortedTop);
-      } catch (err) {
-        console.error("Error fetching top leads for overview:", err);
-      }
-    };
+      const sortedTop = [...combined]
+        .sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0))
+        .slice(0, 10);
 
-    fetchTopLeads();
-  }, []);
+      setTopLeads(sortedTop);
+    } catch (err) {
+      console.error("Error fetching top leads for overview:", err);
+    }
+  };
+
+  fetchTopLeads();
+}, []);
+
 
   const handleSendBulkEmail = (leadsList) => {
     console.log("Send bulk email to:", leadsList);
@@ -277,7 +282,6 @@ export default function LeadDashboard() {
           headers: { "Content-Type": "application/json" },
         }
       );
-
       const data = response.data;
 
       if (data?.responseCode === 200 || data?.success) {

@@ -92,8 +92,6 @@ export default function LeadDashboard() {
       setLoading(false);
     }
   };
-
-  // ---------- BULK STATUS UPDATE ----------
   const bulkUpdateStatus = async (newStatus) => {
     if (selectedLeadIds.length === 0) {
       toast.info("Please select at least one lead");
@@ -539,7 +537,11 @@ export default function LeadDashboard() {
           </div>
         </div>
 
-        <LeadStats stats={stats} />
+        <LeadStats 
+  stats={stats} 
+  hideSections={["trend", "status", "funnel", "insights"]}
+/>
+
       </div>
     </div>
   );
