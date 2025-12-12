@@ -3,9 +3,11 @@
 import React, { useRef, useState } from 'react';
 import ProfileSlideOver from './ProfileSlideOver'; // adjust path if needed
 import { useRouter } from 'next/navigation';
+import { useTheme } from "next-themes";
 
-export default function MainNavbar() {
-  const router = useRouter();
+export default function MainNavbar({setCollapsed, collapsed}) {
+    const { theme, setTheme } = useTheme();
+    const router = useRouter();
   const [openProfile, setOpenProfile] = useState(false);
   const avatarRef = useRef(null);
 
@@ -25,12 +27,32 @@ export default function MainNavbar() {
     <div className='w-full px-6 md:px-8 z-20'>
       <div className='flex items-center justify-between h-16'>
         <div className='flex items-center gap-4'>
+                    <button
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            title={collapsed ? "Expand" : "Collapse"}
+          >
+            {/* chevron icon rotates based on state */}
+            <svg
+              className={`w-5 h-5 transform transition-transform duration-200 ${
+                collapsed ? "rotate-180" : "rotate-0"
+              }`}
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M6 4L14 10L6 16V4Z" fill="currentColor" />
+            </svg>
+          </button>
             <button
       onClick={() => router.back()}
       className="px-4 py-2 text-xs rounded-full bg-white border border-primary  hover:bg-primary text-primary hover:text-white"
     >
       ← Back
     </button>
+
         </div>
 
         <div className='flex items-center gap-4'>
