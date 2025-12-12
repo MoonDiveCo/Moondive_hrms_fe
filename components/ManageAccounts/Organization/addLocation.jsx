@@ -161,42 +161,42 @@ export default function AddLocationModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Type *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Type <span className="text-red-500">*</span></label>
               <input name="addressType" value={form.addressType} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Label *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Label <span className="text-red-500">*</span></label>
               <input name="addressLabel" value={form.addressLabel} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Country *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Country <span className="text-red-500">*</span></label>
               <input name="country" value={form.country} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">State *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">State <span className="text-red-500">*</span></label>
               <input name="state" value={form.state} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">City *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">City <span className="text-red-500">*</span></label>
               <input name="city" value={form.city} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Locality *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Locality <span className="text-red-500">*</span></label>
               <input name="locality" value={form.locality} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Postal Code *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Postal Code <span className="text-red-500">*</span></label>
               <input name="postalCode" value={form.postalCode} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Time Zone *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Time Zone </label>
               <input name="timeZone" value={form.timeZone} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" placeholder="e.g. Asia/Kolkata" />
             </div>
 
@@ -222,7 +222,7 @@ export default function AddLocationModal({
             </button>
 
             {!isViewMode && (
-              <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 text-white bg-orange-500 rounded-md hover:bg-orange-600">
+              <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 text-white bg-orange-500 rounded-md">
                 {loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Location" : "Add Location")}
               </button>
             )}

@@ -109,7 +109,7 @@ export default function Locations() {
         <div className="p-6 border-b border-gray-200 flex flex-row justify-between items-center">
           <h4 className="text-lg font-semibold text-gray-900">Locations</h4>
           <div className="flex gap-2">
-            <button onClick={openAdd} className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded hover:bg-orange-600">
+            <button onClick={openAdd} className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded ">
               Add Location
             </button>
           </div>
