@@ -4,7 +4,7 @@ import { AuthProvider } from "@/context/authContext";
 import { RBACProvider } from "@/context/rbacContext";
 import { WebVitals } from "@/components/WebVitals";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
-
+import { Toaster } from 'sonner';
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -40,6 +40,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+          <Toaster richColors position="top-right" />
         {/* Skip to main content link for accessibility */}
         <a href="#main-content" className="skip-to-main">
           Skip to main content

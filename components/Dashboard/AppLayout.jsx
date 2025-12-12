@@ -14,7 +14,7 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   const [bottomItems, setBottomItems] = useState([]);
   const accessPermissions = menus.rules ?? [];
   const subSet = new Set();
-
+const [collapsed, setCollapsed] = useState(false); 
   useEffect(() => {
     if (authLoading || rbacLoading) return;
 
@@ -91,19 +91,33 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   ]);
 
 
-  return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden flex bg-gray-50">
-      <aside className="w-[19vw] max-w-full bg-white border-r border-gray-200 flex-shrink-0 sticky top-0 h-screen  self-start overflow-hidden md:block ">
-        <Sidebar topItems={topItems} bottomItems={bottomItems} />
-      </aside>
-      <div className="grid grid-cols-1  h-full w-full z-10">
-        <div className="sticky top-0 h-16">
-          {showMainNavbar && <header className="bg-white border-b border-gray-200 h-16 flex items-center  ">
-            <MainNavbar />
-          </header>}
-        </div>
-        <main className="flex-1 hide-scrollbar w-[80vw] max-w-full overflow-hidden sticky top-2">{children}</main>
+return (
+  <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
+    <aside
+      className={`${
+        collapsed ? "w-20" : "w-[19vw]"
+      } max-w-full bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen self-start overflow-hidden md:block transition-all duration-200`}
+    >
+      <Sidebar topItems={topItems} bottomItems={bottomItems} collapsed={collapsed} />
+    </aside>
+
+    <div className="grid grid-rows-[auto_1fr] h-screen w-full z-10">
+      <div className="sticky top-0 z-30">
+        {showMainNavbar && (
+          <header className="bg-white border-b border-gray-200 h-16 flex items-center">
+            <MainNavbar setCollapsed={setCollapsed} collapsed={collapsed} />
+          </header>
+        )}
       </div>
+
+      <main
+        className="flex-1 w-full max-w-full overflow-auto p-4"
+        style={{ height: "calc(100vh - 4rem)" }} 
+      >
+        {children}
+      </main>
     </div>
-  );  
+  </div>
+);
+ 
 }

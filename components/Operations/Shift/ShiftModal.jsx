@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import BaseModal from '../../../components/Common/Modal';
+import { toast, Toaster } from 'sonner';
 
 export default function ShiftModal({
-  mode = 'add',      
+  mode = 'add',
   shift = null,
   isVisible = false,
   onClose,
@@ -31,8 +32,8 @@ export default function ShiftModal({
         name: shift.name || '',
         startTime: shift.startTime || '',
         endTime: shift.endTime || '',
-        beforeShiftStart: shift.shiftMargin?.beforeShiftStart || '',
-        afterShiftEnd: shift.shiftMargin?.afterShiftEnd || '',
+        beforeShiftStart: shift.shiftMargin?.beforeShiftStart ?? '',
+        afterShiftEnd: shift.shiftMargin?.afterShiftEnd ?? '',
       });
     } else {
       setForm({
@@ -50,23 +51,90 @@ export default function ShiftModal({
     setForm((s) => ({ ...s, [name]: value }));
   }
 
+  const to12Hour = (hour24, minute) => {
+    const period = hour24 >= 12 ? 'PM' : 'AM';
+    let h12 = hour24 % 12;
+    if (h12 === 0) h12 = 12;
+    return `${String(h12).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${period}`;
+  };
+
+  function normalizeTime(value) {
+    if (!value && value !== 0) return null;
+    const v = String(value).trim();
+
+    const m = v.match(/^(\d{1,2}):([0-5][0-9])\s*(AM|PM|am|pm)?$/);
+    if (!m) return null;
+
+    let hour = parseInt(m[1], 10);
+    const minute = parseInt(m[2], 10);
+    const ampm = m[3];
+
+    if (ampm) {
+      const up = ampm.toUpperCase();
+      if (hour < 1 || hour > 12) return null;
+      if (up === 'AM') {
+        if (hour === 12) hour = 0;
+      } else {
+        if (hour !== 12) hour = hour + 12;
+      }
+      return to12Hour(hour, minute);
+    } else {
+      if (hour < 0 || hour > 23) return null;
+      return to12Hour(hour, minute);
+    }
+  }
+
+  function parseMargin(val) {
+    if (val === '' || val === null || val === undefined) return undefined;
+    const s = String(val).trim();
+    if (!/^\d+$/.test(s)) return NaN;
+    const n = Number(s);
+    if (!Number.isInteger(n) || n < 0 || n > 1440) return NaN;
+    return n;
+  }
+
   async function handleSubmit() {
     setError('');
-    if (!form.name.trim()) return setError('Name is required');
-    if (!form.startTime.trim()) return setError('Start time is required');
-    if (!form.endTime.trim()) return setError('End time is required');
 
+    if (!form.name.trim()) {
+      setError('Name is required');
+      toast.error('Name is required');
+      return;
+    }
+    const normalizedStart = normalizeTime(form.startTime || '');
+    const normalizedEnd = normalizeTime(form.endTime || '');
+
+    if (!normalizedStart) {
+      setError('Start time is invalid. Use HH:MM AM/PM (e.g. 09:00 AM) or 24h 13:30');
+      toast.error('Start time is invalid. Use HH:MM AM/PM (e.g. 09:00 AM) or 24h 13:30');
+      return;
+    }
+    if (!normalizedEnd) {
+      setError('End time is invalid. Use HH:MM AM/PM (e.g. 06:00 PM) or 24h 18:00');
+      toast.error('End time is invalid. Use HH:MM AM/PM (e.g. 06:00 PM) or 24h 18:00');
+      return;
+    }
+
+    const before = parseMargin(form.beforeShiftStart);
+    const after = parseMargin(form.afterShiftEnd);
+    if (Number.isNaN(before) || Number.isNaN(after)) {
+      setError('Shift margin must be whole minutes between 0 and 1440');
+      toast.error('Shift margin must be whole minutes between 0 and 1440');
+      return;
+    }
     const payload = {
-      name: form.name,
-      startTime: form.startTime,
-      endTime: form.endTime,
+      name: form.name.trim(),
+      startTime: normalizedStart,
+      endTime: normalizedEnd,
       shiftMargin: {
-        beforeShiftStart: form.beforeShiftStart || undefined,
-        afterShiftEnd: form.afterShiftEnd || undefined,
+        ...(before !== undefined ? { beforeShiftStart: before } : {}),
+        ...(after !== undefined ? { afterShiftEnd: after } : {}),
       },
     };
 
     setLoading(true);
+    const tId = toast.loading(isEdit ? 'Saving shift...' : 'Adding shift...');
+
     try {
       if (isEdit && shift && shift._id) {
         const res = await axios.put(
@@ -75,34 +143,19 @@ export default function ShiftModal({
         );
         const updated = res?.data?.result || res?.data;
         onSaved && onSaved(updated);
+        toast.success('Shift updated', { id: tId });
       } else {
         const res = await axios.post('/hrms/organization/add-shift', payload);
         const created = res?.data?.result || res?.data;
         onSaved && onSaved(created);
+        toast.success('Shift added', { id: tId });
       }
       onClose && onClose();
     } catch (err) {
       console.error('Error saving shift', err);
-      const msg =
-        err?.response?.data?.message || 'Failed to save shift';
+      const msg = err?.response?.data?.message || 'Failed to save shift';
       setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!shift?._id) return;
-    const ok = window.confirm('Delete this shift?');
-    if (!ok) return;
-    setLoading(true);
-    try {
-      await axios.delete(`/hrms/organization/delete-shift/${shift._id}`);
-      onDeleted && onDeleted(shift._id);
-      onClose && onClose();
-    } catch (err) {
-      console.error('Delete failed', err);
-      setError('Failed to delete shift');
+      toast.error(msg, { id: tId });
     } finally {
       setLoading(false);
     }
@@ -118,6 +171,27 @@ export default function ShiftModal({
     ? 'Read-only shift details'
     : 'Provide details for this shift';
 
+    async function handleDelete() {
+  if (!shift?._id) return;
+ 
+
+  setLoading(true);
+  const tId = toast.loading('Deleting shift...');
+
+  try {
+    await axios.delete(`/hrms/organization/delete-shift/${shift._id}`);
+    onDeleted && onDeleted(shift._id);
+    toast.success('Shift deleted', { id: tId });
+    onClose && onClose();
+  } catch (err) {
+    console.error('Delete failed', err);
+    const msg = err?.response?.data?.message || 'Failed to delete shift';
+    setError(msg);
+    toast.error(msg, { id: tId });
+  } finally {
+    setLoading(false);
+  }
+}
   const rightHeaderContent = isEdit ? (
     <button
       onClick={handleDelete}
@@ -136,6 +210,8 @@ export default function ShiftModal({
       rightHeaderContent={rightHeaderContent}
       maxWidth="800px"
     >
+      <Toaster richColors position="top-right" />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
@@ -160,8 +236,9 @@ export default function ShiftModal({
               onChange={(e) => updateField('startTime', e.target.value)}
               readOnly={isView}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)]"
-              placeholder="e.g. 09:00 AM"
+              placeholder="e.g. 09:00 AM or 13:30"
             />
+            <div className="text-xs text-gray-400 mt-1">Format: <strong>HH:MM AM/PM</strong> (or 24h <strong>HH:MM</strong>)</div>
           </div>
 
           <div>
@@ -173,8 +250,9 @@ export default function ShiftModal({
               onChange={(e) => updateField('endTime', e.target.value)}
               readOnly={isView}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)]"
-              placeholder="e.g. 06:00 PM"
+              placeholder="e.g. 06:00 PM or 18:00"
             />
+            <div className="text-xs text-gray-400 mt-1">Format: <strong>HH:MM AM/PM</strong> (or 24h <strong>HH:MM</strong>)</div>
           </div>
         </div>
 
@@ -192,6 +270,7 @@ export default function ShiftModal({
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)]"
               placeholder="e.g. 15"
             />
+            <div className="text-xs text-gray-400 mt-1">Whole minutes, 0–1440</div>
           </div>
 
           <div>
@@ -207,6 +286,7 @@ export default function ShiftModal({
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--color-primary)]"
               placeholder="e.g. 30"
             />
+            <div className="text-xs text-gray-400 mt-1">Whole minutes, 0–1440</div>
           </div>
 
           {error && <div className="text-sm text-red-600">{error}</div>}
