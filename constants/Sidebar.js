@@ -31,7 +31,7 @@ export function MenuProvider({ children }) {
       HRMS: {
         SUPER_ADMIN: {
           top: [
-            { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
+            // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
             { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
@@ -173,13 +173,9 @@ export function MenuProvider({ children }) {
             {
               label: "Finalised",
               icon: TimeTrackerIcon,
-              href: "/crm/dashboard/final-schedule",
+              href: "/crm/dashboard/Finalised",
             },
-            // {
-            //   label: "Win/Lose Status",
-            //   icon: PerformanceIcon,
-            //   href: "/crm/dashboard/status",
-            // },
+            
           ],
           bottom: [],
         },
