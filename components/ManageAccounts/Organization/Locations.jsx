@@ -19,7 +19,6 @@ export default function Locations() {
     try {
       const res = await axios.get('/hrms/organization/get-allLocations');
       const data = res?.data?.result || res?.data || [];
-      console.log("[Locations] fetched list:", data);
       setLocations(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error while fetching locations', err);
@@ -122,7 +121,7 @@ export default function Locations() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City / Locality</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Postal Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Zone</th>
@@ -138,7 +137,7 @@ export default function Locations() {
                   <tr key={loc._id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} onClick={(e) => openView(loc, e)} style={{ cursor: 'pointer' }}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{loc.name || "-"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{loc.addressType || "-"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{loc.addressLabel || "-"}</td>
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{loc.addressLabel || "-"}</td> */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{loc.city ? `${loc.city} / ${loc.locality || "-"}` : "-"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{loc.postalCode || "-"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{loc.timeZone || "-"}</td>

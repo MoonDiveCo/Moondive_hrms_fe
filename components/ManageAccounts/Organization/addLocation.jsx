@@ -161,12 +161,12 @@ export default function AddLocationModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Type <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Type *</label>
               <input name="addressType" value={form.addressType} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Label <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Label *</label>
               <input name="addressLabel" value={form.addressLabel} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
             </div>
 
