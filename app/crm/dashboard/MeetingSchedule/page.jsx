@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Search, MoreVertical } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
-
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
 
@@ -28,6 +28,7 @@ export default function MeetingSchedulingPage() {
   const [baseLeads, setBaseLeads] = useState([]); // full batch used for filtering + stats
   const [allLeads, setAllLeads] = useState([]); // filtered slice passed to LeadList
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false); // NEW: for pagination loading
   const [stats, setStats] = useState(getDefaultStats());
 
   const [filters, setFilters] = useState({
@@ -136,7 +137,18 @@ export default function MeetingSchedulingPage() {
     // update filtered leads (we let LeadList handle pagination using filters.page + filters.limit)
     setAllLeads(filtered);
   };
-
+  const handlePageChange = (newPage) => {
+    setPageLoading(true);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      setFilters((prev) => ({ ...prev, page: newPage }));
+      setPageLoading(false);
+    }, 500);
+  };
   // ----- selection handlers (checkboxes) -----
   const handleToggleLeadSelect = (leadId) => {
     setSelectedLeadIds((prev) =>
@@ -254,6 +266,20 @@ export default function MeetingSchedulingPage() {
       return { ...base, grade: tab.charAt(0).toUpperCase() + tab.slice(1) };
     });
   };
+
+
+   if (loading || pageLoading) {
+      return (
+        <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm z-50'>
+          <DotLottieReact
+            src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+            loop
+            autoplay
+            style={{ width: 100, height: 100, alignItems: 'center' }}
+          />
+        </div>
+      );
+    }
 
   return (
     <div className="w-full p-6">
@@ -381,7 +407,7 @@ export default function MeetingSchedulingPage() {
             onRefresh={fetchStatsAndLeads}
             currentPage={filters.page}
             leadsPerPage={filters.limit}
-            onPageChange={(newPage) => setFilters((prev) => ({ ...prev, page: newPage }))}
+            onPageChange={handlePageChange}
             selectedLeadIds={selectedLeadIds}
             onToggleLeadSelect={handleToggleLeadSelect}
             onToggleSelectAll={handleToggleSelectAll}
