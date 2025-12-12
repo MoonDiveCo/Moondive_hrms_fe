@@ -31,6 +31,7 @@ export default function InProcessPage() {
   const [baseLeads, setBaseLeads] = useState([]); 
   const [allLeads, setAllLeads] = useState([]); 
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
 
   const [stats, setStats] = useState(getDefaultStats());
 
@@ -151,11 +152,25 @@ export default function InProcessPage() {
     }
 
     setAllLeads(filtered);
+   
   };
 
   useEffect(() => {
     fetchStatsAndLeads();
   }, []);
+
+   const handlePageChange = (newPage) => {
+    setPageLoading(true);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      setFilters((prev) => ({ ...prev, page: newPage }));
+      setPageLoading(false);
+    }, 500);
+  };
 
   // re-apply filters whenever baseLeads or filters change
   useEffect(() => {
@@ -219,7 +234,7 @@ export default function InProcessPage() {
     }
   };
 
-  if(loading){
+  if(loading || pageLoading){
     return(
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
         <DotLottieReact
@@ -374,9 +389,7 @@ export default function InProcessPage() {
             onRefresh={fetchStatsAndLeads}
             currentPage={filters.page}
             leadsPerPage={filters.limit}
-            onPageChange={(newPage) =>
-              setFilters((prev) => ({ ...prev, page: newPage }))
-            }
+            onPageChange={handlePageChange}
             selectedLeadIds={[]}
             onToggleLeadSelect={undefined}
             onToggleSelectAll={undefined}

@@ -3,14 +3,9 @@ import { useEffect, useState } from "react";
 import { Search, MoreVertical } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
-
-import LeadList from "../../../../components/CrmDashboard/LeadList";
-<<<<<<< HEAD
-import { getLeadsFromAllSources } from "../../../../services/leadService";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-=======
+import LeadList from "../../../../components/CrmDashboard/LeadList";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
->>>>>>> 527206717160ce665832ae1a8403d6b2b1340fc9
 
 function getDefaultStats() {
   return {
@@ -33,6 +28,7 @@ export default function MeetingSchedulingPage() {
   const [baseLeads, setBaseLeads] = useState([]); // full batch used for filtering + stats
   const [allLeads, setAllLeads] = useState([]); // filtered slice passed to LeadList
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false); // NEW: for pagination loading
   const [stats, setStats] = useState(getDefaultStats());
 
   const [filters, setFilters] = useState({
@@ -141,7 +137,18 @@ export default function MeetingSchedulingPage() {
     // update filtered leads (we let LeadList handle pagination using filters.page + filters.limit)
     setAllLeads(filtered);
   };
-
+  const handlePageChange = (newPage) => {
+    setPageLoading(true);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      setFilters((prev) => ({ ...prev, page: newPage }));
+      setPageLoading(false);
+    }, 500);
+  };
   // ----- selection handlers (checkboxes) -----
   const handleToggleLeadSelect = (leadId) => {
     setSelectedLeadIds((prev) =>
@@ -259,6 +266,20 @@ export default function MeetingSchedulingPage() {
       return { ...base, grade: tab.charAt(0).toUpperCase() + tab.slice(1) };
     });
   };
+
+
+   if (loading || pageLoading) {
+      return (
+        <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm z-50'>
+          <DotLottieReact
+            src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+            loop
+            autoplay
+            style={{ width: 100, height: 100, alignItems: 'center' }}
+          />
+        </div>
+      );
+    }
 
   return (
     <div className="w-full p-6">
@@ -386,7 +407,7 @@ export default function MeetingSchedulingPage() {
             onRefresh={fetchStatsAndLeads}
             currentPage={filters.page}
             leadsPerPage={filters.limit}
-            onPageChange={(newPage) => setFilters((prev) => ({ ...prev, page: newPage }))}
+            onPageChange={handlePageChange}
             selectedLeadIds={selectedLeadIds}
             onToggleLeadSelect={handleToggleLeadSelect}
             onToggleSelectAll={handleToggleSelectAll}
@@ -411,125 +432,6 @@ function StatCard({ label, value, change, changeLabel, isPercentage = false }) {
       <div className="text-xs text-primary-500">
         <span className="font-medium text-primary-800">{isPercentage ? `${displayChange}%` : displayChange}</span>{" "}
         {changeLabel}
-      </div>
-    </div>
-  );
-}
-
-export default function MeetingSchedulingPage() {
-  const [leads, setLeads] = useState([]);
-  const [stats, setStats] = useState(getDefaultStats());
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const leadsPerPage = 10;
-
-  // We'll fetch two things:
-  // 1) paginated leads for the list (current page)
-  // 2) a larger set (or all returned leads) to compute stats
-  const fetchMeetingLeads = async (page = 1) => {
-    try {
-      setLoading(true);
-
-      // 1) paginated list for the visible table
-      const paginatedResult = await getLeadsFromAllSources({
-        status: "Contacted",
-        page,
-        limit: leadsPerPage,
-      });
-
-      const pageLeads = paginatedResult?.allLeads || [];
-      setLeads(pageLeads);
-
-      // 2) fetch a larger batch for stats (adjust limit if you expect >1000 leads)
-      // If your service supports passing limit: 0 or a very large number to get all leads,
-      // use that. Here we request 1000 as a reasonable default.
-      const statsResult = await getLeadsFromAllSources({
-        status: "Contacted",
-        page: 1,
-        limit: 1000,
-      });
-
-      const allLeads = statsResult?.allLeads || pageLeads;
-      const computed = computeStatsFromLeads(allLeads);
-      setStats(computed);
-    } catch (err) {
-      console.error("❌ Error fetching meeting leads:", err);
-      setLeads([]);
-      setStats(getDefaultStats());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMeetingLeads(currentPage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage]);
-if(loading){
-    return(
-      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
-        <DotLottieReact
-          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
-          loop
-          autoplay
-          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
-        />
-      </div>
-    )
-  }
-  return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h4 className="text-primaryText font-semibold">Scheduled Meetings</h4>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          label="Scheduled (Contacted)"
-          value={stats.totalLeads}
-          change={stats.leadsThisWeek}
-          changeLabel="this week"
-        />
-        <StatCard
-          label="Hot Leads (Contacted)"
-          value={stats.hotLeads}
-          change={stats.hotLeadsPercentage}
-          changeLabel="of contacted"
-          isPercentage
-        />
-        <StatCard
-          label="Avg Lead Score"
-          value={Math.round(stats.averageScore || 0)}
-          change={stats.scoreImprovement || 0}
-          changeLabel="vs last week"
-        />
-        <StatCard
-          label="This Week (Contacted)"
-          value={stats.leadsThisWeek}
-          change={stats.weekOverWeekGrowth || 0}
-          changeLabel="growth"
-          isPercentage
-        />
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="xl:max-w-[75vw] 2xl:max-w-[82vw]">
-          <LeadList
-            leads={leads}
-            loading={loading}
-            onSelectLead={() => {}}
-            sendEmail={() => {}}
-            onRefresh={() => fetchMeetingLeads(currentPage)}
-            currentPage={currentPage}
-            leadsPerPage={leadsPerPage}
-            onPageChange={(p) => setCurrentPage(p)}
-            selectedLeadIds={[]}
-            onToggleLeadSelect={() => {}}
-            onToggleSelectAll={() => {}}
-            showContactActions={false}
-            showSelection={true}
-          />
-        </div>
       </div>
     </div>
   );
