@@ -3,17 +3,20 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MANAGE_ACCOUNTS_HEADER } from "@/constants/NestedDashboard";
-
+import { MANAGE_ACCOUNTS_HEADER, LEAVE_TRACKER_HEADER } from "@/constants/NestedDashboard";
+import { DASHBOARD_HEADERS } from "@/constants/NestedDashboard";
 
 
 export default function NestedAppLayout({ children }) {
   const pathname = usePathname();
   const parts = pathname.split("/").filter(Boolean);
-  const headerKey = parts[3] || "users";
+ const serviceKey = parts[3];
+  const headerKey = parts[4];
+  const headerList = DASHBOARD_HEADERS[serviceKey] || [];
 
   const activeHeader =
-    MANAGE_ACCOUNTS_HEADER.find((h) => h.key === headerKey) || MANAGE_ACCOUNTS_HEADER[0];
+    headerList.find((h) => h.key === headerKey) || headerList[0];
+const showSidebar = activeHeader?.layoutType === "SIDEBAR";
 
   return (
     <div className="px-6 md:px-8 py-6 hide-scrollbar">
@@ -26,21 +29,22 @@ export default function NestedAppLayout({ children }) {
               </h3>
 
               <ul className="mt-2 flex items-center gap-5 text-sm font-normal text-[#464F60]">
-                {MANAGE_ACCOUNTS_HEADER.map((header) => {
+                {headerList.map((header) => {
                   const isActive = header.key === activeHeader.key;
                   const defaultSection = header.sections[0];
-                  const href = `${header.basePath}/${defaultSection.slug}`;
+                  
+                  const href = activeHeader?.layoutType === "SIDEBAR"?`${header.basePath}/${defaultSection.slug}`:`${header.basePath}`;
 
                   return (
                     <li
                       key={header.key}
-                      className="pr-3 border-r last:border-r-0 border-gray-300"
+                      className="pr-2 border-gray-300"
                     >
                       <Link
                         href={href}
                         className={
                           isActive
-                            ? "text-primary font-semibold"
+                            ? "text-primary font-semibold border-b-2 border-primary pb-2"
                             : "text-primaryText hover:text-primary"
                         }
                       >
@@ -54,7 +58,7 @@ export default function NestedAppLayout({ children }) {
           </div>
         </div>
         <div className="flex-1 flex gap-6">
-          <aside className="w-64 sticky top-30 h-[65vh]">
+          {showSidebar &&(<aside className="w-64 sticky top-30 h-[65vh]">
             <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4 overflow-auto">
               <ul className="space-y-0 text-sm">
                 {activeHeader.sections.map((section) => {
@@ -81,7 +85,7 @@ export default function NestedAppLayout({ children }) {
                 })}
               </ul>
             </div>
-          </aside>
+          </aside>)}
 
           <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-[65vh]">{children}</section>
         </div>
