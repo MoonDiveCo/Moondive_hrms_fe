@@ -1,9 +1,10 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { Search, MoreVertical } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
 
@@ -24,11 +25,10 @@ function getDefaultStats() {
   };
 }
 
-export default function MeetingSchedulingPage() {
-  const [baseLeads, setBaseLeads] = useState([]); // full batch used for filtering + stats
-  const [allLeads, setAllLeads] = useState([]); // filtered slice passed to LeadList
+export default function FinalizedPage() {
+  const [baseLeads, setBaseLeads] = useState([]); 
+  const [allLeads, setAllLeads] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pageLoading, setPageLoading] = useState(false); // NEW: for pagination loading
   const [stats, setStats] = useState(getDefaultStats());
 
   const [filters, setFilters] = useState({
@@ -43,16 +43,14 @@ export default function MeetingSchedulingPage() {
 
   const [activeTab, setActiveTab] = useState("all");
 
-  // selection state for bulk actions
-  const [selectedLeadIds, setSelectedLeadIds] = useState([]);
-
+  // Fetch stats & leads (status = Finalized)
   const fetchStatsAndLeads = async () => {
     setLoading(true);
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/stats`,
         {
-          params: { status: "Contacted" },
+          params: { status: "Finalized" },
           headers: { "Content-Type": "application/json" },
         }
       );
@@ -63,7 +61,6 @@ export default function MeetingSchedulingPage() {
         const result = data.result || {};
         const leadsFromApi = result.leads || [];
 
-        // normalize for LeadList (_sourceLabel)
         const normalized = leadsFromApi.map((l) => ({
           ...l,
           _sourceLabel: l._sourceLabel || l.source || "",
@@ -76,8 +73,8 @@ export default function MeetingSchedulingPage() {
         setBaseLeads([]);
       }
     } catch (error) {
-      console.error("Error fetching Contacted stats/leads:", error);
-      toast.error("Error loading Scheduled Meetings");
+      console.error("Error fetching Finalized stats/leads:", error);
+      toast.error("Error loading Finalized leads");
       setStats(getDefaultStats());
       setBaseLeads([]);
     } finally {
@@ -85,16 +82,18 @@ export default function MeetingSchedulingPage() {
     }
   };
 
-  // ----- apply client-side filters (same as InProcess) -----
+  // Apply same client-side filters as other pages
   const applyFilters = () => {
     let filtered = [...baseLeads];
 
+    // grade filter
     if (filters.grade) {
       filtered = filtered.filter(
         (lead) => lead.leadGrade?.toLowerCase() === filters.grade.toLowerCase()
       );
     }
 
+    // source filter
     if (filters.leadType) {
       if (filters.leadType === "direct") {
         filtered = filtered.filter((l) => l._sourceLabel === "Contact Form");
@@ -107,25 +106,28 @@ export default function MeetingSchedulingPage() {
       }
     }
 
+    // search filter
     if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
+      const s = filters.search.toLowerCase();
       filtered = filtered.filter(
         (lead) =>
-          lead.fullName?.toLowerCase().includes(searchLower) ||
-          lead.firstName?.toLowerCase().includes(searchLower) ||
-          lead.lastName?.toLowerCase().includes(searchLower) ||
-          lead.email?.toLowerCase().includes(searchLower) ||
-          lead.company?.toLowerCase().includes(searchLower) ||
-          lead.companyName?.toLowerCase().includes(searchLower)
+          lead.fullName?.toLowerCase().includes(s) ||
+          lead.firstName?.toLowerCase().includes(s) ||
+          lead.lastName?.toLowerCase().includes(s) ||
+          lead.email?.toLowerCase().includes(s) ||
+          lead.company?.toLowerCase().includes(s) ||
+          lead.companyName?.toLowerCase().includes(s)
       );
     }
 
+    // time sort
     if (filters.time === "newest") {
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (filters.time === "oldest") {
       filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
 
+    // score sort
     if (filters.score === "highest") {
       filtered.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     } else if (filters.score === "lowest") {
@@ -134,123 +136,12 @@ export default function MeetingSchedulingPage() {
       filtered.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     }
 
-    // update filtered leads (we let LeadList handle pagination using filters.page + filters.limit)
     setAllLeads(filtered);
-  };
-  const handlePageChange = (newPage) => {
-    setPageLoading(true);
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Simulate loading delay
-    setTimeout(() => {
-      setFilters((prev) => ({ ...prev, page: newPage }));
-      setPageLoading(false);
-    }, 500);
-  };
-  // ----- selection handlers (checkboxes) -----
-  const handleToggleLeadSelect = (leadId) => {
-    setSelectedLeadIds((prev) =>
-      prev.includes(leadId) ? prev.filter((id) => id !== leadId) : [...prev, leadId]
-    );
-  };
-
-  const handleToggleSelectAll = (pageLeadIds = []) => {
-    setSelectedLeadIds((prev) => {
-      const allOnPageSelected = pageLeadIds.every((id) => prev.includes(id));
-      if (allOnPageSelected) {
-        // unselect those on page
-        return prev.filter((id) => !pageLeadIds.includes(id));
-      } else {
-        // add those on page
-        const set = new Set(prev);
-        pageLeadIds.forEach((id) => set.add(id));
-        return Array.from(set);
-      }
-    });
-  };
-
-  // ----- bulk update to Finalized -----
-  const bulkUpdateStatusToFinalized = async () => {
-    if (selectedLeadIds.length === 0) {
-      toast.info("Select at least one lead");
-      return;
-    }
-
-    try {
-      const response = await axios.patch(
-        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/bulk-update-status`,
-        {
-          leadIds: selectedLeadIds,
-          status: "Finalized",
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      const data = response.data;
-
-      if (data?.success || data?.responseCode === 200) {
-        toast.success(`Updated ${selectedLeadIds.length} lead(s) to Finalized`);
-        setSelectedLeadIds([]);
-        fetchStatsAndLeads();
-      } else {
-        toast.error(data?.responseMessage || "Failed to update leads");
-      }
-    } catch (err) {
-      if (err.response) {
-        console.error("Bulk update failed", err.response.status, err.response.data);
-        toast.error(`Update failed: ${err.response.status}`);
-      } else {
-        console.error("Bulk update error:", err);
-        toast.error("Something went wrong while updating leads");
-      }
-    }
-  };
-
-  // ----- bulk update to Archived (new) -----
-  const bulkUpdateStatusToArchived = async () => {
-    if (selectedLeadIds.length === 0) {
-      toast.info("Select at least one lead to archive");
-      return;
-    }
-
-    try {
-      const response = await axios.patch(
-        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/bulk-update-status`,
-        {
-          leadIds: selectedLeadIds,
-          status: "Archived",
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      const data = response.data;
-
-      if (data?.success || data?.responseCode === 200) {
-        toast.success(`Archived ${selectedLeadIds.length} lead(s)`);
-        setSelectedLeadIds([]);
-        fetchStatsAndLeads();
-      } else {
-        toast.error(data?.responseMessage || "Failed to archive leads");
-      }
-    } catch (err) {
-      if (err.response) {
-        console.error("Bulk archive failed", err.response.status, err.response.data);
-        toast.error(`Archive failed: ${err.response.status}`);
-      } else {
-        console.error("Bulk archive error:", err);
-        toast.error("Something went wrong while archiving leads");
-      }
-    }
   };
 
   useEffect(() => {
     fetchStatsAndLeads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -259,7 +150,6 @@ export default function MeetingSchedulingPage() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-
     setFilters((prev) => {
       const base = { ...prev, page: 1 };
       if (tab === "all") return { ...base, grade: "" };
@@ -267,33 +157,42 @@ export default function MeetingSchedulingPage() {
     });
   };
 
-
-   if (loading || pageLoading) {
-      return (
-        <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm z-50'>
-          <DotLottieReact
-            src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
-            loop
-            autoplay
-            style={{ width: 100, height: 100, alignItems: 'center' }}
-          />
-        </div>
-      );
-    }
-
   return (
     <div className="w-full p-6">
       <div className="mb-6 flex justify-between items-center">
-        <h4 className="text-primaryText">Scheduled Meetings</h4>
+        <h4 className="text-primaryText">Finalized Leads</h4>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <StatCard label="Scheduled (Contacted)" value={stats.totalLeads} change={stats.leadsThisWeek} changeLabel="this week" />
-        <StatCard label="Hot Leads (Contacted)" value={stats.hotLeads} change={stats.hotLeadsPercentage} changeLabel="of contacted" isPercentage />
-        <StatCard label="Avg Lead Score" value={Math.round(stats.averageScore || 0)} change={stats.scoreImprovement || 0} changeLabel="vs last week" />
-        <StatCard label="This Week (Contacted)" value={stats.leadsThisWeek} change={stats.weekOverWeekGrowth || 0} changeLabel="growth" isPercentage />
+        <StatCard
+          label="Finalized Leads"
+          value={stats.totalLeads}
+          change={stats.leadsThisWeek}
+          changeLabel="this week"
+        />
+        <StatCard
+          label="Hot (Finalized)"
+          value={stats.hotLeads}
+          change={stats.hotLeadsPercentage}
+          changeLabel="of finalized"
+          isPercentage
+        />
+        <StatCard
+          label="Avg Lead Score"
+          value={Math.round(stats.averageScore || 0)}
+          change={stats.scoreImprovement || 0}
+          changeLabel="vs last week"
+        />
+        <StatCard
+          label="This Week"
+          value={stats.leadsThisWeek}
+          change={stats.weekOverWeekGrowth || 0}
+          changeLabel="growth"
+          isPercentage
+        />
       </div>
 
+      {/* Tabs + Filters + List */}
       <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6" aria-label="Tabs">
@@ -332,7 +231,6 @@ export default function MeetingSchedulingPage() {
               </div>
             </div>
 
-            {/* MIDDLE → Filters + SELECT / ACTIONS (inline) */}
             <div className="flex flex-wrap items-center gap-3 justify-end">
               <FilterDropdown
                 label="Sort by Time"
@@ -360,41 +258,6 @@ export default function MeetingSchedulingPage() {
                 ]}
                 onChange={(val) => setFilters((prev) => ({ ...prev, leadType: val, page: 1 }))}
               />
-
-              {/* SELECT / ACTIONS dropdown — appears inline with other filters */}
-              {selectedLeadIds.length > 0 && (
-                <FilterDropdown
-                  label="Select"
-                  value=""
-                  align="right"
-                  options={[
-                    { value: "finalized", label: "Move to Finalized" },
-                    { value: "archived", label: "Move to Archive" },
-                  ]}
-                  onChange={(val) => {
-                    if (val === "finalized") bulkUpdateStatusToFinalized();
-                    if (val === "archived") bulkUpdateStatusToArchived();
-                  }}
-                  renderTrigger={({ open, toggle }) => (
-                    <button
-                      onClick={toggle}
-                      className="
-                        h-9 px-3
-                        flex items-center gap-2
-                        rounded-full border border-primary bg-white
-                        focus:border-primary cursor-pointer
-                        text-xs md:text-sm font-semibold
-                      "
-                    >
-                      <span className="py-0.5 px-2 rounded-full bg-gray-100 text-gray-700 text-[10px] md:text-xs font-semibold">
-                        {selectedLeadIds.length}
-                      </span>
-                      <span>Select</span>
-                      <MoreVertical className={`w-4 h-4 transition-transform ${open ? "rotate-90" : ""}`} />
-                    </button>
-                  )}
-                />
-              )}
             </div>
           </div>
         </div>
@@ -407,12 +270,12 @@ export default function MeetingSchedulingPage() {
             onRefresh={fetchStatsAndLeads}
             currentPage={filters.page}
             leadsPerPage={filters.limit}
-            onPageChange={handlePageChange}
-            selectedLeadIds={selectedLeadIds}
-            onToggleLeadSelect={handleToggleLeadSelect}
-            onToggleSelectAll={handleToggleSelectAll}
+            onPageChange={(newPage) => setFilters((prev) => ({ ...prev, page: newPage }))}
+            selectedLeadIds={[]}
+            onToggleLeadSelect={undefined}
+            onToggleSelectAll={undefined}
             showContactActions={false}
-            showSelection={true}
+            showSelection={false}
             contactActions={["view"]}
           />
         </div>

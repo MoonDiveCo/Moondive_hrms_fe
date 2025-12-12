@@ -6,6 +6,7 @@ import LeadStats from "../../../components/CrmDashboard/LeadStats";
 import { toast } from "react-toastify";
 import FilterDropdown from "../../../components/CrmDashboard/ui/FilterDropdown";
 import { getLeadsFromAllSources } from "../../../services/leadService";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import axios from "axios";
 
 export default function LeadDashboard() {
@@ -19,40 +20,45 @@ export default function LeadDashboard() {
   const [topLeads, setTopLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
-  useEffect(() => {
-    const fetchTopLeads = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads?page=1&limit=100`
-        );
-        const data = await res.json();
+useEffect(() => {
+  const fetchTopLeads = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads`,
+        {
+          params: { page: 1, limit: 100 },
+        }
+      );
 
-        const results = Array.isArray(data?.result?.leads)
-          ? data.result.leads
-          : Array.isArray(data?.result)
-          ? data.result
-          : [];
+      const data = res.data;
 
-        const combined = results.map((lead) => ({
-          ...lead,
-          leadScore: lead.leadScore || 0,
-          firstName: lead.fullName?.split(" ")[0] || lead.firstName || "",
-          lastName:
-            lead.fullName?.split(" ").slice(1).join(" ") || lead.lastName || "",
-        }));
+      const results = Array.isArray(data?.result?.leads)
+        ? data.result.leads
+        : Array.isArray(data?.result)
+        ? data.result
+        : [];
 
-        const sortedTop = [...combined]
-          .sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0))
-          .slice(0, 10);
+      const combined = results.map((lead) => ({
+        ...lead,
+        leadScore: lead.leadScore || 0,
+        firstName: lead.fullName?.split(" ")[0] || lead.firstName || "",
+        lastName:
+          lead.fullName?.split(" ").slice(1).join(" ") || lead.lastName || "",
+      }));
 
-        setTopLeads(sortedTop);
-      } catch (err) {
-        console.error("Error fetching top leads for overview:", err);
-      }
-    };
+      const sortedTop = [...combined]
+        .sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0))
+        .slice(0, 10);
 
-    fetchTopLeads();
-  }, []);
+      setTopLeads(sortedTop);
+    } catch (err) {
+      console.error("Error fetching top leads for overview:", err);
+    }
+  };
+
+  fetchTopLeads();
+}, []);
+
 
   const handleSendBulkEmail = (leadsList) => {
     console.log("Send bulk email to:", leadsList);
@@ -179,6 +185,8 @@ export default function LeadDashboard() {
     fetchAllLeads();
   }, [filters.time, filters.score, filters.search, filters.page]);
 
+  
+
   // Combine and filter leads (client-side)
   useEffect(() => {
     let combined = [];
@@ -277,7 +285,6 @@ export default function LeadDashboard() {
           headers: { "Content-Type": "application/json" },
         }
       );
-
       const data = response.data;
 
       if (data?.responseCode === 200 || data?.success) {
@@ -428,7 +435,18 @@ export default function LeadDashboard() {
       console.error("Failed to export leads:", error);
     }
   };
-
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm">
+        <DotLottieReact
+          src="https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie"
+          loop
+          autoplay
+          style={{ width: 100, height: 100 }}
+        />
+      </div>
+    );
+  }
   if (!stats) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -436,12 +454,17 @@ export default function LeadDashboard() {
       </div>
     );
   }
+
+ 
+ 
+
+ 
   return (
-    <div className="w-full p-6">
+    <div className="w-full p-4">
       <div className="w-full">
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-2 flex justify-between items-center">
           <div>
-            <h4 className="text-primaryText">Overview</h4>
+            <h4 className="text-primaryText ">Overview</h4>
           </div>
         </div>
         <div className="">

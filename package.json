@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@lottiefiles/dotlottie-react": "^0.17.8",
+    "@lottiefiles/dotlottie-react": "^0.17.10",
     "@reduxjs/toolkit": "^2.10.1",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
