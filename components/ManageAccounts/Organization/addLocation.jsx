@@ -84,7 +84,7 @@ export default function AddLocationModal({
     if (isViewMode) return onClose();
 
     setError("");
-    const required = ["addressType","addressLabel","country","state","city","locality","postalCode","timeZone"];
+    const required = ["addressType","addressLabel","country","state","city","locality","postalCode",];
     for (const f of required) {
       if (!form[f] || form[f].toString().trim() === "") {
         setError("Please fill all required fields.");
