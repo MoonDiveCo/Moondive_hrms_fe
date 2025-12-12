@@ -31,7 +31,7 @@ export function MenuProvider({ children }) {
       HRMS: {
         SUPER_ADMIN: {
           top: [
-            { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
+            // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
             { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
@@ -131,32 +131,54 @@ export function MenuProvider({ children }) {
           bottom: [],
         },
       },
-   CRM: {
+     CRM: {
         SALES: {
           top: [
-           
+            {
+              label: "Sales Dashboard",
+              icon: OverviewIcon,
+              href: "/crm/dashboard/sales",
+            },
           ],
           bottom: [],
         },
         ACCOUNTS: {
-          top: [{ label: "Manage Leads", icon: CandidateIcon, href: "/crm/dashboard/leads" }],
+          top: [
+            // {
+            //   label: "Manage Leads",
+            //   icon: CandidateIcon,
+            //   href: "/crm/dashboard/leads",
+            // },
+          ],
           bottom: [],
         },
-             SUPER_ADMIN:{
-            top: [
-    { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard" },
-    { label: "Manage Blog", icon: DocumentsIcon, href: "/cms/dashboard/manage-blog" },
-    { label: "Manage Testimonials", icon: DocumentsIcon, href: "/cms/dashboard/manage-testimonials" },
-    { label: "Manage Case Studies", icon: DocumentsIcon, href: "/cms/dashboard/manage-case-studies" },
-    { label: "Manage Comparisions", icon: DocumentsIcon, href: "/cms/dashboard/manage-comparisons" },
-    { label: "Manage Summaries", icon: DocumentsIcon, href: "/cms/dashboard/manage-summaries" },
-    { label: "Manage Industries", icon: DocumentsIcon, href: "/cms/dashboard/manage-industries" },
-    { label: "Website Meta SEO", icon: DocumentsIcon, href: "/cms/dashboard/website-meta-seo" },
-    { label: "AI Content Performance", icon: DocumentsIcon, href: "/cms/dashboard/ai-content-performance" },
-    { label: "Gen AI Visibility", icon: DocumentsIcon, href: "/cms/dashboard/gen-ai-visibility" },
-    { label: "Inventory Management", icon: DocumentsIcon, href: "/cms/dashboard/inventory-management" },
-  ],
-          bottom: [] },
+        SUPER_ADMIN: {
+          top: [
+            { label: "Overview", icon: OverviewIcon, href: "/crm/dashboard" },
+            {
+              label: "Leads",
+              icon: CandidateIcon,
+              href: "/crm/dashboard/leads",
+            },
+            {
+              label: "In Process",
+              icon: LeaveTrackerIcon,
+              href: "/crm/dashboard/InProcess",
+            },
+            {
+              label: "Meeting Scheduled",
+              icon: AttendanceIcon,
+              href: "/crm/dashboard/MeetingSchedule",
+            },
+            {
+              label: "Finalised",
+              icon: TimeTrackerIcon,
+              href: "/crm/dashboard/Finalised",
+            },
+            
+          ],
+          bottom: [],
+        },
       },
  
     };

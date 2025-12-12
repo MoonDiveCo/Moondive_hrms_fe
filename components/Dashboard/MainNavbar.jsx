@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import Image from 'next/image';
 import ProfileSlideOver from './ProfileSlideOver'; // adjust path if needed
+import { useRouter } from 'next/navigation';
 
 export default function MainNavbar() {
+  const router = useRouter();
   const [openProfile, setOpenProfile] = useState(false);
   const avatarRef = useRef(null);
 
@@ -24,7 +25,12 @@ export default function MainNavbar() {
     <div className='w-full px-6 md:px-8 z-20'>
       <div className='flex items-center justify-between h-16'>
         <div className='flex items-center gap-4'>
-          {/* left side - navigation/logo goes here */}
+            <button
+      onClick={() => router.back()}
+      className="px-4 py-2 text-xs rounded-full bg-white border border-primary  hover:bg-primary text-primary hover:text-white"
+    >
+      ← Back
+    </button>
         </div>
 
         <div className='flex items-center gap-4'>

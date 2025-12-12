@@ -1,40 +1,138 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Search, Download, MoreVertical } from "lucide-react";
-import LeadList from "../../../../components/CrmDashboard/LeadList";
-import LeadStats from "../../../../components/CrmDashboard/LeadStats";
 import { toast } from "react-toastify";
-import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
-import { getLeadsFromAllSources } from "../../../../services/leadService";
 import axios from "axios";
 
+import LeadList from "../../../../components/CrmDashboard/LeadList";
+import LeadStats from "../../../../components/CrmDashboard/LeadStats";
+import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
+
 export default function LeadDashboard() {
-  const [stats, setStats] = useState(null);
-  const [allLeads, setAllLeads] = useState([]);
-  const [directLeads, setDirectLeads] = useState([]);
-  const [chatbotLeads, setChatbotLeads] = useState([]);
-  const [sdrLeads, setSdrLeads] = useState([]);
-  const [scheduleMeetingLeads, setScheduleMeetingLeads] = useState([]);
-  const [leadScoringLeads, setLeadScoringLeads] = useState([]);
-  const [topLeads, setTopLeads] = useState([]);
+  const [stats, setStats] = useState(getDefaultStats());
+  const [baseLeads, setBaseLeads] = useState([]);  
+  const [allLeads, setAllLeads] = useState([]);    
   const [loading, setLoading] = useState(true);
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
 
   const [filters, setFilters] = useState({
-    grade: "",
-    status: "",
-    source: "",
-    time: "",
-    score: "",
-    leadType: "",
+    grade: "",  
+    time: "",     
+    score: "",     
+    leadType: "",  
     search: "",
     page: 1,
     limit: 10,
   });
+
   const [activeTab, setActiveTab] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
 
-  // Toggle single lead
+  // ---------- HELPERS ----------
+  function getDefaultStats() {
+    return {
+      totalLeads: 0,
+      hotLeads: 0,
+      warmLeads: 0,
+      coldLeads: 0,
+      frozenLeads: 0,
+      archivedLeads: 0,
+      leadsThisWeek: 0,
+      averageScore: 0,
+      hotLeadsPercentage: 0,
+      weekOverWeekGrowth: 0,
+      scoreImprovement: 0,
+      leadsBySource: [],
+      leadsByStatus: [],
+      weeklyTrend: [],
+      leads: [],
+    };
+  }
+
+  // ---------- API: STATS + LEADS (status = New) ----------
+  const fetchNewLeadsStats = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/stats`,
+        {
+          params: { status: "New" }, 
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const data = response.data;
+
+      if (data?.responseCode === 200 || data?.success) {
+        const result = data.result || {};
+        const leadsFromApi = result.leads || [];
+
+        // normalize for LeadList (source label)
+        const normalized = leadsFromApi.map((l) => ({
+          ...l,
+          _sourceLabel: l._sourceLabel || l.source || "",
+        }));
+
+        setBaseLeads(normalized);
+        setStats({
+          ...getDefaultStats(),
+          ...result,
+          leads: normalized,
+        });
+      } else {
+        setBaseLeads([]);
+        setStats(getDefaultStats());
+      }
+    } catch (error) {
+      console.error("Failed to fetch New leads stats:", error);
+      toast.error("Failed to load leads");
+      setBaseLeads([]);
+      setStats(getDefaultStats());
+    } finally {
+      setLoading(false);
+    }
+  };
+  const bulkUpdateStatus = async (newStatus) => {
+    if (selectedLeadIds.length === 0) {
+      toast.info("Please select at least one lead");
+      return;
+    }
+
+    try {
+      const response = await axios.patch(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/bulk-update-status`,
+        {
+          leadIds: selectedLeadIds,
+          status: newStatus,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const data = response.data;
+
+      if (data?.success || data?.responseCode === 200) {
+        toast.success(
+          `Updated ${selectedLeadIds.length} lead(s) to "${newStatus}"`
+        );
+        setSelectedLeadIds([]);
+
+        // refresh New leads after status change
+        fetchNewLeadsStats();
+      } else {
+        toast.error(data?.responseMessage || "Failed to update leads");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong while updating leads");
+    }
+  };
+
+  const handleMoveSelectedToInProcess = () => bulkUpdateStatus("In Process");
+  const handleMoveSelectedToArchived = () => bulkUpdateStatus("Archived");
+
+  // ---------- SELECTION ----------
   const handleToggleLeadSelect = (leadId) => {
     setSelectedLeadIds((prev) =>
       prev.includes(leadId)
@@ -43,7 +141,6 @@ export default function LeadDashboard() {
     );
   };
 
-  // Toggle "select all" for current page
   const handleToggleSelectAll = (pageLeadIds) => {
     setSelectedLeadIds((prev) => {
       const allOnPageSelected = pageLeadIds.every((id) => prev.includes(id));
@@ -57,144 +154,35 @@ export default function LeadDashboard() {
     });
   };
 
-  // Generic bulk status update
-const bulkUpdateStatus = async (newStatus) => {
-  if (selectedLeadIds.length === 0) {
-    toast.info("Please select at least one lead");
-    return;
-  }
+  // ---------- APPLY FILTERS (client-side) ----------
+  const applyFilters = () => {
+    let filtered = [...baseLeads];
 
-  try {
-    const response = await axios.patch(
-      `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/bulk-update-status`,
-      {
-        leadIds: selectedLeadIds,
-        status: newStatus,
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    const data = response.data;
-
-    if (data?.success || data?.responseCode === 200) {
-      toast.success(
-        `Updated ${selectedLeadIds.length} lead(s) to "${newStatus}"`
-      );
-
-      setSelectedLeadIds([]);
-      fetchAllLeads();
-    } else {
-      toast.error(data?.responseMessage || "Failed to update leads");
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong while updating leads");
-  }
-};
-
-  // Specific actions
-  const handleMoveSelectedToInProcess = () => bulkUpdateStatus("In Process");
-  const handleMoveSelectedToArchived = () => bulkUpdateStatus("Archived");
-
-  const fetchAllLeads = async () => {
-    setLoading(true);
-    try {
-      const statusForService = filters.status || "New";
-      const {
-        contactLeads,
-        chatbotLeads,
-        scheduleLeads,
-        sdrLeads: sdrFromService,
-        allLeads: combinedFromService,
-      } = await getLeadsFromAllSources({
-        status:statusForService,
-        search: filters.search,
-        time: filters.time,  
-        score: filters.score, 
-        page: filters.page,
-        limit: filters.limit,
-      });
-
-      // Save each list to state (for filters & stats)
-      setDirectLeads(contactLeads);
-      setChatbotLeads(chatbotLeads);
-      setScheduleMeetingLeads(scheduleLeads);
-
-      setLeadScoringLeads(sdrFromService);
-      setSdrLeads(sdrFromService);
-      // await fetchStats();
-    } catch (error) {
-      console.error("Error fetching leads:", error);
-      setDirectLeads([]);
-      setChatbotLeads([]);
-      setScheduleMeetingLeads([]);
-      setLeadScoringLeads([]);
-      setSdrLeads([]);
-      setAllLeads([]);
-      setTopLeads([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAllLeads();
-  }, [filters.time, filters.score, filters.search, filters.page]);
-
-  // Combine and filter leads (client-side)
-  useEffect(() => {
-    let combined = [];
-
-    // Select source type
-    if (filters.leadType === "direct") {
-      combined = [...directLeads];
-    } else if (filters.leadType === "chatbot") {
-      combined = [...chatbotLeads];
-    } else if (filters.leadType === "schedule") {
-      combined = [...scheduleMeetingLeads];
-    } else if (filters.leadType === "scoring") {
-      combined = [...leadScoringLeads];
-    } else if (filters.leadType === "sdrLeads") {
-      combined = [...sdrLeads];
-    } else {
-      combined = [
-        ...directLeads,
-        ...chatbotLeads,
-        ...scheduleMeetingLeads,
-        ...leadScoringLeads,
-        ...sdrLeads,
-      ];
-    }
-
-    // Grade filter
+    // Tabs → grade filter (Hot/Warm/Cold)
     if (filters.grade) {
-      combined = combined.filter(
+      filtered = filtered.filter(
         (lead) =>
           lead.leadGrade?.toLowerCase() === filters.grade.toLowerCase()
       );
     }
 
-    // Status filter from tabs
-    if (filters.status) {
-      combined = combined.filter((lead) => lead.status === filters.status);
+    // Source filter
+    if (filters.leadType) {
+      if (filters.leadType === "direct") {
+        filtered = filtered.filter((l) => l._sourceLabel === "Contact Form");
+      } else if (filters.leadType === "chatbot") {
+        filtered = filtered.filter((l) => l._sourceLabel === "Chatbot");
+      } else if (filters.leadType === "schedule") {
+        filtered = filtered.filter((l) => l._sourceLabel === "Schedule Meeting");
+      } else if (filters.leadType === "sdrLeads") {
+        filtered = filtered.filter((l) => l._sourceLabel === "SDR Leads");
+      }
     }
 
-    // Remove In-Process from main page
-    combined = combined.filter(
-      (lead) => lead.status !== "In Process" && lead.status !== "In_Process"
-    );
-
-    // Hide archived unless in Archived tab
-    if (filters.status !== "Archived") {
-      combined = combined.filter((lead) => lead.status !== "Archived");
-    }
-
-    // Search filter (extra layer, OK even though service also filters)
+    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      combined = combined.filter(
+      filtered = filtered.filter(
         (lead) =>
           lead.fullName?.toLowerCase().includes(searchLower) ||
           lead.firstName?.toLowerCase().includes(searchLower) ||
@@ -205,127 +193,38 @@ const bulkUpdateStatus = async (newStatus) => {
       );
     }
 
-    // Time sort (safety – service already sorts)
+    // Sort by time
     if (filters.time === "newest") {
-      combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (filters.time === "oldest") {
-      combined.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
 
-    // Score sort (default: highest first)
+    // Sort by score (default: highest)
     if (filters.score === "highest") {
-      combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
+      filtered.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     } else if (filters.score === "lowest") {
-      combined.sort((a, b) => (a.leadScore || 0) - (b.leadScore || 0));
+      filtered.sort((a, b) => (a.leadScore || 0) - (b.leadScore || 0));
     } else {
-      combined.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
+      filtered.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     }
 
-    setAllLeads(combined);
-    setTopLeads(combined.slice(0, 10));
-  }, [
-    directLeads,
-    chatbotLeads,
-    scheduleMeetingLeads,
-    leadScoringLeads,
-    sdrLeads,
-    filters,
-    loading,
-  ]);
+    // ⚠️ Let LeadList handle pagination using currentPage + leadsPerPage
+    setAllLeads(filtered);
+  };
 
-// Stats from backend
-const fetchStats = async () => {
-  try {
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads/stats`,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    const data = response.data;
-
-    if (data?.responseCode === 200 || data?.success) {
-      setStats(data.result);
-    } else {
-      setStats(getDefaultStats());
-    }
-  } catch (error) {
-    console.error("Failed to fetch stats:", error);
-    setStats(getDefaultStats());
-  }
-};
-
-
-  const getDefaultStats = () => ({
-    totalLeads: 0,
-    hotLeads: 0,
-    warmLeads: 0,
-    coldLeads: 0,
-    frozenLeads: 0,
-    archivedLeads: 0,
-    leadsThisWeek: 0,
-    averageScore: 0,
-    hotLeadsPercentage: 0,
-    weekOverWeekGrowth: 0,
-  });
-
-  // Recalculate stats from combined leads when loading finishes
+  // ---------- EFFECTS ----------
+  // initial load + whenever we might want to refetch from backend
   useEffect(() => {
-    if (!loading) {
-      const allCombined = [
-        ...directLeads,
-        ...chatbotLeads,
-        ...scheduleMeetingLeads,
-        // ...leadScoringLeads,
-        ...sdrLeads,
-      ];
+    fetchNewLeadsStats();
+  }, []);
 
-      if (allCombined.length > 0) {
-        const hotCount = allCombined.filter(
-          (l) => l.leadGrade === "Hot"
-        ).length;
-        const warmCount = allCombined.filter(
-          (l) => l.leadGrade === "Warm"
-        ).length;
-        const coldCount = allCombined.filter(
-          (l) => l.leadGrade === "Cold"
-        ).length;
-        const frozenCount = allCombined.filter(
-          (l) => l.leadGrade === "Frozen"
-        ).length;
-        const archivedCount = allCombined.filter(
-          (l) => l.status === "Archived"
-        ).length;
-        const avgScore =
-          allCombined.reduce((sum, l) => sum + (l.leadScore || 0), 0) /
-          allCombined.length;
+  // re-apply filters whenever baseLeads or filters change
+  useEffect(() => {
+    applyFilters();
+  }, [baseLeads, filters]);
 
-        setStats((prev) => ({
-          ...(prev || getDefaultStats()),
-          totalLeads: allCombined.length,
-          hotLeads: hotCount,
-          warmLeads: warmCount,
-          coldLeads: coldCount,
-          frozenLeads: frozenCount,
-          archivedLeads: archivedCount,
-          averageScore: avgScore,
-          hotLeadsPercentage:
-            allCombined.length > 0
-              ? Math.round((hotCount / allCombined.length) * 100)
-              : 0,
-        }));
-      }
-    }
-  }, [
-    directLeads,
-    chatbotLeads,
-    scheduleMeetingLeads,
-    leadScoringLeads,
-    sdrLeads,
-    loading,
-  ]);
-
+  // ---------- TABS ----------
   const handleTabChange = (tab) => {
     setActiveTab(tab);
 
@@ -333,20 +232,18 @@ const fetchStats = async () => {
       const base = { ...prev, page: 1 };
 
       if (tab === "all") {
-        return { ...base, grade: "", status: "" };
+        return { ...base, grade: "" }; // all grades
       }
 
-      if (tab === "archived") {
-        return { ...base, grade: "", status: "Archived" };
-      }
+      // hot / warm / cold tabs
       return {
         ...base,
-        status: "",
         grade: tab.charAt(0).toUpperCase() + tab.slice(1),
       };
     });
   };
 
+  // ---------- EXPORT ----------
   const handleExport = async () => {
     try {
       const csvContent = [
@@ -385,7 +282,7 @@ const fetchStats = async () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `all-leads-${new Date().toISOString().split("T")[0]}.csv`;
+      a.download = `new-leads-${new Date().toISOString().split("T")[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -431,10 +328,10 @@ const fetchStats = async () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards (from backend stats for status=New) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard
-            label="Total Leads"
+            label="Total New Leads"
             value={stats.totalLeads}
             change={stats.leadsThisWeek}
             changeLabel="this week"
@@ -448,20 +345,20 @@ const fetchStats = async () => {
           />
           <StatCard
             label="Avg Lead Score"
-            value={Math.round(stats.averageScore)}
-            change={stats.scoreImprovement}
+            value={Math.round(stats.averageScore || 0)}
+            change={stats.scoreImprovement || 0}
             changeLabel="vs last week"
           />
           <StatCard
             label="This Week"
             value={stats.leadsThisWeek}
-            change={stats.weekOverWeekGrowth}
+            change={stats.weekOverWeekGrowth || 0}
             changeLabel="growth"
             isPercentage
           />
         </div>
 
-        {/* Tabs and Filters + Lead List */}
+        {/* Tabs + Filters + Lead List */}
         <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6" aria-label="Tabs">
@@ -485,11 +382,6 @@ const fetchStats = async () => {
                   id: "cold",
                   label: "Cold",
                   count: stats.coldLeads,
-                },
-                {
-                  id: "archived",
-                  label: "Archived",
-                  count: stats.archivedLeads || 0,
                 },
               ].map((tab) => (
                 <button
@@ -516,7 +408,7 @@ const fetchStats = async () => {
           {/* Filters & Search */}
           <div className="p-3 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
-              {/* LEFT SIDE → Search */}
+              {/* LEFT → Search */}
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -578,7 +470,7 @@ const fetchStats = async () => {
                 />
               </div>
 
-              {/* RIGHT SIDE → Selection Count + Move Button */}
+              {/* RIGHT → Bulk Move */}
               {selectedLeadIds.length > 0 && (
                 <div className="flex items-center gap-3 ml-auto">
                   <FilterDropdown
@@ -624,12 +516,13 @@ const fetchStats = async () => {
             </div>
           </div>
 
+          {/* Lead List */}
           <div className="xl:max-w-[75vw] 2xl:max-w-[82vw]">
             <LeadList
               leads={allLeads}
               loading={loading}
               onSelectLead={setSelectedLead}
-              onRefresh={fetchAllLeads}
+              onRefresh={fetchNewLeadsStats}
               currentPage={filters.page}
               leadsPerPage={filters.limit}
               onPageChange={(newPage) =>
@@ -643,7 +536,12 @@ const fetchStats = async () => {
             />
           </div>
         </div>
-        <LeadStats stats={stats} />
+
+        <LeadStats 
+  stats={stats} 
+  hideSections={["trend", "status", "funnel", "insights"]}
+/>
+
       </div>
     </div>
   );
