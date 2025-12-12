@@ -154,17 +154,15 @@ const handleSaveNewItem = async (formData) => {
     }
   }
 
+  
   const productImage = formData.get("productImage");
   const receipt = formData.get("receipt");
 
-  const missingImageFields = [];
-  if (!productImage || productImage.size === 0) missingImageFields.push("Product Image");
-
-  if (missingImageFields.length > 0) {
-    toast.error(`${missingImageFields.join(", ")} is required`);
-    return;
+  if (!productImage) {
+    toast.error("Product image is required");
+    return false;
   }
-
+  
   if (category === "Laptop") {
     const requiredLaptopFields = [
       "modelName",
@@ -173,12 +171,12 @@ const handleSaveNewItem = async (formData) => {
       "ram",
       "expiryDate",
     ];
-
+    
     const missing = requiredLaptopFields.filter((f) => !specs[f]);
-
+    
     if (missing.length > 0) {
       toast.error(`${missing.join(", ")} is Missing`);
-      return;
+      return false;
     }
   } else {
     const requiredAccessoryFields = [
@@ -189,17 +187,16 @@ const handleSaveNewItem = async (formData) => {
       "model",
       "lowStock",
     ];
-
+    
     const missing = requiredAccessoryFields.filter((f) => !specs[f]);
-
+    
     if (missing.length > 0) {
       toast.error(`${missing.join(", ")} is Missing`);
       return false;
     }
-    return true;
   }
-
-
+  
+  // If we reach here, validation passed
   try {
     await axios.post("/cms/inventory/inventory/add", formData, {
       headers: { "Content-Type": "multipart/form-data" },
