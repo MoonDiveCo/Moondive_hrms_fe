@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
-export default function EmployeeModal({ employee, onClose }) {
+
+export default function EmployeeModal({ employee, onClose, onEdit }) {
   const modalRef = useRef(null);
 
   useEffect(() => {
@@ -23,14 +24,18 @@ export default function EmployeeModal({ employee, onClose }) {
 
   if (!employee) return null;
 
+  function handleEditClick() {
+    onEdit(employee);
+  }
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center "
+      className="fixed inset-0 z-50 flex items-center justify-center"
       aria-modal="true"
       role="dialog"
       aria-labelledby="employee-modal-title"
     >
-      <div className="absolute inset-0 z-[9999999999px] bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
       <div
         ref={modalRef}
         className="relative w-[min(900px,95%)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
@@ -63,10 +68,16 @@ export default function EmployeeModal({ employee, onClose }) {
             />
             <h3 className="text-lg font-semibold text-[var(--color-blackText)]">{employee.name}</h3>
             <p className="text-sm text-[var(--color-primaryText)] mt-1">{employee.designation}</p>
-            {employee.status && (
+            {employee.employmentStatus && (
               <div className="mt-3">
-                <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                  {employee.status}
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                  employee.employmentStatus === 'Active' 
+                    ? 'bg-green-100 text-green-700' 
+                    : employee.employmentStatus === 'On Probation'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {employee.employmentStatus}
                 </span>
               </div>
             )}
@@ -81,22 +92,32 @@ export default function EmployeeModal({ employee, onClose }) {
                 <div className="text-sm text-[var(--color-primaryText)] space-y-3">
                   {employee.email && (
                     <div className="flex items-center gap-3">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 8.5v7A2.5 2.5 0 0 0 5.5 18h13A2.5 2.5 0 0 0 21 15.5v-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 8.5v7A2.5 2.5 0 0 0 5.5 18h13A2.5 2.5 0 0 0 21 15.5v-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                       <div>{employee.email}</div>
                     </div>
                   )}
 
-                  {employee.phone && (
+                  {employee.mobileNumber && (
                     <div className="flex items-center gap-3">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 16.92V21a1 1 0 0 1-1.11 1 19.8 19.8 0 0 1-8.63-3.07 19.8 19.8 0 0 1-6-6A19.8 19.8 0 0 1 2 3.11 1 1 0 0 1 3 2h4.09a1 1 0 0 1 1 .75l.78 3.1a1 1 0 0 1-.27.9L7.6 9.88a12.02 12.02 0 0 0 6 6l2.12-2.12a1 1 0 0 1 .9-.27l3.1.78a1 1 0 0 1 .75 1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      <div>{employee.phone}</div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 16.92V21a1 1 0 0 1-1.11 1 19.8 19.8 0 0 1-8.63-3.07 19.8 19.8 0 0 1-6-6A19.8 19.8 0 0 1 2 3.11 1 1 0 0 1 3 2h4.09a1 1 0 0 1 1 .75l.78 3.1a1 1 0 0 1-.27.9L7.6 9.88a12.02 12.02 0 0 0 6 6l2.12-2.12a1 1 0 0 1 .9-.27l3.1.78a1 1 0 0 1 .75 1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <div>{employee.mobileNumber}</div>
                     </div>
                   )}
 
-                  {employee.location && (
-                    <div className="flex items-center gap-3">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      <div>{employee.location}</div>
+                  {employee.address && employee.address[0] && (
+                    <div className="flex items-start gap-3">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mt-0.5">
+                        <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <div>
+                        {employee.address[0].city && employee.address[0].state 
+                          ? `${employee.address[0].city}, ${employee.address[0].state}` 
+                          : employee.address[0].city || employee.address[0].state || '-'}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -118,13 +139,35 @@ export default function EmployeeModal({ employee, onClose }) {
                   </div>
 
                   <div>
-                    <div className="text-xs text-[#8b8f94]">Manager</div>
-                    <div className="mt-1 font-medium text-[var(--color-blackText)]">{employee.manager || "-"}</div>
+                    <div className="text-xs text-[#8b8f94]">Reporting Manager</div>
+                    <div className="mt-1 font-medium text-[var(--color-blackText)]">
+                      {employee.reportingManagerId 
+                        ? (typeof employee.reportingManagerId === 'object' 
+                            ? `${employee.reportingManagerId.firstName} ${employee.reportingManagerId.lastName}` 
+                            : '-')
+                        : "-"}
+                    </div>
                   </div>
 
                   <div>
                     <div className="text-xs text-[#8b8f94]">Start Date</div>
-                    <div className="mt-1 font-medium text-[var(--color-blackText)]">{employee.startDate || "-"}</div>
+                    <div className="mt-1 font-medium text-[var(--color-blackText)]">
+                      {employee.dateOfJoining 
+                        ? new Date(employee.dateOfJoining).toLocaleDateString() 
+                        : "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-[#8b8f94]">Employment Type</div>
+                    <div className="mt-1 font-medium text-[var(--color-blackText)]">{employee.employmentType || "-"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-[#8b8f94]">Available Leave</div>
+                    <div className="mt-1 font-medium text-[var(--color-blackText)]">
+                      {employee.availableLeave !== undefined ? `${employee.availableLeave} days` : "-"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -134,17 +177,14 @@ export default function EmployeeModal({ employee, onClose }) {
             <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-[var(--color-primaryText)]"
+                className="px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-[var(--color-primaryText)] hover:bg-gray-50"
               >
                 Close
               </button>
 
               <button
-                className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm font-semibold"
-                onClick={() => {
-                  // TODO: navigate to edit page or open edit modal
-                  alert("Open edit profile (implement)");
-                }}
+                className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm font-semibold hover:brightness-95"
+                onClick={handleEditClick}
               >
                 Edit Profile
               </button>
