@@ -6,6 +6,7 @@ import LeadStats from "../../../components/CrmDashboard/LeadStats";
 import { toast } from "react-toastify";
 import FilterDropdown from "../../../components/CrmDashboard/ui/FilterDropdown";
 import { getLeadsFromAllSources } from "../../../services/leadService";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import axios from "axios";
 
 export default function LeadDashboard() {
@@ -21,11 +22,13 @@ export default function LeadDashboard() {
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
   useEffect(() => {
     const fetchTopLeads = async () => {
+
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_MOONDIVE_API}/leads?page=1&limit=100`
         );
         const data = await res.json();
+
 
         const results = Array.isArray(data?.result?.leads)
           ? data.result.leads
@@ -178,6 +181,8 @@ export default function LeadDashboard() {
   useEffect(() => {
     fetchAllLeads();
   }, [filters.time, filters.score, filters.search, filters.page]);
+
+  
 
   // Combine and filter leads (client-side)
   useEffect(() => {
@@ -428,7 +433,18 @@ export default function LeadDashboard() {
       console.error("Failed to export leads:", error);
     }
   };
-
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm">
+        <DotLottieReact
+          src="https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie"
+          loop
+          autoplay
+          style={{ width: 100, height: 100 }}
+        />
+      </div>
+    );
+  }
   if (!stats) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -436,12 +452,17 @@ export default function LeadDashboard() {
       </div>
     );
   }
+
+ 
+ 
+
+ 
   return (
-    <div className="w-full p-6">
+    <div className="w-full p-4">
       <div className="w-full">
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-2 flex justify-between items-center">
           <div>
-            <h4 className="text-primaryText">Overview</h4>
+            <h4 className="text-primaryText ">Overview</h4>
           </div>
         </div>
         <div className="">

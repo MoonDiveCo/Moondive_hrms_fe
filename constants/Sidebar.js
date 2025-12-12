@@ -166,20 +166,20 @@ export function MenuProvider({ children }) {
               href: "/crm/dashboard/InProcess",
             },
             {
-              label: "Meeting Scheduling",
+              label: "Meeting Scheduled",
               icon: AttendanceIcon,
               href: "/crm/dashboard/MeetingSchedule",
             },
             {
-              label: "Final Scheduling",
+              label: "Finalised",
               icon: TimeTrackerIcon,
               href: "/crm/dashboard/final-schedule",
             },
-            {
-              label: "Win/Lose Status",
-              icon: PerformanceIcon,
-              href: "/crm/dashboard/status",
-            },
+            // {
+            //   label: "Win/Lose Status",
+            //   icon: PerformanceIcon,
+            //   href: "/crm/dashboard/status",
+            // },
           ],
           bottom: [],
         },

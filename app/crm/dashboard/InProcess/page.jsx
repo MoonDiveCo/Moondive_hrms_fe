@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+
 
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
@@ -219,6 +222,19 @@ export default function InProcessPage() {
       setSendingEmail(false);
     }
   };
+
+  if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full p-6">
