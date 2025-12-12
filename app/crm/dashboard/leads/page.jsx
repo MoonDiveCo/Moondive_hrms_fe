@@ -7,12 +7,14 @@ import axios from "axios";
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import LeadStats from "../../../../components/CrmDashboard/LeadStats";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function LeadDashboard() {
   const [stats, setStats] = useState(getDefaultStats());
   const [baseLeads, setBaseLeads] = useState([]);  
   const [allLeads, setAllLeads] = useState([]);    
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false); // NEW: for pagination loading
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
 
   const [filters, setFilters] = useState({
@@ -67,7 +69,6 @@ export default function LeadDashboard() {
         const result = data.result || {};
         const leadsFromApi = result.leads || [];
 
-        // normalize for LeadList (source label)
         const normalized = leadsFromApi.map((l) => ({
           ...l,
           _sourceLabel: l._sourceLabel || l.source || "",
@@ -117,8 +118,6 @@ export default function LeadDashboard() {
           `Updated ${selectedLeadIds.length} lead(s) to "${newStatus}"`
         );
         setSelectedLeadIds([]);
-
-        // refresh New leads after status change
         fetchNewLeadsStats();
       } else {
         toast.error(data?.responseMessage || "Failed to update leads");
@@ -209,22 +208,29 @@ export default function LeadDashboard() {
       filtered.sort((a, b) => (b.leadScore || 0) - (a.leadScore || 0));
     }
 
-    // ⚠️ Let LeadList handle pagination using currentPage + leadsPerPage
     setAllLeads(filtered);
   };
 
   // ---------- EFFECTS ----------
-  // initial load + whenever we might want to refetch from backend
   useEffect(() => {
     fetchNewLeadsStats();
   }, []);
 
-  // re-apply filters whenever baseLeads or filters change
   useEffect(() => {
     applyFilters();
-  }, [baseLeads, filters]);
+  }, [baseLeads, filters.grade, filters.leadType, filters.search, filters.time, filters.score]);
 
-  // ---------- TABS ----------
+  
+  const handlePageChange = (newPage) => {
+    setPageLoading(true);
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      setFilters((prev) => ({ ...prev, page: newPage }));
+      setPageLoading(false);
+    }, 300); 
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
 
@@ -232,10 +238,9 @@ export default function LeadDashboard() {
       const base = { ...prev, page: 1 };
 
       if (tab === "all") {
-        return { ...base, grade: "" }; // all grades
+        return { ...base, grade: "" };
       }
 
-      // hot / warm / cold tabs
       return {
         ...base,
         grade: tab.charAt(0).toUpperCase() + tab.slice(1),
@@ -292,6 +297,20 @@ export default function LeadDashboard() {
     }
   };
 
+  // Full-page loading for initial load OR page change
+  if (loading || pageLoading) {
+    return (
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm z-50'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }}
+        />
+      </div>
+    );
+  }
+
   if (!stats) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -328,7 +347,7 @@ export default function LeadDashboard() {
           </div>
         </div>
 
-        {/* Stats Cards (from backend stats for status=New) */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard
             label="Total New Leads"
@@ -363,26 +382,10 @@ export default function LeadDashboard() {
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6" aria-label="Tabs">
               {[
-                {
-                  id: "all",
-                  label: "All Leads",
-                  count: stats.totalLeads,
-                },
-                {
-                  id: "hot",
-                  label: "Hot",
-                  count: stats.hotLeads,
-                },
-                {
-                  id: "warm",
-                  label: "Warm",
-                  count: stats.warmLeads,
-                },
-                {
-                  id: "cold",
-                  label: "Cold",
-                  count: stats.coldLeads,
-                },
+                { id: "all", label: "All Leads", count: stats.totalLeads },
+                { id: "hot", label: "Hot", count: stats.hotLeads },
+                { id: "warm", label: "Warm", count: stats.warmLeads },
+                { id: "cold", label: "Cold", count: stats.coldLeads },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -408,7 +411,6 @@ export default function LeadDashboard() {
           {/* Filters & Search */}
           <div className="p-3 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
-              {/* LEFT → Search */}
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -428,7 +430,6 @@ export default function LeadDashboard() {
                 </div>
               </div>
 
-              {/* MIDDLE → Filters */}
               <div className="flex flex-wrap items-center gap-3 justify-end">
                 <FilterDropdown
                   label="Sort by Time"
@@ -470,7 +471,6 @@ export default function LeadDashboard() {
                 />
               </div>
 
-              {/* RIGHT → Bulk Move */}
               {selectedLeadIds.length > 0 && (
                 <div className="flex items-center gap-3 ml-auto">
                   <FilterDropdown
@@ -520,14 +520,12 @@ export default function LeadDashboard() {
           <div className="xl:max-w-[75vw] 2xl:max-w-[82vw]">
             <LeadList
               leads={allLeads}
-              loading={loading}
+              loading={false}
               onSelectLead={setSelectedLead}
               onRefresh={fetchNewLeadsStats}
               currentPage={filters.page}
               leadsPerPage={filters.limit}
-              onPageChange={(newPage) =>
-                setFilters((prev) => ({ ...prev, page: newPage }))
-              }
+              onPageChange={handlePageChange}
               selectedLeadIds={selectedLeadIds}
               onToggleLeadSelect={handleToggleLeadSelect}
               onToggleSelectAll={handleToggleSelectAll}
