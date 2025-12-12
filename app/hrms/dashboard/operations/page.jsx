@@ -141,7 +141,7 @@ export default function Operations() {
   );
 
   return (
-    <div className="container py-6 px-8 mx-auto bg-white">
+    <div className="container py-8 px-8 mx-auto bg-white">
       <section className="mb-8 px-8">
         <h5 className="text-base font-semibold text-blackText mb-4">Popular Services</h5>
 

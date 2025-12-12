@@ -15,9 +15,11 @@
   --color-whiteText: #FFFFFF;
   --color-whiteBg:#FEFEFE;
   --color-primaryText:#484F57;
-  --color-background: #FFF8EE;
+  /* --color-background: #FFF8EE; */
   --color-whiteBackground:
 }
+
+
 
 .container {
   width: 100%;
