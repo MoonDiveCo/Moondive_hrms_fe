@@ -239,7 +239,7 @@ export default function Employees({ initialEmployees }) {
   }
   return (
     <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
-      <div className='container py-6'>
+      <div className='container py-6 h-auto '>
         {/* Header */}
         <div className='flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 mt-3'>
           <div>

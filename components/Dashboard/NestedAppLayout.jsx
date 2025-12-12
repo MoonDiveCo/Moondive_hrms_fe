@@ -19,9 +19,9 @@ export default function NestedAppLayout({ children }) {
 const showSidebar = activeHeader?.layoutType === "SIDEBAR";
 
   return (
-    <div className="px-6 md:px-8 py-6 hide-scrollbar">
-      <div className="h-[calc(100vh-4rem)] flex flex-col gap-4">
-        <div className="bg-white rounded-2xl border-[0.5px] border-[#D0D5DD] p-4 sticky top-0">
+    <div className="px-6 md:px-8 py-6 hide-scrollbar  w-full h-full ">
+      <div className=" flex flex-col gap-4">
+        <div className="bg-white rounded-2xl border-[0.5px] border-[#D0D5DD] p-4 overflow-auto sticky top-0">
           <div className="flex items-center justify-between ">
             <div >
               <h3 className="text-lg font-medium text-gray-900">
@@ -58,9 +58,9 @@ const showSidebar = activeHeader?.layoutType === "SIDEBAR";
           </div>
         </div>
         <div className="flex-1 flex gap-6">
-          {showSidebar &&(<aside className="w-64 sticky top-30 h-[65vh]">
-            <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4 overflow-auto">
-              <ul className="space-y-0 text-sm">
+          {showSidebar &&(<aside className="w-64 sticky top-30 overflow-auto">
+            <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4">
+              <ul className="space-y-0 text-sm sticky">
                 {activeHeader.sections.map((section) => {
                   const href = `${activeHeader.basePath}/${section.slug}`;
                   const isActive = pathname.startsWith(href);
@@ -87,7 +87,7 @@ const showSidebar = activeHeader?.layoutType === "SIDEBAR";
             </div>
           </aside>)}
 
-          <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-[65vh]">{children}</section>
+          <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-[calc(100vh-15rem)]">{children}</section>
         </div>
       </div>
     </div>
