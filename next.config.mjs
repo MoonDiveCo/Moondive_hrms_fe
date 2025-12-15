@@ -54,6 +54,12 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'hrms-bucket-s3.s3.ap-south-1.amazonaws.com',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc',
+        port: '',
+        pathname: '/**',
       }
     ]
   }
