@@ -5,15 +5,12 @@ import React, { useEffect, useCallback, useRef, useState, use } from 'react';
 import Image from "next/image";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
-export default function AddEditEmployeeModal({ mode = 'add', employee = null, onClose, onSave ,organizationData}) {
+export default function AddEditEmployeeModal({ mode = 'add', employee = null, onClose, onSave ,organizationData,employeeList}) {
   const modalRef = useRef(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [departments, setDepartments] = useState([]);
-  const [designations, setDesignations] = useState([]);
-  const [existingEmployees, setExistingEmployees] = useState([]);
-  const [shifts, setShifts] = useState([]);
+
   const [imagePreview, setImagePreview] = useState(null);
   const [imageHovered, setImageHovered] = useState(false);
   const [autoEmployee,setAutoEmployee]=useState(false)
@@ -365,7 +362,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
       if (!form.email?.trim()) {
         e.email = 'Email is required';
       } else if (!isValidMoondiveEmail(form.email)) {
-        e.email = 'Please enter a valid moondive email address';
+        e.email = 'Please enter a valid moondive  email address';
       }
       
       if (!form.dateOfBirth) {
@@ -1432,7 +1429,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   disabled={isView}
                 >
                   <option value="">Select Reporting Manager</option>
-                  {organizationData?.employees?.map((e) => (
+                  {employeeList.map((e) => (
                     <option key={e._id} value={e._id}>
                       {e.firstName} {e.lastName}
                     </option>
