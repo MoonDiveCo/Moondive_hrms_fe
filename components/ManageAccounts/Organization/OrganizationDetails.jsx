@@ -85,7 +85,7 @@ export default function OrganizationDetails() {
     }
   }
 
-  // Handle contact person name changes
+
   const handleContactPersonChange = (e) => {
     const fullName = e.target.value
     const parts = fullName.trim().split(' ')
