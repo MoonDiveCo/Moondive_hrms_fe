@@ -1,8 +1,9 @@
 'use client';
 
 import axios from 'axios';
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useCallback, useRef, useState, use } from 'react';
 import Image from "next/image";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function AddEditEmployeeModal({ mode = 'add', employee = null, onClose, onSave }) {
   const modalRef = useRef(null);
@@ -15,6 +16,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
   const [shifts, setShifts] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageHovered, setImageHovered] = useState(false);
+  const [autoEmployee,setAutoEmployee]=useState(false)
 
   const empty = {
     employeeId: '',
@@ -87,7 +89,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
   const [form, setForm] = useState(() => {
     if (employee && mode === 'edit') {
       const imageUrl = employee.photo || employee.imageUrl || '';
-      // Set initial image preview
+      
       if (imageUrl) {
         setImagePreview(imageUrl);
       }
@@ -160,20 +162,23 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     return { ...empty };
   });
 
+
+
   const [errors, setErrors] = useState({});
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [departmentRes, employeeRes, designationRes] = await Promise.all([
+      const [departmentRes, employeeRes, designationRes,shiftRes] = await Promise.all([
         axios.get("/hrms/organization/get-allDepartment"),
         axios.get("/hrms/employee/list"),
         axios.get("/hrms/organization/get-alldesignation"),
+        axios.get("/hrms/organization/get-shifts")
       ]);
-
       setDepartments(departmentRes?.data?.result || []);
       setExistingEmployees(employeeRes?.data?.result || []);
       setDesignations(designationRes?.data?.result || []);
+      setShifts(shiftRes?.data?.result|| [])
     } catch (err) {
       console.error("Failed to load dropdown data:", err);
     } finally {
@@ -346,6 +351,12 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     return emailRegex.test(email);
   }
 
+  function isValidMoondiveEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isMoondive = email.toLowerCase().endsWith('@moondive.co');
+    return emailRegex.test(email) && isMoondive;
+  }
+
   function isValidPhone(phone) {
     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
     return phoneRegex.test(phone);
@@ -370,7 +381,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
       
       if (!form.email?.trim()) {
         e.email = 'Email is required';
-      } else if (!isValidEmail(form.email)) {
+      } else if (!isValidMoondiveEmail(form.email)) {
         e.email = 'Please enter a valid email address';
       }
       
@@ -501,37 +512,41 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     setStep((s) => Math.max(1, s - 1));
   }
 
-  async function submit() {
-    // Validate all steps
-    const allErrors = {};
-    
-    for (let i = 1; i <= 4; i++) {
-      const stepErrors = validateStep(i);
-      Object.assign(allErrors, stepErrors);
-    }
-    
-    // Set all errors
-    setErrors(allErrors);
-    
-    // If there are errors, navigate to the first step with errors
-    if (Object.keys(allErrors).length > 0) {
-      const step1Errors = validateStep(1);
-      const step2Errors = validateStep(2);
-      const step3Errors = validateStep(3);
-      const step4Errors = validateStep(4);
-      
-      if (Object.keys(step1Errors).length > 0) {
-        setStep(1);
-      } else if (Object.keys(step2Errors).length > 0) {
-        setStep(2);
-      } else if (Object.keys(step3Errors).length > 0) {
-        setStep(3);
-      } else if (Object.keys(step4Errors).length > 0) {
-        setStep(4);
-      }
-      return;
-    }
 
+  async function submit(type='add') {
+    
+    if (type === 'auto') {
+      setSubmitting(true);
+    } else if (type === 'add') {
+      const allErrors = {};
+    
+      for (let i = 1; i <= 4; i++) {
+        const stepErrors = validateStep(i);
+        Object.assign(allErrors, stepErrors);
+      }
+      
+      
+      setErrors(allErrors);
+      
+      
+      if (Object.keys(allErrors).length > 0) {
+        const step1Errors = validateStep(1);
+        const step2Errors = validateStep(2);
+        const step3Errors = validateStep(3);
+        const step4Errors = validateStep(4);
+        
+        if (Object.keys(step1Errors).length > 0) {
+          setStep(1);
+        } else if (Object.keys(step2Errors).length > 0) {
+          setStep(2);
+        } else if (Object.keys(step3Errors).length > 0) {
+          setStep(3);
+        } else if (Object.keys(step4Errors).length > 0) {
+          setStep(4);
+        }
+        return;
+      }
+    }
     setSubmitting(true);
 
     const submitData = {
@@ -600,28 +615,34 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     } catch (error) {
       console.error("Failed to save employee:", error);
       
-      // Handle API validation errors
-      if (error.response?.data?.details) {
-        const apiErrors = {};
-        error.response.data.details.forEach(detail => {
-          const field = detail.field;
-          apiErrors[field] = detail.message;
-        });
-        setErrors(apiErrors);
-        
-        // Navigate to the step with errors
-        if (apiErrors.employeeId || apiErrors.password) {
-          setStep(4);
-        } else if (apiErrors.departmentId || apiErrors.designationId || apiErrors.dateOfJoining || apiErrors.probationEndDate || apiErrors.availableLeave || apiErrors.reportingManagerId) {
-          setStep(3);
-        } else if (apiErrors.userRole || apiErrors.employmentType || apiErrors.employmentStatus) {
-          setStep(2);
-        } else {
-          setStep(1);
-        }
-      } else {
-        const errorMessage = error.response?.data?.message || `Failed to ${mode === 'add' ? 'add' : 'update'} employee. Please try again.`;
+      
+      if (type === 'auto') {
+        const errorMessage = error.response?.data?.message || `Failed to add employee. Please try again.`;
         setErrors({ submit: errorMessage });
+      } else {
+        
+        if (error.response?.data?.details) {
+          const apiErrors = {};
+          error.response.data.details.forEach(detail => {
+            const field = detail.field;
+            apiErrors[field] = detail.message;
+          });
+          setErrors(apiErrors);
+          
+          
+          if (apiErrors.employeeId || apiErrors.password) {
+            setStep(4);
+          } else if (apiErrors.departmentId || apiErrors.designationId || apiErrors.dateOfJoining || apiErrors.probationEndDate || apiErrors.availableLeave || apiErrors.reportingManagerId) {
+            setStep(3);
+          } else if (apiErrors.userRole || apiErrors.employmentType || apiErrors.employmentStatus) {
+            setStep(2);
+          } else {
+            setStep(1);
+          }
+        } else {
+          const errorMessage = error.response?.data?.message || `Failed to ${mode === 'add' ? 'add' : 'update'} employee. Please try again.`;
+          setErrors({ submit: errorMessage });
+        }
       }
     } finally {
       setSubmitting(false);
@@ -676,6 +697,114 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     }
   }
 
+  function generateRandomEmail(domain = 'example.com', length = 8) {
+    const username = Array.from({ length }, () => Math.random().toString(36)[2]).join('').slice(0, length);
+    return `${username}@${domain}`;
+  }
+
+
+  function generateRandomPersonImage(size = 300, seed = null) {
+    if (seed === null) {
+      seed = Math.floor(Math.random() * 70) + 1; 
+    } else if (seed > 70 || seed < 1) {
+      seed = Math.floor(Math.random() * 70) + 1; 
+    }
+    return `https://i.pravatar.cc/${size}?img=${seed}`;
+  }
+
+  function generateRandomString(length = 10, includeSpecial = true) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let allChars = chars;
+    if (includeSpecial) {
+      allChars += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    }
+    let result = '';
+    const allCharsLength = allChars.length;
+    for (let i = 0; i < length; i++) {
+      result += allChars.charAt(Math.floor(Math.random() * allCharsLength));
+    }
+    return result;
+  }
+
+  async function autoGenerate(){
+
+    const submitData={
+      employeeId: generateRandomString(),
+      firstName: "test",
+      lastName: "employee",
+      email: generateRandomEmail('moondive.co'),
+      photo: generateRandomPersonImage(),
+      dateOfBirth: new Date('1977-10-28T00:00:00.000Z'),
+      gender: 'Male',
+      maritalStatus: 'Single',
+      aboutMe: 'this is auto generated employee',
+      mobileNumber: "1111111111",
+      alternateMobileNumber: "2222222222",
+      presentAddress: {
+        addressLine: "random address line",
+        locality: "random locality",
+        city: "random city",
+        state: "random state",
+        postalCode: "random postalcode",
+        country: "random country",
+      },
+      permanentAddress: {
+        addressLine: "permanent address line",
+        locality: "permanent address locality",
+        city: "permanent address city",
+        state: "permanent address state",
+        postalCode: "permanent address postalcode",
+        country: "permanent address country",
+      },
+      userRole: "Admin",
+      skills: ["skill1","skill2"],
+      sourceOfHire: "Web",
+      employmentType: "Internship",
+      employmentStatus: "Active",
+      departmentId: '69392827b912d4f8c20de338',
+      designationId: '693f9d9f8246612bd85e6bee',
+      reportingManagerId: '693aae15266fd0d126b40de0',
+      dateOfJoining: new Date('2024-10-28T00:00:00.000Z'),
+      onboardingStatus: 'Pending',
+      availableLeave: '10',
+      workingShiftId: '693f9d9f8246612bd85e6bee',
+      password:"1234567890",
+      probationEndDate:  null,
+      emergencyContacts: [{
+        name: 'test emergency contact',
+        relationship: 'Child',
+        phone: "8888888888",
+        email: 'test@gmail.com'
+      }],
+    }
+    try {
+      setSubmitting(true)
+      console.log("Submitting data:", submitData);
+      
+      let res;
+      if (mode === 'add') {
+        res = await axios.post('/hrms/employee/add-employee', submitData);
+        console.log("Add response:", res.data);
+      } else if (mode === 'edit') {
+        const empId = employee._id || employee.id;
+        res = await axios.put(`/hrms/employee/update-employee/${empId}`, submitData);
+        console.log("Update response:", res.data);
+      }
+
+      onSave && onSave(res.data.data || res.data.result);
+      onClose && onClose();
+    } catch (error) {
+      console.error("Failed to save employee:", error);
+      
+      
+      if (type === 'auto') {
+        const errorMessage = error.response?.data?.message || `Failed to add employee. Please try again.`;
+        setErrors({ submit: errorMessage });}
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   const isView = mode === 'view';
   const isEdit = mode === 'edit';
   const primaryLabel = isView ? 'Close' : isEdit ? 'Save changes' : 'Create employee';
@@ -688,8 +817,18 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
         <div className="relative bg-white rounded-2xl p-8 shadow-2xl">
-          <div className="text-center">Loading form data...</div>
+          <div className='flex justify-center'>
+            <div className='w-48 '>
+              <DotLottieReact
+                src='https://lottie.host/6ea42a0b-7716-4eff-a01d-6a486e150a49/TCdIGyunvu.lottie'
+                loop
+                autoplay
+              />
+            </div>
+          </div>
+          <div className="text-center">Loading please wait...</div>
         </div>
       </div>
     );
@@ -704,7 +843,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
         role="dialog"
         aria-modal="true"
       >
-        {/* Header */}
+        
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 sticky top-0 bg-white z-10">
           <div>
             <h3 className="text-lg font-semibold text-[var(--color-blackText)]">
@@ -722,7 +861,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
           </button>
         </div>
 
-        {/* Stepper */}
+       
         <div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
           <div className="flex items-center gap-4">
             {[1, 2, 3, 4].map((s) => (
@@ -742,7 +881,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
           </div>
         </div>
 
-        {/* Error Display */}
+        
         {(errorMessages.length > 0 || errors.submit) && (
           <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-start gap-2">
@@ -767,14 +906,14 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
           </div>
         )}
 
-        {/* Body */}
+        
         <div className="p-6">
-          {/* Step 1: Personal */}
+          
           <div hidden={step !== 1}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h5 className="md:col-span-2 font-semibold text-lg mb-2">Personal Details</h5>
 
-              {/* Photo Upload - Full Width at Top */}
+              
               <div className="md:col-span-2">
                 <label className="text-sm text-[var(--color-primaryText)] block mb-2">Employee Photo</label>
                 <div className="flex items-center justify-center">
@@ -838,7 +977,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <input
                   value={form.firstName || ''}
                   onChange={(e) => update('firstName', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.firstName ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.firstName ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -848,7 +987,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <input
                   value={form.lastName || ''}
                   onChange={(e) => update('lastName', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.lastName ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.lastName ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -859,7 +998,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   type="email"
                   value={form.email || ''}
                   onChange={(e) => update('email', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.email ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.email ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -870,7 +1009,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   type="date"
                   value={form.dateOfBirth || ''}
                   onChange={(e) => update('dateOfBirth', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.dateOfBirth ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.dateOfBirth ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -880,7 +1019,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.gender || ''}
                   onChange={(e) => update('gender', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.gender ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.gender ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -895,7 +1034,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.maritalStatus || ''}
                   onChange={(e) => update('maritalStatus', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.maritalStatus ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.maritalStatus ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -911,7 +1050,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <input
                   value={form.mobileNumber || ''}
                   onChange={(e) => handleNumberInput(e, 'mobileNumber')}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.mobileNumber ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.mobileNumber ? 'border-red-500' : ''}`}
                   readOnly={isView}
                   placeholder="+1234567890"
                 />
@@ -922,7 +1061,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <input
                   value={form.alternateMobileNumber || ''}
                   onChange={(e) => handleNumberInput(e, 'alternateMobileNumber')}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.alternateMobileNumber ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.alternateMobileNumber ? 'border-red-500' : ''}`}
                   readOnly={isView}
                   placeholder="+1234567890"
                 />
@@ -934,7 +1073,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.about || ''}
                   onChange={(e) => update('about', e.target.value)}
                   rows={3}
-                  className="mt-1 w-full px-3 py-2 border rounded-md"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
                   readOnly={isView}
                 />
               </div>
@@ -947,7 +1086,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[0]?.addressLine || ''}
                   onChange={(e) => updateAddressField(0, 'addressLine', e.target.value)}
                   placeholder="Street address, etc."
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[0].addressLine'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[0].addressLine'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -958,7 +1097,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[0]?.locality || ''}
                   onChange={(e) => updateAddressField(0, 'locality', e.target.value)}
                   placeholder="Neighborhood or locality"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[0].locality'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[0].locality'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -969,7 +1108,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[0]?.city || ''}
                   onChange={(e) => updateAddressField(0, 'city', e.target.value)}
                   placeholder="City name"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[0].city'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[0].city'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -980,7 +1119,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[0]?.state || ''}
                   onChange={(e) => updateAddressField(0, 'state', e.target.value)}
                   placeholder="State/Province"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[0].state'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[0].state'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -991,7 +1130,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[0]?.postalCode || ''}
                   onChange={(e) => updateAddressField(0, 'postalCode', e.target.value)}
                   placeholder="ZIP/Postal code"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[0].postalCode'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[0].postalCode'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1002,7 +1141,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[0]?.country || ''}
                   onChange={(e) => updateAddressField(0, 'country', e.target.value)}
                   placeholder="Country name"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[0].country'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[0].country'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1015,7 +1154,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[1]?.addressLine || ''}
                   onChange={(e) => updateAddressField(1, 'addressLine', e.target.value)}
                   placeholder="Street address, etc."
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[1].addressLine'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[1].addressLine'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1026,7 +1165,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[1]?.locality || ''}
                   onChange={(e) => updateAddressField(1, 'locality', e.target.value)}
                   placeholder="Neighborhood or locality"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[1].locality'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[1].locality'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1037,7 +1176,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[1]?.city || ''}
                   onChange={(e) => updateAddressField(1, 'city', e.target.value)}
                   placeholder="City name"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[1].city'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[1].city'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1048,7 +1187,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[1]?.state || ''}
                   onChange={(e) => updateAddressField(1, 'state', e.target.value)}
                   placeholder="State/Province"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[1].state'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[1].state'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1059,7 +1198,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[1]?.postalCode || ''}
                   onChange={(e) => updateAddressField(1, 'postalCode', e.target.value)}
                   placeholder="ZIP/Postal code"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[1].postalCode'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[1].postalCode'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1070,7 +1209,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.address?.[1]?.country || ''}
                   onChange={(e) => updateAddressField(1, 'country', e.target.value)}
                   placeholder="Country name"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['address[1].country'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['address[1].country'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1083,7 +1222,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.emergencyContacts?.[0]?.name || ''}
                   onChange={(e) => updateEmergencyContactField(0, 'name', e.target.value)}
                   placeholder="Full name of contact"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['emergencyContacts[0].name'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['emergencyContacts[0].name'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1093,7 +1232,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.emergencyContacts?.[0]?.relationship || ''}
                   onChange={(e) => updateEmergencyContactField(0, 'relationship', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['emergencyContacts[0].relationship'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['emergencyContacts[0].relationship'] ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select Relationship</option>
@@ -1113,7 +1252,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.emergencyContacts?.[0]?.phone || ''}
                   onChange={(e) => handleEmergencyPhoneInput(e, 0)}
                   placeholder="+1234567890"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['emergencyContacts[0].phone'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['emergencyContacts[0].phone'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1125,24 +1264,24 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   value={form.emergencyContacts?.[0]?.email || ''}
                   onChange={(e) => updateEmergencyContactField(0, 'email', e.target.value)}
                   placeholder="Emergency contact email"
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors['emergencyContacts[0].email'] ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors['emergencyContacts[0].email'] ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
             </div>
           </div>
 
-          {/* Step 2: Job */}
+          
           <div hidden={step !== 2}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h5 className="md:col-span-2 font-semibold text-lg mb-2">Job Details</h5>
 
               <div>
-                <label className="text-sm text-[var(--color-primaryText)]">User Role <span className="text-red-500">*</span></label>
+                <label className="text-sm text-[var(--color-primaryText)]">Assigned Role <span className="text-red-500">*</span></label>
                 <select
                   value={form.userRole?.[0] || ''}
                   onChange={(e) => update('userRole', [e.target.value])}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.userRole ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.userRole ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select role</option>
@@ -1158,7 +1297,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.sourceOfHire || ''}
                   onChange={(e) => update('sourceOfHire', e.target.value)}
-                  className="mt-1 w-full px-3 py-2 border rounded-md"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -1175,7 +1314,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.employmentType || ''}
                   onChange={(e) => update('employmentType', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.employmentType ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employmentType ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -1191,7 +1330,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.employmentStatus || ''}
                   onChange={(e) => update('employmentStatus', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.employmentStatus ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employmentStatus ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -1207,10 +1346,15 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.workingShiftId || ''}
                   onChange={(e) => update('workingShiftId', e.target.value)}
-                  className="mt-1 w-full px-3 py-2 border rounded-md"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
                   disabled={isView}
                 >
                   <option value="">Select Shift</option>
+                  {shifts?.map((d) => (
+                    <option key={d._id} value={d._id}>
+                      {d.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1248,7 +1392,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
             </div>
           </div>
 
-          {/* Step 3: Employment */}
+          
           <div hidden={step !== 3}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h5 className="md:col-span-2 font-semibold text-lg mb-2">Employment Details</h5>
@@ -1258,7 +1402,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.departmentId || ''}
                   onChange={(e) => update('departmentId', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.departmentId ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.departmentId ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select Department</option>
@@ -1275,7 +1419,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.designationId || ''}
                   onChange={(e) => update('designationId', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.designationId ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.designationId ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select Designation</option>
@@ -1292,7 +1436,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.reportingManagerId || ''}
                   onChange={(e) => update('reportingManagerId', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.reportingManagerId ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.reportingManagerId ? 'border-red-500' : ''}`}
                   disabled={isView}
                 >
                   <option value="">Select Reporting Manager</option>
@@ -1310,7 +1454,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   type="date"
                   value={form.dateOfJoining || ''}
                   onChange={(e) => update('dateOfJoining', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.dateOfJoining ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.dateOfJoining ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
@@ -1320,7 +1464,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <select
                   value={form.onboardingStatus || 'Pending'}
                   onChange={(e) => update('onboardingStatus', e.target.value)}
-                  className="mt-1 w-full px-3 py-2 border rounded-md"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
                   disabled={isView}
                 >
                   <option value="Pending">Pending</option>
@@ -1330,12 +1474,12 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
               </div>
 
               <div>
-                <label className="text-sm text-[var(--color-primaryText)]">Available Leave (days)</label>
+                <label className="text-sm text-[var(--color-primaryText)]">Available Leave (days per month)</label>
                 <input
                   type="text"
                   value={form.availableLeave || ''}
                   onChange={(e) => handleNumberInput(e, 'availableLeave')}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.availableLeave ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.availableLeave ? 'border-red-500' : ''}`}
                   readOnly={isView}
                   placeholder="0"
                 />
@@ -1347,14 +1491,14 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   type="date"
                   value={form.probationEndDate || ''}
                   onChange={(e) => update('probationEndDate', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.probationEndDate ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.probationEndDate ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
               </div>
             </div>
           </div>
 
-          {/* Step 4: Credentials */}
+          
           <div hidden={step !== 4}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h5 className="md:col-span-2 font-semibold text-lg mb-2">Credentials</h5>
@@ -1364,7 +1508,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <input
                   value={form.employeeId || ''}
                   onChange={(e) => update('employeeId', e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.employeeId ? 'border-red-500' : ''}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employeeId ? 'border-red-500' : ''}`}
                   readOnly={isView}
                 />
                 {errors.employeeId && (
@@ -1377,7 +1521,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 <input
                   value={form.email || ''}
                   readOnly
-                  className="mt-1 w-full px-3 py-2 border rounded-md bg-gray-100"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                 />
               </div>
 
@@ -1388,7 +1532,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                     type="password"
                     value={form.password || ''}
                     onChange={(e) => update('password', e.target.value)}
-                    className={`mt-1 w-full px-3 py-2 border rounded-md ${errors.password ? 'border-red-500' : ''}`}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.password ? 'border-red-500' : ''}`}
                     placeholder="Minimum 8 characters"
                   />
                   {errors.password && (
@@ -1404,7 +1548,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                     type="password"
                     value="********"
                     readOnly
-                    className="mt-1 w-full px-3 py-2 border rounded-md bg-gray-100"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                   />
                 </div>
               )}
@@ -1412,8 +1556,8 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-gray-100 sticky bottom-0 bg-white">
+        
+        <div className="flex items-center justify-between p-4 border-t border-gray-100 sticky bottom-0 bg-white ">
           <div>
             {!isView && (
               <>
@@ -1429,7 +1573,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                 {step < 4 && (
                   <button
                     onClick={next}
-                    className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm"
+                    className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm hover:brightness-95"
                     disabled={submitting}
                   >
                     Continue
@@ -1447,12 +1591,21 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
             >
               Cancel
             </button>
+            {mode==='add'&& <button
+              onClick={autoGenerate}
+              disabled={submitting}
+                className={`px-4 py-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
+                  submitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+            >
+              {submitting ? 'Generating data...' : 'Auto generate'}
+            </button>}
 
             {!isView ? (step==4 &&
               <button
                 onClick={submit}
                 disabled={submitting}
-                className={`px-4 py-2 rounded-md bg-[var(--color-primary)] text-white font-semibold ${
+                className={`px-4 py-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
                   submitting ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >

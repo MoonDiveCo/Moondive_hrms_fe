@@ -6,7 +6,8 @@ import axios from 'axios';
 import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
 
-const API_BASE = '/api';
+
+
 
 export default function Employees({ initialEmployees = [] }) {
   const [employees, setEmployees] = useState(initialEmployees);
@@ -68,7 +69,17 @@ export default function Employees({ initialEmployees = [] }) {
     setShowViewModal(false);
   }
 
-  // This function is called from EmployeeModal when "Edit Profile" is clicked
+  async function deleteFromView(){
+    try{
+      await fetchEmployees()
+      setShowViewModal(false);
+      setSelected(null)
+    }catch(err){
+      console.error('failed to fetch employee data after deleting',err)
+    }
+  }
+
+  
   function handleEditFromView(emp) {
     setShowViewModal(false);
     setModalMode('edit');
@@ -94,9 +105,9 @@ export default function Employees({ initialEmployees = [] }) {
     if (lastFocusedRef.current) lastFocusedRef.current.focus();
   }
 
-  // Enhanced getDisplayEmployee with better null handling
+  
   function getDisplayEmployee(emp) {
-    // Handle department - could be populated object or just ID
+    
     let departmentName = 'Unknown Dept';
     if (emp.departmentId) {
       if (typeof emp.departmentId === 'object' && emp.departmentId.name) {
@@ -106,7 +117,7 @@ export default function Employees({ initialEmployees = [] }) {
       }
     }
 
-    // Handle designation - could be populated object or just ID
+    
     let designationName = 'Unknown Role';
     if (emp.designationId) {
       if (typeof emp.designationId === 'object' && emp.designationId.name) {
@@ -158,7 +169,7 @@ export default function Employees({ initialEmployees = [] }) {
   return (
     <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
       <div className='container py-6'>
-        {/* Header */}
+        
         <div className='flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 mt-3'>
           <div>
             <h3 className='text-[var(--font-size-h2)] font-extrabold text-[var(--color-blackText)] leading-tight'>
@@ -232,7 +243,7 @@ export default function Employees({ initialEmployees = [] }) {
           </div>
         </div>
 
-        {/* Grid of cards */}
+        
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
           {employees.map((emp, index) => {
             const displayEmp = getDisplayEmployee(emp);
@@ -270,22 +281,14 @@ export default function Employees({ initialEmployees = [] }) {
                   className='ml-auto p-1 text-gray-400 hover:text-gray-600'
                   title='Edit'
                 >
-                  <svg width='16' height='16' viewBox='0 0 24 24' fill='none'>
-                    <path
-                      d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </svg>
+
                 </button>
               </article>
             );
           })}
         </div>
 
-        {/* Empty state */}
+        
         {employees.length === 0 && (
           <div className='text-center py-12'>
             <p className='text-gray-500 mb-4'>No employees found</p>
@@ -298,16 +301,17 @@ export default function Employees({ initialEmployees = [] }) {
           </div>
         )}
 
-        {/* View modal */}
+        
         {showViewModal && selected && (
           <EmployeeModal 
             employee={selected} 
             onClose={closeView} 
             onEdit={handleEditFromView}
+            onDelete={deleteFromView}
           />
         )}
 
-        {/* Add/Edit modal */}
+        
         {showAddEdit && (
           <AddEditEmployeeModal
             mode={modalMode}
