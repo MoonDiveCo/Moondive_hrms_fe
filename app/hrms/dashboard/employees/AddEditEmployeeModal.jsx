@@ -778,7 +778,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
       }],
     }
     try {
-      setSubmitting(true)
+      setAutoEmployee(true)
       console.log("Submitting data:", submitData);
       
       let res;
@@ -801,7 +801,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
         const errorMessage = error.response?.data?.message || `Failed to add employee. Please try again.`;
         setErrors({ submit: errorMessage });}
     } finally {
-      setSubmitting(false);
+      setAutoEmployee(false);
     }
   }
 
@@ -1591,14 +1591,14 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
             >
               Cancel
             </button>
-            {mode==='add'&& <button
+            {(mode==='add' && step===1)&& <button
               onClick={autoGenerate}
-              disabled={submitting}
+              disabled={autoEmployee}
                 className={`px-4 py-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
-                  submitting ? 'opacity-50 cursor-not-allowed' : ''
+                  autoEmployee ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
-              {submitting ? 'Generating data...' : 'Auto generate'}
+              {autoEmployee ? 'Generating data...' : 'Auto generate'}
             </button>}
 
             {!isView ? (step==4 &&
