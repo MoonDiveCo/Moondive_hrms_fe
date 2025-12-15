@@ -112,7 +112,7 @@ return (
   <React.Fragment key={lt.code}>
     <td className="px-6 py-4 text-gray-700">
       {isUnlimited ? (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary border border-primary">
           Unlimited
         </span>
       ) : (
@@ -122,7 +122,7 @@ return (
 
     <td className="px-6 py-4 text-gray-700">
       {isUnlimited ? (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary border border-primary">
           Unlimited
         </span>
       ) : (

@@ -72,6 +72,11 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
   );
 };
 
+const getDisabledClasses = (disabled) =>
+  disabled
+    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+    : "bg-white";
+
 const isValidNumberInput = (value) => /^\d*$/.test(value);
 
   return (
@@ -103,17 +108,21 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
         <div className="grid grid-cols-2 gap-4">
           {policy.leaveTypes.map((lt) => {
             const alloc = allocations.find(a => a.leaveTypeCode === lt.code);
+            
+            const isOptionalLeave =
+            lt.code === "OL" && lt.usageRule?.type === "WINDOWED";
+
+          const isUnlimited = alloc?.unlimited;
 
             return (
               <div key={lt.code} className="bg-gray-50 p-3 rounded-md">
                 <label className="font-medium">{lt.code}</label>
 
-  {/* Unlimited checkbox */}
             <div className="flex items-center gap-2 mt-2">
               <input
                 type="checkbox"
                 checked={alloc?.unlimited ?? false}
-                disabled={isView } // ONLY LWP editable
+                disabled={isView } 
                 onChange={(e) =>
                   toggleUnlimited(lt.code, e.target.checked)
                 }
@@ -124,21 +133,20 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
               </span>
             </div>
 
-            {/* Monthly + Yearly quota */}
             <div className="grid grid-cols-2 gap-4 mt-3">
               <div>
                 <label className="text-sm text-gray-600">Monthly Quota</label>
                 <input
                   type="text"
                   inputMode="numeric"
-                  disabled={isView || alloc?.unlimited}
+                  disabled={isView ||isUnlimited || isOptionalLeave}
                   value={alloc?.monthlyQuota ?? 0}
                   onChange={(e) => {
                   const value = e.target.value;
                   if (!isValidNumberInput(value)) return;
                   updateQuota(lt.code, "monthlyQuota", value === "" ? "" : Number(value));
                 }}
-                  className="w-full px-3 py-2 border rounded-md mt-1"
+                  className={`w-full px-3 py-2 border rounded-md mt-1  ${getDisabledClasses(isView || isUnlimited || isOptionalLeave)}`}
                 />
               </div>
 
@@ -154,10 +162,20 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
                     if (!isValidNumberInput(value)) return;
                     updateQuota(lt.code, "yearlyQuota", value === "" ? "" : Number(value));
                   }}
-                  className="w-full px-3 py-2 border rounded-md mt-1"
+                  className={`w-full px-3 py-2 border rounded-md mt-1 ${getDisabledClasses(isView || isUnlimited)}`}
                 />
               </div>
             </div>
+                {isOptionalLeave && (
+            <span className="text-xs text-red-500 mt-1">
+              Optional Leave is yearly-based (1 per half-year)
+            </span>
+          )}
+          {isUnlimited && (
+        <span className="text-xs text-red-500 mt-1">
+          Unlimited leave - quota not required
+        </span>
+      )}
           </div>
             );
           })}
