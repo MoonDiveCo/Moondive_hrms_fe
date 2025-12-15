@@ -20,6 +20,7 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
         leaveTypeCode: lt.code,
         monthlyQuota: 0,
         yearlyQuota: 0,
+        unlimited: lt.code === "LWP"
       }));
       setAllocations(defaultAllocations);
     }
@@ -33,7 +34,7 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
     };
 
     if (isEdit) {
-      await axios.put(`/hrms/leave/create-group-policy/`, {
+      await axios.put(`/hrms/leave/update-group-policy/`, {
         organizationId,
         employmentType: [body],
       });
@@ -55,6 +56,23 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
       )
     );
   };
+
+  const toggleUnlimited = (code, value) => {
+  setAllocations(prev =>
+    prev.map(a =>
+      a.leaveTypeCode === code
+        ? {
+            ...a,
+            unlimited: value,
+            monthlyQuota: value ? 0 : a.monthlyQuota,
+            yearlyQuota: value ? 0 : a.yearlyQuota,
+          }
+        : a
+    )
+  );
+};
+
+const isValidNumberInput = (value) => /^\d*$/.test(value);
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center">
@@ -90,36 +108,57 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
               <div key={lt.code} className="bg-gray-50 p-3 rounded-md">
                 <label className="font-medium">{lt.code}</label>
 
-                {/* Monthly Quota */}
-                <div className="grid grid-cols-2 gap-4">
-                <div className="mt-2">
-                  <label className="text-sm text-gray-600">Monthly Quota</label>
-                  <input
-                    type="number"
-                    disabled={isView}
-                    value={alloc?.monthlyQuota ?? 0}
-                    onChange={(e) =>
-                      updateQuota(lt.code, "monthlyQuota", Number(e.target.value))
-                    }
-                    className="w-full px-3 py-2 border rounded-md mt-1"
-                  />
-                </div>
+  {/* Unlimited checkbox */}
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                checked={alloc?.unlimited ?? false}
+                disabled={isView } // ONLY LWP editable
+                onChange={(e) =>
+                  toggleUnlimited(lt.code, e.target.checked)
+                }
+                className="h-4 w-4"
+              />
+              <span className="text-sm text-gray-700">
+                Unlimited ({alloc?.unlimited ? "true" : "false"})
+              </span>
+            </div>
 
-                {/* Yearly Quota */}
-                <div className="mt-2">
-                  <label className="text-sm text-gray-600">Yearly Quota</label>
-                  <input
-                    type="number"
-                    disabled={isView}
-                    value={alloc?.yearlyQuota ?? 0}
-                    onChange={(e) =>
-                      updateQuota(lt.code, "yearlyQuota", Number(e.target.value))
-                    }
-                    className="w-full px-3 py-2 border rounded-md mt-1"
-                  />
-                </div>
-                </div>
+            {/* Monthly + Yearly quota */}
+            <div className="grid grid-cols-2 gap-4 mt-3">
+              <div>
+                <label className="text-sm text-gray-600">Monthly Quota</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  disabled={isView || alloc?.unlimited}
+                  value={alloc?.monthlyQuota ?? 0}
+                  onChange={(e) => {
+                  const value = e.target.value;
+                  if (!isValidNumberInput(value)) return;
+                  updateQuota(lt.code, "monthlyQuota", value === "" ? "" : Number(value));
+                }}
+                  className="w-full px-3 py-2 border rounded-md mt-1"
+                />
               </div>
+
+              <div>
+                <label className="text-sm text-gray-600">Yearly Quota</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  disabled={isView || alloc?.unlimited}
+                  value={alloc?.yearlyQuota ?? 0}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!isValidNumberInput(value)) return;
+                    updateQuota(lt.code, "yearlyQuota", value === "" ? "" : Number(value));
+                  }}
+                  className="w-full px-3 py-2 border rounded-md mt-1"
+                />
+              </div>
+            </div>
+          </div>
             );
           })}
         </div>

@@ -224,6 +224,11 @@ const handleEditItem = async (formData, id) => {
   }
 };
 
+const handleDeleteInventory = async (id) => {
+  await axios.delete(`/cms/inventory/delete-inventory/${id}`);
+  setEditOpen(false);
+  fetchData();
+};
 
   const handleEdit = (item) => {
   setSelectedItem(item);
@@ -439,6 +444,7 @@ const handleEditItem = async (formData, id) => {
         item={selectedItem}
         onClose={() => setEditOpen(false)}
         onSave={(form, _id) => handleEditItem(form, _id)}
+        onDelete={(id)=>handleDeleteInventory(id)}
       />
     </div>
   );

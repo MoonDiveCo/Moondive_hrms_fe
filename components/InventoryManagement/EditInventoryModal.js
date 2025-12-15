@@ -5,7 +5,7 @@ import AddInventoryModal from "./AddInventoryModal";
 import { EditIcon } from "lucide-react";
 import ImagePreviewModal from "./ImagePreviewModal";
 
-export default function EditInventoryModal({ open, item, users = [], onClose, onSave }) {
+export default function EditInventoryModal({ open, item,onDelete, users = [], onClose, onSave }) {
   const [form, setForm] = useState({
     assignedTo: "",
     remarks: "",
@@ -412,6 +412,7 @@ const openPreview = (fileUrl) => {
           initialData={item}
           onClose={() => setShowEditModal(false)}
           onSave={(fd) => onSave(fd, item._id)}
+          onDelete={(id)=>onDelete(id)}
         />
       )}
 

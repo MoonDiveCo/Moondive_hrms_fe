@@ -48,7 +48,70 @@ const LEAVE_TRACKER_HEADER = [
     ],
   },
 ];
+
+const LEAVE_TRACKER_EMPLOYEE_HEADER = [
+  {
+    key: "leave-dashboard",
+    label: "Leave Dashboard ",
+    basePath: "/hrms/dashboard/leave-tracker/leave-dashboard",
+        layoutType: "HEADER", 
+
+    sections: [
+      {}
+    ],
+  },
+  {
+    key: "holiday-calender",
+    label: "Holiday Calender",
+    basePath: "/hrms/dashboard/leave-tracker/holiday-calender",
+        layoutType: "HEADER", 
+
+    sections: [
+      {}
+    ],
+  },
+
+  {
+    key: "leave-request",
+    label: "Leave Request ",
+    basePath: "/hrms/dashboard/leave-tracker/leave-request",
+        layoutType: "HEADER", 
+
+    sections: [
+      {}
+    ],
+  },
+];
 export const DASHBOARD_HEADERS = {
-  "leave-tracker": LEAVE_TRACKER_HEADER,
-  "manage-accounts": MANAGE_ACCOUNTS_HEADER,
+  "leave-tracker": {
+    patterns: [
+      {
+        path: ["dashboard", "leave-tracker"],  
+        level: 2,                                
+        type: "employee",                         
+      },
+      {
+        path: ["dashboard","operations", "leave-tracker"],
+        level: 3,
+        type: "admin",
+      },
+    ],
+    headers: {
+      employee: LEAVE_TRACKER_EMPLOYEE_HEADER,
+      admin: LEAVE_TRACKER_HEADER,
+    }
+  },
+
+  "manage-accounts": {
+    patterns: [
+      {
+        path: ["dashboard","operations", "manage-accounts"],
+        level: 4,
+        type: "admin",
+      }
+    ],
+    headers: {
+      admin: MANAGE_ACCOUNTS_HEADER
+    }
+  }
 };

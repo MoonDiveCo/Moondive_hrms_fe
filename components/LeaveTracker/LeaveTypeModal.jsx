@@ -52,6 +52,8 @@ export default function LeaveTypeModal({ mode, data, onClose, organizationId }) 
     onClose();
   };
 
+  const isValidNumberInput = (value) => /^\d*$/.test(value);
+
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -99,10 +101,15 @@ export default function LeaveTypeModal({ mode, data, onClose, organizationId }) 
           <div>
             <label className="text-sm font-medium">Yearly Quota</label>
             <input
-              type="number"
+                  type="text"
+                  inputMode="numeric"
               disabled={isView}
               value={form.yearlyQuota}
-              onChange={(e) => handleChange("yearlyQuota", Number(e.target.value))}
+              onChange={(e) => { 
+                const value = e.target.value;
+              if (!isValidNumberInput(value)) return;
+
+              handleChange("yearlyQuota", value === "" ? "" : Number(value));}}
               className="w-full px-3 py-2 border rounded-md"
             />
           </div>
@@ -115,7 +122,13 @@ export default function LeaveTypeModal({ mode, data, onClose, organizationId }) 
               disabled={isView}
               value={form.maxCarryForwardLimit}
               onChange={(e) =>
-                handleChange("maxCarryForwardLimit", Number(e.target.value))
+              { const value = e.target.value;
+              if (!isValidNumberInput(value)) return;
+
+              handleChange(
+                "maxCarryForwardLimit",
+                value === "" ? "" : Number(value)
+              );}
               }
               className="w-full px-3 py-2 border rounded-md"
             />

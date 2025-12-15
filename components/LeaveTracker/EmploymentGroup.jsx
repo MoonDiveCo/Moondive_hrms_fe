@@ -39,17 +39,21 @@ function EmploymentGroup() {
     fetchPolicy();
   };
 
-    async function deleteGroup(name) {
-    if (!window.confirm("Delete this employment group?")) return;
-    await axios.delete(`/hrms/leave-policy/group/${name}`);
-    fetchPolicy();
-  }
+async function deleteGroup(groupName) {
+  if (!window.confirm("Delete this employment group?")) return;
+
+  await axios.delete(`/hrms/leave/delete-group-policy/${user.organizationId}/${groupName}`);
+
+  fetchPolicy();
+}
+
+
 
     if (loading) return <div className="p-6">Loading...</div>;
   return (
      <section className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="p-6 border-b flex justify-between items-center">
-          <h4 className="text-lg font-semibold text-gray-900">Employment Groups</h4>
+          <h4 className="text-lg font-semibold text-gray-900"></h4>
 
           <button
             className="px-4 py-2 text-sm text-white bg-orange-500 rounded hover:bg-orange-600 flex items-center gap-2"
@@ -102,16 +106,32 @@ function EmploymentGroup() {
                     const allocation = grp.leaveAllocations.find(
                         (a) => a.leaveTypeCode === lt.code
                     );
+const isUnlimited = allocation?.unlimited === true;
 
-                    const monthly = allocation?.monthlyQuota ?? 0;
-                    const yearly = allocation?.yearlyQuota ?? 0;
+return (
+  <React.Fragment key={lt.code}>
+    <td className="px-6 py-4 text-gray-700">
+      {isUnlimited ? (
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+          Unlimited
+        </span>
+      ) : (
+        allocation?.monthlyQuota ?? 0
+      )}
+    </td>
 
-                    return (
-                        <React.Fragment key={lt.code}>
-                        <td className="px-6 py-4 text-gray-700">{monthly}</td>
-                        <td className="px-6 py-4 text-gray-700">{yearly}</td>
-                        </React.Fragment>
-                    );
+    <td className="px-6 py-4 text-gray-700">
+      {isUnlimited ? (
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+          Unlimited
+        </span>
+      ) : (
+        allocation?.yearlyQuota ?? 0
+      )}
+    </td>
+  </React.Fragment>
+);
+
                     })}
 
                     {/* Actions */}

@@ -33,16 +33,17 @@ export default function LeavePoliciesPage() {
 
   const closeModal = () => {
     setLeaveModal({ open: false, mode: "add", data: null });
-    setGroupModal({ open: false, mode: "add", data: null });
     lastFocus.current?.focus();
     fetchPolicy();
   };
 
-  async function deleteLeaveType(code) {
-    if (!window.confirm("Delete this leave type?")) return;
-    await axios.delete(`/hrms/leave-policy/type/${code}`);
-    fetchPolicy();
-  }
+async function deleteLeaveType(code) {
+  if (!window.confirm("Delete this leave type?")) return;
+
+  await axios.delete(`/hrms/leave/delete-leave-policy/${user.organizationId}/${code}`);
+
+  fetchPolicy();
+}
 
   if (loading) return <div className="p-6">Loading...</div>;
 
@@ -51,7 +52,7 @@ export default function LeavePoliciesPage() {
 
       <section className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="p-6 border-b flex justify-between items-center">
-          <h4 className="text-lg font-semibold text-gray-900">Leave Types</h4>
+          <h4 className="text-lg font-semibold text-gray-900"></h4>
 
           <button
             className="px-4 py-2 text-sm text-white bg-orange-500 rounded hover:bg-orange-600 flex items-center gap-2"
@@ -61,40 +62,39 @@ export default function LeavePoliciesPage() {
           </button>
         </div>
 
-        <table className="min-w-full divide-y divide-gray-200">
+            <div className="relative overflow-auto">
+
+        <table className="min-w-full divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>
-              {["Name", "Code", "Quota", "Paid", "Half Day", "Carry Forward", "Max CF", "", ""].map((h) => (
-                <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {["Name", "Code", "Quota", "Paid", "Half Day", "Carry Forward", "Max CF",  "Actions"].map((h) => (
+                <th key={h} className="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
 
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-gray-200 ">
             {policy?.leaveTypes?.length ? (
               policy.leaveTypes.map((lt, i) => (
-                <tr key={lt.code} className={i % 2 ? "bg-gray-50" : ""}>
-                  <td className="px-6 py-4">{lt.name}</td>
-                  <td className="px-6 py-4">{lt.code}</td>
-                  <td className="px-6 py-4">{lt.yearlyQuota}</td>
-                  <td className="px-6 py-4">{lt.isPaid ? "Yes" : "No"}</td>
-                  <td className="px-6 py-4">{lt.allowHalfDay ? "Yes" : "No"}</td>
-                  <td className="px-6 py-4">{lt.carryForward ? "Yes" : "No"}</td>
-                  <td className="px-6 py-4">{lt.maxCarryForwardLimit}</td>
+                <tr key={lt.code} >
+                  <td className="px-8 py-4">{lt.name}</td>
+                  <td className="px-10 py-4">{lt.code}</td>
+                  <td className="px-12 py-4">{lt.yearlyQuota}</td>
+                  <td className="px-10 py-4">{lt.isPaid ? "Yes" : "No"}</td>
+                  <td className="px-14 py-4">{lt.allowHalfDay ? "Yes" : "No"}</td>
+                  <td className="px-14 py-4">{lt.carryForward ? "Yes" : "No"}</td>
+                  <td className="px-14 py-4">{lt.maxCarryForwardLimit}</td>
 
                   <td className="px-4 py-4 text-right">
-                    <button
+                    <div className="inline-flex gap-2">
+                        <button
                       onClick={(e) => openLeaveModal("view", lt, e)}
                       className="p-2 hover:bg-gray-100 rounded-md"
                     >
                       <Eye size={16} className="text-blue-600" />
                     </button>
-                  </td>
-
-                  <td className="px-4 py-4 text-right">
-                    <div className="inline-flex gap-2">
                       <button
                         onClick={(e) => openLeaveModal("edit", lt, e)}
                         className="p-2 hover:bg-gray-100 rounded-md"
@@ -120,7 +120,7 @@ export default function LeavePoliciesPage() {
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </section>
 
       {leaveModal.open && (

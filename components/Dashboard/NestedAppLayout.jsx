@@ -5,32 +5,51 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MANAGE_ACCOUNTS_HEADER, LEAVE_TRACKER_HEADER } from "@/constants/NestedDashboard";
 import { DASHBOARD_HEADERS } from "@/constants/NestedDashboard";
+import { detectModuleKey, findMatchingPattern } from "@/utils/utils";
 
 
 export default function NestedAppLayout({ children }) {
   const pathname = usePathname();
   const parts = pathname.split("/").filter(Boolean);
- const serviceKey = parts[3];
-  const headerKey = parts[4];
-  const headerList = DASHBOARD_HEADERS[serviceKey] || [];
 
+  const moduleKey = detectModuleKey(parts);
+  const moduleConfig = DASHBOARD_HEADERS[moduleKey];
+
+  if (!moduleConfig) return children;
+
+  const pattern = findMatchingPattern(parts, moduleConfig);
+
+  if (!pattern) return children; 
+
+  const { level, type } = pattern;
+
+  const headerList = moduleConfig.headers[type];
+
+  const serviceIndex = level - 1;
+  const headerIndex = level;
+  const sectionIndex = level + 1;
+
+  let headerKey;
+
+if (headerList.length === 1) {
+  headerKey = headerList[0].key;
+} else {
+  headerKey = parts[headerIndex];
+}
   const activeHeader =
-    headerList.find((h) => h.key === headerKey) || headerList[0];
-const showSidebar = activeHeader?.layoutType === "SIDEBAR";
+    headerList.find(h => h.key === headerKey) || headerList[0];
 
+  const showSidebar = activeHeader?.layoutType === "SIDEBAR";
   return (
-    <div className="px-6 md:px-8 py-6 hide-scrollbar  w-full h-full ">
+    <div className=" hide-scrollbar  w-full h-full ">
       <div className=" flex flex-col gap-4">
-        <div className="bg-white rounded-2xl border-[0.5px] border-[#D0D5DD] p-4 overflow-auto sticky top-0">
+        <div className="bg-white rounded-2xl p-4 overflow-auto sticky top-0">
           <div className="flex items-center justify-between ">
             <div >
-              <h3 className="text-lg font-medium text-gray-900">
-                {activeHeader.label}
-              </h3>
 
-              <ul className="mt-2 flex items-center gap-5 text-sm font-normal text-[#464F60]">
+              <ul className=" flex items-center gap-5 text-sm font-normal text-[#464F60]">
                 {headerList.map((header) => {
-                  const isActive = header.key === activeHeader.key;
+                  const isActive = pathname.startsWith(header.basePath);
                   const defaultSection = header.sections[0];
                   
                   const href = activeHeader?.layoutType === "SIDEBAR"?`${header.basePath}/${defaultSection.slug}`:`${header.basePath}`;
