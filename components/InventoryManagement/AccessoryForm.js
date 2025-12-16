@@ -9,7 +9,7 @@ export default function AccessoryForm({ form, setForm }) {
 
         {/* Type */}
         <div>
-          <label className="text-sm">Type *</label>
+          <label className="text-sm">Type <span className="text-red-500">*</span></label>
           <input
             className="w-full border border-gray-300 p-2 rounded mt-1"
             placeholder="e.g., Headphone, Dock, Adapter"
@@ -20,7 +20,7 @@ export default function AccessoryForm({ form, setForm }) {
 
         {/* Quantity */}
         <div>
-          <label className="text-sm">Quantity *</label>
+          <label className="text-sm">Quantity <span className="text-red-500">*</span></label>
           <input
             type="number"
             className="w-full border border-gray-300 p-2 rounded mt-1"
@@ -31,7 +31,7 @@ export default function AccessoryForm({ form, setForm }) {
 
         {/* Brand */}
         <div>
-          <label className="text-sm">Brand *</label>
+          <label className="text-sm">Brand <span className="text-red-500">*</span></label>
           <input
             className="w-full border border-gray-300 p-2 rounded mt-1"
             placeholder="Apple, Logitech, Sony"
@@ -42,7 +42,7 @@ export default function AccessoryForm({ form, setForm }) {
 
         {/* Condition */}
         <div>
-          <label className="text-sm">Condition *</label>
+          <label className="text-sm">Condition<span className="text-red-500">*</span></label>
           <select
             className="w-full border border-gray-300 p-2 rounded mt-1"
             value={form.condition || ""}
@@ -57,7 +57,7 @@ export default function AccessoryForm({ form, setForm }) {
 
         {/* Model */}
         <div>
-          <label className="text-sm">Model *</label>
+          <label className="text-sm">Model <span className="text-red-500">*</span></label>
           <input
             className="w-full border border-gray-300 p-2 rounded mt-1"
             placeholder="AirPods Pro, MX Master 3"
@@ -67,15 +67,15 @@ export default function AccessoryForm({ form, setForm }) {
         </div>
 
         {/* Low Stock */}
-        <div>
-          <label className="text-sm">Low Stock Alert *</label>
+        {/* <div>
+          <label className="text-sm">Low Stock Alert <span className="text-red-500">*</span></label>
           <input
             type="number"
             className="w-full border border-gray-300 p-2 rounded mt-1"
             value={form.lowStock || ""}
             onChange={(e) => handle("lowStock", e.target.value)}
           />
-        </div>
+        </div> */}
 
         {/* Compatible With */}
         <div className="col-span-2">
@@ -102,7 +102,7 @@ export default function AccessoryForm({ form, setForm }) {
 
         {/* Purchase Date */}
         <div>
-          <label className="text-sm">Purchase Date *</label>
+          <label className="text-sm">Purchase Date <span className="text-red-500">*</span></label>
           <input
             type="date"
             className="w-full border border-gray-300 p-2 rounded mt-1"
@@ -122,7 +122,7 @@ export default function AccessoryForm({ form, setForm }) {
         </div> */}
 
         {/* Specifications */}
-        <div className="col-span-2">
+        {/* <div className="col-span-2">
           <h4 className="text-primaryText mt-4 mb-2">Specifications</h4>
         </div>
 
@@ -130,7 +130,7 @@ export default function AccessoryForm({ form, setForm }) {
         {specField("Dimensions", "dimensions", form, setForm)}
         {specField("Weight", "weight", form, setForm)}
         {specField("Connectivity", "connectivity", form, setForm)}
-        {specField("Features", "features", form, setForm)}
+        {specField("Features", "features", form, setForm)} */}
 
         {/* Notes */}
         <div className="col-span-2 mt-4">

@@ -60,7 +60,7 @@ const fetchIPData = async () => {
 
 
     Cookies.set("ipaddress", userIP);
-    axios.defaults.headers.common["ipaddress"] = userIP;
+    // axios.defaults.headers.common["ipaddress"] = userIP;
 
 
     let machineId = Cookies.get("machineid");
@@ -70,16 +70,16 @@ const fetchIPData = async () => {
       Cookies.set("machineid", machineId);
     }
 
-    axios.defaults.headers.common["machineid"] = machineId;
+    // axios.defaults.headers.common["machineid"] = machineId;
 
 
     let geoLocation = null;
     try {
       geoLocation = await getGeolocation();
 
-      axios.defaults.headers.common["latitude"] = geoLocation.latitude;
-      axios.defaults.headers.common["longitude"] = geoLocation.longitude;
-      axios.defaults.headers.common["accuracy"] = geoLocation.accuracy;
+      // axios.defaults.headers.common["latitude"] = geoLocation.latitude;
+      // axios.defaults.headers.common["longitude"] = geoLocation.longitude;
+      // axios.defaults.headers.common["accuracy"] = geoLocation.accuracy;
     } catch (geoErr) {
       console.warn("Geolocation unavailable:", geoErr.message);
       geoLocation = {

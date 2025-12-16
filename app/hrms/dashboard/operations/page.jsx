@@ -101,7 +101,7 @@ export default function Operations() {
   const popular = useMemo(
     () => [
       { id: 'onboarding', title: 'Onboarding', subtitle: '', icon: 'onboarding' },
-      { id: 'leave', title: 'Leave Tracker', subtitle: '', icon: 'leave' },
+      { id: 'leave-tracker/leave-policy', title: 'Leave Tracker', subtitle: '', icon: 'leave' },
       { id: 'performance', title: 'Performance', subtitle: '', icon: 'performance' },
       { id: 'hrletters', title: 'HR Letters', subtitle: '', icon: 'files' },
       { id: 'timetracker', title: 'Time Tracker', subtitle: '', icon: 'time' },
@@ -122,8 +122,8 @@ export default function Operations() {
     () => [
       { id: 'manage-accounts/organization/organization-details', title: 'Manage Accounts', icon: 'onboarding' },
       { id: 'employeeInfo', title: 'Employee Info', icon: 'employee' },
-        { id: '/accounts', title: 'Accounts', icon: 'files' },
-      { id: 'leaveTracker', title: 'Leave Tracker', icon: 'leave' },
+      { id: 'leave-tracker/leave-policy', title: 'Leave Tracker', icon: 'leave' },
+      { id: '/accounts', title: 'Accounts', icon: 'files' },
       { id: 'attendance', title: 'Attendance', icon: 'time' },
       { id: 'shift', title: 'Shift', icon: 'employee' },
       { id: 'timeTracker', title: 'Time Tracker', icon: 'time' },

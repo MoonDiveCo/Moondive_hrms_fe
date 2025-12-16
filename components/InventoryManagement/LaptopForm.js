@@ -10,7 +10,7 @@ export default function LaptopForm({ form, setForm }) {
 
         {/* Model Name */}
         <div>
-          <label className="text-sm">Model Name *</label>
+          <label className="text-sm">Model Name <span className="text-red-500">*</span></label>
           <input
             className="w-full border border-gray-300 p-2 rounded mt-1"
             placeholder="MacBook Pro 14-inch M2"
@@ -21,7 +21,7 @@ export default function LaptopForm({ form, setForm }) {
 
         {/* Serial Number */}
         <div>
-          <label className="text-sm">Serial Number *</label>
+          <label className="text-sm">Serial Number <span className="text-red-500">*</span></label>
           <input
             className="w-full border border-gray-300 p-2 rounded mt-1"
             placeholder="C02XL1234567"
@@ -32,7 +32,7 @@ export default function LaptopForm({ form, setForm }) {
 
         {/* Purchase Date */}
         <div>
-          <label className="text-sm">Purchase Date *</label>
+          <label className="text-sm">Purchase Date <span className="text-red-500">*</span></label>
           <input
             type="date"
             className="w-full border border-gray-300 p-2 rounded mt-1"
@@ -42,7 +42,7 @@ export default function LaptopForm({ form, setForm }) {
         </div>
         
         <div>
-          <label className="text-sm">Warranty expiryDate *</label>
+          <label className="text-sm">Warranty expiryDate <span className="text-red-500">*</span></label>
           <input
             type="date"
             className="w-full border border-gray-300 p-2 rounded mt-1"
