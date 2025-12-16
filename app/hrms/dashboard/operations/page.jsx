@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import React, { useMemo, useState } from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 
 
@@ -71,6 +72,7 @@ const Icon = ({ name }) => {
       );
   }
 };
+ 
 
 function ServiceCard({ title, subtitle, icon, onClick, className = '' }) {
   return (
@@ -96,6 +98,7 @@ function ServiceCard({ title, subtitle, icon, onClick, className = '' }) {
 
 export default function Operations() {
   const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
     const router = useRouter()
 
   const popular = useMemo(
@@ -133,7 +136,9 @@ export default function Operations() {
     []
   );
 
+
   function handleCardClick(id) {
+    setLoading(true);
     router.push(`/hrms/dashboard/operations/${id}`);
   }
 
@@ -141,6 +146,18 @@ export default function Operations() {
     (s.title + (s.subtitle || '')).toLowerCase().includes(query.trim().toLowerCase())
   );
 
+  if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} 
+        />
+      </div>
+    )
+  }
   return (
     <div className="container py-8 px-8 mx-auto bg-white">
       <section className="mb-8 px-8">

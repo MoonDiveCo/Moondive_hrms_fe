@@ -26,7 +26,7 @@ import ContentPerformance from "@/public/CMS/CMSContentPerformace.svg"
 const MenuContext = createContext(null);
 
 export function MenuProvider({ children }) {
-  const menus = useMemo(() => {
+  const menus = useMemo(() => { 
     const MENU = {
       HRMS: {
         SUPER_ADMIN: {
