@@ -352,151 +352,151 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     }
   }
 
-function getDigits(str) {
-  return str ? str.replace(/\D/g, '') : '';
-}
+  function getDigits(str) {
+    return str ? str.replace(/\D/g, '') : '';
+  }
 
-function validateStep(currentStep = step) {
-  const e = {};
-  
-  if (currentStep === 1) {
-    if (!form.firstName?.trim()) e.firstName = 'First name is required';
-    if (!form.lastName?.trim()) e.lastName = 'Last name is required';
+  function validateStep(currentStep = step) {
+    const e = {};
     
-    if (!form.email?.trim()) {
-      e.email = 'Email is required';
-    } else if (!isValidMoondiveEmail(form.email)) {
-      e.email = 'Please enter a valid moondive  email address';
+    if (currentStep === 1) {
+      if (!form.firstName?.trim()) e.firstName = 'First name is required';
+      if (!form.lastName?.trim()) e.lastName = 'Last name is required';
+      
+      if (!form.email?.trim()) {
+        e.email = 'Email is required';
+      } else if (!isValidMoondiveEmail(form.email)) {
+        e.email = 'Please enter a valid moondive  email address';
+      }
+      
+      if (!form.dateOfBirth) {
+        e.dateOfBirth = 'Date of birth is required';
+      } else {
+        const dob = new Date(form.dateOfBirth);
+        const today = new Date();
+        
+        if (dob > today) {
+          e.dateOfBirth = 'Date of birth cannot be in the future';
+        } else {
+          const age = today.getFullYear() - dob.getFullYear();
+          const monthDiff = today.getMonth() - dob.getMonth();
+          const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate()) 
+            ? age - 1 
+            : age;
+          
+          if (actualAge < 18) {
+            e.dateOfBirth = 'Employee must be at least 18 years old';
+          }
+        }
+      }
+      
+      if (!form.gender) e.gender = 'Gender is required';
+      if (!form.maritalStatus) e.maritalStatus = 'Marital status is required';
+      
+      if (!form.mobileNumber?.trim()) {
+        e.mobileNumber = 'Mobile number is required';
+      } else {
+        const mobileDigits = getDigits(form.mobileNumber);
+        if (mobileDigits.length !== 10) {
+          e.mobileNumber = 'Mobile number must be exactly 10 digits';
+        } else if (!isValidPhone(form.mobileNumber)) {
+          e.mobileNumber = 'Please enter a valid phone number (e.g., +1234567890 or 1234567890)';
+        }
+      }
+      
+      if (form.alternateMobileNumber?.trim()) {
+        const altDigits = getDigits(form.alternateMobileNumber);
+        if (altDigits.length !== 10) {
+          e.alternateMobileNumber = 'Alternate mobile number must be exactly 10 digits';
+        } else if (!isValidPhone(form.alternateMobileNumber)) {
+          e.alternateMobileNumber = 'Please enter a valid phone number (e.g., +1234567890 or 1234567890)';
+        }
+      }
+
+      if (form.imageUrl && !isValidURL(form.imageUrl)) {
+        e.imageUrl = 'Please enter a valid URL';
+      }
+
+      if (!form.address[0]?.addressLine?.trim()) e['address[0].addressLine'] = 'Address line is required';
+      if (!form.address[0]?.locality?.trim()) e['address[0].locality'] = 'Locality is required';
+      if (!form.address[0]?.city?.trim()) e['address[0].city'] = 'City is required';
+      if (!form.address[0]?.state?.trim()) e['address[0].state'] = 'State is required';
+      if (!form.address[0]?.postalCode?.trim()) e['address[0].postalCode'] = 'Postal code is required';
+      if (!form.address[0]?.country?.trim()) e['address[0].country'] = 'Country is required';
+
+      if (!form.address[1]?.addressLine?.trim()) e['address[1].addressLine'] = 'Address line is required';
+      if (!form.address[1]?.locality?.trim()) e['address[1].locality'] = 'Locality is required';
+      if (!form.address[1]?.city?.trim()) e['address[1].city'] = 'City is required';
+      if (!form.address[1]?.state?.trim()) e['address[1].state'] = 'State is required';
+      if (!form.address[1]?.postalCode?.trim()) e['address[1].postalCode'] = 'Postal code is required';
+      if (!form.address[1]?.country?.trim()) e['address[1].country'] = 'Country is required';
+
+      if (!form.emergencyContacts[0]?.name?.trim()) e['emergencyContacts[0].name'] = 'Emergency contact name is required';
+      if (!form.emergencyContacts[0]?.relationship?.trim()) e['emergencyContacts[0].relationship'] = 'Relationship is required';
+      
+      if (!form.emergencyContacts[0]?.phone?.trim()) {
+        e['emergencyContacts[0].phone'] = 'Emergency contact phone is required';
+      } else {
+        const emergencyDigits = getDigits(form.emergencyContacts[0].phone);
+        if (emergencyDigits.length !== 10) {
+          e['emergencyContacts[0].phone'] = 'Emergency contact phone must be exactly 10 digits';
+        } else if (!isValidPhone(form.emergencyContacts[0].phone)) {
+          e['emergencyContacts[0].phone'] = 'Please enter a valid phone number';
+        }
+      }
+
+      if (form.emergencyContacts[0]?.email && !isValidEmail(form.emergencyContacts[0].email)) {
+        e['emergencyContacts[0].email'] = 'Please enter a valid email address';
+      }
     }
     
-    if (!form.dateOfBirth) {
-      e.dateOfBirth = 'Date of birth is required';
-    } else {
-      const dob = new Date(form.dateOfBirth);
-      const today = new Date();
+    if (currentStep === 2) {
+      if (!form.userRole || form.userRole.length === 0) e.userRole = 'User role is required';
+      if (!form.employmentType) e.employmentType = 'Employment type is required';
+      if (!form.employmentStatus) e.employmentStatus = 'Employment status is required';
+    }
+    
+    if (currentStep === 3) {
+      if (!form.departmentId) e.departmentId = 'Department is required';
+      if (!form.designationId) e.designationId = 'Designation is required';
       
-      if (dob > today) {
-        e.dateOfBirth = 'Date of birth cannot be in the future';
-      } else {
-        const age = today.getFullYear() - dob.getFullYear();
-        const monthDiff = today.getMonth() - dob.getMonth();
-        const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate()) 
-          ? age - 1 
-          : age;
-        
-        if (actualAge < 18) {
-          e.dateOfBirth = 'Employee must be at least 18 years old';
+      if (!form.dateOfJoining) {
+        e.dateOfJoining = 'Date of joining is required';
+      } else if (form.dateOfBirth) {
+        const doj = new Date(form.dateOfJoining);
+        const dob = new Date(form.dateOfBirth);
+        if (doj < dob) {
+          e.dateOfJoining = 'Date of joining cannot be before date of birth';
+        }
+      }
+
+      if (form.availableLeave && (isNaN(form.availableLeave) || parseInt(form.availableLeave) < 0)) {
+        e.availableLeave = 'Available leave must be a positive number';
+      }
+
+      if (form.probationEndDate && form.dateOfJoining) {
+        const probEnd = new Date(form.probationEndDate);
+        const doj = new Date(form.dateOfJoining);
+        if (probEnd < doj) {
+          e.probationEndDate = 'Probation end date must be after date of joining';
         }
       }
     }
     
-    if (!form.gender) e.gender = 'Gender is required';
-    if (!form.maritalStatus) e.maritalStatus = 'Marital status is required';
-    
-    if (!form.mobileNumber?.trim()) {
-      e.mobileNumber = 'Mobile number is required';
-    } else {
-      const mobileDigits = getDigits(form.mobileNumber);
-      if (mobileDigits.length !== 10) {
-        e.mobileNumber = 'Mobile number must be exactly 10 digits';
-      } else if (!isValidPhone(form.mobileNumber)) {
-        e.mobileNumber = 'Please enter a valid phone number (e.g., +1234567890 or 1234567890)';
+    if (currentStep === 4) {
+      if (!form.employeeId?.trim()) e.employeeId = 'Employee ID is required';
+      
+      if (mode === 'add') {
+        if (!form.password?.trim()) {
+          e.password = 'Password is required';
+        } else if (form.password.length < 8) {
+          e.password = 'Password must be at least 8 characters long';
+        }
       }
     }
     
-    if (form.alternateMobileNumber?.trim()) {
-      const altDigits = getDigits(form.alternateMobileNumber);
-      if (altDigits.length !== 10) {
-        e.alternateMobileNumber = 'Alternate mobile number must be exactly 10 digits';
-      } else if (!isValidPhone(form.alternateMobileNumber)) {
-        e.alternateMobileNumber = 'Please enter a valid phone number (e.g., +1234567890 or 1234567890)';
-      }
-    }
-
-    if (form.imageUrl && !isValidURL(form.imageUrl)) {
-      e.imageUrl = 'Please enter a valid URL';
-    }
-
-    if (!form.address[0]?.addressLine?.trim()) e['address[0].addressLine'] = 'Address line is required';
-    if (!form.address[0]?.locality?.trim()) e['address[0].locality'] = 'Locality is required';
-    if (!form.address[0]?.city?.trim()) e['address[0].city'] = 'City is required';
-    if (!form.address[0]?.state?.trim()) e['address[0].state'] = 'State is required';
-    if (!form.address[0]?.postalCode?.trim()) e['address[0].postalCode'] = 'Postal code is required';
-    if (!form.address[0]?.country?.trim()) e['address[0].country'] = 'Country is required';
-
-    if (!form.address[1]?.addressLine?.trim()) e['address[1].addressLine'] = 'Address line is required';
-    if (!form.address[1]?.locality?.trim()) e['address[1].locality'] = 'Locality is required';
-    if (!form.address[1]?.city?.trim()) e['address[1].city'] = 'City is required';
-    if (!form.address[1]?.state?.trim()) e['address[1].state'] = 'State is required';
-    if (!form.address[1]?.postalCode?.trim()) e['address[1].postalCode'] = 'Postal code is required';
-    if (!form.address[1]?.country?.trim()) e['address[1].country'] = 'Country is required';
-
-    if (!form.emergencyContacts[0]?.name?.trim()) e['emergencyContacts[0].name'] = 'Emergency contact name is required';
-    if (!form.emergencyContacts[0]?.relationship?.trim()) e['emergencyContacts[0].relationship'] = 'Relationship is required';
-    
-    if (!form.emergencyContacts[0]?.phone?.trim()) {
-      e['emergencyContacts[0].phone'] = 'Emergency contact phone is required';
-    } else {
-      const emergencyDigits = getDigits(form.emergencyContacts[0].phone);
-      if (emergencyDigits.length !== 10) {
-        e['emergencyContacts[0].phone'] = 'Emergency contact phone must be exactly 10 digits';
-      } else if (!isValidPhone(form.emergencyContacts[0].phone)) {
-        e['emergencyContacts[0].phone'] = 'Please enter a valid phone number';
-      }
-    }
-
-    if (form.emergencyContacts[0]?.email && !isValidEmail(form.emergencyContacts[0].email)) {
-      e['emergencyContacts[0].email'] = 'Please enter a valid email address';
-    }
+    return e;
   }
-  
-  if (currentStep === 2) {
-    if (!form.userRole || form.userRole.length === 0) e.userRole = 'User role is required';
-    if (!form.employmentType) e.employmentType = 'Employment type is required';
-    if (!form.employmentStatus) e.employmentStatus = 'Employment status is required';
-  }
-  
-  if (currentStep === 3) {
-    if (!form.departmentId) e.departmentId = 'Department is required';
-    if (!form.designationId) e.designationId = 'Designation is required';
-    
-    if (!form.dateOfJoining) {
-      e.dateOfJoining = 'Date of joining is required';
-    } else if (form.dateOfBirth) {
-      const doj = new Date(form.dateOfJoining);
-      const dob = new Date(form.dateOfBirth);
-      if (doj < dob) {
-        e.dateOfJoining = 'Date of joining cannot be before date of birth';
-      }
-    }
-
-    if (form.availableLeave && (isNaN(form.availableLeave) || parseInt(form.availableLeave) < 0)) {
-      e.availableLeave = 'Available leave must be a positive number';
-    }
-
-    if (form.probationEndDate && form.dateOfJoining) {
-      const probEnd = new Date(form.probationEndDate);
-      const doj = new Date(form.dateOfJoining);
-      if (probEnd < doj) {
-        e.probationEndDate = 'Probation end date must be after date of joining';
-      }
-    }
-  }
-  
-  if (currentStep === 4) {
-    if (!form.employeeId?.trim()) e.employeeId = 'Employee ID is required';
-    
-    if (mode === 'add') {
-      if (!form.password?.trim()) {
-        e.password = 'Password is required';
-      } else if (form.password.length < 8) {
-        e.password = 'Password must be at least 8 characters long';
-      }
-    }
-  }
-  
-  return e;
-}
 
   function next() {
     const stepErrors = validateStep(step);
@@ -1602,7 +1602,7 @@ function validateStep(currentStep = step) {
             {(mode==='add' && step===1)&& <button
               onClick={autoGenerate}
               disabled={autoEmployee}
-                className={`px-4 py-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
+                className={`px-2 py-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-sm text-white font-semibold ${
                   autoEmployee ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
