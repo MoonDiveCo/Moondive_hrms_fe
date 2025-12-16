@@ -148,7 +148,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="text-sm text-[var(--color-primaryText)]">{/* step indicator */}</div>
+            <div className="text-sm text-[var(--color-primaryText">{/* step indicator */}</div>
             <button
               onClick={onClose}
               aria-label="Close"
