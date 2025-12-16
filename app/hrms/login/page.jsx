@@ -1,12 +1,28 @@
 "use client"
 import LoginForm from '@/components/Loginpage/LoginForm'
 import ForgotModal from '@/components/Loginpage/ForgotModal'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation';
+import axios from 'axios';
 
 const page = () => {
   const [showForgotModal, setShowForgotModal] = useState(false);
-    const [email, setEmail] = useState("");
- const bgImage = "/mnt/data/f74cd845-284d-46a6-b45b-6b71300493c8.png";
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState("");
+  const bgImage = "/mnt/data/f74cd845-284d-46a6-b45b-6b71300493c8.png";
+  const [isInvited,setInvited]=useState(false)
+
+
+  useEffect(() => {
+    const urlEmail = searchParams.get('email');
+    if (urlEmail) {
+      setEmail(decodeURIComponent(urlEmail));
+      setInvited(true)
+    }
+  }, [searchParams]);
+
+
+
   return (
     <div className='relative'>
     <LoginForm
@@ -15,6 +31,7 @@ const page = () => {
         setEmail={setEmail}
         setShowForgotModal={setShowForgotModal}
         redirectTo = "hrms"
+        isInvited={isInvited}
       />
       {
 
