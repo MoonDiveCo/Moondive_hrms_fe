@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import axios from "axios"
 import Image from "next/image"
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function OrganizationDetails() {
   const [organization, setOrganization] = useState(null)
@@ -10,6 +11,7 @@ export default function OrganizationDetails() {
   const [hovered, setHovered] = useState(false)
   const [loading, setLoading] = useState(true)
   const [logoPreview, setLogoPreview] = useState(null)
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -141,9 +143,18 @@ export default function OrganizationDetails() {
     window.location.reload()
   }
 
-  if (loading) {
-    return <div className="p-4">Loading...</div>
-  }
+    if(loading){
+        return(
+          <div className='absolute inset-0 z-20 flex items-center justify-center bg-white backdrop-blur-sm rounded-2xl'>
+            <DotLottieReact
+              src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+              loop
+              autoplay
+              style={{ width: 100, height: 100, alignItems: 'center' }} 
+            />
+          </div>
+        )
+      }
 
   if (error) {
     return <div className="p-4 text-red-500">{error}</div>
