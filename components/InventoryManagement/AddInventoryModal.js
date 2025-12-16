@@ -4,8 +4,9 @@ import AccessoryForm from "./AccessoryForm";
 import axios from "axios";
 import { toast } from "react-toastify";
 import FileUploader from "./FileUploader";
+import { Trash2 } from "lucide-react";
 
-export default function AddInventoryModal({ open, onClose, onSave,mode = "add", initialData = null   }) {
+export default function AddInventoryModal({ open, onClose,onDelete, onSave,mode = "add", initialData = null   }) {
 
   const [category, setCategory] = useState("");
   const [form, setForm] = useState({});
@@ -125,6 +126,24 @@ const handleSubmit = () => {
   setReceiptFiles([]);
 };
 
+const handleDelete = async () => {
+  if (!initialData?._id) return;
+
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this inventory item?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await onDelete(initialData._id);
+    toast.success("Inventory deleted successfully");
+    onClose();
+  } catch (err) {
+    toast.error("Failed to delete inventory");
+  }
+};
+
   if (!open) return null;
 
   return (
@@ -174,7 +193,7 @@ const handleSubmit = () => {
         {category &&  <div className="grid grid-cols-2 gap-4 my-4">
            <div>
              <FileUploader
-             heading="Product Image *"
+             heading="Product Image"
              files={productImages}
              setFiles={setProductImages}
              loading={uploading.productImage}
@@ -184,7 +203,7 @@ const handleSubmit = () => {
  
            <div>
              <FileUploader
-             heading="Receipt (PDF) *"
+             heading="Receipt (PDF)"
              files={receiptFiles}
              setFiles={setReceiptFiles}
              loading={uploading.receipt}
@@ -215,17 +234,39 @@ const handleSubmit = () => {
 
 
         {/* FOOTER */}
-        <div className="flex justify-end gap-3 mt-6">
-          <button className="px-4 py-2 bg-white text-primaryText rounded-full border border-primary" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="px-4 py-2 bg-primary hover:bg-indigo-700 text-white rounded-full"
-            onClick={handleSubmit}
-          >
-            {mode==='add'?'Add':'Edit'} {category}
-          </button>
+        <div className="flex justify-between items-center mt-6">
+  
+          {/* DELETE (only in edit mode) */}
+          {mode === "edit" && (
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-4 py-2 rounded-full
+                        border border-red-500 text-red-600
+                        hover:bg-red-50 transition"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+          )}
+
+          {/* RIGHT ACTIONS */}
+          <div className="flex gap-3">
+            <button
+              className="px-4 py-2 bg-white text-primaryText rounded-full border border-primary"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="px-4 py-2 bg-primary  text-white rounded-full"
+              onClick={handleSubmit}
+            >
+              {mode === "add" ? "Add" : "Edit"} {category}
+            </button>
+          </div>
         </div>
+
 
       </div>
     </div>

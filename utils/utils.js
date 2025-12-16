@@ -1,3 +1,5 @@
+import { DASHBOARD_HEADERS } from "@/constants/NestedDashboard"
+
 export const makeApiRequest = async (apiType, apiPath, data) => {
     try {
         let response
@@ -36,3 +38,26 @@ export const formatDate = (dateInput) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
 };
+
+export const detectModuleKey = (parts) =>{
+  return Object.keys(DASHBOARD_HEADERS).find(key =>
+    parts.includes(key)
+  );
+}
+
+export const matchPattern = (parts, pattern) => {
+  if (parts.length < pattern.path.length) return false;
+
+  for (let i = 0; i < pattern.path.length; i++) {
+    if (parts[i + 1] !== pattern.path[i]) return false;
+  }
+
+  return true;
+}
+
+export const findMatchingPattern = (parts, moduleConfig) => {
+  for (const pattern of moduleConfig.patterns) {
+    if (matchPattern(parts, pattern)) return pattern;
+  }
+  return null;
+}

@@ -33,7 +33,7 @@ export function MenuProvider({ children }) {
           top: [
             // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
             { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
-            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
+            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker/leave-dashboard" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },

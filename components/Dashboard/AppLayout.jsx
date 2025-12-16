@@ -102,7 +102,7 @@ return (
     </aside>
 
     <div className="grid grid-rows-[auto_1fr] h-screen w-full z-10">
-      <div className="sticky top-0 z-30">
+      <div className="sticky top-0 z-0">
         {showMainNavbar && (
           <header className="bg-white border-b border-gray-200 h-16 flex items-center">
             <MainNavbar setCollapsed={setCollapsed} collapsed={collapsed} />
