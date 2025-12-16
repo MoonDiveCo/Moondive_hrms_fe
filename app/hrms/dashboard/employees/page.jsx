@@ -5,6 +5,7 @@ import React, { useRef, useState, useEffect,useCallback } from 'react';
 import axios from 'axios';
 import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 
 
@@ -169,14 +170,17 @@ export default function Employees({ initialEmployees = [] }) {
     };
   }
 
-  if (loading) {
-    return (
-      <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
-        <div className='container py-6'>
-          <div className='text-center py-8'>Loading employees...</div>
-        </div>
-      </SubModuleProtectedRoute>
-    );
+  if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} 
+        />
+      </div>
+    )
   }
 
   if (error) {
@@ -276,7 +280,7 @@ export default function Employees({ initialEmployees = [] }) {
         </div>
 
         
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'>
           {employees.map((emp, index) => {
             const displayEmp = getDisplayEmployee(emp);
             return (
@@ -287,7 +291,8 @@ export default function Employees({ initialEmployees = [] }) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') openView(displayEmp, e);
                 }}
-                className='bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer flex items-center gap-5 w-[40vh]'
+               className='bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100 
+                    hover:shadow-md transition cursor-pointer flex items-center gap-5 w-full'
               >
                 <img
                   src={displayEmp.avatar}
