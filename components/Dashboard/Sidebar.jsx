@@ -31,6 +31,7 @@ export default function Sidebar({
     return path === cleanHref || path.startsWith(`${cleanHref}/`);
   };
 
+
   const linkLayoutClass = (isActive) => {
     const layout = collapsed ? "justify-center gap-0" : "justify-start gap-3";
     const activeStyles = isActive && !collapsed

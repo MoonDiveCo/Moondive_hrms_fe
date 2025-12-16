@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import AddLocationModal from "./addLocation";
 import { Eye, Edit2, Trash2 } from "lucide-react";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function Locations() {
   const [locations, setLocations] = useState([]);
@@ -100,7 +101,19 @@ export default function Locations() {
     if (lastFocusedRef.current) lastFocusedRef.current.focus();
   }
 
-  if (loading) return <div className="p-4">Loading...</div>;
+    // if (loading) return <div className="p-4">Loading...</div>;
+      if(loading){
+        return(
+          <div className='absolute inset-0 z-20 flex items-center justify-center bg-white backdrop-blur-sm rounded-2xl'>
+            <DotLottieReact
+              src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+              loop
+              autoplay
+              style={{ width: 100, height: 100, alignItems: 'center' }} 
+            />
+          </div>
+        )
+      }
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (

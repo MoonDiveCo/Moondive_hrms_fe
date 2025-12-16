@@ -725,84 +725,84 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     return result;
   }
 
-  async function autoGenerate(){
+  // async function autoGenerate(){
 
-    const submitData={
-      employeeId: generateRandomString(),
-      firstName: "test",
-      lastName: "employee",
-      email: generateRandomEmail('moondive.co'),
-      photo: generateRandomPersonImage(),
-      dateOfBirth: new Date('1977-10-28T00:00:00.000Z'),
-      gender: 'Male',
-      maritalStatus: 'Single',
-      aboutMe: 'this is auto generated employee',
-      mobileNumber: "1111111111",
-      alternateMobileNumber: "2222222222",
-      presentAddress: {
-        addressLine: "random address line",
-        locality: "random locality",
-        city: "random city",
-        state: "random state",
-        postalCode: "random postalcode",
-        country: "random country",
-      },
-      permanentAddress: {
-        addressLine: "permanent address line",
-        locality: "permanent address locality",
-        city: "permanent address city",
-        state: "permanent address state",
-        postalCode: "permanent address postalcode",
-        country: "permanent address country",
-      },
-      userRole: "Admin",
-      skills: ["skill1","skill2"],
-      sourceOfHire: "Web",
-      employmentType: "Internship",
-      employmentStatus: "Active",
-      departmentId: '69392827b912d4f8c20de338',
-      designationId: '693f9d9f8246612bd85e6bee',
-      reportingManagerId: '693aae15266fd0d126b40de0',
-      dateOfJoining: new Date('2024-10-28T00:00:00.000Z'),
-      onboardingStatus: 'Pending',
-      availableLeave: '10',
-      workingShiftId: '693f9d9f8246612bd85e6bee',
-      password:"1234567890",
-      probationEndDate:  null,
-      emergencyContacts: [{
-        name: 'test emergency contact',
-        relationship: 'Child',
-        phone: "8888888888",
-        email: 'test@gmail.com'
-      }],
-    }
-    try {
-      setAutoEmployee(true)
-      console.log("Submitting data:", submitData);
+  //   const submitData={
+  //     employeeId: generateRandomString(),
+  //     firstName: "test",
+  //     lastName: "employee",
+  //     email: generateRandomEmail('moondive.co'),
+  //     photo: generateRandomPersonImage(),
+  //     dateOfBirth: new Date('1977-10-28T00:00:00.000Z'),
+  //     gender: 'Male',
+  //     maritalStatus: 'Single',
+  //     aboutMe: 'this is auto generated employee',
+  //     mobileNumber: "1111111111",
+  //     alternateMobileNumber: "2222222222",
+  //     presentAddress: {
+  //       addressLine: "random address line",
+  //       locality: "random locality",
+  //       city: "random city",
+  //       state: "random state",
+  //       postalCode: "random postalcode",
+  //       country: "random country",
+  //     },
+  //     permanentAddress: {
+  //       addressLine: "permanent address line",
+  //       locality: "permanent address locality",
+  //       city: "permanent address city",
+  //       state: "permanent address state",
+  //       postalCode: "permanent address postalcode",
+  //       country: "permanent address country",
+  //     },
+  //     userRole: "Admin",
+  //     skills: ["skill1","skill2"],
+  //     sourceOfHire: "Web",
+  //     employmentType: "Internship",
+  //     employmentStatus: "Active",
+  //     departmentId: '69392827b912d4f8c20de338',
+  //     designationId: '693f9d9f8246612bd85e6bee',
+  //     reportingManagerId: '693aae15266fd0d126b40de0',
+  //     dateOfJoining: new Date('2024-10-28T00:00:00.000Z'),
+  //     onboardingStatus: 'Pending',
+  //     availableLeave: '10',
+  //     workingShiftId: '693f9d9f8246612bd85e6bee',
+  //     password:"1234567890",
+  //     probationEndDate:  null,
+  //     emergencyContacts: [{
+  //       name: 'test emergency contact',
+  //       relationship: 'Child',
+  //       phone: "8888888888",
+  //       email: 'test@gmail.com'
+  //     }],
+  //   }
+  //   try {
+  //     setAutoEmployee(true)
+  //     console.log("Submitting data:", submitData);
       
-      let res;
-      if (mode === 'add') {
-        res = await axios.post('/hrms/employee/add-employee', submitData);
-        console.log("Add response:", res.data);
-      } else if (mode === 'edit') {
-        const empId = employee._id || employee.id;
-        res = await axios.put(`/hrms/employee/update-employee/${empId}`, submitData);
-        console.log("Update response:", res.data);
-      }
+  //     let res;
+  //     if (mode === 'add') {
+  //       res = await axios.post('/hrms/employee/add-employee', submitData);
+  //       console.log("Add response:", res.data);
+  //     } else if (mode === 'edit') {
+  //       const empId = employee._id || employee.id;
+  //       res = await axios.put(`/hrms/employee/update-employee/${empId}`, submitData);
+  //       console.log("Update response:", res.data);
+  //     }
 
-      onSave && onSave(res.data.data || res.data.result);
-      onClose && onClose();
-    } catch (error) {
-      console.error("Failed to save employee:", error);
+  //     onSave && onSave(res.data.data || res.data.result);
+  //     onClose && onClose();
+  //   } catch (error) {
+  //     console.error("Failed to save employee:", error);
       
       
-      if (type === 'auto') {
-        const errorMessage = error.response?.data?.message || `Failed to add employee. Please try again.`;
-        setErrors({ submit: errorMessage });}
-    } finally {
-      setAutoEmployee(false);
-    }
-  }
+  //     if (type === 'auto') {
+  //       const errorMessage = error.response?.data?.message || `Failed to add employee. Please try again.`;
+  //       setErrors({ submit: errorMessage });}
+  //   } finally {
+  //     setAutoEmployee(false);
+  //   }
+  // }
 
   const isView = mode === 'view';
   const isEdit = mode === 'edit';
@@ -861,22 +861,29 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
         </div>
 
        
-<div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
-  <div className="flex items-center">
-    {[1, 2, 3, 4].map((s, index) => (
-      <React.Fragment key={s}>
-        {index > 0 && (
-          <div 
-            className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${
-              step >= s ? 'border-[var(--color-primary)]' : 'border-gray-400'
-            }`} 
-          />
+     <div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
+     <div className="flex items-center">
+        {[1, 2, 3, 4].map((s, index) => (
+          <React.Fragment key={s}>
+           {index > 0 && (
+             <div 
+               className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${
+                step >= s ? 'border-[var(--color-primary)]' : 'border-gray-400'
+                }`} 
+             />
         )}
-        <div className="flex items-center gap-3 shrink-0">
+        <div 
+          className={`flex items-center gap-3 shrink-0 ${!isView ? 'cursor-pointer' : ''}`}
+          onClick={() => {
+            if (!isView) {
+              setStep(s);
+            }
+          }}
+        >
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
               step >= s ? 'bg-[var(--color-primary)] text-white' : 'bg-gray-100 text-gray-600'
-            }`}
+            } ${!isView ? 'hover:opacity-80' : ''}`}
           >
             {s}
           </div>
@@ -887,7 +894,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
       </React.Fragment>
     ))}
   </div>
-</div>
+     </div>
 
         
         {(errorMessages.length > 0 || errors.submit) && (
@@ -1565,67 +1572,66 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
         </div>
 
         
-        <div className="flex items-center justify-between p-4 border-t border-gray-100 sticky bottom-0 bg-white ">
-          <div>
-            {!isView && (
-              <>
-                {step > 1 && (
-                  <button
-                    onClick={back}
-                    className="px-3 py-2 rounded-md bg-white border text-sm mr-2"
-                    disabled={submitting}
-                  >
-                    Back
-                  </button>
-                )}
-                {step < 4 && (
-                  <button
-                    onClick={next}
-                    className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm hover:brightness-95"
-                    disabled={submitting}
-                  >
-                    Continue
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+      
+      <div className="flex items-center justify-end  p-4 border-t border-gray-100 sticky bottom-0 bg-white">
+  <div className="flex items-center gap-2">
+    {!isView && (
+      <>
+        {step > 1 && (
+          <button
+            onClick={back}
+            className="px-3 py-2 rounded-md bg-white border text-sm"
+            disabled={submitting}
+          >
+            Back
+          </button>
+        )}
+        {step < 4 && (
+          <button
+            onClick={next}
+            className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm hover:brightness-95"
+            disabled={submitting}
+          >
+            Continue
+          </button>
+        )}
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onClose}
-              className="px-3 py-2 rounded-md bg-white border text-sm"
-              disabled={submitting}
-            >
-              Cancel
-            </button>
-            {(mode==='add' && step===1)&& <button
-              onClick={autoGenerate}
-              disabled={autoEmployee}
-                className={`px-2 py-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-sm text-white font-semibold ${
-                  autoEmployee ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-            >
-              {autoEmployee ? 'Generating data...' : 'Auto generate'}
-            </button>}
+        <button
+      onClick={onClose}
+      className="px-3 py-2 rounded-md bg-white border text-sm"
+      disabled={submitting}
+    >
+      Cancel
+    </button>
+      </>
+    )}
+  </div>
 
-            {!isView ? (step==4 &&
-              <button
-                onClick={submit}
-                disabled={submitting}
-                className={`px-4 py-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
-                  submitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {submitting ? 'Saving...' : primaryLabel}
-              </button>
-            ) : (
-              <button onClick={onClose} className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white font-semibold">
-                Close
-              </button>
-            )}
-          </div>
-        </div>
+ 
+  <div className="flex items-center gap-4">
+    
+    {!isView ? (
+      step === 4 && (
+        <button
+          onClick={submit}
+          disabled={submitting}
+          className={`px-4 py-2 ml-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
+            submitting ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {submitting ? 'Saving...' : primaryLabel}
+        </button>
+      )
+    ) : (
+      <button
+        onClick={onClose}
+        className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white font-semibold"
+      >
+        Close
+      </button>
+    )}
+  </div>
+</div>
       </div>
     </div>
   );

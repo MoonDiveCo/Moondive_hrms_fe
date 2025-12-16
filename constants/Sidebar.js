@@ -26,14 +26,14 @@ import ContentPerformance from "@/public/CMS/CMSContentPerformace.svg"
 const MenuContext = createContext(null);
 
 export function MenuProvider({ children }) {
-  const menus = useMemo(() => {
+  const menus = useMemo(() => { 
     const MENU = {
       HRMS: {
         SUPER_ADMIN: {
           top: [
             // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
             { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
-            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
+            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker/leave-dashboard" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
