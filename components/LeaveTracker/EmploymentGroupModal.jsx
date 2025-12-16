@@ -9,6 +9,7 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
 
   const [groupName, setGroupName] = useState("");
   const [allocations, setAllocations] = useState([]);
+  const [groupError, setGroupError] = useState("");
 
   // Load data or initialize default allocations
   useEffect(() => {
@@ -28,6 +29,10 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
 
   // Save
   const save = async () => {
+      if (!groupName) {
+    setGroupError("Please select an employment group");
+    return;
+  }
     const body = {
       groupName,
       leaveAllocations: allocations,
@@ -93,7 +98,11 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
         <select
           disabled={isView || isEdit}
           value={groupName}
-          onChange={(e) => setGroupName(e.target.value)}
+          onChange={(e) => {
+              setGroupName(e.target.value);
+              if (e.target.value) setGroupError("");
+            }
+          }
           className="w-full px-3 py-2 border rounded-md mb-4 bg-white"
         >
           <option value="">Select Group</option>
@@ -101,6 +110,9 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
           <option value="Internship">Internship</option>
           <option value="Contract">Contract</option>
         </select>
+        {groupError && (
+          <span className="text-xs text-red-500 mb-4 mt-1">{groupError}</span>
+        )}
 
         {/* Leave Allocations */}
         <h4 className="font-medium mb-2">Leave Allocations</h4>
