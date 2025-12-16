@@ -288,3 +288,94 @@ li {
   outline: 3px solid #fff;
   outline-offset: 2px;
 }
+
+/* ===========================
+   FULLCALENDAR THEME
+=========================== */
+
+.fc {
+  --fc-border-color: #e5e7eb;
+  --fc-today-bg-color: rgba(59, 130, 246, 0.08);
+  font-family: inherit;
+}
+
+/* Toolbar */
+.fc .fc-toolbar-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Buttons */
+.fc .fc-button {
+  border-radius: 8px;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+}
+
+.fc .fc-button-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.fc .fc-button-primary:not(:disabled):hover {
+  filter: brightness(0.95);
+}
+
+/* Grid */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid #e5e7eb;
+}
+
+.fc-daygrid-day {
+  transition: background 0.2s ease;
+}
+
+.fc-daygrid-day:hover {
+  background-color: #f9fafb;
+}
+
+/* Today */
+.fc-day-today {
+  background-color: var(--fc-today-bg-color) !important;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+  background: var(--color-primary);
+  color: white;
+  border-radius: 9999px;
+  padding: 4px 8px;
+  font-weight: 600;
+}
+
+/* Day number */
+.fc-daygrid-day-number {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Events */
+.fc-event {
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  border: none;
+}
+
+.fc-event-title {
+  font-weight: 500;
+}
+
+/* Background events (holidays) */
+.fc-bg-event {
+  opacity: 1 !important;
+  border-radius: 6px;
+}
+
+/* Remove harsh outer border */
+.fc-scrollgrid {
+  border-radius: 12px;
+  overflow: hidden;
+}
