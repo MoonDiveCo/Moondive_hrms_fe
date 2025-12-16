@@ -5,15 +5,12 @@ import React, { useEffect, useCallback, useRef, useState, use } from 'react';
 import Image from "next/image";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
-export default function AddEditEmployeeModal({ mode = 'add', employee = null, onClose, onSave }) {
+export default function AddEditEmployeeModal({ mode = 'add', employee = null, onClose, onSave ,organizationData,employeeList}) {
   const modalRef = useRef(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [departments, setDepartments] = useState([]);
-  const [designations, setDesignations] = useState([]);
-  const [existingEmployees, setExistingEmployees] = useState([]);
-  const [shifts, setShifts] = useState([]);
+
   const [imagePreview, setImagePreview] = useState(null);
   const [imageHovered, setImageHovered] = useState(false);
   const [autoEmployee,setAutoEmployee]=useState(false)
@@ -166,29 +163,6 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
 
   const [errors, setErrors] = useState({});
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [departmentRes, employeeRes, designationRes,shiftRes] = await Promise.all([
-        axios.get("/hrms/organization/get-allDepartment"),
-        axios.get("/hrms/employee/list"),
-        axios.get("/hrms/organization/get-alldesignation"),
-        axios.get("/hrms/organization/get-shifts")
-      ]);
-      setDepartments(departmentRes?.data?.result || []);
-      setExistingEmployees(employeeRes?.data?.result || []);
-      setDesignations(designationRes?.data?.result || []);
-      setShifts(shiftRes?.data?.result|| [])
-    } catch (err) {
-      console.error("Failed to load dropdown data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   useEffect(() => {
     if (employee && mode === 'edit') {
@@ -283,6 +257,12 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose]);
 
+  useEffect(()=>{
+    if(organizationData){
+      setLoading(false)
+    }
+  },[organizationData])
+
   function update(field, value) {
     setForm((s) => ({ ...s, [field]: value }));
     if (errors[field]) {
@@ -372,132 +352,151 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
     }
   }
 
-  function validateStep(currentStep = step) {
-    const e = {};
+function getDigits(str) {
+  return str ? str.replace(/\D/g, '') : '';
+}
+
+function validateStep(currentStep = step) {
+  const e = {};
+  
+  if (currentStep === 1) {
+    if (!form.firstName?.trim()) e.firstName = 'First name is required';
+    if (!form.lastName?.trim()) e.lastName = 'Last name is required';
     
-    if (currentStep === 1) {
-      if (!form.firstName?.trim()) e.firstName = 'First name is required';
-      if (!form.lastName?.trim()) e.lastName = 'Last name is required';
+    if (!form.email?.trim()) {
+      e.email = 'Email is required';
+    } else if (!isValidMoondiveEmail(form.email)) {
+      e.email = 'Please enter a valid moondive  email address';
+    }
+    
+    if (!form.dateOfBirth) {
+      e.dateOfBirth = 'Date of birth is required';
+    } else {
+      const dob = new Date(form.dateOfBirth);
+      const today = new Date();
       
-      if (!form.email?.trim()) {
-        e.email = 'Email is required';
-      } else if (!isValidMoondiveEmail(form.email)) {
-        e.email = 'Please enter a valid email address';
-      }
-      
-      if (!form.dateOfBirth) {
-        e.dateOfBirth = 'Date of birth is required';
+      if (dob > today) {
+        e.dateOfBirth = 'Date of birth cannot be in the future';
       } else {
-        const dob = new Date(form.dateOfBirth);
-        const today = new Date();
+        const age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate()) 
+          ? age - 1 
+          : age;
         
-        if (dob > today) {
-          e.dateOfBirth = 'Date of birth cannot be in the future';
-        } else {
-          const age = today.getFullYear() - dob.getFullYear();
-          const monthDiff = today.getMonth() - dob.getMonth();
-          const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate()) 
-            ? age - 1 
-            : age;
-          
-          if (actualAge < 18) {
-            e.dateOfBirth = 'Employee must be at least 18 years old';
-          }
+        if (actualAge < 18) {
+          e.dateOfBirth = 'Employee must be at least 18 years old';
         }
       }
-      
-      if (!form.gender) e.gender = 'Gender is required';
-      if (!form.maritalStatus) e.maritalStatus = 'Marital status is required';
-      
-      if (!form.mobileNumber?.trim()) {
-        e.mobileNumber = 'Mobile number is required';
+    }
+    
+    if (!form.gender) e.gender = 'Gender is required';
+    if (!form.maritalStatus) e.maritalStatus = 'Marital status is required';
+    
+    if (!form.mobileNumber?.trim()) {
+      e.mobileNumber = 'Mobile number is required';
+    } else {
+      const mobileDigits = getDigits(form.mobileNumber);
+      if (mobileDigits.length !== 10) {
+        e.mobileNumber = 'Mobile number must be exactly 10 digits';
       } else if (!isValidPhone(form.mobileNumber)) {
         e.mobileNumber = 'Please enter a valid phone number (e.g., +1234567890 or 1234567890)';
       }
-      
-      if (form.alternateMobileNumber && !isValidPhone(form.alternateMobileNumber)) {
+    }
+    
+    if (form.alternateMobileNumber?.trim()) {
+      const altDigits = getDigits(form.alternateMobileNumber);
+      if (altDigits.length !== 10) {
+        e.alternateMobileNumber = 'Alternate mobile number must be exactly 10 digits';
+      } else if (!isValidPhone(form.alternateMobileNumber)) {
         e.alternateMobileNumber = 'Please enter a valid phone number (e.g., +1234567890 or 1234567890)';
       }
+    }
 
-      if (form.imageUrl && !isValidURL(form.imageUrl)) {
-        e.imageUrl = 'Please enter a valid URL';
-      }
+    if (form.imageUrl && !isValidURL(form.imageUrl)) {
+      e.imageUrl = 'Please enter a valid URL';
+    }
 
-      if (!form.address[0]?.addressLine?.trim()) e['address[0].addressLine'] = 'Address line is required';
-      if (!form.address[0]?.locality?.trim()) e['address[0].locality'] = 'Locality is required';
-      if (!form.address[0]?.city?.trim()) e['address[0].city'] = 'City is required';
-      if (!form.address[0]?.state?.trim()) e['address[0].state'] = 'State is required';
-      if (!form.address[0]?.postalCode?.trim()) e['address[0].postalCode'] = 'Postal code is required';
-      if (!form.address[0]?.country?.trim()) e['address[0].country'] = 'Country is required';
+    if (!form.address[0]?.addressLine?.trim()) e['address[0].addressLine'] = 'Address line is required';
+    if (!form.address[0]?.locality?.trim()) e['address[0].locality'] = 'Locality is required';
+    if (!form.address[0]?.city?.trim()) e['address[0].city'] = 'City is required';
+    if (!form.address[0]?.state?.trim()) e['address[0].state'] = 'State is required';
+    if (!form.address[0]?.postalCode?.trim()) e['address[0].postalCode'] = 'Postal code is required';
+    if (!form.address[0]?.country?.trim()) e['address[0].country'] = 'Country is required';
 
-      if (!form.address[1]?.addressLine?.trim()) e['address[1].addressLine'] = 'Address line is required';
-      if (!form.address[1]?.locality?.trim()) e['address[1].locality'] = 'Locality is required';
-      if (!form.address[1]?.city?.trim()) e['address[1].city'] = 'City is required';
-      if (!form.address[1]?.state?.trim()) e['address[1].state'] = 'State is required';
-      if (!form.address[1]?.postalCode?.trim()) e['address[1].postalCode'] = 'Postal code is required';
-      if (!form.address[1]?.country?.trim()) e['address[1].country'] = 'Country is required';
+    if (!form.address[1]?.addressLine?.trim()) e['address[1].addressLine'] = 'Address line is required';
+    if (!form.address[1]?.locality?.trim()) e['address[1].locality'] = 'Locality is required';
+    if (!form.address[1]?.city?.trim()) e['address[1].city'] = 'City is required';
+    if (!form.address[1]?.state?.trim()) e['address[1].state'] = 'State is required';
+    if (!form.address[1]?.postalCode?.trim()) e['address[1].postalCode'] = 'Postal code is required';
+    if (!form.address[1]?.country?.trim()) e['address[1].country'] = 'Country is required';
 
-      if (!form.emergencyContacts[0]?.name?.trim()) e['emergencyContacts[0].name'] = 'Emergency contact name is required';
-      if (!form.emergencyContacts[0]?.relationship?.trim()) e['emergencyContacts[0].relationship'] = 'Relationship is required';
-      
-      if (!form.emergencyContacts[0]?.phone?.trim()) {
-        e['emergencyContacts[0].phone'] = 'Emergency contact phone is required';
+    if (!form.emergencyContacts[0]?.name?.trim()) e['emergencyContacts[0].name'] = 'Emergency contact name is required';
+    if (!form.emergencyContacts[0]?.relationship?.trim()) e['emergencyContacts[0].relationship'] = 'Relationship is required';
+    
+    if (!form.emergencyContacts[0]?.phone?.trim()) {
+      e['emergencyContacts[0].phone'] = 'Emergency contact phone is required';
+    } else {
+      const emergencyDigits = getDigits(form.emergencyContacts[0].phone);
+      if (emergencyDigits.length !== 10) {
+        e['emergencyContacts[0].phone'] = 'Emergency contact phone must be exactly 10 digits';
       } else if (!isValidPhone(form.emergencyContacts[0].phone)) {
         e['emergencyContacts[0].phone'] = 'Please enter a valid phone number';
       }
+    }
 
-      if (form.emergencyContacts[0]?.email && !isValidEmail(form.emergencyContacts[0].email)) {
-        e['emergencyContacts[0].email'] = 'Please enter a valid email address';
-      }
+    if (form.emergencyContacts[0]?.email && !isValidEmail(form.emergencyContacts[0].email)) {
+      e['emergencyContacts[0].email'] = 'Please enter a valid email address';
     }
-    
-    if (currentStep === 2) {
-      if (!form.userRole || form.userRole.length === 0) e.userRole = 'User role is required';
-      if (!form.employmentType) e.employmentType = 'Employment type is required';
-      if (!form.employmentStatus) e.employmentStatus = 'Employment status is required';
-    }
-    
-    if (currentStep === 3) {
-      if (!form.departmentId) e.departmentId = 'Department is required';
-      if (!form.designationId) e.designationId = 'Designation is required';
-      
-      if (!form.dateOfJoining) {
-        e.dateOfJoining = 'Date of joining is required';
-      } else if (form.dateOfBirth) {
-        const doj = new Date(form.dateOfJoining);
-        const dob = new Date(form.dateOfBirth);
-        if (doj < dob) {
-          e.dateOfJoining = 'Date of joining cannot be before date of birth';
-        }
-      }
-
-      if (form.availableLeave && (isNaN(form.availableLeave) || parseInt(form.availableLeave) < 0)) {
-        e.availableLeave = 'Available leave must be a positive number';
-      }
-
-      if (form.probationEndDate && form.dateOfJoining) {
-        const probEnd = new Date(form.probationEndDate);
-        const doj = new Date(form.dateOfJoining);
-        if (probEnd < doj) {
-          e.probationEndDate = 'Probation end date must be after date of joining';
-        }
-      }
-    }
-    
-    if (currentStep === 4) {
-      if (!form.employeeId?.trim()) e.employeeId = 'Employee ID is required';
-      
-      if (mode === 'add') {
-        if (!form.password?.trim()) {
-          e.password = 'Password is required';
-        } else if (form.password.length < 8) {
-          e.password = 'Password must be at least 8 characters long';
-        }
-      }
-    }
-    
-    return e;
   }
+  
+  if (currentStep === 2) {
+    if (!form.userRole || form.userRole.length === 0) e.userRole = 'User role is required';
+    if (!form.employmentType) e.employmentType = 'Employment type is required';
+    if (!form.employmentStatus) e.employmentStatus = 'Employment status is required';
+  }
+  
+  if (currentStep === 3) {
+    if (!form.departmentId) e.departmentId = 'Department is required';
+    if (!form.designationId) e.designationId = 'Designation is required';
+    
+    if (!form.dateOfJoining) {
+      e.dateOfJoining = 'Date of joining is required';
+    } else if (form.dateOfBirth) {
+      const doj = new Date(form.dateOfJoining);
+      const dob = new Date(form.dateOfBirth);
+      if (doj < dob) {
+        e.dateOfJoining = 'Date of joining cannot be before date of birth';
+      }
+    }
+
+    if (form.availableLeave && (isNaN(form.availableLeave) || parseInt(form.availableLeave) < 0)) {
+      e.availableLeave = 'Available leave must be a positive number';
+    }
+
+    if (form.probationEndDate && form.dateOfJoining) {
+      const probEnd = new Date(form.probationEndDate);
+      const doj = new Date(form.dateOfJoining);
+      if (probEnd < doj) {
+        e.probationEndDate = 'Probation end date must be after date of joining';
+      }
+    }
+  }
+  
+  if (currentStep === 4) {
+    if (!form.employeeId?.trim()) e.employeeId = 'Employee ID is required';
+    
+    if (mode === 'add') {
+      if (!form.password?.trim()) {
+        e.password = 'Password is required';
+      } else if (form.password.length < 8) {
+        e.password = 'Password must be at least 8 characters long';
+      }
+    }
+  }
+  
+  return e;
+}
 
   function next() {
     const stepErrors = validateStep(step);
@@ -862,24 +861,33 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
         </div>
 
        
-        <div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
-          <div className="flex items-center gap-4">
-            {[1, 2, 3, 4].map((s) => (
-              <div key={s} className="flex items-center gap-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step === s ? 'bg-[var(--color-primary)] text-white' : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {s}
-                </div>
-                <div className="text-sm text-[var(--color-primaryText)]">
-                  {s === 1 ? 'Personal' : s === 2 ? 'Job' : s === 3 ? 'Employment' : 'Credentials'}
-                </div>
-              </div>
-            ))}
+<div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
+  <div className="flex items-center">
+    {[1, 2, 3, 4].map((s, index) => (
+      <React.Fragment key={s}>
+        {index > 0 && (
+          <div 
+            className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${
+              step >= s ? 'border-[var(--color-primary)]' : 'border-gray-400'
+            }`} 
+          />
+        )}
+        <div className="flex items-center gap-3 shrink-0">
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              step >= s ? 'bg-[var(--color-primary)] text-white' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {s}
+          </div>
+          <div className="text-sm text-[var(--color-primaryText)] whitespace-nowrap">
+            {s === 1 ? 'Personal' : s === 2 ? 'Employment' : s === 3 ? 'Job' : 'Credentials'}
           </div>
         </div>
+      </React.Fragment>
+    ))}
+  </div>
+</div>
 
         
         {(errorMessages.length > 0 || errors.submit) && (
@@ -1274,7 +1282,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
           
           <div hidden={step !== 2}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2">Job Details</h5>
+              <h5 className="md:col-span-2 font-semibold text-lg mb-2">Employement Details</h5>
 
               <div>
                 <label className="text-sm text-[var(--color-primaryText)]">Assigned Role <span className="text-red-500">*</span></label>
@@ -1350,7 +1358,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   disabled={isView}
                 >
                   <option value="">Select Shift</option>
-                  {shifts?.map((d) => (
+                  {organizationData?.shifts?.map((d) => (
                     <option key={d._id} value={d._id}>
                       {d.name}
                     </option>
@@ -1395,7 +1403,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
           
           <div hidden={step !== 3}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2">Employment Details</h5>
+              <h5 className="md:col-span-2 font-semibold text-lg mb-2">Job Details</h5>
 
               <div>
                 <label className="text-sm text-[var(--color-primaryText)]">Department <span className="text-red-500">*</span></label>
@@ -1406,7 +1414,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   disabled={isView}
                 >
                   <option value="">Select Department</option>
-                  {departments?.map((d) => (
+                  {organizationData?.departments?.map((d) => (
                     <option key={d._id} value={d._id}>
                       {d.name}
                     </option>
@@ -1423,7 +1431,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   disabled={isView}
                 >
                   <option value="">Select Designation</option>
-                  {designations?.map((d) => (
+                  {organizationData?.designations?.map((d) => (
                     <option key={d._id} value={d._id}>
                       {d.name}
                     </option>
@@ -1440,7 +1448,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
                   disabled={isView}
                 >
                   <option value="">Select Reporting Manager</option>
-                  {existingEmployees?.map((e) => (
+                  {employeeList.map((e) => (
                     <option key={e._id} value={e._id}>
                       {e.firstName} {e.lastName}
                     </option>

@@ -1,7 +1,7 @@
 'use client';
 
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect,useCallback } from 'react';
 import axios from 'axios';
 import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
@@ -18,6 +18,38 @@ export default function Employees({ initialEmployees = [] }) {
   const [showAddEdit, setShowAddEdit] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const lastFocusedRef = useRef(null);
+  const [organizationData,setOrganizationData]=useState(null)
+
+  const loadData = useCallback(async () => {
+  setLoading(true);
+  try {
+    const [departmentRes, designationRes, shiftRes] = await Promise.all([
+      axios.get("/hrms/organization/get-allDepartment"),
+      axios.get("/hrms/organization/get-alldesignation"),
+      axios.get("/hrms/organization/get-shifts")
+    ]);
+
+    setOrganizationData({
+      departments: departmentRes?.data?.result || [],
+      designations: designationRes?.data?.result || [],
+      shifts: shiftRes?.data?.result || []
+    });
+  } catch (err) {
+    console.error("Failed to load dropdown data:", err);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+  
+    useEffect(() => {
+      loadData();
+      fetchEmployees();
+    }, [loadData]);
+
+    useEffect(()=>{
+      console.log("----------------------",organizationData)
+    },[organizationData])
 
   useEffect(() => {
     if (initialEmployees.length === 0) {
@@ -318,6 +350,8 @@ export default function Employees({ initialEmployees = [] }) {
             employee={modalMode === 'edit' ? selected : null}
             onClose={handleAddEditClose}
             onSave={handleSave}
+            organizationData={organizationData}
+            employeeList={employees}
           />
         )}
       </div>
