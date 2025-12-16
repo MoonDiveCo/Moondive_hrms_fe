@@ -193,7 +193,7 @@ const handleDelete = async () => {
         {category &&  <div className="grid grid-cols-2 gap-4 my-4">
            <div>
              <FileUploader
-             heading="Product Image *"
+             heading="Product Image"
              files={productImages}
              setFiles={setProductImages}
              loading={uploading.productImage}
@@ -203,7 +203,7 @@ const handleDelete = async () => {
  
            <div>
              <FileUploader
-             heading="Receipt (PDF) *"
+             heading="Receipt (PDF)"
              files={receiptFiles}
              setFiles={setReceiptFiles}
              loading={uploading.receipt}
@@ -259,7 +259,7 @@ const handleDelete = async () => {
             </button>
 
             <button
-              className="px-4 py-2 bg-primary hover:bg-indigo-700 text-white rounded-full"
+              className="px-4 py-2 bg-primary  text-white rounded-full"
               onClick={handleSubmit}
             >
               {mode === "add" ? "Add" : "Edit"} {category}

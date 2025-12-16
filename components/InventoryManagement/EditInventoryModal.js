@@ -4,21 +4,25 @@ import { toast } from "react-toastify";
 import AddInventoryModal from "./AddInventoryModal";
 import { EditIcon } from "lucide-react";
 import ImagePreviewModal from "./ImagePreviewModal";
+import AddHistoryModal from "./AddHistoryModal";
 
 export default function EditInventoryModal({ open, item,onDelete, users = [], onClose, onSave }) {
+  const today = new Date().toISOString().split("T")[0];
   const [form, setForm] = useState({
     assignedTo: "",
     remarks: "",
     agreement: null,
+    assignedDate: "", 
   });
   const [showEditModal, setShowEditModal] = useState(false);
   const [uploading, setUploading] = useState({ agreement: false });
   const [uploadedUrls, setUploadedUrls] = useState({ agreementUrl: "" });
   const [unassignUserId, setUnassignUserId] = useState(null);
-  const [showHistory, setShowHistory] = useState(true);
+  const [showAddHistory, setShowAddHistory] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewFiles, setPreviewFiles] = useState([]);
+  const [editingHistory, setEditingHistory] = useState(null);
 
   useEffect(() => {
     if (item) {
@@ -75,6 +79,7 @@ const openPreview = (fileUrl) => {
 };
 
 
+
   const handleSubmit = () => {
     const fd = new FormData();
 
@@ -83,6 +88,10 @@ const openPreview = (fileUrl) => {
     } else if (form.assignedTo && form.assignedTo.trim() !== "") {
       fd.append("isAssigned", "true");
       fd.append("assignedTo", form.assignedTo);
+    }
+
+    if (form.assignedDate && form.assignedDate.trim() !== "") {
+      fd.append("assignedDate", form.assignedDate);
     }
 
     if (form.remarks && form.remarks.trim() !== "") {
@@ -153,6 +162,20 @@ const openPreview = (fileUrl) => {
         {form.assignedTo && form.assignedTo !== item.assignedTo?.id && (
           <>
             <div className="mb-4">
+                  <div className="mb-4">
+                <label className="text-sm font-medium">Issue Date</label>
+                <input
+                  type="date"
+                  className="w-full border p-2 rounded mt-1"
+                  value={form.assignedDate}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, assignedDate: e.target.value }))
+                  }
+                />
+                <span className="text-xs text-red-500 mt-1">
+                  Leave empty to use today’s date
+                </span>
+              </div>
               <label className="text-sm font-medium">Upload Agreement (PDF)</label>
               <input
                 type="file"
@@ -209,7 +232,7 @@ const openPreview = (fileUrl) => {
             {item.usersHistory
               ?.filter((u) => !u.returnedDate)
               .map((user, idx) => {
-                const keyVal = user.user || idx;
+                const keyVal = user._id ?? String(user.user?._id ?? idx);
                 const selected = unassignUserId === keyVal;
                 return (
                   <div key={keyVal} className={`p-4 rounded-lg shadow-sm border ${selected ? "bg-red-50 border-red-300" : "bg-indigo-50 border-indigo-200"}`}>
@@ -251,6 +274,24 @@ const openPreview = (fileUrl) => {
             <p className="text-xs text-red-600 mt-1">No units left — assignment disabled.</p>
           )}
         </div>
+
+        {form.assignedTo && (
+        <div className="mb-4">
+          <label className="text-sm font-medium">Issue Date</label>
+          <input
+            type="date"
+            className="w-full border p-2 rounded mt-1"
+            value={form.assignedDate}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, assignedDate: e.target.value }))
+            }
+          />
+          <span className="text-xs text-red-500">
+            Leave empty to use today’s date
+          </span>
+        </div>
+      )}
+
 
         {form.assignedTo && form.assignedTo !== item.assignedTo?.id && (
           <div className="mb-6">
@@ -336,23 +377,51 @@ const openPreview = (fileUrl) => {
             </div>
 
             <div className="mb-6">
-              <div className="flex justify-between items-center cursor-pointer mb-2" onClick={() => setShowHistory((s) => !s)}>
-                <h4 className="text-primaryText font-semibold">User Chain / History</h4>
-              </div>
+             <div className="flex justify-between items-center mb-2">
+            <h4 className="text-primaryText font-semibold">User Chain / History</h4>
+            <button
+              onClick={() => setShowAddHistory(true)}
+              className="text-xs px-3 py-1 bg-primary text-white rounded-full"
+            >
+              + Add History
+            </button>
+          </div>
 
-              {showHistory && (
+
                 <div className="max-h-60 bg-gray-50 p-4 rounded-lg">
                   {item.usersHistory?.length === 0 && <p className="text-gray-500 text-sm">No history available</p>}
 
                   <div className="relative">
                     <div className="absolute left-5 top-0 bottom-0 w-[2px] bg-indigo-300"></div>
 
-                    {[...item.usersHistory].reverse().map((h, i, arr) => (
+                {[...item.usersHistory]
+                  .sort((a, b) => {
+                    if (!a.returnedDate && b.returnedDate) return -1;
+                    if (a.returnedDate && !b.returnedDate) return 1;
+
+                    const aAssigned = new Date(a.assignedDate).getTime();
+                    const bAssigned = new Date(b.assignedDate).getTime();
+                    if (aAssigned !== bAssigned) return bAssigned - aAssigned;
+
+                    const aReturned = a.returnedDate ? new Date(a.returnedDate).getTime() : 0;
+                    const bReturned = b.returnedDate ? new Date(b.returnedDate).getTime() : 0;
+                    return bReturned - aReturned;
+                  })
+                  .map((h, i, arr) => (
                       <div key={i} className="relative pl-12 pb-3">
                         <div className="absolute left-[12px] top-1 w-4 h-4 bg-indigo-600 rounded-full shadow"></div>
 
                         <div className="bg-white border rounded-lg p-3 shadow-sm">
                           <div className="flex justify-between">
+                            <button
+                            onClick={() => {
+                              setEditingHistory(h);       
+                              setShowAddHistory(true); 
+                            }}
+                            className="text-xs text-indigo-600 underline"
+                          >
+                            Edit
+                          </button>
                             <h4 className="font-semibold text-indigo-700">{h.userName}</h4>
                             <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">{h.designation || "—"}</span>
                           </div>
@@ -386,7 +455,6 @@ const openPreview = (fileUrl) => {
                     ))}
                   </div>
                 </div>
-              )}
             </div>
           </div>
 
@@ -398,8 +466,8 @@ const openPreview = (fileUrl) => {
             )}
 
             <div className="flex justify-end gap-3 mt-6">
-              <button className="px-4 py-2 bg-gray-400 text-white rounded-lg" onClick={onClose}>Cancel</button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg" onClick={handleSubmit}>Save Changes</button>
+              <button className="px-4 py-2 bg-white text-xs text-primary border border-primary rounded-full" onClick={onClose}>Cancel</button>
+              <button className="px-4 py-2 bg-primary text-white rounded-full text-xs" onClick={handleSubmit}>Save Changes</button>
             </div>
           </div>
         </div>
@@ -415,6 +483,21 @@ const openPreview = (fileUrl) => {
           onDelete={(id)=>onDelete(id)}
         />
       )}
+
+       {showAddHistory && <AddHistoryModal
+      open={showAddHistory}
+      users={users}
+      onClose={() => setShowAddHistory(false)}
+      onSave={(history) => {
+        const fd = new FormData();
+        fd.append("history", JSON.stringify(history));
+
+        onSave(fd, item._id); 
+        setShowAddHistory(false);
+          }}
+          initialData={editingHistory}
+    />}
+
 
       <ImagePreviewModal
         isOpen={isPreviewOpen}
