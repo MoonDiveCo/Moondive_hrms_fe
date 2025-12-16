@@ -4,9 +4,9 @@ import axios from "axios";
 import InventoryCard from "@/components/InventoryManagement/InventoryCard";
 import AddInventoryModal from "@/components/InventoryManagement/AddInventoryModal";
 import EditInventoryModal from "@/components/InventoryManagement/EditInventoryModal";
-import { toast } from "react-toastify";
 import FilterDropdown from "@/components/UI/FilterDropdown";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { toast, Toaster } from "sonner";
 
 const categories = ["Laptop", "Monitor", "Mouse", "Keyboard", "Accessories", "OfficeInventory"];
 
@@ -185,7 +185,6 @@ const handleSaveNewItem = async (formData) => {
       "brand",
       "condition",
       "model",
-      "lowStock",
     ];
     
     const missing = requiredAccessoryFields.filter((f) => !specs[f]);
@@ -211,6 +210,7 @@ const handleSaveNewItem = async (formData) => {
 
 const handleEditItem = async (formData, id) => {
   try {
+    console.log(formData)
     await axios.patch(`/cms/inventory/inventory-status/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
@@ -224,6 +224,11 @@ const handleEditItem = async (formData, id) => {
   }
 };
 
+const handleDeleteInventory = async (id) => {
+  await axios.delete(`/cms/inventory/delete-inventory/${id}`);
+  setEditOpen(false);
+  fetchData();
+};
 
   const handleEdit = (item) => {
   setSelectedItem(item);
@@ -252,7 +257,7 @@ const handleEditItem = async (formData, id) => {
 
   return (
     <div className="p-6">
-
+      <Toaster richColors position="top-right" />
    <div className="grid grid-cols-3 gap-4 mb-6">
       <OverallStatCard 
         title="OVERALL" 
@@ -439,6 +444,7 @@ const handleEditItem = async (formData, id) => {
         item={selectedItem}
         onClose={() => setEditOpen(false)}
         onSave={(form, _id) => handleEditItem(form, _id)}
+        onDelete={(id)=>handleDeleteInventory(id)}
       />
     </div>
   );

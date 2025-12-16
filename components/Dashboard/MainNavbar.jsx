@@ -26,12 +26,12 @@ export default function MainNavbar({setCollapsed, collapsed}) {
   return (
     <div className='w-full px-6 md:px-8 z-20'>
       <div className='flex items-center justify-between h-16'>
-        <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-2'>
                     <button
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            className=" rounded hover:bg-primary/20 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
             title={collapsed ? "Expand" : "Collapse"}
           >
             {/* chevron icon rotates based on state */}
@@ -43,12 +43,12 @@ export default function MainNavbar({setCollapsed, collapsed}) {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M6 4L14 10L6 16V4Z" fill="currentColor" />
+              <path d="M6 4L14 10L6 16V4Z" fill="orange" />
             </svg>
           </button>
             <button
       onClick={() => router.back()}
-      className="px-4 py-2 text-xs rounded-full bg-white border border-primary  hover:bg-primary text-primary hover:text-white"
+      className="px-4 py-2 text-xs rounded-full bg-white  text-primaryText hover:text-primary"
     >
       ← Back
     </button>
