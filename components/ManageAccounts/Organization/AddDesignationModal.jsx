@@ -265,9 +265,9 @@ export default function AddDesignationModal({
             {error && <div className="text-sm text-red-600">{error}</div>}
 
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={onClose} className="px-4 py-2 bg-white border rounded-md">
+              {/* <button onClick={onClose} className="px-4 py-2 bg-white border rounded-md">
                 {isView ? 'Close' : 'Cancel'}
-              </button>
+              </button> */}
 
               {!isView && (
                 <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md">
