@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import axios from "axios";
 
 const LEAVE_NAMES = [
@@ -20,7 +21,12 @@ const LEAVE_CODE_MAP = {
 const getDisabledClasses = (disabled) =>
   disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white";
 
-export default function LeaveTypeModal({ mode, data, onClose, organizationId }) {
+export default function LeaveTypeModal({
+  mode,
+  data,
+  onClose,
+  organizationId,
+}) {
   const isView = mode === "view";
   const isEdit = mode === "edit";
 
@@ -38,20 +44,20 @@ export default function LeaveTypeModal({ mode, data, onClose, organizationId }) 
     },
   });
 
-useEffect(() => {
-  if (!data) return;
+  useEffect(() => {
+    if (!data) return;
 
-  setForm({
-    ...data,
+    setForm({
+      ...data,
 
-    usageRule: {
-      type: data.usageRule?.type || "NONE",
-      windows: Array.isArray(data.usageRule?.windows)
-        ? data.usageRule.windows
-        : [],
-    },
-  });
-}, [data]);
+      usageRule: {
+        type: data.usageRule?.type || "NONE",
+        windows: Array.isArray(data.usageRule?.windows)
+          ? data.usageRule.windows
+          : [],
+      },
+    });
+  }, [data]);
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -59,9 +65,7 @@ useEffect(() => {
   const toggleWindowed = (enabled) => {
     handleChange("usageRule", {
       type: enabled ? "WINDOWED" : "NONE",
-      windows: enabled
-        ? [{ fromMonth: 1, toMonth: 12, maxUsage: 1 }]
-        : [],
+      windows: enabled ? [{ fromMonth: 1, toMonth: 12, maxUsage: 1 }] : [],
     });
   };
 
@@ -169,15 +173,12 @@ useEffect(() => {
             </label>
             <input
               type="text"
-              disabled={isView }
+              disabled={isView}
               value={form.maxCarryForwardLimit}
               onChange={(e) => {
                 const v = e.target.value;
                 if (!isValidNumberInput(v)) return;
-                handleChange(
-                  "maxCarryForwardLimit",
-                  v === "" ? "" : Number(v)
-                );
+                handleChange("maxCarryForwardLimit", v === "" ? "" : Number(v));
               }}
               className={`w-full px-3 py-2 border rounded-md ${getDisabledClasses(
                 isView
@@ -191,9 +192,7 @@ useEffect(() => {
               <select
                 disabled={isView}
                 value={form[key] ? "true" : "false"}
-                onChange={(e) =>
-                  handleChange(key, e.target.value === "true")
-                }
+                onChange={(e) => handleChange(key, e.target.value === "true")}
                 className="w-full px-3 py-2 border rounded-md"
               >
                 <option value="true">True</option>
@@ -261,10 +260,14 @@ useEffect(() => {
 
                   {!isView && (
                     <button
-                      onClick={() => removeWindow(i)}
-                      className="text-xs text-red-500"
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevents row / parent click
+                        removeWindow(i);
+                      }}
+                      title="Remove"
+                      className="p-2 rounded-md "
                     >
-                      Remove
+                      <Trash2 size={16} className="text-red-600" />
                     </button>
                   )}
                 </div>
@@ -282,7 +285,7 @@ useEffect(() => {
           )}
         </div>
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-6 flex justify-end gap-3">
           {!isView && (
             <button
               onClick={save}
