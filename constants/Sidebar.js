@@ -32,7 +32,7 @@ export function MenuProvider({ children }) {
         SUPER_ADMIN: {
           top: [
             // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
-            { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
+            { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", },
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker/leave-dashboard" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
@@ -184,9 +184,9 @@ export function MenuProvider({ children }) {
     };
 
     const rules = [];
-Object.entries(MENU).forEach(([moduleName, roles]) => {
-  Object.entries(roles).forEach(([roleName, menuObj]) => {
-    const requiredPermissionPrefixes =
+    Object.entries(MENU).forEach(([moduleName, roles]) => {
+      Object.entries(roles).forEach(([roleName, menuObj]) => {
+        const requiredPermissionPrefixes =
       roleName === "SUPER_ADMIN"
         ? ["*"] 
         : [`${moduleName}:${roleName}`];
