@@ -56,7 +56,7 @@ async function deleteGroup(groupName) {
           <h4 className="text-primaryText">Employment Group</h4>
 
           <button
-            className="px-4 py-2 text-xs rounded-full text-white bg-orange-500 rounded hover:bg-orange-600 flex items-center gap-2"
+            className="px-4 py-2 text-sm text-white bg-orange-500 rounded flex items-center gap-2"
             onClick={(e) => openGroupModal("add", null, e)}
           >
             <Plus size={16} /> Add Employment Group

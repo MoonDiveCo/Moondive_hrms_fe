@@ -150,17 +150,18 @@ export default function ProfileSlideOver({
         mobileNumber: profile.mobileNumber,
         gender: profile.gender,
         about: profile.about,
-        address: [
-          {
-            addressLine: '',
-            locality: '',
-            city: profile.city,
-            state: profile.state,
-            postalCode: '',
-            country: profile.country,
-            addresstype: 'Current',
-          },
-        ],
+
+        // address: [
+        //   {
+        //     addressLine: '',
+        //     locality: '',
+        //     city: profile.city,
+        //     state: profile.state,
+        //     postalCode: '',
+        //     country: profile.country,
+        //     addresstype: 'Current',
+        //   },
+        // ],
       };
 
       // prefer PATCH/PUT depending on your backend - using PUT here matches your existing code
@@ -417,7 +418,7 @@ export default function ProfileSlideOver({
                   </select>
                 </div>
 
-                <div>
+                {/* <div>
                   <label className='text-sm font-medium text-gray-700'>
                     Country
                   </label>
@@ -435,9 +436,9 @@ export default function ProfileSlideOver({
                     <option>United States</option>
                     <option>United Kingdom</option>
                   </select>
-                </div>
+                </div> */}
 
-                <div>
+                {/* <div>
                   <label className='text-sm font-medium text-gray-700'>
                     State
                   </label>
@@ -451,9 +452,9 @@ export default function ProfileSlideOver({
                         : 'border-gray-200 bg-gray-50 cursor-not-allowed'
                     }`}
                   />
-                </div>
+                </div> */}
 
-                <div>
+                {/* <div>
                   <label className='text-sm font-medium text-gray-700'>
                     Language
                   </label>
@@ -471,7 +472,7 @@ export default function ProfileSlideOver({
                     <option>Hindi</option>
                     <option>Spanish</option>
                   </select>
-                </div>
+                </div> */}
               </div>
 
               <div>
