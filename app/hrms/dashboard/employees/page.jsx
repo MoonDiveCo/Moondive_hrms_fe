@@ -7,6 +7,7 @@ import axios from 'axios';
 import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import ImportEmployeeModal from './ImportEmployeeModal';
 
 export default function Employees({ initialEmployees = [] }) {
   const [employees, setEmployees] = useState(initialEmployees);
@@ -17,7 +18,8 @@ export default function Employees({ initialEmployees = [] }) {
   const [showAddEdit, setShowAddEdit] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const lastFocusedRef = useRef(null);
-  const [organizationData, setOrganizationData] = useState(null);
+  const [organizationData,setOrganizationData]=useState(null)
+  const [open, setOpen] = useState(false);
   
   // Filter states
   const [selectedDepartment, setSelectedDepartment] = useState('');
@@ -335,7 +337,29 @@ export default function Employees({ initialEmployees = [] }) {
             </div>
 
             <button
-              className='px-4 rounded-lg h-10  bg-[var(--color-primary)] text-white font-medium  hover:brightness-95 transition'
+              className='px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white font-medium shadow hover:brightness-95 transition'
+              onClick={() => setOpen(true)}
+              
+            >
+              Import
+            </button>
+            <button
+              className='flex items-center gap-2 text-sm text-[var(--color-primaryText)] hover:text-[var(--color-blackText)]'
+              title='Filters'
+            >
+              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' className='opacity-80'>
+                <path
+                  d='M4 6h16M7 12h10M10 18h4'
+                  stroke='currentColor'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                />
+              </svg>
+              <span>All Data</span>
+            </button>
+            <button
+              className='px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white font-medium shadow hover:brightness-95 transition'
               aria-label='Add Employee(s)'
               onClick={openAdd}
             >
@@ -433,6 +457,11 @@ export default function Employees({ initialEmployees = [] }) {
             employeeList={employees}
           />
         )}
+        <ImportEmployeeModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onSuccess={fetchEmployees}
+        />
       </div>
     </SubModuleProtectedRoute>
   );
