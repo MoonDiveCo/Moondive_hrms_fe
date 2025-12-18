@@ -131,13 +131,14 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
               email: contact.email || ''
             }))
           : empty.emergencyContacts,
-        departmentId: typeof employee.departmentId === 'object' 
+        // Fix: Add null checks before accessing _id
+        departmentId: (employee.departmentId && typeof employee.departmentId === 'object') 
           ? employee.departmentId._id 
           : employee.departmentId || '',
-        designationId: typeof employee.designationId === 'object' 
+        designationId: (employee.designationId && typeof employee.designationId === 'object') 
           ? employee.designationId._id 
           : employee.designationId || '',
-        reportingManagerId: typeof employee.reportingManagerId === 'object'
+        reportingManagerId: (employee.reportingManagerId && typeof employee.reportingManagerId === 'object')
           ? employee.reportingManagerId._id
           : employee.reportingManagerId || '',
         dateOfJoining: formatDateForInput(employee.dateOfJoining),
@@ -145,7 +146,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
         employmentStatus: employee.employmentStatus || '',
         availableLeave: employee.availableLeave?.toString() || '',
         sourceOfHire: employee.sourceOfHire || '',
-        workingShiftId: typeof employee.workingShiftId === 'object'
+        workingShiftId: (employee.workingShiftId && typeof employee.workingShiftId === 'object')
           ? employee.workingShiftId._id
           : employee.workingShiftId || '',
         onboardingStatus: employee.onboardingStatus || '',
@@ -209,13 +210,14 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
               email: contact.email || ''
             }))
           : empty.emergencyContacts,
-        departmentId: typeof employee.departmentId === 'object' 
+        // Add null checks here too
+        departmentId: (employee.departmentId && typeof employee.departmentId === 'object') 
           ? employee.departmentId._id 
           : employee.departmentId || '',
-        designationId: typeof employee.designationId === 'object' 
+        designationId: (employee.designationId && typeof employee.designationId === 'object') 
           ? employee.designationId._id 
           : employee.designationId || '',
-        reportingManagerId: typeof employee.reportingManagerId === 'object'
+        reportingManagerId: (employee.reportingManagerId && typeof employee.reportingManagerId === 'object')
           ? employee.reportingManagerId._id
           : employee.reportingManagerId || '',
         dateOfJoining: formatDateForInput(employee.dateOfJoining),
@@ -223,7 +225,7 @@ export default function AddEditEmployeeModal({ mode = 'add', employee = null, on
         employmentStatus: employee.employmentStatus || '',
         availableLeave: employee.availableLeave?.toString() || '',
         sourceOfHire: employee.sourceOfHire || '',
-        workingShiftId: typeof employee.workingShiftId === 'object'
+        workingShiftId: (employee.workingShiftId && typeof employee.workingShiftId === 'object')
           ? employee.workingShiftId._id
           : employee.workingShiftId || '',
         onboardingStatus: employee.onboardingStatus || '',

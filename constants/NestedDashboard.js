@@ -4,7 +4,7 @@ export const MANAGE_ACCOUNTS_HEADER = [
     key: "organization",
     label: "Organization",
     basePath: "/hrms/dashboard/operations/manage-accounts/organization",
-            layoutType: "SIDEBAR", 
+    layoutType: "SIDEBAR", 
 
     sections: [
       { slug: "organization-details", label: "Organization Details" },
@@ -13,6 +13,17 @@ export const MANAGE_ACCOUNTS_HEADER = [
       { slug: "designations", label: "Designations" },
     ],
   },
+    {
+    key: "user-access-control",
+    label: "User Access Control",
+    basePath: "/hrms/dashboard/operations/manage-accounts/user-access-control",
+    layoutType: "SIDEBAR", 
+
+    sections: [
+      { slug: "general-role", label: "General Role" },
+      { slug: "assigned-role", label: "Assigned Role" },
+    ],
+  }
 ];
 
 const LEAVE_TRACKER_HEADER = [

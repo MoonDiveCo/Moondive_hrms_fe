@@ -64,6 +64,7 @@ export default function Employees({ initialEmployees = [] }) {
     try {
       const res = await axios.get(`/hrms/employee/list`);
       setEmployees(res.data.result || res.data || []);
+      console.log("==============",res.data.result)
     } catch (err) {
       console.error('Failed to fetch employees:', err);
       setError('Failed to load employees. Please try again.');
