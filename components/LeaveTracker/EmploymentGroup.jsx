@@ -52,8 +52,8 @@ async function deleteGroup(groupName) {
     if (loading) return <div className="p-6">Loading...</div>;
   return (
      <section className="bg-white rounded-2xl border border-gray-200 p-4">
-        <div className="p-6 border-b flex justify-between items-center">
-          <h4 className="text-lg font-semibold text-gray-900"></h4>
+        <div className="p-6 flex justify-between items-center">
+          <h4 className="text-primaryText">Employment Group</h4>
 
           <button
             className="px-4 py-2 text-sm text-white bg-orange-500 rounded flex items-center gap-2"
@@ -106,31 +106,31 @@ async function deleteGroup(groupName) {
                     const allocation = grp.leaveAllocations.find(
                         (a) => a.leaveTypeCode === lt.code
                     );
-const isUnlimited = allocation?.unlimited === true;
+                    const isUnlimited = allocation?.unlimited === true;
 
-return (
-  <React.Fragment key={lt.code}>
-    <td className="px-6 py-4 text-gray-700">
-      {isUnlimited ? (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary border border-primary">
-          Unlimited
-        </span>
-      ) : (
-        allocation?.monthlyQuota ?? 0
-      )}
-    </td>
+                    return (
+                      <React.Fragment key={lt.code}>
+                        <td className="px-6 py-4 text-gray-700">
+                          {isUnlimited ? (
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary border border-primary">
+                              Unlimited
+                            </span>
+                          ) : (
+                            allocation?.monthlyQuota ?? 0
+                          )}
+                        </td>
 
-    <td className="px-6 py-4 text-gray-700">
-      {isUnlimited ? (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary border border-primary">
-          Unlimited
-        </span>
-      ) : (
-        allocation?.yearlyQuota ?? 0
-      )}
-    </td>
-  </React.Fragment>
-);
+                        <td className="px-6 py-4 text-gray-700">
+                          {isUnlimited ? (
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary border border-primary">
+                              Unlimited
+                            </span>
+                          ) : (
+                            allocation?.yearlyQuota ?? 0
+                          )}
+                        </td>
+                      </React.Fragment>
+                    );
 
                     })}
 
@@ -141,7 +141,7 @@ return (
                         onClick={(e) => openGroupModal("view", grp, e)}
                         className="p-2 hover:bg-gray-100 rounded-md"
                         >
-                        <Eye size={16} className="text-blue-600" />
+                        <Eye size={16} className="text-primary" />
                         </button>
 
                         <button
