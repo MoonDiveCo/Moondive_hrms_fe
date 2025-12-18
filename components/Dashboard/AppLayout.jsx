@@ -1,5 +1,6 @@
 "use client";
 import React, { useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation"; // Add this import
 import Sidebar from "./Sidebar";
 import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
@@ -7,6 +8,7 @@ import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
 
 export default function AppLayout({ module, children, showMainNavbar = true }) {
+  const pathname = usePathname(); // Add this
   const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
   const { isSignedIn } = useContext(AuthContext)
   const menus = useMenus();
@@ -14,7 +16,11 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   const [bottomItems, setBottomItems] = useState([]);
   const accessPermissions = menus.rules ?? [];
   const subSet = new Set();
-const [collapsed, setCollapsed] = useState(false); 
+  const [collapsed, setCollapsed] = useState(false);
+  
+  // Check if current path is overview
+  const isOverviewPage = pathname?.startsWith("/hrms/dashboard/overview");
+  
   useEffect(() => {
     if (authLoading || rbacLoading) return;
 
@@ -90,34 +96,33 @@ const [collapsed, setCollapsed] = useState(false);
     isSignedIn,
   ]);
 
-
-return (
-  <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
-    <aside
-      className={`${
-        collapsed ? "w-20" : "w-[19vw]"
-      } max-w-full bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen self-start overflow-hidden md:block transition-all duration-200`}
-    >
-      <Sidebar topItems={topItems} bottomItems={bottomItems} collapsed={collapsed} />
-    </aside>
-
-    <div className="grid grid-rows-[auto_1fr] h-screen w-full z-10">
-      <div className="sticky top-0 z-0">
-        {showMainNavbar && (
-          <header className="bg-white border-b border-gray-200 h-16 flex items-center">
-            <MainNavbar setCollapsed={setCollapsed} collapsed={collapsed} />
-          </header>
-        )}
-      </div>
-
-      <main
-        className="flex-1 w-full max-w-full overflow-auto p-4"
-        style={{ height: "calc(100vh - 4rem)" }} 
+  return (
+    <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
+      <aside
+        className={`${
+          collapsed ? "w-20" : "w-[19vw]"
+        } max-w-full bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen self-start overflow-hidden md:block transition-all duration-200`}
       >
-        {children}
-      </main>
+        <Sidebar topItems={topItems} bottomItems={bottomItems} collapsed={collapsed} />
+      </aside>
+
+      <div className="grid grid-rows-[auto_1fr] h-screen w-full z-10">
+        <div className="sticky top-0 z-0">
+          {/* Hide navbar on overview pages */}
+          {showMainNavbar && !isOverviewPage && (
+            <header className="bg-white border-b border-gray-200 h-16 flex items-center">
+              <MainNavbar setCollapsed={setCollapsed} collapsed={collapsed} />
+            </header>
+          )}
+        </div>
+
+        <main
+          className="flex-1 w-full max-w-full overflow-auto p-4"
+          style={{ height: showMainNavbar && !isOverviewPage ? "calc(100vh - 4rem)" : "100vh" }}
+        >
+          {children}
+        </main>
+      </div>
     </div>
-  </div>
-);
- 
+  );
 }
