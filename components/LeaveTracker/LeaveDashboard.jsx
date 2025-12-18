@@ -2,21 +2,21 @@
 
 import { AuthContext } from "@/context/authContext";
 import axios from "axios";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import HolidayCalendar from "./HolidayCalender";
+import ApplyLeaveModal from "./ApplyLeaveModal";
+import EventDetailsModal from "./EventDetailsModal";
 
 export default function LeaveTrackerDashboard() {
-  const [applyModal, setApplyModal] = useState(false);
   const [viewModal, setViewModal] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
-
+  const [applyLeaveContext, setApplyLeaveContext] = useState(null);
   const [leaveDashboard, setLeaveDashboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const { user } = useContext(AuthContext);
     const userRole = user?.userRole[0];
-    console.log("User Role in Leave Dashboard:", userRole);
 
     const SUPERADMIN_DUMMY_DASHBOARD = [
   {
@@ -62,6 +62,19 @@ export default function LeaveTrackerDashboard() {
       reason: "Fever",
     },
   ];
+
+    const leaveBalanceMap = useMemo(() => {
+      return leaveDashboard.reduce((acc, l) => {
+        acc[l.code] = {
+          available: l.unlimited ? Infinity : l.availableThisYear,
+          name: l.name,
+          taken: l.taken,
+          total: l.total,
+        };
+        return acc;
+      }, {});
+    }, [leaveDashboard]);
+
 
 
 useEffect(() => {
@@ -121,20 +134,17 @@ useEffect(() => {
         )}
       </div>
 
-<div className="bg-white border border-gray-100 rounded-2xl px-6 py-4 shadow-sm flex items-center justify-between">
+<div className="bg-white border-1 border-gray-200 rounded-2xl px-2 py-1  flex items-center justify-between">
   
   <div className="flex items-center gap-4">
-    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-      <span className="text-orange-500 text-lg">⚡</span>
+    <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
+      <span className="text-orange-500 text-lg"></span>
     </div>
 
     <div>
-      <h4 className="text-primaryText">
+      <h5 className="text-primaryText">
         Quick Actions
-      </h4>
-      <p className="text-xs text-gray-500">
-        Manage requests efficiently
-      </p>
+      </h5>
     </div>
   </div>
 
@@ -151,8 +161,8 @@ useEffect(() => {
     </button>
 
     <button
-      onClick={() => setApplyModal(true)}
-      className="flex items-center gap-2 px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg shadow-sm"
+      onClick={() => setApplyLeaveContext({})}
+      className="flex items-center gap-2 px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg "
     >
       <span className="text-lg leading-none">+</span>
       Apply for Leave
@@ -161,40 +171,10 @@ useEffect(() => {
 </div>
 
 
-      <div className="h-[400px] border rounded-lg bg-white flex items-center justify-center text-gray-400">
-        <HolidayCalendar />
+      <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
+        <HolidayCalendar organizationId={user.organizationId}  onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
+  onViewLeave={(data) => setSelectedLeave(data)} />
       </div>
-
-      {applyModal && (
-        <Modal title="Apply for Leave" onClose={() => setApplyModal(false)}>
-          <div className="space-y-4">
-            <select className="w-full border rounded-md px-3 py-2">
-              <option>Select Leave Type</option>
-              <option>Casual Leave</option>
-              <option>Sick Leave</option>
-              <option>Earned Leave</option>
-            </select>
-
-            <input type="date" className="w-full border rounded-md px-3 py-2" />
-            <input type="date" className="w-full border rounded-md px-3 py-2" />
-
-            <textarea
-              placeholder="Reason"
-              className="w-full border rounded-md px-3 py-2"
-              rows={3}
-            />
-
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setApplyModal(false)} className="px-4 py-2 border rounded-md">
-                Cancel
-              </button>
-              <button className="px-4 py-2 bg-orange-500 text-white rounded-md">
-                Submit
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
 
       {viewModal && (
         <Modal title="Pending Leave Requests" onClose={() => setViewModal(false)}>
@@ -230,6 +210,21 @@ useEffect(() => {
         </Modal>
       )}
 
+     {applyLeaveContext && (
+      <ApplyLeaveModal
+        context={applyLeaveContext}
+        leaveBalances={leaveBalanceMap}
+        onClose={() => setApplyLeaveContext(null)}
+      />
+    )}
+
+    {selectedLeave && (
+  <EventDetailsModal
+    data={selectedLeave}
+    onClose={() => setSelectedLeave(null)}
+  />
+)}
+
       {rejectModal && (
         <Modal title="Reject Leave Request" onClose={() => setRejectModal(false)}>
           <div className="space-y-4">
@@ -257,6 +252,8 @@ useEffect(() => {
           </div>
         </Modal>
       )}
+
+      
     </div>
   );
 }
@@ -273,7 +270,7 @@ function LeaveCard({
   isSuperadmin,
 }) {
   return (
-    <div className="relative bg-white rounded-2xl border border-gray-100 shadow-sm p-5 overflow-hidden">
+    <div className="relative bg-white rounded-2xl border border-gray-200  p-5 overflow-hidden">
 
       <p className="text-sm font-medium text-gray-500">{title}</p>
 
@@ -313,7 +310,7 @@ function LeaveCard({
 function Modal({ title, children, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white w-full max-w-lg rounded-lg shadow-lg p-5 relative">
+      <div className="bg-white w-full max-w-lg rounded-lg p-5 relative">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-semibold text-lg">{title}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-black">
