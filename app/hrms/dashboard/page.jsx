@@ -1,5 +1,6 @@
 'use client';
 
+import { getGeolocation } from '@/helper/tracking';
 import React, { useEffect, useRef, useState } from 'react';
 
 export default function HRMSOverviewPage() {
@@ -17,13 +18,11 @@ export default function HRMSOverviewPage() {
     { id: 'files', label: 'Files' },
   ];
 
-  // CHECK-IN state
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [startTs, setStartTs] = useState(null);
   const [elapsed, setElapsed] = useState(0); // ms
   const timerRef = useRef(null);
 
-  // start timer when checked in
   useEffect(() => {
     if (isCheckedIn && startTs) {
       // update elapsed every 1s
@@ -35,7 +34,6 @@ export default function HRMSOverviewPage() {
         timerRef.current = null;
       };
     } else {
-      // ensure cleared
       if (timerRef.current) {
         window.clearInterval(timerRef.current);
         timerRef.current = null;
@@ -45,7 +43,6 @@ export default function HRMSOverviewPage() {
   }, [isCheckedIn, startTs]);
 
   useEffect(() => {
-    // cleanup on unmount
     return () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
@@ -63,14 +60,31 @@ export default function HRMSOverviewPage() {
     return `${h}:${m}:${s}`;
   }
 
-  function handleCheckIn() {
+async function handleCheckIn() {
+  try {
+    
+    const { latitude, longitude } = await getGeolocation();
+    if (!latitude || !longitude) {
+      return;
+    }
+
+    // 2️⃣ Call backend API
+    // await axios.post("/api/attendance/check-in", {
+    //   latitude,
+    //   longitude
+    // });
+
     setIsCheckedIn(true);
     setStartTs(Date.now());
     setElapsed(0);
+  } catch (err) {
+    console.error("Check-in failed:", err);
+    alert("Unable to fetch location or check-in failed");
   }
+}
+
 
   function handleCheckOut() {
-    // you could save session info here before resetting
     setIsCheckedIn(false);
     setStartTs(null);
     setElapsed(0);
