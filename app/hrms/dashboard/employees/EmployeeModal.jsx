@@ -34,7 +34,6 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete }) {
   }, [openConfirmModal, modalMode]);
 
   const deleteEmployee = async () => {
-    console.log("deleteEmployee started"); 
     try {
       
       const res = await axios.put(`/hrms/employee/delete-employee/${employee._id}`);

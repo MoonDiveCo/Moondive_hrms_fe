@@ -106,7 +106,7 @@ if (headerList.length === 1) {
             </div>
           </aside>)}
 
-          <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-[calc(100vh-15rem)]">{children}</section>
+          <section className="flex-1 hide-scrollbar overflow-auto sticky top-30 h-[calc(100vh-11rem)]">{children}</section>
         </div>
       </div>
     </div>
