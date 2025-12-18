@@ -95,6 +95,7 @@ export default function Employees({ initialEmployees = [] }) {
       
       const res = await axios.get(url);
       setEmployees(res.data.result || res.data || []);
+      console.log("xxxxxx",res)
     } catch (err) {
       console.error('Failed to fetch employees:', err);
       setError('Failed to load employees. Please try again.');
