@@ -36,17 +36,13 @@ export default function ImportEmployeeModal({ open, onClose ,onSuccess}) {
       }
     );
 
-    setResult(res.data);
-
-    // ✅ REFRESH EMPLOYEE LIST
+    // 🔹 Refresh employee list in background
     if (typeof onSuccess === "function") {
-      await onSuccess();
+      onSuccess(); // ❗ don't await
     }
 
-    // ✅ CLOSE MODAL AFTER REFRESH
-    setTimeout(() => {
-      handleClose();
-    }, 800);
+    // 🔹 Close modal immediately (smooth UX)
+    handleClose();
 
   } catch (err) {
     setError(
@@ -58,6 +54,7 @@ export default function ImportEmployeeModal({ open, onClose ,onSuccess}) {
     setLoading(false);
   }
 };
+
 
 
   const handleClose = () => {

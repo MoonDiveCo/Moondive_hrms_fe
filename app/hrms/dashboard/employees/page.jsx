@@ -1,15 +1,13 @@
+
 'use client';
 
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
-import React, { useRef, useState, useEffect,useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import ImportEmployeeModal from './ImportEmployeeModal';
-
-
-
 
 export default function Employees({ initialEmployees = [] }) {
   const [employees, setEmployees] = useState(initialEmployees);
@@ -22,37 +20,55 @@ export default function Employees({ initialEmployees = [] }) {
   const lastFocusedRef = useRef(null);
   const [organizationData,setOrganizationData]=useState(null)
   const [open, setOpen] = useState(false);
+  
+  // Filter states
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDesignation, setSelectedDesignation] = useState('');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [filterLabel, setFilterLabel] = useState('All Employees');
+  const filterDropdownRef = useRef(null);
 
   const loadData = useCallback(async () => {
-  setLoading(true);
-  try {
-    const [departmentRes, designationRes, shiftRes] = await Promise.all([
-      axios.get("/hrms/organization/get-allDepartment"),
-      axios.get("/hrms/organization/get-alldesignation"),
-      axios.get("/hrms/organization/get-shifts")
-    ]);
+    setLoading(true);
+    try {
+      const [departmentRes, designationRes, shiftRes] = await Promise.all([
+        axios.get("/hrms/organization/get-allDepartment"),
+        axios.get("/hrms/organization/get-alldesignation"),
+        axios.get("/hrms/organization/get-shifts")
+      ]);
 
-    setOrganizationData({
-      departments: departmentRes?.data?.result || [],
-      designations: designationRes?.data?.result || [],
-      shifts: shiftRes?.data?.result || []
-    });
-  } catch (err) {
-    console.error("Failed to load dropdown data:", err);
-  } finally {
-    setLoading(false);
-  }
-}, []);
+      setOrganizationData({
+        departments: departmentRes?.data?.result || [],
+        designations: designationRes?.data?.result || [],
+        shifts: shiftRes?.data?.result || []
+      });
+    } catch (err) {
+      console.error("Failed to load dropdown data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  
-    useEffect(() => {
-      loadData();
-      fetchEmployees();
-    }, [loadData]);
+  useEffect(() => {
+    loadData();
+    fetchEmployees();
+  }, [loadData]);
 
-    useEffect(()=>{
-      console.log("----------------------",organizationData)
-    },[organizationData])
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+        setShowFilterDropdown(false);
+      }
+    }
+
+    if (showFilterDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilterDropdown]);
 
   useEffect(() => {
     if (initialEmployees.length === 0) {
@@ -60,11 +76,26 @@ export default function Employees({ initialEmployees = [] }) {
     }
   }, [initialEmployees.length]);
 
-  async function fetchEmployees() {
+  // Fetch employees with filters
+  async function fetchEmployees(departmentId = '', designationId = '') {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`/hrms/employee/list`);
+      let url = `/hrms/employee/list`;
+      const params = new URLSearchParams();
+      
+      if (departmentId) {
+        params.append('departmentId', departmentId);
+      }
+      if (designationId) {
+        params.append('designationId', designationId);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const res = await axios.get(url);
       setEmployees(res.data.result || res.data || []);
     } catch (err) {
       console.error('Failed to fetch employees:', err);
@@ -72,6 +103,27 @@ export default function Employees({ initialEmployees = [] }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Handle filter selection
+  function handleFilterSelect(type, value, label) {
+    if (type === 'all') {
+      setSelectedDepartment('');
+      setSelectedDesignation('');
+      setFilterLabel('All Employees');
+      fetchEmployees('', '');
+    } else if (type === 'department') {
+      setSelectedDepartment(value);
+      setSelectedDesignation('');
+      setFilterLabel(label);
+      fetchEmployees(value, '');
+    } else if (type === 'designation') {
+      setSelectedDepartment('');
+      setSelectedDesignation(value);
+      setFilterLabel(label);
+      fetchEmployees('', value);
+    }
+    setShowFilterDropdown(false);
   }
 
   function openView(emp, e) {
@@ -104,17 +156,16 @@ export default function Employees({ initialEmployees = [] }) {
     setShowViewModal(false);
   }
 
-  async function deleteFromView(){
-    try{
-      await fetchEmployees()
+  async function deleteFromView() {
+    try {
+      await fetchEmployees(selectedDepartment, selectedDesignation);
       setShowViewModal(false);
-      setSelected(null)
-    }catch(err){
-      console.error('failed to fetch employee data after deleting',err)
+      setSelected(null);
+    } catch (err) {
+      console.error('failed to fetch employee data after deleting', err);
     }
   }
 
-  
   function handleEditFromView(emp) {
     setShowViewModal(false);
     setModalMode('edit');
@@ -124,7 +175,7 @@ export default function Employees({ initialEmployees = [] }) {
 
   async function handleSave(newEmp) {
     try {
-      await fetchEmployees();
+      await fetchEmployees(selectedDepartment, selectedDesignation);
       setShowAddEdit(false);
       setSelected(null);
     } catch (err) {
@@ -140,9 +191,7 @@ export default function Employees({ initialEmployees = [] }) {
     if (lastFocusedRef.current) lastFocusedRef.current.focus();
   }
 
-  
   function getDisplayEmployee(emp) {
-    
     let departmentName = 'Unknown Dept';
     if (emp.departmentId) {
       if (typeof emp.departmentId === 'object' && emp.departmentId.name) {
@@ -152,7 +201,6 @@ export default function Employees({ initialEmployees = [] }) {
       }
     }
 
-    
     let designationName = 'Unknown Role';
     if (emp.designationId) {
       if (typeof emp.designationId === 'object' && emp.designationId.name) {
@@ -172,17 +220,17 @@ export default function Employees({ initialEmployees = [] }) {
     };
   }
 
-  if(loading){
-    return(
+  if (loading) {
+    return (
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
         <DotLottieReact
           src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
           loop
           autoplay
-          style={{ width: 100, height: 100, alignItems: 'center' }} 
+          style={{ width: 100, height: 100, alignItems: 'center' }}
         />
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -190,11 +238,11 @@ export default function Employees({ initialEmployees = [] }) {
       <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
         <div className='container py-6'>
           <div className='text-center py-8 text-red-500'>{error}</div>
-          <button 
+          <button
             onClick={() => {
               setError(null);
-              fetchEmployees();
-            }} 
+              fetchEmployees(selectedDepartment, selectedDesignation);
+            }}
             className='px-4 py-2 rounded bg-blue-500 text-white mx-auto block mt-4'
           >
             Retry
@@ -207,7 +255,6 @@ export default function Employees({ initialEmployees = [] }) {
   return (
     <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
       <div className='container py-6'>
-        
         <div className='flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 mt-3'>
           <div>
             <h3 className='text-[var(--font-size-h2)] font-extrabold text-[var(--color-blackText)] leading-tight'>
@@ -215,15 +262,80 @@ export default function Employees({ initialEmployees = [] }) {
             </h3>
           </div>
           <div className='flex items-center gap-3'>
-            <div>
-              <select
-                className='px-4 py-2 bg-white border border-gray-200 rounded-md text-sm shadow-sm'
+            {/* Filter Dropdown */}
+            <div className='relative' ref={filterDropdownRef}>
+              <button
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className='px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 flex items-center gap-3 min-w-[200px] justify-between'
                 aria-label='Select view'
-                defaultValue='Employee View'
               >
-                <option>Employee View</option>
-              </select>
+                <span className='font-medium text-gray-700'>{filterLabel}</span>
+                <svg 
+                  className={`w-4 h-4 text-gray-500 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} 
+                  fill='none' 
+                  viewBox='0 0 24 24' 
+                  stroke='currentColor'
+                >
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showFilterDropdown && (
+                <div className='absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-2'>
+                  {/* All Employees Option */}
+                  <button
+                    onClick={() => handleFilterSelect('all', '', 'All Employees')}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition ${
+                      !selectedDepartment && !selectedDesignation ? 'bg-gray-50 font-medium' : ''
+                    }`}
+                  >
+                    All Employees
+                  </button>
+
+                  {/* Departments Section */}
+                  {organizationData?.departments && organizationData.departments.length > 0 && (
+                    <>
+                      <div className='px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t border-gray-100 mt-1'>
+                        Departments
+                      </div>
+                      {organizationData.departments.map((dept) => (
+                        <button
+                          key={dept._id}
+                          onClick={() => handleFilterSelect('department', dept._id, dept.name)}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition ${
+                            selectedDepartment === dept._id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                          }`}
+                        >
+                          {dept.name}
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Designations Section */}
+                  {organizationData?.designations && organizationData.designations.length > 0 && (
+                    <>
+                      <div className='px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t border-gray-100 mt-1'>
+                        Designations
+                      </div>
+                      {organizationData.designations.map((desig) => (
+                        <button
+                          key={desig._id}
+                          onClick={() => handleFilterSelect('designation', desig._id, desig.name)}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition ${
+                            selectedDesignation === desig._id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                          }`}
+                        >
+                          {desig.name}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
+
             <button
               className='px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white font-medium shadow hover:brightness-95 transition'
               onClick={() => setOpen(true)}
@@ -266,7 +378,7 @@ export default function Employees({ initialEmployees = [] }) {
           </div>
         </div>
 
-        
+        {/* Employee Grid */}
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'>
           {employees.map((emp, index) => {
             const displayEmp = getDisplayEmployee(emp);
@@ -278,7 +390,7 @@ export default function Employees({ initialEmployees = [] }) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') openView(displayEmp, e);
                 }}
-               className='bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100 
+                className='bg-white rounded-xl px-5 py-3 shadow-sm border border-gray-100 
                     hover:shadow-md transition cursor-pointer flex items-center gap-5 w-full'
               >
                 <img
@@ -293,9 +405,7 @@ export default function Employees({ initialEmployees = [] }) {
                   <div className='mt-1 text-[var(--color-primaryText)] text-sm'>
                     {displayEmp.department}
                   </div>
-                  <div className='text-[#6C727F] text-sm truncate'>
-                    {displayEmp.designation}
-                  </div>
+                  <div className='text-[#6C727F] text-sm truncate'>{displayEmp.designation}</div>
                 </div>
                 <button
                   onClick={(e) => {
@@ -304,18 +414,20 @@ export default function Employees({ initialEmployees = [] }) {
                   }}
                   className='ml-auto p-1 text-gray-400 hover:text-gray-600'
                   title='Edit'
-                >
-
-                </button>
+                ></button>
               </article>
             );
           })}
         </div>
 
-        
+        {/* Empty State */}
         {employees.length === 0 && (
           <div className='text-center py-12'>
-            <p className='text-gray-500 mb-4'>No employees found</p>
+            <p className='text-gray-500 mb-4'>
+              {(selectedDepartment || selectedDesignation) 
+                ? 'No employees found matching the selected filter' 
+                : 'No employees found'}
+            </p>
             <button
               onClick={openAdd}
               className='px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white font-medium'
@@ -325,17 +437,16 @@ export default function Employees({ initialEmployees = [] }) {
           </div>
         )}
 
-        
+        {/* Modals */}
         {showViewModal && selected && (
-          <EmployeeModal 
-            employee={selected} 
-            onClose={closeView} 
+          <EmployeeModal
+            employee={selected}
+            onClose={closeView}
             onEdit={handleEditFromView}
             onDelete={deleteFromView}
           />
         )}
 
-        
         {showAddEdit && (
           <AddEditEmployeeModal
             mode={modalMode}
