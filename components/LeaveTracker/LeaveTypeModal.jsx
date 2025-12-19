@@ -29,7 +29,7 @@ export default function LeaveTypeModal({
 }) {
   const isView = mode === "view";
   const isEdit = mode === "edit";
-
+  const [leaveNameError, setLeaveNameError] = useState("");
   const [form, setForm] = useState({
     name: "",
     code: "",
@@ -93,6 +93,10 @@ export default function LeaveTypeModal({
   };
 
   const save = async () => {
+      if (!form.name) {
+    setLeaveNameError("Please select a leave type");
+    return;
+  }
     const payload = {
       organizationId,
       leaveTypes: [form],
@@ -128,10 +132,12 @@ export default function LeaveTypeModal({
               disabled={isView}
               value={form.name}
               onChange={(e) => {
-                const name = e.target.value;
-                handleChange("name", name);
-                handleChange("code", LEAVE_CODE_MAP[name] || "");
-              }}
+              const name = e.target.value;
+              handleChange("name", name);
+              handleChange("code", LEAVE_CODE_MAP[name] || "");
+
+              if (name) setLeaveNameError("");
+            }}
               className="w-full px-3 py-2 border rounded-md"
             >
               <option value="">Select Leave Name</option>
@@ -139,6 +145,9 @@ export default function LeaveTypeModal({
                 <option key={l}>{l}</option>
               ))}
             </select>
+            {leaveNameError && (
+              <span className="text-xs text-red-500 mt-1">{leaveNameError}</span>
+            )}
           </div>
 
           <div>

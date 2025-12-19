@@ -123,243 +123,164 @@ export default function AddEditEmployeeModal({
     }
   }
 
-  const [form, setForm] = useState(() => {
-    if (employee && mode === "edit") {
-      const imageUrl = employee.photo || employee.imageUrl || "";
-
+    const [form, setForm] = useState(() => {
+    if (employee && mode === 'edit') {
+      const imageUrl = employee.photo || employee.imageUrl || '';
+     
       if (imageUrl) {
         setImagePreview(imageUrl);
       }
       return {
         ...empty,
-        employeeId: employee.employeeId || "",
-        firstName: employee.firstName || "",
-        lastName: employee.lastName || "",
+        employeeId: employee.employeeId || '',
+        firstName: employee.firstName || '',
+        lastName: employee.lastName || '',
         dateOfBirth: formatDateForInput(employee.dateOfBirth),
-        email: employee.email || "",
+        email: employee.email || '',
         imageUrl: imageUrl,
-        mobileNumber: String(employee.mobileNumber || ""),
-        alternateMobileNumber: String(employee.alternateMobileNumber || ""),
-        gender: employee.gender || "",
-        about: employee.aboutMe || employee.about || "",
-        maritalStatus: employee.maritalStatus || "",
+        mobileNumber: String(employee.mobileNumber || ''),
+        alternateMobileNumber: String(employee.alternateMobileNumber || ''),
+        gender: employee.gender || '',
+        about: employee.aboutMe || employee.about || '',
+        maritalStatus: employee.maritalStatus || '',
         address: [
           {
-            addresstype: "Current",
-            addressLine:
-              employee.address?.[0]?.addressLine ||
-              employee.presentAddress?.addressLine ||
-              "",
-            locality:
-              employee.address?.[0]?.locality ||
-              employee.presentAddress?.locality ||
-              "",
-            city:
-              employee.address?.[0]?.city ||
-              employee.presentAddress?.city ||
-              "",
-            state:
-              employee.address?.[0]?.state ||
-              employee.presentAddress?.state ||
-              "",
-            postalCode:
-              employee.address?.[0]?.postalCode ||
-              employee.presentAddress?.postalCode ||
-              "",
-            country:
-              employee.address?.[0]?.country ||
-              employee.presentAddress?.country ||
-              "",
+            addresstype: 'Current',
+            addressLine: employee.address?.[0]?.addressLine || employee.presentAddress?.addressLine || '',
+            locality: employee.address?.[0]?.locality || employee.presentAddress?.locality || '',
+            city: employee.address?.[0]?.city || employee.presentAddress?.city || '',
+            state: employee.address?.[0]?.state || employee.presentAddress?.state || '',
+            postalCode: employee.address?.[0]?.postalCode || employee.presentAddress?.postalCode || '',
+            country: employee.address?.[0]?.country || employee.presentAddress?.country || '',
           },
           {
-            addresstype: "Permanent",
-            addressLine:
-              employee.address?.[1]?.addressLine ||
-              employee.permanentAddress?.addressLine ||
-              "",
-            locality:
-              employee.address?.[1]?.locality ||
-              employee.permanentAddress?.locality ||
-              "",
-            city:
-              employee.address?.[1]?.city ||
-              employee.permanentAddress?.city ||
-              "",
-            state:
-              employee.address?.[1]?.state ||
-              employee.permanentAddress?.state ||
-              "",
-            postalCode:
-              employee.address?.[1]?.postalCode ||
-              employee.permanentAddress?.postalCode ||
-              "",
-            country:
-              employee.address?.[1]?.country ||
-              employee.permanentAddress?.country ||
-              "",
-          },
+            addresstype: 'Permanent',
+            addressLine: employee.address?.[1]?.addressLine || employee.permanentAddress?.addressLine || '',
+            locality: employee.address?.[1]?.locality || employee.permanentAddress?.locality || '',
+            city: employee.address?.[1]?.city || employee.permanentAddress?.city || '',
+            state: employee.address?.[1]?.state || employee.permanentAddress?.state || '',
+            postalCode: employee.address?.[1]?.postalCode || employee.permanentAddress?.postalCode || '',
+            country: employee.address?.[1]?.country || employee.permanentAddress?.country || '',
+          }
         ],
-        emergencyContacts:
-          employee.emergencyContacts?.length > 0
-            ? employee.emergencyContacts.map((contact) => ({
-                name: contact.name || "",
-                relationship: contact.relationship || "",
-                phone: String(contact.phone || ""),
-                email: contact.email || "",
-              }))
-            : empty.emergencyContacts,
-        departmentId:
-          typeof employee.departmentId === "object"
-            ? employee.departmentId._id
-            : employee.departmentId || "",
-        designationId:
-          typeof employee.designationId === "object"
-            ? employee.designationId._id
-            : employee.designationId || "",
-        reportingManagerId:
-          typeof employee.reportingManagerId === "object"
-            ? employee.reportingManagerId._id
-            : employee.reportingManagerId || "",
+        emergencyContacts: employee.emergencyContacts?.length > 0
+          ? employee.emergencyContacts.map(contact => ({
+              name: contact.name || '',
+              relationship: contact.relationship || '',
+              phone: String(contact.phone || ''),
+              email: contact.email || ''
+            }))
+          : empty.emergencyContacts,
+        // Fix: Add null checks before accessing _id
+        departmentId: (employee.departmentId && typeof employee.departmentId === 'object')
+          ? employee.departmentId._id
+          : employee.departmentId || '',
+        designationId: (employee.designationId && typeof employee.designationId === 'object')
+          ? employee.designationId._id
+          : employee.designationId || '',
+        reportingManagerId: (employee.reportingManagerId && typeof employee.reportingManagerId === 'object')
+          ? employee.reportingManagerId._id
+          : employee.reportingManagerId || '',
         dateOfJoining: formatDateForInput(employee.dateOfJoining),
-        employmentType: employee.employmentType || "",
-        employmentStatus: employee.employmentStatus || "",
-        availableLeave: employee.availableLeave?.toString() || "",
-        sourceOfHire: employee.sourceOfHire || "",
-        workingShiftId:
-          typeof employee.workingShiftId === "object"
-            ? employee.workingShiftId._id
-            : employee.workingShiftId || "",
-        onboardingStatus: employee.onboardingStatus || "",
+        employmentType: employee.employmentType || '',
+        employmentStatus: employee.employmentStatus || '',
+        availableLeave: employee.availableLeave?.toString() || '',
+        sourceOfHire: employee.sourceOfHire || '',
+        workingShiftId: (employee.workingShiftId && typeof employee.workingShiftId === 'object')
+          ? employee.workingShiftId._id
+          : employee.workingShiftId || '',
+        onboardingStatus: employee.onboardingStatus || '',
         probationEndDate: formatDateForInput(employee.probationEndDate),
         userRole: employee.userRole || [],
         skills: employee.skills || [],
-        skillInput: "",
-        password: "",
+        skillInput: '',
+        password: '',
       };
     }
     return { ...empty };
   });
+ 
 
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (employee && mode === "edit") {
-      const imageUrl = employee.photo || employee.imageUrl || "";
+   useEffect(() => {
+    if (employee && mode === 'edit') {
+      const imageUrl = employee.photo || employee.imageUrl || '';
       setImagePreview(imageUrl);
       setForm({
         ...empty,
-        employeeId: employee.employeeId || "",
-        firstName: employee.firstName || "",
-        lastName: employee.lastName || "",
+        employeeId: employee.employeeId || '',
+        firstName: employee.firstName || '',
+        lastName: employee.lastName || '',
         dateOfBirth: formatDateForInput(employee.dateOfBirth),
-        email: employee.email || "",
+        email: employee.email || '',
         imageUrl: imageUrl,
-        mobileNumber: String(employee.mobileNumber || ""),
-        alternateMobileNumber: String(employee.alternateMobileNumber || ""),
-        gender: employee.gender || "",
-        about: employee.aboutMe || employee.about || "",
-        maritalStatus: employee.maritalStatus || "",
+        mobileNumber: String(employee.mobileNumber || ''),
+        alternateMobileNumber: String(employee.alternateMobileNumber || ''),
+        gender: employee.gender || '',
+        about: employee.aboutMe || employee.about || '',
+        maritalStatus: employee.maritalStatus || '',
         address: [
           {
-            addresstype: "Current",
-            addressLine:
-              employee.address?.[0]?.addressLine ||
-              employee.presentAddress?.addressLine ||
-              "",
-            locality:
-              employee.address?.[0]?.locality ||
-              employee.presentAddress?.locality ||
-              "",
-            city:
-              employee.address?.[0]?.city ||
-              employee.presentAddress?.city ||
-              "",
-            state:
-              employee.address?.[0]?.state ||
-              employee.presentAddress?.state ||
-              "",
-            postalCode:
-              employee.address?.[0]?.postalCode ||
-              employee.presentAddress?.postalCode ||
-              "",
-            country:
-              employee.address?.[0]?.country ||
-              employee.presentAddress?.country ||
-              "",
+            addresstype: 'Current',
+            addressLine: employee.address?.[0]?.addressLine || employee.presentAddress?.addressLine || '',
+            locality: employee.address?.[0]?.locality || employee.presentAddress?.locality || '',
+            city: employee.address?.[0]?.city || employee.presentAddress?.city || '',
+            state: employee.address?.[0]?.state || employee.presentAddress?.state || '',
+            postalCode: employee.address?.[0]?.postalCode || employee.presentAddress?.postalCode || '',
+            country: employee.address?.[0]?.country || employee.presentAddress?.country || '',
           },
           {
-            addresstype: "Permanent",
-            addressLine:
-              employee.address?.[1]?.addressLine ||
-              employee.permanentAddress?.addressLine ||
-              "",
-            locality:
-              employee.address?.[1]?.locality ||
-              employee.permanentAddress?.locality ||
-              "",
-            city:
-              employee.address?.[1]?.city ||
-              employee.permanentAddress?.city ||
-              "",
-            state:
-              employee.address?.[1]?.state ||
-              employee.permanentAddress?.state ||
-              "",
-            postalCode:
-              employee.address?.[1]?.postalCode ||
-              employee.permanentAddress?.postalCode ||
-              "",
-            country:
-              employee.address?.[1]?.country ||
-              employee.permanentAddress?.country ||
-              "",
-          },
+            addresstype: 'Permanent',
+            addressLine: employee.address?.[1]?.addressLine || employee.permanentAddress?.addressLine || '',
+            locality: employee.address?.[1]?.locality || employee.permanentAddress?.locality || '',
+            city: employee.address?.[1]?.city || employee.permanentAddress?.city || '',
+            state: employee.address?.[1]?.state || employee.permanentAddress?.state || '',
+            postalCode: employee.address?.[1]?.postalCode || employee.permanentAddress?.postalCode || '',
+            country: employee.address?.[1]?.country || employee.permanentAddress?.country || '',
+          }
         ],
-        emergencyContacts:
-          employee.emergencyContacts?.length > 0
-            ? employee.emergencyContacts.map((contact) => ({
-                name: contact.name || "",
-                relationship: contact.relationship || "",
-                phone: String(contact.phone || ""),
-                email: contact.email || "",
-              }))
-            : empty.emergencyContacts,
-        departmentId:
-          typeof employee.departmentId === "object"
-            ? employee.departmentId._id
-            : employee.departmentId || "",
-        designationId:
-          typeof employee.designationId === "object"
-            ? employee.designationId._id
-            : employee.designationId || "",
-        reportingManagerId:
-          typeof employee.reportingManagerId === "object"
-            ? employee.reportingManagerId._id
-            : employee.reportingManagerId || "",
+        emergencyContacts: employee.emergencyContacts?.length > 0
+          ? employee.emergencyContacts.map(contact => ({
+              name: contact.name || '',
+              relationship: contact.relationship || '',
+              phone: String(contact.phone || ''),
+              email: contact.email || ''
+            }))
+          : empty.emergencyContacts,
+        // Add null checks here too
+        departmentId: (employee.departmentId && typeof employee.departmentId === 'object')
+          ? employee.departmentId._id
+          : employee.departmentId || '',
+        designationId: (employee.designationId && typeof employee.designationId === 'object')
+          ? employee.designationId._id
+          : employee.designationId || '',
+        reportingManagerId: (employee.reportingManagerId && typeof employee.reportingManagerId === 'object')
+          ? employee.reportingManagerId._id
+          : employee.reportingManagerId || '',
         dateOfJoining: formatDateForInput(employee.dateOfJoining),
-        employmentType: employee.employmentType || "",
-        employmentStatus: employee.employmentStatus || "",
-        availableLeave: employee.availableLeave?.toString() || "",
-        sourceOfHire: employee.sourceOfHire || "",
-        workingShiftId:
-          typeof employee.workingShiftId === "object"
-            ? employee.workingShiftId._id
-            : employee.workingShiftId || "",
-        onboardingStatus: employee.onboardingStatus || "",
+        employmentType: employee.employmentType || '',
+        employmentStatus: employee.employmentStatus || '',
+        availableLeave: employee.availableLeave?.toString() || '',
+        sourceOfHire: employee.sourceOfHire || '',
+        workingShiftId: (employee.workingShiftId && typeof employee.workingShiftId === 'object')
+          ? employee.workingShiftId._id
+          : employee.workingShiftId || '',
+        onboardingStatus: employee.onboardingStatus || '',
         probationEndDate: formatDateForInput(employee.probationEndDate),
         userRole: employee.userRole || [],
         skills: employee.skills || [],
-        skillInput: "",
-        password: "",
+        skillInput: '',
+        password: '',
       });
     } else {
-      setForm({ ...empty, skillInput: "" });
+      setForm({ ...empty, skillInput: '' });
       setImagePreview(null);
-      setSameAsCurrentAddress(false);
     }
     setStep(1);
     setErrors({});
   }, [employee, mode]);
+ 
 
   useEffect(() => {
     function onKey(e) {
