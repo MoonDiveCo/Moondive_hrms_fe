@@ -22,6 +22,7 @@ import Blog from "@/public/CMS/CMSBlog.svg"
 import Comparisons from "@/public/CMS/CMSComparisons.svg"
 import Summaries from "@/public/CMS/CMSSummaries.svg"
 import ContentPerformance from "@/public/CMS/CMSContentPerformace.svg"
+import { Menu } from 'lucide-react';
 
 const MenuContext = createContext(null);
 
@@ -201,6 +202,7 @@ export function MenuProvider({ children }) {
         });
       });
     });
+    
     const routePermissionMap = buildRoutePermissionMap(MENU);
 
     return {

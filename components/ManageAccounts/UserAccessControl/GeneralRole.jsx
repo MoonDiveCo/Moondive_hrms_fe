@@ -124,7 +124,7 @@ export default function GeneralRole() {
                             {user.name}
                             </p>
                             <p className="text-sm text-gray-500">
-                            {user.designation}
+                            {user.designation.name}
                             </p>
                         </div>
                         </div>
