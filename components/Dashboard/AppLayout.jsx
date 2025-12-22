@@ -5,7 +5,7 @@ import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
-
+ 
 export default function AppLayout({ module, children, showMainNavbar = true }) {
   const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
   const { isSignedIn } = useContext(AuthContext)
@@ -14,27 +14,27 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   const [bottomItems, setBottomItems] = useState([]);
   const accessPermissions = menus.rules ?? [];
   const subSet = new Set();
-const [collapsed, setCollapsed] = useState(false); 
+const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
     if (authLoading || rbacLoading) return;
-
+ 
     const moduleName = module ? module.toUpperCase() : "";
-
+ 
     const isModuleAccessible = canAccessModule(moduleName);
-
+ 
     if (!isSignedIn || !isModuleAccessible) {
       setTopItems([]);
       setBottomItems([]);
       return;
     }
-
+ 
     const keyOf = (item) =>
       (item && (item.href || item.label)) || JSON.stringify(item);
-
+ 
     const mergeUnique = (existing = [], additions = []) => {
       const seen = new Set(existing.map((it) => keyOf(it)));
       const merged = [...existing];
-
+ 
       for (const it of additions || []) {
         const k = keyOf(it);
         if (!seen.has(k)) {
@@ -44,30 +44,30 @@ const [collapsed, setCollapsed] = useState(false);
       }
       return merged;
     };
-
+ 
     let computedTop = [];
     let computedBottom = [];
-
+ 
     if (menus && menus[moduleName.toLowerCase()]) {
       computedTop = [...(menus[moduleName.toLowerCase()].top || [])];
       computedBottom = [...(menus[moduleName.toLowerCase()].bottom || [])];
     }
-
+ 
     const moduleRules = accessPermissions.filter(
       (rule) => rule.module?.toUpperCase() === moduleName
     );
-
+ 
     moduleRules.forEach((permission) => {
       if (!permission) return;
-
+ 
       const prefixes = Array.isArray(permission.requiredPermissionPrefixes)
         ? permission.requiredPermissionPrefixes
         : [permission.requiredPermissionPrefixes];
-
+ 
       const isSubmodulesAccessible = prefixes.some((p) =>
         canAccessSubmodule(p.toUpperCase())
       );
-
+ 
       if (isSubmodulesAccessible) {
         computedTop = mergeUnique(computedTop, permission.menu?.top || []);
         computedBottom = mergeUnique(
@@ -76,7 +76,7 @@ const [collapsed, setCollapsed] = useState(false);
         );
       }
     });
-
+ 
     setTopItems(computedTop);
     setBottomItems(computedBottom);
   }, [
@@ -89,8 +89,8 @@ const [collapsed, setCollapsed] = useState(false);
     rbacLoading,
     isSignedIn,
   ]);
-
-
+ 
+ 
 return (
   <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
     <aside
@@ -100,7 +100,7 @@ return (
     >
       <Sidebar topItems={topItems} bottomItems={bottomItems} collapsed={collapsed} />
     </aside>
-
+ 
     <div className="grid grid-rows-[auto_1fr] h-screen w-full z-10">
       <div className="sticky top-0 z-0">
         {showMainNavbar && (
@@ -109,10 +109,10 @@ return (
           </header>
         )}
       </div>
-
+ 
       <main
         className="flex-1 w-full max-w-full overflow-auto p-4"
-        style={{ height: "calc(100vh - 4rem)" }} 
+        style={{ height: "calc(100vh - 4rem)" }}
       >
         {children}
       </main>
@@ -121,3 +121,5 @@ return (
 );
  
 }
+ 
+ 
