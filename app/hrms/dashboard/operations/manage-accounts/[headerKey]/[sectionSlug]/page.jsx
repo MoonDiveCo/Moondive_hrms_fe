@@ -3,7 +3,7 @@ import Locations from "@/components/ManageAccounts/Organization/Locations";
 import Departments from "@/components/ManageAccounts/Organization/Departments";
 import Designations from "@/components/ManageAccounts/Organization/Designations";
 import GeneralRole from "@/components/ManageAccounts/UserAccessControl/GeneralRole";
-import AssignedRole from "@/components/ManageAccounts/UserAccessControl/AssignedRole";
+import AssignPermission from "@/components/ManageAccounts/UserAccessControl/AssignPermission";
 
 const SECTION_COMPONENTS = {
   "organization-details": OrganizationDetails,
@@ -11,7 +11,7 @@ const SECTION_COMPONENTS = {
   departments: Departments,
   designations: Designations,
   "general-role":GeneralRole,
-  "assigned-role":AssignedRole
+  "assigned-permission":AssignPermission
 };
 
 export default async function SectionPage({ params }) {

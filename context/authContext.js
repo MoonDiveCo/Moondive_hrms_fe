@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { createContext, useEffect, useState } from "react";
 import {fetchIPData} from '@/helper/tracking'
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
+import {getUserActionPermissions} from '@/constants/NestedDashboard'
 
 export const AuthContext = createContext();
 
@@ -12,6 +13,7 @@ export function AuthProvider({ children }) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [permissions, setPermissions] = useState([]);
+  const [actionPermission,setActionPermission]=useState([])
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,8 +34,10 @@ export function AuthProvider({ children }) {
         headers: {token}
       });
       const data = res?.data?.result
+      console.log("------",data)
       setUser(data?.user);
       setPermissions(data?.userPermissions);
+      setActionPermission(getUserActionPermissions(data?.user))
       setIsSignedIn(true);
       localStorage.setItem("user", JSON.stringify(data?.user));
     } catch(err) {
@@ -54,7 +58,7 @@ export function AuthProvider({ children }) {
     setUser(payload.user);
     setPermissions(payload.permissions);
     setIsSignedIn(true);
-
+    setActionPermission(getUserActionPermissions(payload?.user))
     localStorage.setItem("user", JSON.stringify(payload.user));
   };
 
@@ -89,6 +93,7 @@ const getSessionTrackingInfo = async () => {
         login,
         logout,
         loading,
+        actionPermission
       }}
     >
       {children}
