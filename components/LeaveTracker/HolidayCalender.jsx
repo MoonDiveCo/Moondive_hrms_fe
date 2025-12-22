@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -22,12 +22,16 @@ export default function HolidayCalender({
   organizationId,
   onApplyLeave,
   onViewLeave,
+  onRefresh,
 }) {
   const [events, setEvents] = useState([]);
-
+  const calendarRef = useRef(null);
+  // const currentYear = new Date().getFullYear();
   async function fetchCalendarData(info) {
-    const year = info.start.getFullYear();
-    const month = info.start.getMonth() + 1;
+      const viewStart = info?.view?.currentStart || info.start;
+
+      const year = viewStart.getFullYear();
+      const month = viewStart.getMonth() + 1;
 
     const holidayRes = await axios.get("/hrms/holiday", {
       params: { organizationId, year, month },
@@ -47,7 +51,6 @@ export default function HolidayCalender({
     const leaveRes = await axios.get("/hrms/leave/get-leave", {
       params: { year, month },
     });
-    console.log("Leave Res:", leaveRes.data.leaves);  
 
     const leaveEvents =
       leaveRes.data?.leaves?.map((l) => ({
@@ -64,16 +67,22 @@ export default function HolidayCalender({
     setEvents([...holidayEvents, ...leaveEvents]);
   }
 
-  console.log("Events:", events);
+function handleDateClick(info) {
+  const clickedDate = new Date(info.dateStr);
+  clickedDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+today.setHours(0, 0, 0, 0);
 
-  function handleDateClick(info) {
-    const date = new Date(info.dateStr);
-    const day = date.getDay();
 
-    if (day === 0 || day === 6) return;
+  const day = clickedDate.getDay();
 
-    onApplyLeave(info.dateStr);
-  }
+  if (day === 0 || day === 6) return;
+
+  if (clickedDate < today) return;
+
+  onApplyLeave(info.dateStr, refreshCalendar);
+}
+
 
   function handleEventClick(info) {
    const { extendedProps, startStr, title, endStr } = info.event;
@@ -83,14 +92,36 @@ export default function HolidayCalender({
     }
   }
 
+    function refreshCalendar() {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+
+    api.removeAllEvents();
+
+    fetchCalendarData({
+      view: api.view,
+      start: api.view.currentStart,
+    });
+  }
+
+    useEffect(() => {
+    onRefresh?.(refreshCalendar);
+  }, []);
+
   return (
-    <div className="bg-white rounded-2xl flex-1 h-full p-4">
+    <div className="bg-white border border-gray-300 rounded-2xl flex-1 h-full p-4">
       <FullCalendar
+        ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
         initialView="dayGridMonth"
         height="100%"
         showNonCurrentDates={false}
         fixedWeekCount={false}
+        
+        // validRange={{
+        //     start: `${currentYear}-01-01`,
+        //     end: `${currentYear + 1}-01-01`,
+        //   }}
         datesSet={fetchCalendarData}
         headerToolbar={{
           left: "prev title next",

@@ -26,10 +26,23 @@ export default function LeaveTypeModal({
   data,
   onClose,
   organizationId,
+  existingLeaveTypes,
 }) {
   const isView = mode === "view";
   const isEdit = mode === "edit";
   const [leaveNameError, setLeaveNameError] = useState("");
+
+  const existingCodes = React.useMemo(() => {
+  if (!existingLeaveTypes) return [];
+
+  return existingLeaveTypes
+    .filter((lt) => {
+      if (isEdit && lt.code === data?.code) return false;
+      return true;
+    })
+    .map((lt) => lt.code);
+}, [existingLeaveTypes, isEdit, data]);
+
   const [form, setForm] = useState({
     name: "",
     code: "",
@@ -141,9 +154,16 @@ export default function LeaveTypeModal({
               className="w-full px-3 py-2 border rounded-md"
             >
               <option value="">Select Leave Name</option>
-              {LEAVE_NAMES.map((l) => (
-                <option key={l}>{l}</option>
-              ))}
+            {LEAVE_NAMES.map((l) => {
+            const code = LEAVE_CODE_MAP[l];
+            const isDisabled = existingCodes.includes(code);
+
+            return (
+              <option key={l} value={l} disabled={isDisabled}>
+                {l} {isDisabled ? "(Already added)" : ""}
+              </option>
+            );
+            })}
             </select>
             {leaveNameError && (
               <span className="text-xs text-red-500 mt-1">{leaveNameError}</span>
