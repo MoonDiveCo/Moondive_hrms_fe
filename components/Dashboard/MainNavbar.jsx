@@ -56,11 +56,6 @@ export default function MainNavbar({setCollapsed, collapsed}) {
         </div>
 
         <div className='flex items-center gap-4'>
-          <input
-            type='search'
-            placeholder='Search employee'
-            className='w-52 md:w-80 bg-[#0000000A] rounded-4xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]'
-          />
 
           {/* avatar button */}
           <button
