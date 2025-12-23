@@ -315,31 +315,33 @@ li {
 
 .fc .fc-button-primary {
   background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  border: none;
+  /* border-color: var(--color-primary); */
 }
 
 .fc .fc-button-primary:not(:disabled):hover {
   filter: brightness(0.95);
   background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  /* border-color: var(--color-primary); */
 }
 
-.fc .fc-button-primary.fc-button-active {
+.fc .fc-button-active {
   background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  /* border-color: var(--color-primary); */
+  border: none;
   filter: brightness(0.9);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  /* box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2); */
 }
 
 .fc .fc-button-group .fc-button {
   border-radius: 10px;
 }
 
-.fc .fc-button-group .fc-button.fc-button-active {
+.fc .fc-button-group .fc-button  {
   background-color: var(--color-primary) !important;
-  border-color: var(--color-primary) !important;
+  /* border-color: var(--color-primary) !important; */
   color: white !important;
-  filter: brightness(0.9);
+  /* filter: brightness(0.9); */
 }
 
 /* Grid */
@@ -435,21 +437,175 @@ li {
   background: var(--color-primary);
 }
 
-.fc .fc-button-group {
+.fc .fc-button-group .fc-button {
   border-radius: 12px;
   overflow: hidden;
   background-color: var(--color-primary);
-    border: none !important;
+  border: none !important;
 }
 
 .fc .fc-button-group .fc-button {
   margin: 0;
-  border-right: 1px solid rgba(255,255,255,0.2);
+  border: none;
 }
 
 .fc .fc-button-group .fc-button:last-child {
   border-right: none;
 }
-.fc-toolbar-chunk{
 
+.fc {
+  --fc-border-color: #e5e7eb;
+  --fc-today-bg-color: rgba(59, 130, 246, 0.08);
+  font-family: inherit;
 }
+
+/* Toolbar */
+.fc .fc-toolbar-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* Buttons */
+.fc .fc-button {
+  border-radius: 10px;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+}
+
+.fc .fc-button-primary {
+  background-color: var(--color-primary);
+  border: none;
+  border-color: var(--color-primary);
+}
+
+.fc .fc-button-primary:not(:disabled):hover {
+  filter: brightness(0.95);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.fc .fc-button-active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border: none;
+  filter: brightness(0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.fc .fc-button-group .fc-button {
+  border-radius: 10px;
+}
+
+.fc .fc-button-group .fc-button  {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: white !important;
+  filter: brightness(0.9);
+}
+
+/* Grid */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid #e5e7eb;
+}
+
+.fc-daygrid-day {
+  transition: background 0.2s ease;
+}
+
+.fc-daygrid-day:hover {
+  background-color: #f9fafb;
+}
+
+/* Today */
+.fc-day-today {
+  background-color: var(--fc-today-bg-color) !important;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+  background: var(--color-primary);
+  color: white;
+  border-radius: 9999px;
+  padding: 4px 8px;
+  font-weight: 600;
+}
+
+/* Day number */
+.fc-daygrid-day-number {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Events */
+.fc-event {
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  border: none;
+}
+
+.fc-event-title {
+  font-weight: 500;
+}
+
+.fc-bg-event {
+  opacity: 1 !important;
+  border-radius: 6px;
+}
+
+.fc-scrollgrid {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.fc .fc-toolbar  {
+  display: flex;
+  align-items: center;
+  /* justify-content: space-between; */
+   gap: 12px;
+}
+
+.fc .fc-toolbar-chunk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.fc .fc-toolbar-title {
+  line-height: 1;
+  margin: 0;
+}
+
+.fc .fc-prev-button,
+.fc .fc-next-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+      box-shadow: none !important;
+}
+
+.fc .fc-prev-button:disabled,
+.fc .fc-next-button:disabled {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: var(--color-primary);
+}
+
+.fc .fc-button-group .fc-button {
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: var(--color-primary);
+  border: none !important;
+}
+
+.fc .fc-button-group .fc-button {
+  margin: 0;
+  border: none;
+  box-shadow: none !important;
+}
+

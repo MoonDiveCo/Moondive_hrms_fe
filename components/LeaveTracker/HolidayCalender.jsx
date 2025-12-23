@@ -133,6 +133,60 @@ today.setHours(0, 0, 0, 0);
         dateClick={handleDateClick}
         eventClick={handleEventClick}
       />
+
+      <div className="mt-4 flex flex-wrap items-center gap-6 text-xs text-gray-600">
+        
+        <div className="flex items-center gap-3">
+          <span className="font-medium text-gray-500">Holidays:</span>
+
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: HOLIDAY_COLORS.PUBLIC }}
+            />
+            <span>Public</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: HOLIDAY_COLORS.OPTIONAL }}
+            />
+            <span>Optional</span>
+          </div>
+        </div>
+
+        <span className="h-4 w-px bg-gray-300" />
+
+        <div className="flex items-center gap-3">
+          <span className="font-medium text-gray-500">Leaves:</span>
+
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: LEAVE_COLORS.Approved }}
+            />
+            <span>Approved</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: LEAVE_COLORS.Pending }}
+            />
+            <span>Pending</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: LEAVE_COLORS.Rejected }}
+            />
+            <span>Rejected</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
