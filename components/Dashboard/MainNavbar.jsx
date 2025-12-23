@@ -1,74 +1,116 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import ProfileSlideOver from './ProfileSlideOver'; // adjust path if needed
+import React, { useEffect, useRef, useState } from 'react';
+import ProfileSlideOver from './ProfileSlideOver';
 import { useRouter } from 'next/navigation';
-import { useTheme } from "next-themes";
+import { Bell, Clock, LogIn, LogOut } from 'lucide-react';
 
-export default function MainNavbar({setCollapsed, collapsed}) {
-    const { theme, setTheme } = useTheme();
-    const router = useRouter();
-  const [openProfile, setOpenProfile] = useState(false);
+export default function MainNavbar({ setCollapsed, collapsed }) {
+  const router = useRouter();
   const avatarRef = useRef(null);
+  const [openProfile, setOpenProfile] = useState(false);
 
-  // NOTE: Replace with actual logged-in user's avatar if you store it in context or props
-  const avatarUrl = '/avatar-placeholder.png'; // fallback
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  function openPanel() {
-    setOpenProfile(true);
-  }
-  function closePanel() {
-    setOpenProfile(false);
-    // return focus to avatar button
-    if (avatarRef.current) avatarRef.current.focus();
-  }
+  useEffect(() => {
+    if (!isCheckedIn) return;
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isCheckedIn]);
+
+  const handleCheckToggle = () => {
+    if (isCheckedIn) {
+      setIsCheckedIn(false);
+      setElapsedSeconds(0);
+    } else {
+      setIsCheckedIn(true);
+    }
+  };
+
+  const formatTime = (secs) => {
+    const h = String(Math.floor(secs / 3600)).padStart(2, '0');
+    const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
 
   return (
-    <div className='w-full px-6 md:px-8 z-20'>
-      <div className='flex items-center justify-between h-16'>
-        <div className='flex items-center gap-2'>
-                    <button
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!collapsed}
+    <div className="w-full px-6 md:px-8 z-20 border-b bg-white">
+      <div className="flex items-center justify-between h-16">
+
+        <div className="flex items-center gap-3">
+          <button
             onClick={() => setCollapsed(!collapsed)}
-            className=" rounded hover:bg-primary/20 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            title={collapsed ? "Expand" : "Collapse"}
+            className="rounded hover:bg-primary/20 p-1"
           >
-            {/* chevron icon rotates based on state */}
             <svg
-              className={`w-5 h-5 transform transition-transform duration-200 ${
-                collapsed ? "rotate-180" : "rotate-0"
+              className={`w-5 h-5 transition-transform ${
+                collapsed ? 'rotate-180' : ''
               }`}
               viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              fill="orange"
             >
-              <path d="M6 4L14 10L6 16V4Z" fill="orange" />
+              <path d="M6 4L14 10L6 16V4Z" />
             </svg>
           </button>
-            <button
-      onClick={() => router.back()}
-      className="px-4 py-2 text-xs rounded-full bg-white  text-primaryText hover:text-primary"
-    >
-      ← Back
-    </button>
 
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-1.5 text-xs rounded-full bg-gray-100 hover:bg-gray-200"
+          >
+            ← Back
+          </button>
         </div>
 
-        <div className='flex items-center gap-4'>
+        <div className="flex items-center gap-4">
 
-          {/* avatar button */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium">
+            <Clock size={14} className="text-gray-500" />
+            <span>{formatTime(elapsedSeconds)}</span>
+          </div>
+
+          <button
+            onClick={handleCheckToggle}
+            className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold transition ${
+              isCheckedIn
+                ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                : 'bg-orange-500 text-white hover:bg-orange-600'
+            }`}
+          >
+            {isCheckedIn ? (
+              <>
+                <LogOut size={14} />
+                Check Out
+              </>
+            ) : (
+              <>
+                <LogIn size={14} />
+                Check In
+              </>
+            )}
+          </button>
+
+          <button className="relative p-2 rounded-full hover:bg-gray-100">
+            <Bell size={18} />
+            <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] flex items-center justify-center rounded-full bg-orange-500 text-white">
+              3
+            </span>
+          </button>
+
           <button
             ref={avatarRef}
-            onClick={openPanel}
-            className='flex items-center gap-2 rounded-full px-1 py-1 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]'
-            aria-expanded={openProfile}
-            aria-controls='profile-slideover'
+            onClick={() => setOpenProfile(true)}
+            className="flex items-center gap-2 rounded-full hover:bg-gray-50 p-1"
           >
             <img
-              src={'https://i.pravatar.cc/160?img=2'}
-              alt='Profile'
-              className='w-9 h-9 rounded-full object-cover border border-gray-100'
+              src="https://i.pravatar.cc/160?img=2"
+              alt="Profile"
+              className="w-9 h-9 rounded-full border"
             />
           </button>
         </div>
@@ -76,11 +118,7 @@ export default function MainNavbar({setCollapsed, collapsed}) {
 
       <ProfileSlideOver
         isOpen={openProfile}
-        onClose={closePanel}
-        onProfileUpdated={(updated) => {
-          // optional: update local state / show toast
-          console.log('profile updated', updated);
-        }}
+        onClose={() => setOpenProfile(false)}
       />
     </div>
   );
