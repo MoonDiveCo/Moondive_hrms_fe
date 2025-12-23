@@ -169,7 +169,14 @@ const handleSaveNewItem = async (formData) => {
       "serialNumber",
       "purchaseDate",
       "ram",
-      "expiryDate",
+      "storage",
+      "processor",
+      "condition",
+      "screenSize",
+      "operatingSystem",
+      "status",
+      "graphics",
+      // "expiryDate",
     ];
     
     const missing = requiredLaptopFields.filter((f) => !specs[f]);
@@ -195,7 +202,6 @@ const handleSaveNewItem = async (formData) => {
     }
   }
   
-  // If we reach here, validation passed
   try {
     await axios.post("/cms/inventory/inventory/add", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -436,6 +442,7 @@ const handleDeleteInventory = async (id) => {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onSave={(fd) => handleSaveNewItem(fd)}
+        inventories={fullInventory}
       />
 
       <EditInventoryModal
