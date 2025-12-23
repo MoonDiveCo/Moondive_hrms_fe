@@ -92,6 +92,35 @@ export default function LeaveTrackerDashboard() {
   }, {});
 }, [leaveDashboard]);
 
+useEffect(() => {
+  if (!user?._id) return;
+
+  const eventSource = new EventSource(
+    `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream`,
+    {withCredentials: true}
+  );
+
+  eventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Received SSE event:", data);
+    if (data.type === "LEAVE_APPLIED") {
+      fetchLeaveRequests();
+    }
+
+    if (data.type === "LEAVE_UPDATED") {
+      fetchLeaveDashboard();
+      calendarRefreshRef.current?.();
+    }
+  };
+
+  eventSource.onerror = () => {
+    eventSource.close();
+  };
+
+  return () => eventSource.close();
+}, [user?._id]);
+
+
 
 
 useEffect(() => {
@@ -127,6 +156,7 @@ useEffect(() => {
     const fetchLeaveRequests = async () => {
     try {
       const leaveRes = await axios.get("/hrms/leave/get-leave");
+      console.log(leaveRes?.data?.leaveRequests )
       setPendingLeaves(leaveRes?.data?.leaveRequests || []);
     } catch (err) {
       console.error("Failed to load leaves", err);
