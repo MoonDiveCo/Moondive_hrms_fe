@@ -21,11 +21,17 @@ export default function AccessoryForm({ form, setForm }) {
         {/* Quantity */}
         <div>
           <label className="text-sm">Quantity <span className="text-red-500">*</span></label>
-          <input
+         <input
             type="number"
+            min={0}
+            step={1}
             className="w-full border border-gray-300 p-2 rounded mt-1"
-            value={form.quantity || ""}
-            onChange={(e) => handle("quantity", e.target.value)}
+            value={form.quantity ?? ""}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (value < 0) return;
+              handle("quantity", value);
+            }}
           />
         </div>
 

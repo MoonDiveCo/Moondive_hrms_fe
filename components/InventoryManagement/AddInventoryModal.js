@@ -5,8 +5,49 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import FileUploader from "./FileUploader";
 import { Trash2 } from "lucide-react";
+import SlugSearchInput from "./SlugSearchInput.js";
 
-export default function AddInventoryModal({ open, onClose,onDelete, onSave,mode = "add", initialData = null   }) {
+export function buildInventorySlug(item) {
+  const specs = item.specs || {};
+
+  if (item.category === "Laptop") {
+    return {
+      id: item._id,
+      category: "Laptop",
+      label: [
+        specs.modelName,
+        specs.processor,
+        specs.ram,
+        specs.storage,
+        specs.graphics,
+        specs.screenSize,
+        specs.operatingSystem,
+      ]
+        .filter(Boolean)
+        .join(" | "),
+      searchableText: Object.values(specs).join(" ").toLowerCase(),
+      payload: item,
+    };
+  }
+
+  return {
+    id: item._id,
+    category: item.category,
+    label: [
+      specs.brand,
+      specs.model,
+      specs.type,
+      specs.connectivity,
+    ]
+      .filter(Boolean)
+      .join(" | "),
+    searchableText: Object.values(specs).join(" ").toLowerCase(),
+    payload: item,
+  };
+}
+
+
+export default function AddInventoryModal({ open, onClose,onDelete, onSave,mode = "add", initialData = null, inventories = [] }) {
 
   const [category, setCategory] = useState("");
   const [form, setForm] = useState({});
@@ -17,6 +58,35 @@ const [receiptFiles, setReceiptFiles] = useState([]);
     productImageUrl: "",
     receiptUrl: "",
   });
+
+  const [slugIndex, setSlugIndex] = useState([]);
+const [query, setQuery] = useState("");
+const [suggestions, setSuggestions] = useState([]);
+
+useEffect(() => {
+  if (!inventories?.length) return;
+
+  const normalized = inventories.map(buildInventorySlug);
+  setSlugIndex(normalized);
+}, [inventories]);
+
+useEffect(() => {
+  if (!query || !category) {
+    setSuggestions([]);
+    return;
+  }
+
+  const q = query.toLowerCase();
+
+  const filtered = slugIndex.filter(
+    (item) =>
+      item.category === category &&
+      item.searchableText.includes(q)
+  );
+
+  setSuggestions(filtered.slice(0, 5));   
+}, [query, category, slugIndex]);
+
 
    useEffect(() => {
     if (mode === "edit" && initialData) {
@@ -101,6 +171,25 @@ const handleAutoGenerate = async () => {
     toast.error("Error auto-generating specs.");
   } 
 };
+
+const handleSlugSelect = (slug) => {
+  const item = slug.payload;
+
+  setCategory(item.category);
+  setForm(item.specs || {});
+
+  setUploadedUrls({
+    productImageUrl: item.productImage || "",
+    receiptUrl: item.receipt || "",
+  });
+
+  setProductImages(item.productImage ? [item.productImage] : []);
+  setReceiptFiles(item.receipt ? [item.receipt] : []);
+
+  setQuery("");
+  setSuggestions([]);
+};
+
   
 const handleSubmit = () => {
   const fd = new FormData();
@@ -118,12 +207,12 @@ const handleSubmit = () => {
     fd.append("receipt", uploadedUrls.receiptUrl);
 
   onSave(fd);
-  setForm({});
-  setCategory("");
-  setUploadedUrls({ productImageUrl: "", receiptUrl: "" });
-  setUploading({ productImage: false, receipt: false });
-  setProductImages([]);
-  setReceiptFiles([]);
+  // setForm({});
+  // setCategory("");
+  // setUploadedUrls({ productImageUrl: "", receiptUrl: "" });
+  // setUploading({ productImage: false, receipt: false });
+  // setProductImages([]);
+  // setReceiptFiles([]);
 };
 
 const handleDelete = async () => {
@@ -143,6 +232,32 @@ const handleDelete = async () => {
     toast.error("Failed to delete inventory");
   }
 };
+
+const resetModalState = () => {
+  setCategory("");
+  setForm({});
+  setQuery("");
+  setSuggestions([]);
+
+  setUploadedUrls({
+    productImageUrl: "",
+    receiptUrl: "",
+  });
+
+  setUploading({
+    productImage: false,
+    receipt: false,
+  });
+
+  setProductImages([]);
+  setReceiptFiles([]);
+};
+
+const handleClose = () => {
+  resetModalState();
+  onClose();
+};
+
 
   if (!open) return null;
 
@@ -227,6 +342,14 @@ const handleDelete = async () => {
  
          </div>}
         {/* DYNAMIC FORM */}
+        {mode=== "add" && category && (
+        <SlugSearchInput
+          query={query}
+          setQuery={setQuery}
+          suggestions={suggestions}
+          onSelect={handleSlugSelect}
+        />
+      )}
         {category === "Laptop" && <LaptopForm form={form} setForm={setForm} />}
         {category !== "Laptop" && category !== "" && (
           <AccessoryForm form={form} setForm={setForm} />
@@ -253,7 +376,7 @@ const handleDelete = async () => {
           <div className="flex gap-3">
             <button
               className="px-4 py-2 bg-white text-primaryText rounded-full border border-primary"
-              onClick={onClose}
+              onClick={handleClose}
             >
               Cancel
             </button>
