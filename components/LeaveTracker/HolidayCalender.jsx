@@ -134,7 +134,7 @@ today.setHours(0, 0, 0, 0);
         eventClick={handleEventClick}
       />
 
-      <div className="mt-4 flex flex-wrap items-center gap-6 text-xs text-gray-600">
+      <div className="pt-6 pb-3 flex flex-wrap items-center gap-6 text-xs text-gray-600">
         
         <div className="flex items-center gap-3">
           <span className="font-medium text-gray-500">Holidays:</span>
