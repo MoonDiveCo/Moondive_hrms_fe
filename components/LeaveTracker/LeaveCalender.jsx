@@ -93,7 +93,7 @@ function refreshCalendar() {
 
 
   return (<>
-    <div className="bg-white rounded-2xl h-full flex-1 p-4">
+    <div className="bg-white border border-gray-300 rounded-2xl h-full flex-1 p-4">
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}

@@ -8,24 +8,27 @@ function getDatesBetween(start, end) {
   let current = new Date(start);
 
   while (current <= new Date(end)) {
-    const day = current.getDay();
-    if (day !== 0 && day !== 6) {
-      dates.push({
-        date: current.toISOString().split("T")[0],
-        isHalfDay: false,
-        session: "FULL",
-        enabled: true,
-      });
-    }
+    dates.push({
+      date: current.toISOString().split("T")[0],
+      isHalfDay: false,
+      session: "FULL",
+      enabled: true,
+      reason: null,
+    });
+
     current.setDate(current.getDate() + 1);
   }
   return dates;
 }
 
+
 export default function ApplyLeaveModal({
   context,
   leaveBalances,
+  pendingLeaves,
   onClose,
+  holidays,
+  allLeaves,
 }) {
   const [leaveType, setLeaveType] = useState("");
   const [fromDate, setFromDate] = useState(context.startDate || "");
@@ -34,40 +37,145 @@ export default function ApplyLeaveModal({
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit() {
-  if (!canSubmit || !leaveType) return;
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  // today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split("T")[0];
 
-  try {
-    setSubmitting(true);
+  const isOptionalLeave = leaveType === "OL";
 
-    const payload = {
-      leaveType, 
-      reason,
-      dates: days
-        .filter((d) => d.enabled)
-        .map((d) => ({
-          date: d.date,
-          isHalfDay: d.isHalfDay,
-          session: d.isHalfDay ? d.session : null,
-        })),
-    };
+  const optionalHolidays = useMemo(() => {
+    return holidays
+      .filter(
+        (h) =>
+          h.isActive &&
+          h.type === "OPTIONAL" &&
+          new Date(h.date) >= today
+      )
+      .map((h) => ({
+        date: new Date(h.date).toISOString().split("T")[0],
+        name: h.name || "Optional Holiday",
+      }));
+  }, [holidays, today]);
 
-    await axios.post("/hrms/leave/add-leave", payload);
+  const handleOptionalHolidaySelect = (date) => {
+    if (!date) return;
 
-    onClose();
-  } catch (err) {
-    console.error("Failed to apply leave", err);
-  } finally {
-    setSubmitting(false);
-  }
-}
+    setFromDate(date);
+    setToDate(date);
+    setDays([
+      {
+        date,
+        isHalfDay: false,
+        session: "FULL",
+        enabled: true,
+        reason: null,
+      },
+    ]);
+  };
 
+  const holidayDateSet = useMemo(() => {
+    return new Set(
+      holidays
+        .filter((h) => h.isActive && h.type === "PUBLIC")
+        .map((h) => new Date(h.date).toISOString().split("T")[0])
+    );
+  }, [holidays]);
+
+  const appliedDateSet = useMemo(() => {
+    const set = new Set();
+
+    allLeaves.forEach((leave) => {
+      if (leave.status !== "Approved") return;
+
+      const start = new Date(leave.startDate);
+      const end = new Date(leave.endDate);
+
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+
+      while (start <= end) {
+        set.add(start.toISOString().split("T")[0]);
+        start.setDate(start.getDate() + 1);
+      }
+    });
+
+    return set;
+  }, [allLeaves]);
 
   useEffect(() => {
-    if (fromDate && toDate) {
-      setDays(getDatesBetween(fromDate, toDate));
+    if (!fromDate || !toDate || isOptionalLeave) return;
+
+    const generated = getDatesBetween(fromDate, toDate).map((d) => {
+      const dateObj = new Date(d.date);
+      dateObj.setHours(0, 0, 0, 0);
+
+      const day = dateObj.getDay();
+
+      if (dateObj < today)
+        return { ...d, enabled: false, reason: "PAST" };
+
+      if (day === 0 || day === 6)
+        return { ...d, enabled: false, reason: "WEEKEND" };
+
+      if (holidayDateSet.has(d.date))
+        return { ...d, enabled: false, reason: "HOLIDAY" };
+
+      if (appliedDateSet.has(d.date))
+        return { ...d, enabled: false, reason: "APPLIED" };
+
+      return d;
+    });
+
+    const res = generated.slice();
+
+    for (let i = 0; i < res.length; i++) {
+      const curDay = new Date(res[i].date).getDay();
+      if (curDay !== 0 && curDay !== 6) continue;
+
+      let start = i;
+      let end = i;
+      while (end + 1 < res.length && [0, 6].includes(new Date(res[end + 1].date).getDay())) {
+        end++;
+      }
+
+      const prevIdx = start - 1;
+      const nextIdx = end + 1;
+
+      if (
+        prevIdx >= 0 &&
+        nextIdx < res.length &&
+        res[prevIdx].enabled &&
+        res[nextIdx].enabled
+      ) {
+        const prevDay = new Date(res[prevIdx].date).getDay();
+        const nextDay = new Date(res[nextIdx].date).getDay();
+
+        if (prevDay === 5 && nextDay === 1) {
+          for (let k = start; k <= end; k++) {
+            if (res[k].reason === "WEEKEND") {
+              res[k] = { ...res[k], enabled: true, reason: "SANDWICH" };
+            }
+          }
+        }
+      }
+
+      i = end; 
     }
-  }, [fromDate, toDate]);
+
+    setDays(res);
+  }, [
+    fromDate,
+    toDate,
+    holidayDateSet,
+    appliedDateSet,
+    isOptionalLeave,
+    today,
+  ]);
+
 
   const totalRequested = useMemo(() => {
     return days.reduce((sum, d) => {
@@ -75,88 +183,203 @@ export default function ApplyLeaveModal({
       return sum + (d.isHalfDay ? 0.5 : 1);
     }, 0);
   }, [days]);
-const balance = leaveBalances[leaveType];
 
-    const available = balance?.available ?? 0;
-    const name = balance?.name ?? "";
+  const balance = leaveBalances[leaveType];
+  const pendingForType = pendingLeaves?.[leaveType] ?? 0;
 
-  const canSubmit = totalRequested > 0 && totalRequested <= available;
+  const isUnlimited = balance?.unlimited;
+  const isWindowed = balance?.isWindowed;
+
+  const monthlyAvailable =
+    typeof balance?.availableThisMonth === "number"
+      ? balance.availableThisMonth
+      : 0;
+
+  const carryForwarded =
+    balance?.canCarryForward ? balance?.carryForwarded ?? 0 : 0;
+
+  const rawAvailable = isUnlimited
+    ? Infinity
+    : isWindowed
+      ? monthlyAvailable
+      : monthlyAvailable + carryForwarded;
+
+  const effectiveAvailable =
+    rawAvailable === Infinity
+      ? Infinity
+      : Math.max(0, rawAvailable - pendingForType);
+
+  const name = balance?.name ?? "";
+
+  const canSubmit =
+    totalRequested > 0 &&
+    (effectiveAvailable === Infinity ||
+      totalRequested <= effectiveAvailable);
+
+  const availabilityMessage = useMemo(() => {
+    if (!leaveType || !balance) return null;
+
+    if (effectiveAvailable === Infinity) return null;
+
+    if (effectiveAvailable === 0) {
+      if (pendingForType > 0) {
+        return `You already have ${pendingForType} pending ${name} leave(s).`;
+      }
+      return `You don’t have any ${name} leaves available.`;
+    }
+
+    if (totalRequested > effectiveAvailable) {
+      return `You only have ${effectiveAvailable} ${name} leave(s) available.`;
+    }
+
+    return null;
+  }, [
+    leaveType,
+    balance,
+    effectiveAvailable,
+    pendingForType,
+    totalRequested,
+    name,
+  ]);
+
+  async function handleSubmit() {
+    if (!canSubmit || !leaveType) return;
+
+    try {
+      setSubmitting(true);
+
+      const payload = {
+        leaveType,
+        reason,
+        dates: days
+          .filter((d) => d.enabled)
+          .map((d) => ({
+            date: d.date,
+            isHalfDay: d.isHalfDay,
+            session: d.isHalfDay ? d.session : null,
+            reasonType: d.reason,
+          })),
+      };
+
+      await axios.post("/hrms/leave/add-leave", payload);
+      context?.refreshCalendar?.();
+      onClose();
+    } catch (err) {
+      console.error("Failed to apply leave", err);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center">
       <div className="bg-white w-[900px] rounded-xl p-6 flex gap-6">
-
         {/* LEFT */}
         <div className="flex-1 space-y-4">
-          <h3 className="text-lg font-semibold">Apply Leave</h3>
+          <h4 className="text-primaryText">Apply Leave</h4>
 
           <select
             className="w-full border px-3 py-2 rounded-md"
             onChange={(e) => setLeaveType(e.target.value)}
           >
             <option value="">Select Leave Type</option>
-           {Object.entries(leaveBalances).map(([code, data]) => (
-            <option key={code} value={code}>
+            {Object.entries(leaveBalances).map(([code, data]) => (
+              <option key={code} value={code}>
                 {data.name}
-            </option>
+              </option>
             ))}
           </select>
 
-          <div className="flex gap-3">
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="border px-3 py-2 rounded-md w-full"
-            />
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="border px-3 py-2 rounded-md w-full"
-            />
-          </div>
+          {/* DATE / OPTIONAL HOLIDAY */}
+          {!isOptionalLeave ? (
+            <div className="flex gap-3">
+              <input
+                type="date"
+                min={todayStr}
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="border px-3 py-2 rounded-md w-full"
+              />
+              <input
+                type="date"
+                min={fromDate || todayStr}
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="border px-3 py-2 rounded-md w-full"
+              />
+            </div>
+          ) : (
+            <select
+              className="w-full border px-3 py-2 rounded-md"
+              onChange={(e) => handleOptionalHolidaySelect(e.target.value)}
+            >
+              <option value="">Select Optional Holiday</option>
+              {optionalHolidays.map((h) => (
+                <option key={h.date} value={h.date}>
+                  {h.name} ({h.date})
+                </option>
+              ))}
+            </select>
+          )}
 
-          {/* INDIVIDUAL DAYS */}
-          <div className="space-y-2 max-h-40 overflow-auto border rounded-md p-2">
-            {days.map((d, idx) => (
-              <div key={d.date} className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={d.enabled}
-                  onChange={() =>
-                    setDays((prev) =>
-                      prev.map((x, i) =>
-                        i === idx ? { ...x, enabled: !x.enabled } : x
-                      )
-                    )
-                  }
-                />
-                <span className="text-sm">{d.date}</span>
+          {/* DAYS */}
+          <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
+            {days.map((d) => {
+              const isDisabled =d.reason=== "SANDWICH"? d.enabled :!d.enabled ;
+              const reasonLabel = {
+                PAST: "Past date",
+                WEEKEND: "Weekend",
+                HOLIDAY: "Holiday",
+                APPLIED: "Already applied",
+                SANDWICH: "Sandwich",
+              }[d.reason];
 
-                <select
-                  disabled={!d.enabled}
-                  onChange={(e) =>
-                    setDays((prev) =>
-                      prev.map((x, i) =>
-                        i === idx
-                          ? {
-                              ...x,
-                              isHalfDay: e.target.value !== "FULL",
-                              session: e.target.value,
-                            }
-                          : x
-                      )
-                    )
-                  }
-                  className="border px-2 py-1 rounded text-xs"
+              const reasonColor = {
+                PAST: "bg-gray-200 text-gray-600",
+                WEEKEND: "bg-blue-100 text-blue-600",
+                HOLIDAY: "bg-purple-100 text-purple-600",
+                APPLIED: "bg-red-100 text-red-600",
+                SANDWICH: "bg-yellow-100 text-yellow-700",
+              }[d.reason];
+
+              return (
+
+                <div
+                  key={d.date}
+                  className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${d.enabled
+                    ? "bg-white hover:bg-gray-100"
+                    : "bg-gray-100 text-gray-400"
+                    }`}
                 >
-                  <option value="FULL">Full Day</option>
-                  <option value="FIRST_HALF">1st Half</option>
-                  <option value="SECOND_HALF">2nd Half</option>
-                </select>
-              </div>
-            ))}
+                  <span>{d.date}</span>
+                  {isDisabled && ( <span className={`text-xs px-2 py-0.5 rounded-full ${reasonColor}`} > {reasonLabel} </span> )}
+
+                  {d.enabled && d.reason!=="SANDWICH" && (
+                    <select
+                      value={d.session}
+                      onChange={(e) =>
+                        setDays((prev) =>
+                          prev.map((x) =>
+                            x.date === d.date
+                              ? {
+                                ...x,
+                                isHalfDay: e.target.value !== "FULL",
+                                session: e.target.value,
+                              }
+                              : x
+                          )
+                        )
+                      }
+                      className="border px-2 py-1 rounded text-xs"
+                    >
+                      <option value="FULL">Full Day</option>
+                      <option value="FIRST_HALF">1st Half</option>
+                      <option value="SECOND_HALF">2nd Half</option>
+                    </select>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <textarea
@@ -168,45 +391,68 @@ const balance = leaveBalances[leaveType];
           />
 
           <div className="flex gap-3">
-           <button
-                disabled={!canSubmit || submitting}
-                onClick={handleSubmit}
-                className={`px-4 py-2 rounded-md ${
-                    canSubmit && !submitting
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            <button
+              disabled={!canSubmit || submitting}
+              onClick={handleSubmit}
+              className={`px-3 py-1 rounded-full text-xs ${canSubmit && !submitting
+                ? "bg-primary text-white"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
-                >
-                {submitting ? "Submitting..." : "Submit"}
-                </button>
-            <button onClick={onClose} className="border px-4 py-2 rounded-md">
+            >
+              {submitting ? "Submitting..." : "Submit"}
+            </button>
+
+            <button
+              onClick={onClose}
+              className="border px-3 py-1 text-xs rounded-full"
+            >
               Cancel
             </button>
           </div>
+
+          {availabilityMessage && (
+            <p className="text-xs text-red-500">{availabilityMessage}</p>
+          )}
         </div>
 
         {/* RIGHT SUMMARY */}
-        <div className="w-[260px] bg-gray-50 rounded-lg p-4">
-          <p className="text-sm text-gray-500 mb-3">Leave Summary</p>
+        <div className="w-[260px] bg-gray-50 rounded-lg p-4 space-y-2">
+          <p className="text-sm text-gray-500 mb-2">Leave Summary</p>
 
           <p className="text-sm">
             Available
-            <span className="float-right text-green-600">
-              {available}
+            <span className="float-right">
+              {rawAvailable === Infinity ? 0 : rawAvailable}
             </span>
           </p>
 
           <p className="text-sm">
-            Requested
+            Pending
             <span className="float-right">
-              {totalRequested}
+              {rawAvailable === Infinity ? 0 : pendingForType}
             </span>
           </p>
 
-          <p className="text-sm text-blue-600 font-medium">
+          <p className="text-sm font-medium">
+            Effective Available
+            <span className="float-right">
+              {effectiveAvailable === Infinity ? 0 : effectiveAvailable}
+            </span>
+          </p>
+
+          <div className="border-t my-2" />
+
+          <p className="text-sm">
+            Requested
+            <span className="float-right">{totalRequested}</span>
+          </p>
+
+          <p className="text-sm font-medium">
             Balance After
             <span className="float-right">
-              {Math.max(available - totalRequested, 0)}
+              {effectiveAvailable === Infinity
+                ? 0
+                : Math.max(effectiveAvailable - totalRequested, 0)}
             </span>
           </p>
         </div>
