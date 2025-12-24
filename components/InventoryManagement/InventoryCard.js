@@ -14,9 +14,11 @@ export default function InventoryCard({ item, onClick }) {
     >
 
       {/* IMAGE */}
-      <div className={`h-36 w-full rounded-lg mb-4 overflow-hidden flex items-center justify-center 
-        ${isNotWorking ? "bg-red-100" : "bg-gray-50"}
-      `}>
+     <div className={`relative h-36 w-full rounded-lg mb-4 overflow-hidden flex items-center justify-center 
+            ${isNotWorking ? "bg-red-100" : "bg-gray-50"}
+          `}
+        >
+
         {item.productImage ? (
           <img
             src={item.productImage}
@@ -28,6 +30,39 @@ export default function InventoryCard({ item, onClick }) {
             <span>No Image</span>
           </div>
         )}
+
+        {item.category === "Laptop" && item.assignedTo?.id && (
+          <div className="absolute top-2 right-2 z-10">
+            {item.assignedTo?.profilePicture ? (
+              <img
+                src={item.assignedTo.profilePicture}
+                alt={item.assignedTo.name}
+                title={item.assignedTo.name}
+                className="
+                  w-9 h-9 rounded-full object-cover
+                  border-2 border-white
+                  shadow-md
+                  bg-white
+                "
+              />
+            ) : (
+              <div
+                title={item.assignedTo.name}
+                className="
+                  w-9 h-9 rounded-full
+                  bg-indigo-600 text-white
+                  flex items-center justify-center
+                  text-xs font-semibold
+                  border-2 border-white
+                  shadow-md
+                "
+              >
+                {item.assignedTo.name?.[0]?.toUpperCase()}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* CATEGORY BADGE */}
