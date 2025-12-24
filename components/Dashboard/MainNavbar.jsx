@@ -40,7 +40,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
   };
 
   return (
-    <div className="w-full px-6 md:px-8 z-20 border-b bg-white">
+    <div className="w-full px-6 md:px-8 z-20 bg-white">
       <div className="flex items-center justify-between h-16">
 
         <div className="flex items-center gap-3">
