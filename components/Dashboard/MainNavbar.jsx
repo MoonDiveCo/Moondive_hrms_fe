@@ -78,8 +78,8 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
             onClick={handleCheckToggle}
             className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold transition ${
               isCheckedIn
-                ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                : 'bg-orange-500 text-white hover:bg-orange-600'
+                ? 'bg-red-100 text-red-600'
+                : 'bg-primary text-white'
             }`}
           >
             {isCheckedIn ? (
