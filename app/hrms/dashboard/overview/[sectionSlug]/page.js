@@ -1,11 +1,13 @@
-import Approval from "@/components/Overview/Approval";
+
 import Department from "@/components/Overview/Department";
 import MySpace from "@/components/Overview/MySpace";
+
 
 const SECTION_COMPONENTS = {
   "myspace": MySpace,
   "department": Department,
-  "approval": Approval
+  // "approval": Approval,
+  // "organizationpolicy": OrganizationPolicy,
 };
 
 export default async function SectionPage({ params }) {

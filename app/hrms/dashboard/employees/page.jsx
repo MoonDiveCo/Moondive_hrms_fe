@@ -397,7 +397,7 @@ export default function Employees({ initialEmployees = [] }) {
         </div>
 
         {/* Empty State */}
-        {employees.length === 0 && (
+        {/* {employees.length === 0 && (
           <div className='text-center py-12'>
             <p className='text-gray-500 mb-4'>
               {(selectedDepartment || selectedDesignation) 
@@ -411,7 +411,7 @@ export default function Employees({ initialEmployees = [] }) {
               Add Your First Employee
             </button>
           </div>
-        )}
+        )} */}
 
         {/* Modals */}
         {showViewModal && selected && (

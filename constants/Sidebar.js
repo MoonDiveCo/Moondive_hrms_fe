@@ -38,6 +38,7 @@ export function MenuProvider({ children }) {
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
+            { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
             { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents" },
           
