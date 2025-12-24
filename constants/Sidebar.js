@@ -26,14 +26,14 @@ import ContentPerformance from "@/public/CMS/CMSContentPerformace.svg"
 const MenuContext = createContext(null);
 
 export function MenuProvider({ children }) {
-  const menus = useMemo(() => {
+  const menus = useMemo(() => { 
     const MENU = {
       HRMS: {
         SUPER_ADMIN: {
           top: [
             // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
             { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
-            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker/leave-dashboard" },
+            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
@@ -41,13 +41,16 @@ export function MenuProvider({ children }) {
           
           ],
           bottom: [
-  { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations" },
+            { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations" },
             { label: "Analytics", icon: AnalyticsIcon, href: "/hrms/dashboard/analytics" },
             { label: "Settings", icon: SettingIcon, href: "/hrms/dashboard/settings" },
           ],
         },
         EMPLOYEE: {
-          top: [],
+          top: [
+            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
+            { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
+          ],
 
           bottom: [],
         },
@@ -198,15 +201,40 @@ Object.entries(MENU).forEach(([moduleName, roles]) => {
         });
       });
     });
+    const routePermissionMap = buildRoutePermissionMap(MENU);
 
     return {
       rules,
       menus: MENU,
+      routePermissionMap
     };
   }, []);
 
   return <MenuContext.Provider value={menus}>{children}</MenuContext.Provider>;
 }
+
+const buildRoutePermissionMap = (MENU) => {
+  const map = {};
+
+  Object.entries(MENU).forEach(([moduleName, roles]) => {
+    Object.entries(roles).forEach(([roleName, menuObj]) => {
+      const permission =
+        roleName === "SUPER_ADMIN" ? "*" : `${moduleName}:${roleName}`;
+
+      [...menuObj.top, ...menuObj.bottom].forEach((item) => {
+        if (!map[item.href]) {
+          map[item.href] = new Set();
+        }
+        map[item.href].add(permission);
+      });
+    });
+  });
+
+  Object.keys(map).forEach((k) => (map[k] = Array.from(map[k])));
+
+  return map;
+};
+
 
 export function useMenus() {
   const ctx = useContext(MenuContext);

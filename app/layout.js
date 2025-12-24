@@ -5,6 +5,7 @@ import { RBACProvider } from "@/context/rbacContext";
 import { WebVitals } from "@/components/WebVitals";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { Toaster } from 'sonner';
+import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

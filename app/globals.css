@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+
 :root {
   --font-size-base: clamp(0.6rem, 0.8rem + 0.2vw, 1.125rem);
   --font-size-h1: clamp(2.5rem, 2rem + 2vw, 3.5rem);
@@ -303,12 +304,12 @@ li {
 .fc .fc-toolbar-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-primary);
 }
 
 /* Buttons */
 .fc .fc-button {
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.85rem;
   padding: 6px 10px;
 }
@@ -320,6 +321,26 @@ li {
 
 .fc .fc-button-primary:not(:disabled):hover {
   filter: brightness(0.95);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.fc .fc-button-primary.fc-button-active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  filter: brightness(0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.fc .fc-button-group .fc-button {
+  border-radius: 10px;
+}
+
+.fc .fc-button-group .fc-button.fc-button-active {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: white !important;
+  filter: brightness(0.9);
 }
 
 /* Grid */
@@ -379,3 +400,108 @@ li {
   border-radius: 12px;
   overflow: hidden;
 }
+
+.fc .fc-toolbar  {
+  display: flex;
+  align-items: center;
+  /* justify-content: space-between; */
+   gap: 12px;
+}
+
+.fc .fc-toolbar-chunk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.fc .fc-toolbar-title {
+  line-height: 1;
+  margin: 0;
+}
+
+.fc .fc-prev-button,
+.fc .fc-next-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none
+}
+
+.fc .fc-prev-button:disabled,
+.fc .fc-next-button:disabled {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: var(--color-primary);
+}
+
+.fc .fc-button-group {
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: var(--color-primary);
+    border: none !important;
+}
+
+.fc .fc-button-group .fc-button {
+  margin: 0;
+  border-right: 1px solid rgba(255,255,255,0.2);
+}
+
+.fc .fc-button-group .fc-button:last-child {
+  border-right: none;
+}
+.fc-toolbar-chunk{
+
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.timeline-line {
+  height: 2px;
+  width: 100%;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+/* current time */
+.vis-current-time {
+  border-left: 2px dashed #2563eb !important;
+}
+
+/* absent */
+.vis-item.absent {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #dc2626;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* worked */
+.vis-item.worked {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  border-radius: 6px;
+}
+
+/* weekend */
+.vis-item.weekend {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+  border-radius: 6px;
+}
+
+/* row height */
+.vis-group {
+  min-height: 70px;
+}
+

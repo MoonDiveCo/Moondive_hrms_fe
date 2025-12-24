@@ -51,11 +51,11 @@ async function deleteLeaveType(code) {
     <div className="w-full -z-10 space-y-10">
 
       <section className="bg-white rounded-2xl border border-gray-200 p-4">
-        <div className="p-6 border-b flex justify-between items-center">
-          <h4 className="text-lg font-semibold text-gray-900"></h4>
+        <div className="p-6 flex justify-between items-center">
+          <h4 className="text-primaryText">Leave Policy</h4>
 
           <button
-            className="px-4 py-2 text-sm text-white bg-orange-500 rounded hover:bg-orange-600 flex items-center gap-2"
+            className="px-4 py-2 text-sm text-white bg-orange-500 rounded flex items-center gap-2"
             onClick={(e) => openLeaveModal("add", null, e)}
           >
             <Plus size={16} /> Add Leave Type
@@ -93,7 +93,7 @@ async function deleteLeaveType(code) {
                       onClick={(e) => openLeaveModal("view", lt, e)}
                       className="p-2 hover:bg-gray-100 rounded-md"
                     >
-                      <Eye size={16} className="text-blue-600" />
+                      <Eye size={16} className="text-primary" />
                     </button>
                       <button
                         onClick={(e) => openLeaveModal("edit", lt, e)}
