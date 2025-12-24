@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState,useContext } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { AuthContext } from "@/context/authContext";
 
 
 
@@ -99,42 +100,31 @@ function ServiceCard({ title, subtitle, icon, onClick, className = '' }) {
 export default function Operations() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-    const router = useRouter()
+  const router = useRouter()
+  const {permissions,actionPermission}=useContext(AuthContext)
+  const userPermissions=[...permissions,...actionPermission]
 
-  const popular = useMemo(
-    () => [
-      { id: 'onboarding', title: 'Onboarding', subtitle: '', icon: 'onboarding' },
-      { id: 'leave-tracker/leave-policy', title: 'Leave Tracker', subtitle: '', icon: 'leave' },
-      { id: 'performance', title: 'Performance', subtitle: '', icon: 'performance' },
-      { id: 'hrletters', title: 'HR Letters', subtitle: '', icon: 'files' },
-      { id: 'timetracker', title: 'Time Tracker', subtitle: '', icon: 'time' },
-    ],
-    []
-  );
-
-  const recentlyUsed = useMemo(
-    () => [
-      { id: 'tasks', title: 'Tasks', icon: 'tasks' },
-      { id: 'files', title: 'Files', icon: 'files' },
-      { id: 'approvals', title: 'Approvals', icon: 'approvals' },
-    ],
-    []
-  );
 
   const allServices = useMemo(
     () => [
-      { id: 'manage-accounts/organization/organization-details', title: 'Manage Accounts', icon: 'onboarding' },
-      { id: 'employeeInfo', title: 'Employee Info', icon: 'employee' },
-      { id: 'leave-tracker/leave-policy', title: 'Leave Tracker', icon: 'leave' },
-      { id: '/accounts', title: 'Accounts', icon: 'files' },
-      { id: 'attendance', title: 'Attendance', icon: 'time' },
-      { id: 'shift', title: 'Shift', icon: 'employee' },
-      { id: 'timeTracker', title: 'Time Tracker', icon: 'time' },
-      { id: 'performance', title: 'Performance', icon: 'performance' },
-    
+      { id: 'manage-accounts/organization/organization-details', title: 'Manage Accounts', icon: 'onboarding', requiredPermissions:'HRMS:MANAGE_ACCOUNT:VIEW' },
+      { id: 'employeeInfo', title: 'Employee Info', icon: 'employee', requiredPermissions:'HRMS:EMPLOYEE:VIEW'},
+      { id: 'leave-tracker/leave-policy', title: 'Leave Tracker', icon: 'leave',requiredPermissions:'HRMS:LEAVE_POLICY:VIEW' },
+      { id: '/accounts', title: 'Accounts', icon: 'files',requiredPermissions:'CRM:ACCOUNTS:VIEW' },
+      { id: 'attendance', title: 'Attendance', icon: 'time',requiredPermissions:'HRMS:EMPLOYEE:VIEW'  },
+      { id: 'shift', title: 'Shift', icon: 'employee',requiredPermissions:'HRMS:EMPLOYEE:VIEW' },
+      { id: 'timeTracker', title: 'Time Tracker', icon: 'time',requiredPermissions:'HRMS:EMPLOYEE:VIEW' },
+      { id: 'performance', title: 'Performance', icon: 'performance',requiredPermissions:'HRMS:EMPLOYEE:VIEW' },
+      // { id: 'onboarding', title: 'Onboarding', subtitle: '', icon: 'onboarding' },
+      // { id: 'hrletters', title: 'HR Letters', subtitle: '', icon: 'files', },
+      
     ],
     []
   );
+
+  const meetRequiredPermission=(serviceObj)=>{
+    return userPermissions.includes(serviceObj.requiredPermissions)
+  }
 
 
   function handleCardClick(id) {
@@ -145,6 +135,7 @@ export default function Operations() {
   const filteredAll = allServices.filter((s) =>
     (s.title + (s.subtitle || '')).toLowerCase().includes(query.trim().toLowerCase())
   );
+  console.log("------------filteredAll",filteredAll)
 
   if(loading){
     return(
@@ -160,35 +151,13 @@ export default function Operations() {
   }
   return (
     <div className="container py-8 px-8 mx-auto bg-white">
-      <section className="mb-8 px-8">
-        <h5 className="text-base font-semibold text-blackText mb-4">Popular Services</h5>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {popular.map((s) => (
-            <ServiceCard
-              key={s.id}
-              title={s.title}
-              subtitle={s.subtitle}
-              icon={s.icon}
-              onClick={() => handleCardClick(s.id)}
-            />
-          ))}
-        </div>
-      </section>
-      <section className="mb-8 px-8">
-        <h5 className="text-base font-semibold text-blackText mb-4">Recently Used</h5>
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-4">
-          {recentlyUsed.map((s) => (
-            <ServiceCard key={s.id} title={s.title} icon={s.icon} onClick={() => handleCardClick(s.id)} />
-          ))}
-        </div>
-      </section>
       <section className='px-8'>
         <h5 className="text-base font-semibold text-blackText mb-4">All Services</h5>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredAll.length ? (
             filteredAll.map((s) => (
+              meetRequiredPermission(s)&&
               <ServiceCard key={s.id} title={s.title} icon={s.icon} onClick={() => handleCardClick(s.id)} />
             ))
           ) : (

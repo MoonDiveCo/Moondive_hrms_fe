@@ -15,6 +15,7 @@ export function AuthProvider({ children }) {
   const [permissions, setPermissions] = useState([]);
   const [actionPermission,setActionPermission]=useState([])
   const [loading, setLoading] = useState(true);
+  const [allUserPermissions,setAllUserPermissions]=useState([])
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -34,10 +35,14 @@ export function AuthProvider({ children }) {
         headers: {token}
       });
       const data = res?.data?.result
-      console.log("------",data)
       setUser(data?.user);
       setPermissions(data?.userPermissions);
       setActionPermission(getUserActionPermissions(data?.user))
+      if(data?.userPermissions.includes('*')){
+        setAllUserPermissions(getUserActionPermissions(data?.user))
+      }else{
+        setAllUserPermissions([...data?.userPermissions,...data?.user?.additionalPermissions])
+      }
       setIsSignedIn(true);
       localStorage.setItem("user", JSON.stringify(data?.user));
     } catch(err) {
@@ -59,6 +64,7 @@ export function AuthProvider({ children }) {
     setPermissions(payload.permissions);
     setIsSignedIn(true);
     setActionPermission(getUserActionPermissions(payload?.user))
+    setAllUserPermissions([...payload?.permissions,...payload?.user?.additionalPermissions])
     localStorage.setItem("user", JSON.stringify(payload.user));
   };
 
@@ -70,6 +76,8 @@ export function AuthProvider({ children }) {
     setIsSignedIn(false);
     setUser(null);
     setPermissions([]);
+    setAllUserPermissions([])
+
   };
 
 const getSessionTrackingInfo = async () => {
@@ -93,7 +101,8 @@ const getSessionTrackingInfo = async () => {
         login,
         logout,
         loading,
-        actionPermission
+        actionPermission,
+        allUserPermissions
       }}
     >
       {children}

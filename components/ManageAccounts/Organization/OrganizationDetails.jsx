@@ -1,8 +1,10 @@
 'use client'
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext, } from "react"
 import axios from "axios"
 import Image from "next/image"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { AuthContext } from "@/context/authContext";
+import {ACTION_PERMISSIONS} from "@/constants/NestedDashboard"
 
 export default function OrganizationDetails() {
   const [organization, setOrganization] = useState(null)
@@ -11,13 +13,18 @@ export default function OrganizationDetails() {
   const [hovered, setHovered] = useState(false)
   const [loading, setLoading] = useState(true)
   const [logoPreview, setLogoPreview] = useState(null)
-
+  const {allUserPermissions}=useContext(AuthContext)
+  const [hasEditPermissions,setHasEditPermissions]=useState(false)
+  
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await axios.get('http://localhost:2000/api/v1/hrms/organization/view-organization', {withCredentials: true})
         const orgData = res.data.result
+        if(allUserPermissions.includes("HRMS:ORGANIZATION:EDIT")){
+          setHasEditPermissions(true)
+        }
         setOrganization(orgData)
         setLogoPreview(orgData?.logoUrl || null)
       } catch (err) {
@@ -30,9 +37,6 @@ export default function OrganizationDetails() {
     fetchData()
   }, [])
 
-  useEffect(() => {
-    console.log("==============================", organization)
-  }, [organization])
 
   const handleTopLevelChange = (e) => {
     const { name, value } = e.target
@@ -156,6 +160,8 @@ export default function OrganizationDetails() {
         )
       }
 
+
+
   if (error) {
     return <div className="p-4 text-red-500">{error}</div>
   }
@@ -173,7 +179,7 @@ export default function OrganizationDetails() {
             <div className="flex justify-center items-center space-x-4">
               <button
                 type="button"
-                disabled={!modified}
+                disabled={ !modified }
                 onClick={handleReset}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -181,7 +187,7 @@ export default function OrganizationDetails() {
               </button>
               <button
                 type="submit"
-                disabled={!modified}
+                disabled={ !modified }
                 className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save
@@ -202,6 +208,7 @@ export default function OrganizationDetails() {
                     <Image
                       src={logoPreview}
                       alt="Organization logo"
+                      
                       fill
                       className="object-cover rounded"
                     />
@@ -233,6 +240,7 @@ export default function OrganizationDetails() {
                 name="logo"
                 accept="image/*"
                 className="hidden"
+                disabled={!hasEditPermissions}
                 onChange={handleLogoChange}
               />
             </div>
@@ -244,6 +252,7 @@ export default function OrganizationDetails() {
                   type="text"
                   id="name"
                   name="name"
+                  disabled={!hasEditPermissions}
                   value={organization?.name || ''}
                   onChange={handleTopLevelChange}
                   required
@@ -253,6 +262,7 @@ export default function OrganizationDetails() {
               <div>
                 <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                 <input
+                  disabled={!hasEditPermissions}
                   type="url"
                   id="website"
                   name="website"
@@ -267,6 +277,7 @@ export default function OrganizationDetails() {
               <div>
                 <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
                 <input
+                  disabled={!hasEditPermissions}
                   type="text"
                   id="contactPerson"
                   name="contactPerson"
@@ -278,6 +289,7 @@ export default function OrganizationDetails() {
               <div>
                 <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
                 <input
+                  disabled={!hasEditPermissions}
                   type="tel"
                   id="contactNumber"
                   name="contactNumber"
@@ -292,6 +304,7 @@ export default function OrganizationDetails() {
               <div>
                 <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">Contact Email *</label>
                 <input
+                  disabled={!hasEditPermissions}
                   type="email"
                   id="contactEmail"
                   name="contactEmail"
@@ -307,6 +320,7 @@ export default function OrganizationDetails() {
                   id="industry"
                   name="industry"
                   value={organization?.industry || ''}
+                  disabled={!hasEditPermissions}
                   onChange={handleTopLevelChange}
                   className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
                 >
@@ -324,6 +338,7 @@ export default function OrganizationDetails() {
                 <div>
                   <label htmlFor="address1" className="block text-sm text-gray-500 mb-1">Address 1</label>
                   <input
+                    disabled={!hasEditPermissions}
                     type="text"
                     id="address1"
                     placeholder="Address 1"
@@ -335,6 +350,7 @@ export default function OrganizationDetails() {
                 <div>
                   <label htmlFor="address2" className="block text-sm text-gray-500 mb-1">Address 2</label>
                   <input
+                    disabled={!hasEditPermissions}
                     type="text"
                     id="address2"
                     placeholder="Address 2"
@@ -349,6 +365,7 @@ export default function OrganizationDetails() {
                     <select
                       id="state"
                       name="state"
+                      disabled={!hasEditPermissions}
                       value={addr.state || ''}
                       onChange={(e) => handleAddressChange('state', e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
@@ -364,6 +381,7 @@ export default function OrganizationDetails() {
                     <select
                       id="country"
                       name="country"
+                      disabled={!hasEditPermissions}
                       value={addr.country || 'India'}
                       onChange={(e) => handleAddressChange('country', e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded bg-transparent outline-none focus:border-orange-400  focus:ring-orange-400"
@@ -377,6 +395,7 @@ export default function OrganizationDetails() {
                   <div>
                     <label htmlFor="city" className="block text-sm text-gray-500 mb-1">City</label>
                     <input
+                      disabled={!hasEditPermissions}
                       type="text"
                       id="city"
                       value={addr.city || ''}
@@ -387,6 +406,7 @@ export default function OrganizationDetails() {
                   <div>
                     <label htmlFor="zip" className="block text-sm text-gray-500 mb-1">ZIP/PIN Code</label>
                     <input
+                      disabled={!hasEditPermissions}
                       type="text"
                       id="zip"
                       placeholder="ZIP/PIN Code"
@@ -402,6 +422,7 @@ export default function OrganizationDetails() {
             <div>
               <label htmlFor="about" className="block text-sm font-medium text-gray-700 mb-1">About</label>
               <textarea
+                disabled={!hasEditPermissions}
                 id="about"
                 name="about"
                 rows={3}

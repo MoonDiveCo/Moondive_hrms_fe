@@ -6,7 +6,7 @@ import { AuthContext } from "./authContext";
 export const RBACContext = createContext();
 
 export function RBACProvider({ children }) {
-  const { permissions: userPermissions,isSignedIn , loading: authLoading } = useContext(AuthContext);
+  const { permissions: userPermissions,isSignedIn , loading: authLoading,actionPermission } = useContext(AuthContext);
 
   const [modules, setModules] = useState([]);
   const [submodules, setSubmodules] = useState([]);
@@ -44,7 +44,10 @@ export function RBACProvider({ children }) {
     const subSet = new Set();
     const actionSet = new Set();
 
-    userPermissions.forEach((p) => {
+        [
+      ...userPermissions,
+      ...(actionPermission.length > 0 ? actionPermission : [])
+    ].forEach((p) => {
       const parts = p.split(":");
       const [module, submodule, action] = parts;
 

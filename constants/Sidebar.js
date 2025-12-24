@@ -51,15 +51,37 @@ export function MenuProvider({ children }) {
         },
         EMPLOYEE: {
           top: [
+            { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview" },
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
+            { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
+            { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
+            { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents" },
           ],
 
-          bottom: [],
+          bottom: [
+            { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations" },
+            { label: "Settings", icon: SettingIcon, href: "/hrms/dashboard/settings" },
+          ],
         },
         HR: {
-          top: [],
-          bottom: [],
+          top: [
+            // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
+            
+            { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview" },
+            { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
+            { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
+            { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
+            { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
+            { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
+            { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents" },
+          
+          ],
+          bottom: [
+            { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations" },
+            { label: "Analytics", icon: AnalyticsIcon, href: "/hrms/dashboard/analytics" },
+            { label: "Settings", icon: SettingIcon, href: "/hrms/dashboard/settings" },
+          ],
         },
       },
 

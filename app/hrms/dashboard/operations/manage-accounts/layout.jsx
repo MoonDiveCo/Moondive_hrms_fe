@@ -6,7 +6,7 @@ import React from "react";
 
 export default function ManageAccountsLayout({ children }) {
   return (
-  <SubModuleProtectedRoute requiredPermissionPrefixes={["*"]}>
+  <SubModuleProtectedRoute >
 
       <NestedAppLayout>{children}</NestedAppLayout>
   </SubModuleProtectedRoute>)
