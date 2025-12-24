@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 const OVERVIEW_TABS = [
   { label: "MySpace", path: "/hrms/dashboard/overview/myspace" },
   { label: "Department", path: "/hrms/dashboard/overview/department" },
-  { label: "Approval", path: "/hrms/dashboard/overview/approval" },
 ];
 
 export default function OverviewLayout({ children }) {
@@ -15,8 +14,8 @@ export default function OverviewLayout({ children }) {
   return (
     <div>
       {/* OVERVIEW SUB TABS */}
-      <div className="bg-white border-b px-6">
-        <div className="flex gap-8">
+      <div className="bg-white px-6">
+        <div className="flex gap-10">
           {OVERVIEW_TABS.map((tab) => {
             const isActive = pathname.startsWith(tab.path);
 
@@ -24,13 +23,20 @@ export default function OverviewLayout({ children }) {
               <button
                 key={tab.path}
                 onClick={() => router.push(tab.path)}
-                className={`py-3 text-sm font-medium ${
-                  isActive
-                    ? "text-[var(--color-primary)]"
-                    : "text-gray-500 hover:text-[var(--color-primary)]"
-                }`}
+                className={`relative py-3 text-sm font-medium transition-colors
+                  ${
+                    isActive
+                      ? "text-[var(--color-primary)]"
+                      : "text-gray-500 hover:text-[var(--color-primary)]"
+                  }
+                `}
               >
                 {tab.label}
+
+                {/* ACTIVE UNDERLINE */}
+                {isActive && (
+                  <span className="absolute left-0 bottom-0 h-[2px] w-full bg-[var(--color-primary)] rounded-full"></span>
+                )}
               </button>
             );
           })}
