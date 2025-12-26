@@ -1,9 +1,10 @@
 'use client'
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import axios from "axios";
 import AddLocationModal from "./addLocation";
 import { Eye, Edit2, Trash2 } from "lucide-react";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { AuthContext } from "@/context/authContext";
 
 export default function Locations() {
   const [locations, setLocations] = useState([]);
@@ -13,6 +14,7 @@ export default function Locations() {
   const [modalMode, setModalMode] = useState('add'); // add | edit | view
   const [selectedLocation, setSelectedLocation] = useState(null);
   const lastFocusedRef = useRef(null);
+  const {allUserPermissions}=useContext(AuthContext)
 
   async function fetchData() {
     setLoading(true);
@@ -121,11 +123,12 @@ export default function Locations() {
       <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4">
         <div className="p-6 border-b border-gray-200 flex flex-row justify-between items-center">
           <h4 className="text-lg font-semibold text-gray-900">Locations</h4>
-          <div className="flex gap-2">
-            <button onClick={openAdd} className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded ">
-              Add Location
-            </button>
-          </div>
+          {allUserPermissions.includes("HRMS:LOCATION:WRITE")&&
+            <div className="flex gap-2">
+              <button onClick={openAdd} className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded " disabled={!allUserPermissions.includes("HRMS:LOCATION:WRITE")}>
+                Add Location
+              </button>
+            </div>}
         </div>
 
         <div className="overflow-x-auto">
@@ -163,13 +166,13 @@ export default function Locations() {
                           <Eye size={16} className="text-[var(--color-primary)]" />
                         </button>
 
-                        <button onClick={(e) => { e.stopPropagation(); openEdit(loc, e); }} aria-label={`Edit ${loc.name}`} title="Edit" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]">
+                        {allUserPermissions.includes("HRMS:LOCATION:EDIT") && <button onClick={(e) => { e.stopPropagation(); openEdit(loc, e); }} aria-label={`Edit ${loc.name}`} title="Edit" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" disabled={!allUserPermissions.includes("HRMS:LOCATION:EDIT")}>
                           <Edit2 size={16} className="text-[var(--color-primaryText)]" />
-                        </button>
+                        </button>}
 
-                        <button onClick={(e) => { e.stopPropagation(); handleDelete(loc._id); }} aria-label={`Delete ${loc.name}`} title="Delete" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        {allUserPermissions.includes("HRMS:LOCATION:DELETE") && <button onClick={(e) => { e.stopPropagation(); handleDelete(loc._id); }} aria-label={`Delete ${loc.name}`} title="Delete" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300" disabled={!allUserPermissions.includes("HRMS:LOCATION:DELETE")}>
                           <Trash2 size={16} className="text-red-600" />
-                        </button>
+                        </button>}
                       </div>
                     </td>
                   </tr>

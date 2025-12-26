@@ -4,7 +4,6 @@ import axios from "axios"
 import Image from "next/image"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { AuthContext } from "@/context/authContext";
-import {ACTION_PERMISSIONS} from "@/constants/NestedDashboard"
 
 export default function OrganizationDetails() {
   const [organization, setOrganization] = useState(null)

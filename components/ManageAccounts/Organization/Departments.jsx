@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef,useContext } from 'react';
 import axios from 'axios';
 import AddDepartmentModal from './addDepartmentModal'; // updated reusable modal
 import { Eye, Edit2, Trash2 } from 'lucide-react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { AuthContext } from '@/context/authContext';
 
 export default function Departments() {
   const [departments, setDepartments] = useState([]);
@@ -14,6 +15,7 @@ export default function Departments() {
   const [modalMode, setModalMode] = useState('add'); // add | edit | view
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const lastFocusedRef = useRef(null);
+  const {allUserPermissions}=useContext(AuthContext)
 
   // fetch departments
   async function fetchDepartments() {
@@ -110,12 +112,12 @@ export default function Departments() {
       <div className='bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4'>
         <div className='p-6 border-b border-gray-200 flex flex-row justify-between items-center'>
           <h4 className='text-lg font-semibold text-gray-900'>Departments</h4>
-          <button
+          {allUserPermissions.includes("HRMS:DEPARTMENT:WRITE")&&<button
             onClick={openAdd}
             className='px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded hover:bg-orange-600'
           >
             Add Department
-          </button>
+          </button>}
         </div>
 
         <div className='overflow-x-auto'>
@@ -191,7 +193,7 @@ export default function Departments() {
                         </button>
 
                         {/* EDIT */}
-                        <button
+                        {allUserPermissions.includes("HRMS:DEPARTMENT:EDIT")&&<button
                           onClick={(e) => {
                             e.stopPropagation();
                             openEdit(dept, e);
@@ -199,15 +201,16 @@ export default function Departments() {
                           aria-label={`Edit ${dept.name}`}
                           title='Edit'
                           className='p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]'
+                          disabled={!allUserPermissions.includes("HRMS:DEPARTMENT:EDIT")}
                         >
                           <Edit2
                             size={16}
                             className='text-[var(--color-primaryText)]'
                           />
-                        </button>
+                        </button>}
 
                         {/* DELETE */}
-                        <button
+                        {allUserPermissions.includes("HRMS:DEPARTMENT:DELETE")&&<button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(dept._id);
@@ -215,9 +218,10 @@ export default function Departments() {
                           aria-label={`Delete ${dept.name}`}
                           title='Delete'
                           className='p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300'
+                          disabled={!allUserPermissions.includes("HRMS:DEPARTMENT:DELETE")}
                         >
                           <Trash2 size={16} className='text-red-600' />
-                        </button>
+                        </button>}
                       </div>
                     </td>
                   </tr>
@@ -245,6 +249,7 @@ export default function Departments() {
         isVisible={modalVisible}
         onClose={handleModalClose}
         onSaved={handleSaved}
+        deletePermission={allUserPermissions.includes("HRMS:DEPARTMENT:DELETE")}
         onDeleted={(id) => {
           setDepartments((prev) => prev.filter((d) => d._id !== id));
           handleModalClose();
