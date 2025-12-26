@@ -106,7 +106,7 @@ export default function LeaveRequestsModal({
         )}
 
 
-        <div className="space-y-4 max-h-[60vh] overflow-auto">
+        <div className="space-y-4 max-h-[60vh] overflow-auto hide-scrollbar">
           {activeTab === "MY_LEAVES" &&
             visibleItems.map((l) => (
               <div

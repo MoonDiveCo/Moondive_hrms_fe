@@ -12,6 +12,7 @@ export default function ProfileSlideOver({
   onClose,
   onProfileUpdated,
   onSignOut,
+  startInEdit = false,
 }) {
   const panelRef = useRef(null);
   const firstInputRef = useRef(null);
@@ -19,7 +20,7 @@ export default function ProfileSlideOver({
   const [portalEl] = useState(() => {
     if (typeof document === 'undefined') return null;
     const el = document.createElement('div');
-    el.setAttribute('id', 'profile-slideover-root');
+    el.setAttribute('id', 'profile-slideover-root'); 
     return el;
   });
 
@@ -72,7 +73,7 @@ export default function ProfileSlideOver({
         };
         setProfile(prepared);
         setInitialProfile(prepared);
-        setIsEditing(false);
+        setIsEditing(startInEdit);
         setPanelHidden(false);
       })
       .catch((err) => {

@@ -75,7 +75,7 @@ export default function LaptopForm({ form, setForm }) {
         <Select
           label="RAM"
           value={form.ram}
-          options={["8 GB", "16 GB", "32 GB"]}
+          options={["8 GB", "16 GB", "24 GB", "32 GB"]}
           onChange={(v) => handle("ram", v)}
         />
 
