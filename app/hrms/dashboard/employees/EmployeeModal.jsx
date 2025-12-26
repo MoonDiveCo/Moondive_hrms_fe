@@ -59,7 +59,6 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete }) {
     if (modalMode === 'delete') {
       setIsDeleting(true);
       const success = await deleteEmployee();
-      console.log("0000000000",success)
       setOpenConfirmModal(false);
       setModalMode('');
       if (success) {
@@ -70,7 +69,6 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete }) {
   };
 
   const handleDeleteClick = () => {
-    console.log("Delete clicked", { employeeId: employee._id }); 
     setOpenConfirmModal(true);
     setModalMode('delete');
   };
