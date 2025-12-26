@@ -323,7 +323,7 @@ export default function ApplyLeaveModal({
           )}
 
           {/* DAYS */}
-          <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
+        {days.length>0 &&  <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
             {days.map((d) => {
               const isDisabled =d.reason=== "SANDWICH"? d.enabled :!d.enabled ;
               const reasonLabel = {
@@ -380,7 +380,7 @@ export default function ApplyLeaveModal({
                 </div>
               )
             })}
-          </div>
+          </div>}
 
           <textarea
             placeholder="Reason"
