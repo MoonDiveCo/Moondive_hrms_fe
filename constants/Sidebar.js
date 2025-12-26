@@ -23,6 +23,7 @@ import Comparisons from "@/public/CMS/CMSComparisons.svg"
 import Summaries from "@/public/CMS/CMSSummaries.svg"
 import ContentPerformance from "@/public/CMS/CMSContentPerformace.svg"
 import { Menu } from 'lucide-react';
+import { AuthContext } from '@/context/authContext';
 
 const MenuContext = createContext(null);
 
@@ -159,6 +160,7 @@ export function MenuProvider({ children }) {
           bottom: [],
         },
       },
+      
      CRM: {
         SALES: {
           top: [
@@ -260,7 +262,6 @@ const buildRoutePermissionMap = (MENU) => {
 
   return map;
 };
-
 
 export function useMenus() {
   const ctx = useContext(MenuContext);
