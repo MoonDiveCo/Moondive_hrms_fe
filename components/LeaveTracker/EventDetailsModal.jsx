@@ -22,8 +22,8 @@ export default function EventDetailsModal({ data, onClose }) {
             <Detail label="Leave Type" value={title} />
             <Detail label="Status" value={status} />
             <Detail
-              label="Duration"
-              value={`${startDate.slice(0,10)} → ${endDate?.slice(0,10)}`}
+              label="Date"
+              value={`${startDate.slice(0,10)} ${endDate?.slice(0,10)}`}
             />
             {/* {leave.HalfDay && (
               <Detail label="Half Day" value={leave.HalfDay} />
