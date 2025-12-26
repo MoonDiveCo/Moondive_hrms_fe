@@ -92,6 +92,35 @@ export default function LeaveTrackerDashboard() {
   }, {});
 }, [leaveDashboard]);
 
+useEffect(() => {
+  if (!user?._id) return;
+
+  const eventSource = new EventSource(
+    `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream`,
+    {withCredentials: true}
+  );
+
+  eventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Received SSE event:", data);
+    if (data.type === "LEAVE_APPLIED") {
+      fetchLeaveRequests();
+    }
+
+    if (data.type === "LEAVE_UPDATED") {
+      fetchLeaveDashboard();
+      calendarRefreshRef.current?.();
+    }
+  };
+
+  eventSource.onerror = () => {
+    eventSource.close();
+  };
+
+  return () => eventSource.close();
+}, [user?._id]);
+
+
 
 
 useEffect(() => {
@@ -127,6 +156,7 @@ useEffect(() => {
     const fetchLeaveRequests = async () => {
     try {
       const leaveRes = await axios.get("/hrms/leave/get-leave");
+      console.log(leaveRes?.data?.leaveRequests )
       setPendingLeaves(leaveRes?.data?.leaveRequests || []);
     } catch (err) {
       console.error("Failed to load leaves", err);
@@ -161,6 +191,7 @@ useEffect(() => {
           return (
             <LeaveCard
               key={leave.code}
+              code={leave.code} 
               title={leave.name}
               available={leave.availableThisYear}
               taken={leave.taken}
@@ -178,24 +209,10 @@ useEffect(() => {
         )}
       </div>
 
-<div className="bg-white border-1 border-gray-200 rounded-2xl px-2 py-1  flex items-center justify-between">
-  
-  <div className="flex items-center gap-4">
-    <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
-      <span className="text-orange-500 text-lg"></span>
-    </div>
-
-    <div>
-      <h5 className="text-primaryText">
-        Quick Actions
-      </h5>
-    </div>
-  </div>
-
-  <div className="flex items-center gap-3">
+  <div className="flex items-center gap-3 justify-between">
     <button
       onClick={() => setViewModal(true)}
-      className="relative flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+      className="relative flex justify-center cursor-pointer items-center gap-2 px-3 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-700"
     >
       View Leave Requests
 
@@ -206,13 +223,12 @@ useEffect(() => {
 
     <button
       onClick={() => setApplyLeaveContext({})}
-      className="flex items-center gap-2 px-5 py-2 bg-primary text-white text-sm font-medium rounded-lg "
+      className="flex items-center justify-center cursor-pointer gap-2 px-3 py-2 bg-primary text-white text-sm font-medium rounded-full "
     >
       <span className="text-lg leading-none">+</span>
       Apply for Leave
     </button>
   </div>
-</div>
 
 
       <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
@@ -292,7 +308,88 @@ useEffect(() => {
 }
 
 
+// function LeaveCard({
+//   title,
+//   availableThisMonth,
+//   availableThisYear,
+//   taken,
+//   carryForwarded,
+//   unlimited,
+//   isLWP,
+//   canCarryForward,
+//   isWindowed,
+//   windowInfo,
+// }) {
+//   return (
+//     <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+
+//       <p className="text-sm font-medium text-gray-500">{title}</p>
+
+//       {isLWP ? (
+//         <p className="">
+//           <span className="font-semibold text-3xl text-primaryText">{taken}</span> <span className="text-sm text-gray-500">Taken</span>
+//         </p>
+//       ) : (
+//         <>
+//           {isWindowed ? (<div>
+//            <span className="text-3xl font-semibold text-primaryText">
+//             {windowInfo.available}
+//           </span>
+//           <span className="text-sm text-gray-500"> available /{windowInfo.months} months</span>
+
+//               <p className="text-sm  text-gray-500">
+//                 <span className="font-semibold text-gray-500">
+//                   {availableThisYear}
+//                 </span>{" "}
+//                 Available/ year
+//               </p>
+//               </div>
+//           ) : (
+//             <>
+//               <span >
+//                 <span className="font-semibold text-4xl text-primaryText">
+//                   {availableThisMonth + carryForwarded}
+//                 </span>{" "}
+//                 <span className="text-sm text-gray-500">
+//                 Available/ month</span>
+//               </span>
+
+//               <p className="text-sm text-gray-500">
+//                 <span className="font-semibold ">
+//                   {availableThisYear}
+//                 </span>{" "}
+//                 Available/ year
+//               </p>
+//             </>
+//           )}
+
+//           <div className="border-t border-dashed border-gray-200 my-2" />
+
+//           {!unlimited && (
+//             <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+//               <p>
+//                 <span className="font-medium text-gray-800">{taken}</span>{" "}
+//                 Taken
+//               </p>
+
+//               {canCarryForward && (
+//                 <p>
+//                   <span className="font-medium text-gray-800">
+//                     {carryForwarded}
+//                   </span>{" "}
+//                   CF
+//                 </p>
+//               )}
+//             </div>
+//           )}
+//         </>
+//       )}
+//     </div>
+//   );
+// }
+
 function LeaveCard({
+  code,
   title,
   availableThisMonth,
   availableThisYear,
@@ -304,73 +401,94 @@ function LeaveCard({
   isWindowed,
   windowInfo,
 }) {
+  let primaryValue = 0;
+  let subLabel = "";
+
+  if (isLWP) {
+    primaryValue = taken;
+    subLabel = "Taken";
+  } else if (isWindowed && windowInfo) {
+    primaryValue = windowInfo.available;
+    subLabel = `Available / ${windowInfo.months} months`;
+  } else {
+    primaryValue = availableThisMonth + (carryForwarded || 0);
+    subLabel = "Available / Month";
+  }
+
+  const COLOR_MAP = {
+    CL: "bg-blue-100 text-blue-600",
+    EL: "bg-green-100 text-green-600",
+    OL: "bg-purple-100 text-purple-600",
+    LWP: "bg-gray-200 text-gray-700",
+  };
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
-
-      <p className="text-sm font-medium text-gray-500">{title}</p>
-
-      {isLWP ? (
-        <p className="">
-          <span className="font-semibold text-3xl text-primaryText">{taken}</span> <span className="text-sm text-gray-500">Taken</span>
-        </p>
-      ) : (
-        <>
-          {isWindowed ? (<div>
-           <span className="text-3xl font-semibold text-primaryText">
-            {windowInfo.available}
-          </span>
-          <span className="text-sm text-gray-500"> available /{windowInfo.months} months</span>
-
-              <p className="text-sm  text-gray-500">
-                <span className="font-semibold text-gray-500">
-                  {availableThisYear}
-                </span>{" "}
-                Available/ year
-              </p>
-              </div>
-          ) : (
-            <>
-              <span >
-                <span className="font-semibold text-4xl text-primaryText">
-                  {availableThisMonth + carryForwarded}
-                </span>{" "}
-                <span className="text-sm text-gray-500">
-                Available/ month</span>
-              </span>
-
-              <p className="text-sm text-gray-500">
-                <span className="font-semibold ">
-                  {availableThisYear}
-                </span>{" "}
-                Available/ year
-              </p>
-            </>
-          )}
-
-          <div className="border-t border-dashed border-gray-200 my-2" />
-
-          {!unlimited && (
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-              <p>
-                <span className="font-medium text-gray-800">{taken}</span>{" "}
-                Taken
-              </p>
-
-              {canCarryForward && (
-                <p>
-                  <span className="font-medium text-gray-800">
-                    {carryForwarded}
-                  </span>{" "}
-                  CF
-                </p>
-              )}
-            </div>
-          )}
-        </>
-      )}
+<div className="relative group bg-white border border-gray-200 rounded-2xl h-[80px] overflow-hidden">
+  
+  <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
+    
+    <div className="flex items-center justify-center">
+      <div
+        className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
+      >
+        <span className="font-semibold text-lg">
+          {primaryValue}
+        </span>
+      </div>
     </div>
+
+    <div className="flex flex-col leading-tight ml-3">
+      <span className="text-xs font-semibold uppercase text-gray-500">
+        {title}
+      </span>
+      <span className="text-xs text-gray-400">
+        {subLabel}
+      </span>
+    </div>
+  </div>
+
+  <div className="absolute inset-0 bg-white opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
+    <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
+      
+      <div className="flex items-center justify-center">
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
+        >
+          <span className="font-semibold text-lg">
+            {primaryValue}
+          </span>
+        </div>
+      </div>
+
+      <div className="text-xs text-gray-600 space-y-0.5 ml-3">
+        {!isLWP && (
+          <>
+            <div>
+              <span className="font-medium">{availableThisYear}</span>{" "}
+              Available / Year
+            </div>
+
+            {canCarryForward && (
+              <div>
+                <span className="font-medium">{carryForwarded}</span>{" "}
+                Carry Forward
+              </div>
+            )}
+          </>
+        )}
+
+        <div>
+          <span className="font-medium">{taken}</span>{" "}
+          Taken
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
   );
 }
+
 
 
 function Modal({ title, children, onClose }) {

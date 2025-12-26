@@ -232,12 +232,6 @@ export default function LeaveRequestsModal({
                 )}
               </div>
             ))}
-
-          {requests.length === 0 && (
-            <p className="text-sm text-gray-400 text-center">
-              No pending leave requests 🎉
-            </p>
-          )}
         </div>
       </div>
     </div>
