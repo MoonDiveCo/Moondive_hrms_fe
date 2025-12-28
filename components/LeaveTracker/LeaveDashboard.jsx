@@ -1,11 +1,12 @@
 "use client";
 
 import { AuthContext } from "@/context/authContext";
-import axios from "axios";
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import axios, { all } from "axios";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import HolidayCalendar from "./HolidayCalender";
 import ApplyLeaveModal from "./ApplyLeaveModal";
 import EventDetailsModal from "./EventDetailsModal";
+import LeaveRequestsModal from "./LeaveRequestModal";
 
 export default function LeaveTrackerDashboard() {
   const [viewModal, setViewModal] = useState(false);
@@ -14,72 +15,118 @@ export default function LeaveTrackerDashboard() {
   const [applyLeaveContext, setApplyLeaveContext] = useState(null);
   const [leaveDashboard, setLeaveDashboard] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pendingLeaves, setPendingLeaves] = useState([]);
+  const [userPendingLeaves, setUserPendingLeaves] = useState([]);
+  const [holidays, setHolidays] = useState([]);
+  const [allLeaves, setAllLeaves] = useState([]);
+  const calendarRefreshRef = useRef(null);
 
   const { user } = useContext(AuthContext);
     const userRole = user?.userRole[0];
+    const organizationId = user?.organizationId;
 
-    const SUPERADMIN_DUMMY_DASHBOARD = [
+    const SUPERADMIN_DUMMY_DASHBOARD =[
   {
-    code: "CL",
-    name: "Casual Leave",
-    available: 10,
-    taken: 2,
-    total: 12,
+    "code": "CL",
+    "name": "Casual Leave",
+    "availableThisMonth": 2,
+    "availableThisYear": 12,
+    "taken": 4,
+    "carryForwarded": 1,
+    "unlimited": false,
+    "isLWP": false,
+    "canCarryForward": true,
+    "isWindowed": false,
+    "window": null
   },
   {
-    code: "EL",
-    name: "Earned Leave",
-    available: 12,
-    taken: 8,
-    total: 20,
+    "code": "EL",
+    "name": "Earned Leave",
+    "availableThisMonth": 1,
+    "availableThisYear": 18,
+    "taken": 7,
+    "carryForwarded": 5,
+    "unlimited": false,
+    "isLWP": false,
+    "canCarryForward": true,
+    "isWindowed": false,
+    "window": null
   },
   {
-    code: "OL",
-    name: "Optional Leave",
-    available: 2,
-    taken: 1,
-    total: 3,
+    "code": "OL",
+    "name": "Optional Leave",
+    "availableThisMonth": 1,
+    "availableThisYear": 2,
+    "taken": 0,
+    "carryForwarded": 0,
+    "unlimited": false,
+    "isLWP": false,
+    "canCarryForward": false,
+    "isWindowed": true,
+    "window": {
+      "available": 1,
+      "months": 6
+    }
   },
   {
-    code: "LWP",
-    name: "Leave Without Pay",
-    taken: 5,
-  },
-];
+    "code": "LWP",
+    "name": "Leave Without Pay",
+    "availableThisMonth": 0,
+    "availableThisYear": 0,
+    "taken": 9,
+    "carryForwarded": 0,
+    "unlimited": true,
+    "isLWP": true,
+    "canCarryForward": false,
+    "isWindowed": false,
+    "window": null
+  }
+]
 
 
-  const pendingLeaves = [
-    {
-      id: 1,
-      type: "Casual Leave",
-      dates: "10 Oct 2025 - 11 Oct 2025",
-      reason: "Family function",
-    },
-    {
-      id: 2,
-      type: "Sick Leave",
-      dates: "15 Oct 2025",
-      reason: "Fever",
-    },
-  ];
 
-    const leaveBalanceMap = useMemo(() => {
-      return leaveDashboard.reduce((acc, l) => {
-        acc[l.code] = {
-          available: l.unlimited ? Infinity : l.availableThisYear,
-          name: l.name,
-          taken: l.taken,
-          total: l.total,
-        };
-        return acc;
-      }, {});
-    }, [leaveDashboard]);
+  const leaveBalanceMap = useMemo(() => {
+  return leaveDashboard.reduce((acc, l) => {
+    acc[l.code] = l;
+    return acc;
+  }, {});
+}, [leaveDashboard]);
+
+useEffect(() => {
+  if (!user?._id) return;
+
+  const eventSource = new EventSource(
+    `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream`,
+    {withCredentials: true}
+  );
+
+  eventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Received SSE event:", data);
+    if (data.type === "LEAVE_APPLIED") {
+      fetchLeaveRequests();
+    }
+
+    if (data.type === "LEAVE_UPDATED") {
+      fetchLeaveDashboard();
+      calendarRefreshRef.current?.();
+    }
+  };
+
+  eventSource.onerror = () => {
+    eventSource.close();
+  };
+
+  return () => eventSource.close();
+}, [user?._id]);
+
 
 
 
 useEffect(() => {
-  if (userRole !== "superadmin") {
+  if (userRole !== "SuperAdmin") {
     fetchLeaveDashboard();
+    fetchLeaveRequests();
   } else {
     setLoading(false);
   }
@@ -88,9 +135,31 @@ useEffect(() => {
     const fetchLeaveDashboard = async () => {
     try {
       const { data } = await axios.get("/hrms/leave/get-leave-dashboard");
+      const holidays = await axios.get("/hrms/holiday", {
+        params: { organizationId, year: new Date().getFullYear() },
+      });
+    const leaves = await axios.get("/hrms/leave/get-leave", {
+      params: { year: new Date().getFullYear() },
+    });
+      
       setLeaveDashboard(data.dashboard || []);
+      setUserPendingLeaves(data.pendingLeaves || []);
+      setHolidays(holidays.data?.result?.data || []);
+      setAllLeaves(leaves.data?.leaves || []);
     } catch (err) {
       console.error("Failed to load leave dashboard", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    const fetchLeaveRequests = async () => {
+    try {
+      const leaveRes = await axios.get("/hrms/leave/get-leave");
+      console.log(leaveRes?.data?.leaveRequests )
+      setPendingLeaves(leaveRes?.data?.leaveRequests || []);
+    } catch (err) {
+      console.error("Failed to load leaves", err);
     } finally {
       setLoading(false);
     }
@@ -104,117 +173,97 @@ useEffect(() => {
         ) : userRole === "SuperAdmin" ? (
           SUPERADMIN_DUMMY_DASHBOARD.map((leave) => (
             <LeaveCard
-              key={leave.code}
-              title={leave.name}
-              available={leave.available}
-              taken={leave.taken}
-              total={leave.total}
-              isLWP={leave.code === "LWP"}
-              isSuperadmin
+                key={leave.code}
+                title={leave.name}
+                availableThisMonth={leave.availableThisMonth}
+                availableThisYear={leave.availableThisYear}
+                taken={leave.taken}
+                carryForwarded={leave.carryForwarded}
+                unlimited={leave.unlimited}
+                isLWP={leave.isLWP}
+                canCarryForward={leave.canCarryForward}
+                isWindowed={leave.isWindowed}
+                windowInfo={leave.window}
             />
           ))
         ) : (
-          leaveDashboard.map((leave) => {
-            const total = leave.unlimited ? null : leave.availableThisYear;
-            const available = leave.unlimited ? null : leave.availableThisYear;
-
-            return (
-              <LeaveCard
-                key={leave.code}
-                title={leave.name}
-                available={available}
-                taken={
-                  leave.unlimited ? null : Math.max(0, total - available)
-                }
-                total={total}
-                unlimited={leave.unlimited}
-              />
-            );
-          })
+        leaveDashboard.map((leave) => {
+          return (
+            <LeaveCard
+              key={leave.code}
+              code={leave.code} 
+              title={leave.name}
+              available={leave.availableThisYear}
+              taken={leave.taken}
+              unlimited={leave.unlimited}
+              carryForwarded={leave.carryForwarded}
+              availableThisMonth={leave.availableThisMonth}
+              availableThisYear={leave.availableThisYear}
+              isLWP={leave.isLWP}
+              canCarryForward={leave.canCarryForward}
+              isWindowed={leave.isWindowed}
+               windowInfo={leave.window}
+            />
+          );
+        })
         )}
       </div>
 
-<div className="bg-white border-1 border-gray-200 rounded-2xl px-2 py-1  flex items-center justify-between">
-  
-  <div className="flex items-center gap-4">
-    <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
-      <span className="text-orange-500 text-lg"></span>
-    </div>
-
-    <div>
-      <h5 className="text-primaryText">
-        Quick Actions
-      </h5>
-    </div>
-  </div>
-
-  <div className="flex items-center gap-3">
+  <div className="flex items-center gap-3 justify-between">
     <button
       onClick={() => setViewModal(true)}
-      className="relative flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+      className="relative flex justify-center cursor-pointer items-center gap-2 px-3 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-700"
     >
       View Leave Requests
 
       <span className="absolute -top-2 -right-2 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-red-500 text-white">
-        2
+        {pendingLeaves.filter((l) => l.decision == null).length}
       </span>
     </button>
 
     <button
       onClick={() => setApplyLeaveContext({})}
-      className="flex items-center gap-2 px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg "
+      className="flex items-center justify-center cursor-pointer gap-2 px-3 py-2 bg-primary text-white text-sm font-medium rounded-full "
     >
       <span className="text-lg leading-none">+</span>
       Apply for Leave
     </button>
   </div>
-</div>
 
 
       <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
-        <HolidayCalendar organizationId={user.organizationId}  onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
-  onViewLeave={(data) => setSelectedLeave(data)} />
+        <HolidayCalendar organizationId={user.organizationId}  
+        onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
+        onViewLeave={(data) => setSelectedLeave(data)}
+         onRefresh={(fn) => (calendarRefreshRef.current = fn)}
+          />
+        
       </div>
 
       {viewModal && (
-        <Modal title="Pending Leave Requests" onClose={() => setViewModal(false)}>
-          <div className="space-y-4">
-            {pendingLeaves.map((leave) => (
-              <div
-                key={leave.id}
-                className="border rounded-lg p-4 flex justify-between items-start"
-              >
-                <div>
-                  <p className="font-medium">{leave.type}</p>
-                  <p className="text-sm text-gray-500">{leave.dates}</p>
-                  <p className="text-sm text-gray-500">{leave.reason}</p>
-                </div>
-
-                <div className="flex gap-2">
-                  <button className="px-3 py-1 bg-green-500 text-white rounded-md text-sm">
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedLeave(leave);
-                      setRejectModal(true);
-                    }}
-                    className="px-3 py-1 bg-red-500 text-white rounded-md text-sm"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Modal>
+        <LeaveRequestsModal
+          requests={pendingLeaves}
+          myLeaves={allLeaves}
+          onClose={() => setViewModal(false)}
+          onResolved={(leaveId) =>
+            setPendingLeaves((prev) =>
+              prev.filter((l) => l.leaveId !== leaveId)
+            )
+          }
+        />
       )}
 
      {applyLeaveContext && (
       <ApplyLeaveModal
-        context={applyLeaveContext}
+         context={{
+          ...applyLeaveContext,
+          refreshCalendar: calendarRefreshRef.current,
+        }}
+        pendingLeaves={userPendingLeaves}
         leaveBalances={leaveBalanceMap}
-        onClose={() => setApplyLeaveContext(null)}
+        holidays={holidays}
+        allLeaves={allLeaves}
+        onClose={() => {setApplyLeaveContext(null)}}
       />
     )}
 
@@ -259,49 +308,184 @@ useEffect(() => {
 }
 
 
+// function LeaveCard({
+//   title,
+//   availableThisMonth,
+//   availableThisYear,
+//   taken,
+//   carryForwarded,
+//   unlimited,
+//   isLWP,
+//   canCarryForward,
+//   isWindowed,
+//   windowInfo,
+// }) {
+//   return (
+//     <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+
+//       <p className="text-sm font-medium text-gray-500">{title}</p>
+
+//       {isLWP ? (
+//         <p className="">
+//           <span className="font-semibold text-3xl text-primaryText">{taken}</span> <span className="text-sm text-gray-500">Taken</span>
+//         </p>
+//       ) : (
+//         <>
+//           {isWindowed ? (<div>
+//            <span className="text-3xl font-semibold text-primaryText">
+//             {windowInfo.available}
+//           </span>
+//           <span className="text-sm text-gray-500"> available /{windowInfo.months} months</span>
+
+//               <p className="text-sm  text-gray-500">
+//                 <span className="font-semibold text-gray-500">
+//                   {availableThisYear}
+//                 </span>{" "}
+//                 Available/ year
+//               </p>
+//               </div>
+//           ) : (
+//             <>
+//               <span >
+//                 <span className="font-semibold text-4xl text-primaryText">
+//                   {availableThisMonth + carryForwarded}
+//                 </span>{" "}
+//                 <span className="text-sm text-gray-500">
+//                 Available/ month</span>
+//               </span>
+
+//               <p className="text-sm text-gray-500">
+//                 <span className="font-semibold ">
+//                   {availableThisYear}
+//                 </span>{" "}
+//                 Available/ year
+//               </p>
+//             </>
+//           )}
+
+//           <div className="border-t border-dashed border-gray-200 my-2" />
+
+//           {!unlimited && (
+//             <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+//               <p>
+//                 <span className="font-medium text-gray-800">{taken}</span>{" "}
+//                 Taken
+//               </p>
+
+//               {canCarryForward && (
+//                 <p>
+//                   <span className="font-medium text-gray-800">
+//                     {carryForwarded}
+//                   </span>{" "}
+//                   CF
+//                 </p>
+//               )}
+//             </div>
+//           )}
+//         </>
+//       )}
+//     </div>
+//   );
+// }
+
 function LeaveCard({
+  code,
   title,
-  available,
+  availableThisMonth,
+  availableThisYear,
   taken,
-  total,
-  icon,
+  carryForwarded,
   unlimited,
   isLWP,
-  isSuperadmin,
+  canCarryForward,
+  isWindowed,
+  windowInfo,
 }) {
+  let primaryValue = 0;
+  let subLabel = "";
+
+  if (isLWP) {
+    primaryValue = taken;
+    subLabel = "Taken";
+  } else if (isWindowed && windowInfo) {
+    primaryValue = windowInfo.available;
+    subLabel = `Available / ${windowInfo.months} months`;
+  } else {
+    primaryValue = availableThisMonth + (carryForwarded || 0);
+    subLabel = "Available / Month";
+  }
+
+  const COLOR_MAP = {
+    CL: "bg-blue-100 text-blue-600",
+    EL: "bg-green-100 text-green-600",
+    OL: "bg-purple-100 text-purple-600",
+    LWP: "bg-gray-200 text-gray-700",
+  };
+
   return (
-    <div className="relative bg-white rounded-2xl border border-gray-200  p-5 overflow-hidden">
-
-      <p className="text-sm font-medium text-gray-500">{title}</p>
-
-     <div className="flex items-baseline gap-2 mt-2">
-      <span className="text-3xl font-semibold text-[#0D1B2A]">
-        {isLWP ? taken : available}
-      </span>
-
-      {!isLWP && (
-        <span className="text-sm text-gray-400">
-          {unlimited ? "Taken" : "Available"}
+<div className="relative group bg-white border border-gray-200 rounded-2xl h-[80px] overflow-hidden">
+  
+  <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
+    
+    <div className="flex items-center justify-center">
+      <div
+        className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
+      >
+        <span className="font-semibold text-lg">
+          {primaryValue}
         </span>
-      )}
+      </div>
     </div>
 
-      <div className="border-t border-dashed border-gray-200 my-4" />
+    <div className="flex flex-col leading-tight ml-3">
+      <span className="text-xs font-semibold uppercase text-gray-500">
+        {title}
+      </span>
+      <span className="text-xs text-gray-400">
+        {subLabel}
+      </span>
+    </div>
+  </div>
 
-      {!isLWP && !unlimited && (
-        <div className="flex items-center gap-5 text-xs text-gray-400">
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            <span>{taken} Taken</span>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-gray-300" />
-            <span>{total} Total</span>
-          </div>
+  <div className="absolute inset-0 bg-white opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
+    <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
+      
+      <div className="flex items-center justify-center">
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
+        >
+          <span className="font-semibold text-lg">
+            {primaryValue}
+          </span>
         </div>
-      )}
+      </div>
+
+      <div className="text-xs text-gray-600 space-y-0.5 ml-3">
+        {!isLWP && (
+          <>
+            <div>
+              <span className="font-medium">{availableThisYear}</span>{" "}
+              Available / Year
+            </div>
+
+            {canCarryForward && (
+              <div>
+                <span className="font-medium">{carryForwarded}</span>{" "}
+                Carry Forward
+              </div>
+            )}
+          </>
+        )}
+
+        <div>
+          <span className="font-medium">{taken}</span>{" "}
+          Taken
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
   );
 }
 

@@ -8,7 +8,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 export default function Locations() {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] =   useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // add | edit | view
   const [selectedLocation, setSelectedLocation] = useState(null);

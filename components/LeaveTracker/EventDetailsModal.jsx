@@ -3,7 +3,6 @@
 export default function EventDetailsModal({ data, onClose }) {
   const { extendedProps , startDate, title, endDate} = data || {};
   const { source, status } = extendedProps || {};
-    console.log("Event Details Data:", data);
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-white w-[420px] rounded-xl p-5 space-y-4">
