@@ -77,7 +77,6 @@ useEffect(() => {
   }
 
   const q = query.toLowerCase();
-
   const filtered = slugIndex.filter(
     (item) =>
       item.category === category &&

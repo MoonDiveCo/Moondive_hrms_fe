@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import ProfileSlideOver from './ProfileSlideOver';
 import { useRouter } from 'next/navigation';
 import { Bell, Clock, LogIn, LogOut } from 'lucide-react';
+import { AuthContext } from '@/context/authContext';
 
 export default function MainNavbar({ setCollapsed, collapsed }) {
   const router = useRouter();
   const avatarRef = useRef(null);
   const [openProfile, setOpenProfile] = useState(false);
-
+  const {user} = useContext(AuthContext)
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -40,7 +41,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
   };
 
   return (
-    <div className="w-full px-6 md:px-8 z-20 bg-white">
+    <div className="w-full px-6 md:px-8 z-20 bg-white shadow-sm">
       <div className="flex items-center justify-between h-16">
 
         <div className="flex items-center gap-3">
@@ -108,9 +109,9 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
             className="flex items-center gap-2 rounded-full hover:bg-gray-50 p-1"
           >
             <img
-              src="https://i.pravatar.cc/160?img=2"
+              src={user?.imageUrl }
               alt="Profile"
-              className="w-9 h-9 rounded-full border"
+              className="w-9 h-9 rounded-full "
             />
           </button>
         </div>
