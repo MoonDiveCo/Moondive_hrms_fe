@@ -3,15 +3,12 @@
 export default function RequestRegularization() {
   return (
     <div className="bg-background-light font-display h-screen p-4">
-      {/* Overlay */}
       <div
         aria-hidden="true"
         className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-0"
       />
 
-      {/* Modal */}
       <div className="relative z-10 flex flex-col lg:flex-row w-full max-w-5xl bg-white rounded-xl shadow-2xl overflow-hidden max-h-[100vh]">
-        {/* LEFT: CALENDAR */}
         <div className="w-full lg:w-5/12 bg-gray-50 p-6 lg:p-8 flex flex-col border-b lg:border-b-0 lg:border-r border-gray-200">
           <h3 className="text-gray-900 text-lg font-bold mb-2">Select Date</h3>
           <p className="text-gray-500 text-sm mb-6">
@@ -19,7 +16,6 @@ export default function RequestRegularization() {
           </p>
 
           <div className="flex flex-col gap-0.5 w-full max-w-[360px] mx-auto">
-            {/* Month Header */}
             <div className="flex items-center justify-between py-2 mb-2">
               <button className="hover:bg-gray-200 rounded-full p-1 transition-colors">
                 <span className="material-symbols-outlined text-gray-900 text-[20px]">
@@ -49,11 +45,9 @@ export default function RequestRegularization() {
                 </p>
               ))}
 
-              {/* Empty slots */}
               <span className="h-10 col-start-1" />
               <span className="h-10 col-start-2" />
 
-              {/* Dates */}
               {Array.from({ length: 30 }).map((_, i) => {
                 const day = i + 1;
                 const isSelected = day === 5;
@@ -82,7 +76,6 @@ export default function RequestRegularization() {
             </div>
           </div>
 
-          {/* Policy Reminder */}
           <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
             <div className="flex items-start gap-3">
               <span className="material-symbols-outlined text-primary mt-0.5">
@@ -102,9 +95,7 @@ export default function RequestRegularization() {
           </div>
         </div>
 
-        {/* RIGHT: FORM */}
         <div className="w-full lg:w-7/12 flex flex-col h-full bg-white">
-          {/* Header */}
           <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
             <div>
               <h2 className="text-gray-900 text-xl font-bold">
@@ -119,7 +110,7 @@ export default function RequestRegularization() {
             </button>
           </div>
 
-          {/* Body */}
+          
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="flex flex-col">
@@ -171,7 +162,6 @@ export default function RequestRegularization() {
               />
             </label>
 
-            {/* Upload */}
             <div>
               <p className="text-gray-700 font-medium pb-2">
                 Supporting Documents{" "}
@@ -195,7 +185,6 @@ export default function RequestRegularization() {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 sticky bottom-0">
             <button className="px-6 py-3 rounded-lg text-gray-700 font-bold text-sm hover:bg-gray-200">
               Cancel
