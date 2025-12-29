@@ -3,6 +3,8 @@ import React, { useContext, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Login from '../../public/signup/Sign.svg';
 import logo from '../../public/signup/logo.png';
+
+
 import {
   LOGIN_BRAND_LETTER,
   LOGIN_BRAND_NAME,

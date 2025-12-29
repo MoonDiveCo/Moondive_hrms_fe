@@ -373,8 +373,8 @@ export default function ApplyLeaveModal({
                       className="border px-2 py-1 rounded text-xs"
                     >
                       <option value="FULL">Full Day</option>
-                      <option value="FIRST_HALF">1st Half</option>
-                      <option value="SECOND_HALF">2nd Half</option>
+                      <option value="First Half">1st Half</option>
+                      <option value="Second Half">2nd Half</option>
                     </select>
                   )}
                 </div>
