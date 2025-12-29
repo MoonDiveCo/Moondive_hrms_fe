@@ -323,7 +323,7 @@ export default function ApplyLeaveModal({
           )}
 
           {/* DAYS */}
-          <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
+        {days.length>0 &&  <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
             {days.map((d) => {
               const isDisabled =d.reason=== "SANDWICH"? d.enabled :!d.enabled ;
               const reasonLabel = {
@@ -373,14 +373,14 @@ export default function ApplyLeaveModal({
                       className="border px-2 py-1 rounded text-xs"
                     >
                       <option value="FULL">Full Day</option>
-                      <option value="FIRST_HALF">1st Half</option>
-                      <option value="SECOND_HALF">2nd Half</option>
+                      <option value="First Half">1st Half</option>
+                      <option value="Second Half">2nd Half</option>
                     </select>
                   )}
                 </div>
               )
             })}
-          </div>
+          </div>}
 
           <textarea
             placeholder="Reason"

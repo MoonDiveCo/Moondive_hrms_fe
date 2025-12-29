@@ -8,7 +8,7 @@ import ApplyLeaveModal from "./ApplyLeaveModal";
 import EventDetailsModal from "./EventDetailsModal";
 import LeaveRequestsModal from "./LeaveRequestModal";
 
-export default function LeaveTrackerDashboard() {
+export default function LeaveTrackerDashboard({showCalender = true }) {
   const [viewModal, setViewModal] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
@@ -231,14 +231,14 @@ useEffect(() => {
   </div>
 
 
-      <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
+     {showCalender && <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
         <HolidayCalendar organizationId={user.organizationId}  
         onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
         onViewLeave={(data) => setSelectedLeave(data)}
          onRefresh={(fn) => (calendarRefreshRef.current = fn)}
           />
         
-      </div>
+      </div>}
 
       {viewModal && (
         <LeaveRequestsModal

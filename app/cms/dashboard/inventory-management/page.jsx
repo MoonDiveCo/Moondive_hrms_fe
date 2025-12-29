@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import InventoryCard from "@/components/InventoryManagement/InventoryCard";
-import AddInventoryModal from "@/components/InventoryManagement/AddInventoryModal";
+import AddInventoryModal, { buildInventorySlug } from "@/components/InventoryManagement/AddInventoryModal";
 import EditInventoryModal from "@/components/InventoryManagement/EditInventoryModal";
 import FilterDropdown from "@/components/UI/FilterDropdown";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -29,6 +29,37 @@ function InventoryManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [issues, setIssues] = useState(0);
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [slugIndex, setSlugIndex] = useState([]);
+
+
+  useEffect(() => {
+  setPage(1);
+}, [
+  activeCategory,
+  isAssigned,
+  quantityRange,
+  laptopCondition,
+  laptopStatus,
+  userFilter,
+]);
+
+useEffect(() => {
+  if (!inventory.length) {
+    setSlugIndex([]);
+    return;
+  }
+
+  const normalized = inventory.map(buildInventorySlug);
+  setSlugIndex(normalized);
+}, [inventory]);
+
+useEffect(() => {
+  setSearchQuery("");
+}, [activeCategory]);
+
+
+
 const fetchData = async () => {
   try {
     setLoading(true);
@@ -51,8 +82,8 @@ const fetchData = async () => {
 
     setInventory(res.data.inventory || []);
     setUsers(res.data.users || []);
-    setOverall(res.data.total || 0);
     setIssues(res.data.issues || 0);
+    setOverall(res.data.totalItems || 0);
     setTotalPages(res.data.totalPages || 1);
   } catch (error) {
     console.error("Error fetching inventory:", error);
@@ -64,7 +95,6 @@ const fetchData = async () => {
 const fetchAllInventory = async () => {
   try {
     const res = await axios.get(`/cms/inventory/inventory-status`);
-    console.log(res)
     setFullInventory(res.data.inventory || []);
   } catch (error) {
     console.error("Error fetching full inventory:", error);
@@ -105,7 +135,7 @@ const overallStats = fullInventory.reduce(
 
       acc.breakdown[category].total += qty+assignedCount;
       acc.breakdown[category].assigned += assignedCount;
-      acc.breakdown[category].available +=  acc.breakdown[category].total - assignedCount;
+      acc.breakdown[category].available += qty ;
     }
 
     return acc;
@@ -119,9 +149,19 @@ const overallStats = fullInventory.reduce(
 );
 
 
-    const laptopTotal = inventory.length;
-    const laptopAssigned = inventory.filter(i => i.isAssigned).length;
-    const laptopAvailable = inventory.filter(i => !i.isAssigned).length;
+    const laptops = fullInventory.filter(
+      (i) => i.category === "Laptop"
+    );
+
+    const laptopTotal = laptops.length;
+
+    const laptopAssigned = laptops.filter(
+      (i) => i.isAssigned
+    ).length;
+
+    const laptopAvailable = laptops.filter(
+      (i) => !i.isAssigned
+    ).length;
 
     let accessoryTotal = 0;
     let accessoryAssigned = 0;
@@ -243,9 +283,22 @@ const handleDeleteInventory = async (id) => {
   };
 
   // Filter by selected category
-  const filteredInventory = inventory.filter(
-    (i) => i.category?.toLowerCase() === activeCategory.toLowerCase()
-  );
+const filteredInventory = React.useMemo(() => {
+  if (!searchQuery.trim()) {
+    return inventory;
+  }
+
+  const q = searchQuery.toLowerCase();
+
+  return slugIndex
+    .filter(
+      (s) =>
+        s.category.toLowerCase() === activeCategory.toLowerCase() &&
+        s.searchableText.includes(q)
+    )
+    .map((s) => s.payload);
+}, [inventory, slugIndex, searchQuery, activeCategory]);
+
 
     if(loading){
     return(
@@ -267,7 +320,7 @@ const handleDeleteInventory = async (id) => {
    <div className="grid grid-cols-3 gap-4 mb-6">
       <OverallStatCard 
         title="OVERALL" 
-        value={overall} 
+        value={overallStats.total} 
         breakdown={overallStats.breakdown} 
         mode="total"
       />
@@ -307,6 +360,8 @@ const handleDeleteInventory = async (id) => {
             + Add Item
         </button>
       </div>
+
+    <div className="flex gap-4">
 
         {activeCategory === "Laptop" && (
           <div className="flex gap-4 mb-3">
@@ -359,6 +414,7 @@ const handleDeleteInventory = async (id) => {
               ]}
               onChange={(v) => setUserFilter(v)}
               />
+     
 
           </div>
         )}
@@ -380,6 +436,25 @@ const handleDeleteInventory = async (id) => {
           </div>
         )}
 
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="Search laptops, accessories, brand, model…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="
+            w-full md:w-[320px]
+            border border-gray-300
+            rounded-full
+            px-4 py-2
+            text-sm
+            focus:outline-none
+            focus:ring-2 focus:ring-primary
+          "
+        />
+      </div>
+
+        </div>
 
      <div className="grid grid-cols-4 gap-4 mb-6"> 
         {activeCategory === "Laptop" ? (
@@ -411,30 +486,68 @@ const handleDeleteInventory = async (id) => {
         ))}
       </div>
     )}
-
     {totalPages > 1 && (
-      <div className="flex justify-center mt-6 gap-3">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage(page - 1)}
-          className="px-3 py-1 bg-gray-300 rounded disabled:opacity-40"
-        >
-          Prev
-        </button>
+      <div className="flex justify-center mt-8">
+        <div className="flex items-center gap-1 rounded-full border border-gray-300 bg-white px-2 py-1 shadow-sm">
+          
+          {/* Prev */}
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(p - 1, 1))}
+            className={`px-3 py-1.5 text-sm rounded-full transition
+              ${
+                page <= 1
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+          >
+            ‹ Prev
+          </button>
 
-        <span className="font-medium text-gray-700">
-          Page {page} of {totalPages}
-        </span>
+          {/* Page Numbers */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) =>
+              p === 1 ||
+              p === totalPages ||
+              Math.abs(p - page) <= 1
+            )
+            .map((p, idx, arr) => (
+              <React.Fragment key={p}>
+                {idx > 0 && p - arr[idx - 1] > 1 && (
+                  <span className="px-2 text-gray-400">…</span>
+                )}
 
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage(page + 1)}
-          className="px-3 py-1 bg-gray-300 rounded disabled:opacity-40"
-        >
-          Next
-        </button>
+                <button
+                  onClick={() => setPage(p)}
+                  className={`w-8 h-8 flex items-center justify-center text-sm rounded-full transition
+                    ${
+                      page === p
+                        ? "bg-primary text-white font-semibold"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                >
+                  {p}
+                </button>
+              </React.Fragment>
+            ))}
+
+          {/* Next */}
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+            className={`px-3 py-1.5 text-sm rounded-full transition
+              ${
+                page >= totalPages
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+          >
+            Next ›
+          </button>
+        </div>
       </div>
     )}
+
 
 
       {/* Modals */}
