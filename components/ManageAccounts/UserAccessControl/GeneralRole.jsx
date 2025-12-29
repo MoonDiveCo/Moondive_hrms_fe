@@ -14,6 +14,7 @@ import axios from 'axios';
 import AddEditRoleModal from './AddEditRoleModal';
 import AssignGeneralRoleModal from './AssignGenerelRoleModal';
 import ConfirmRemoveRoleModal from './ConfirmRemoveRoleModal';
+import { AuthContext } from '@/context/authContext';
 
 export default function GeneralRole() {
   const [roles, setRoles] = useState([]);
@@ -23,8 +24,7 @@ export default function GeneralRole() {
   const [mode, setMode] = useState('add');
   const [editRole, setEditRole] = useState(null);
 
-  const [expandedRoles, setExpandedRoles] = useState({});
-  const [openActionRoleId, setOpenActionRoleId] = useState(null);
+  const [roleUI, setRoleUI] = useState({});
 
   const [assignRoleVisible, setAssignRoleVisible] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -33,27 +33,7 @@ export default function GeneralRole() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [removing, setRemoving] = useState(false);
   const [confirmMode, setConfirmMode] = useState('remove-role');
-
-  const deleteRole = async () => {
-    try {
-      setRemoving(true);
-
-      await axios.delete(`/hrms/roles/${selectedRole._id}`);
-
-      setRoles((prev) =>
-        prev.filter((r) => r._id !== selectedRole._id)
-      );
-
-      setConfirmVisible(false);
-      setSelectedRole(null);
-    } catch (err) {
-      console.error('Error deleting role:', err);
-    } finally {
-      setRemoving(false);
-    }
-  };
-
-
+  
 
   const fetchRoles = async () => {
     try {
@@ -70,38 +50,30 @@ export default function GeneralRole() {
     fetchRoles();
   }, []);
 
-  /* ---------------------------------------
-     Toggle user list
-  ---------------------------------------- */
-  const toggleRoleUsers = (roleId) => {
-    setExpandedRoles((prev) => ({
-      ...prev,
-      [roleId]: !prev[roleId],
-    }));
+  const deleteRole = async () => {
+    try {
+      setRemoving(true);
+      await axios.delete(`/hrms/roles/${selectedRole._id}`);
+      setRoles((prev) =>
+        prev.filter((r) => r._id !== selectedRole._id)
+      );
+      setConfirmVisible(false);
+      setSelectedRole(null);
+    } catch (err) {
+      console.error('Error deleting role:', err);
+    } finally {
+      setRemoving(false);
+    }
   };
 
-  /* ---------------------------------------
-     Toggle action icons
-  ---------------------------------------- */
-  const toggleRoleActions = (roleId) => {
-    setOpenActionRoleId((prev) =>
-      prev === roleId ? null : roleId
-    );
-  };
-
-  /* ---------------------------------------
-     Remove user from role
-  ---------------------------------------- */
   const removeUserFromRole = async () => {
     try {
       setRemoving(true);
-
       await axios.patch('/hrms/roles/update-user-role', {
         mode: 'remove',
         role: selectedRole.name,
         userId: selectedUser._id,
       });
-
       setRoles((prev) =>
         prev.map((r) =>
           r._id === selectedRole._id
@@ -114,7 +86,6 @@ export default function GeneralRole() {
             : r
         )
       );
-
       setConfirmVisible(false);
       setSelectedUser(null);
     } catch (err) {
@@ -123,6 +94,43 @@ export default function GeneralRole() {
       setRemoving(false);
     }
   };
+
+  const toggleExpanded = (roleId) => {
+    setRoleUI((prev) => ({
+      ...prev,
+      [roleId]: {
+        expanded: !prev[roleId]?.expanded,
+        actionsOpen: prev[roleId]?.actionsOpen ?? false,
+      },
+    }));
+  };
+
+  const toggleActions = (roleId) => {
+    setRoleUI((prev) => ({
+      ...prev,
+      [roleId]: {
+        expanded: prev[roleId]?.expanded ?? false,
+        actionsOpen: !prev[roleId]?.actionsOpen,
+      },
+    }));
+  };
+
+
+  const toggleRoleUI = (roleId) => {
+  setRoleUI((prev) => {
+    const isOpen = prev[roleId]?.expanded;
+
+    return {
+      ...prev,
+      [roleId]: {
+        expanded: !isOpen,
+        actionsOpen: !isOpen,
+      },
+    };
+  });
+};
+
+
 
   if (loading) {
     return (
@@ -140,8 +148,7 @@ export default function GeneralRole() {
   return (
     <div className="w-full">
       <div className="bg-white rounded-2xl border border-[#d0d5dd] shadow-sm">
-        {/* Header */}
-        <div className="p-6  flex justify-between">
+        <div className="p-6 flex justify-between">
           <h4 className="text-lg font-semibold text-gray-900">
             General Role
           </h4>
@@ -157,46 +164,24 @@ export default function GeneralRole() {
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6">
           <div className="columns-1 md:columns-2 gap-6">
             {roles.map((role) => {
-              const usersExpanded = expandedRoles[role._id];
-              const actionsOpen = openActionRoleId === role._id;
+              const ui = roleUI[role._id] || {};
+              const usersExpanded = ui.expanded;
+              const actionsOpen = ui.actionsOpen;
 
               return (
                 <div
                   key={role._id}
                   className="rounded-xl bg-white p-4 border border-[#D0D5DD] break-inside-avoid mb-6"
                 >
-                  {/* Role header */}
                   <div className="flex items-center justify-between mb-3">
                     <h5 className="text-sm font-semibold text-gray-900">
                       {role.name}
                     </h5>
 
                     <div className="flex items-center gap-1">
-                      {/* Dropdown (actions toggle) */}
-                      {/* <button
-                        className="p-1 rounded hover:bg-gray-100"
-                        onClick={() =>
-                          
-                        }
-                      >
-                        {actionsOpen ? (
-                          <ChevronUp
-                            size={16}
-                            className="text-gray-500"
-                          />
-                        ) : (
-                          <ChevronDown
-                            size={16}
-                            className="text-gray-500"
-                          />
-                        )}
-                      </button> */}
-
-                      {/* Action icons */}
                       {actionsOpen && (
                         <>
                           <button
@@ -207,10 +192,7 @@ export default function GeneralRole() {
                               setAssignRoleVisible(true);
                             }}
                           >
-                            <Plus
-                              size={16}
-                              className="text-gray-500"
-                            />
+                            <Plus size={16} className="text-gray-500" />
                           </button>
 
                           <button
@@ -222,10 +204,7 @@ export default function GeneralRole() {
                               setAddRoleVisible(true);
                             }}
                           >
-                            <Pencil
-                              size={15}
-                              className="text-gray-500"
-                            />
+                            <Pencil size={15} className="text-gray-500" />
                           </button>
 
                           <button
@@ -242,30 +221,20 @@ export default function GeneralRole() {
                         </>
                       )}
 
-                      {/* Expand users */}
-                      <button
-                        className="p-1 rounded hover:bg-gray-100"
-                        onClick={() =>{
-                          toggleRoleUsers(role._id)
-                          toggleRoleActions(role._id)}
-                        }
-                      >
-                        {usersExpanded ? (
-                          <ChevronUp
-                            size={16}
-                            className="text-gray-500"
-                          />
-                        ) : (
-                          <ChevronDown
-                            size={16}
-                            className="text-gray-500"
-                          />
-                        )}
-                      </button>
+                    <button
+                      className="p-1 rounded hover:bg-gray-100"
+                      onClick={() => toggleRoleUI(role._id)}
+                    >
+                      {usersExpanded ? (
+                        <ChevronUp size={16} className="text-gray-500" />
+                      ) : (
+                        <ChevronDown size={16} className="text-gray-500" />
+                      )}
+                    </button>
+
                     </div>
                   </div>
 
-                  {/* Users */}
                   <div
                     className={`transition-all duration-300 overflow-hidden ${
                       usersExpanded
@@ -297,10 +266,7 @@ export default function GeneralRole() {
                                 setConfirmVisible(true);
                               }}
                             >
-                              <Minus
-                                size={14}
-                                className="text-primary"
-                              />
+                              <Minus size={14} className="text-primary" />
                             </button>
                           </div>
                         ))}
@@ -318,7 +284,6 @@ export default function GeneralRole() {
         </div>
       </div>
 
-      {/* Modals */}
       {addRoleVisible && (
         <AddEditRoleModal
           onClose={() => setAddRoleVisible(false)}

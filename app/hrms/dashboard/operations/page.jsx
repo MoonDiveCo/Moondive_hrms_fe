@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import React, { useMemo, useState,useContext } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { AuthContext } from "@/context/authContext";
+import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
 
 
 
@@ -135,7 +136,6 @@ export default function Operations() {
   const filteredAll = allServices.filter((s) =>
     (s.title + (s.subtitle || '')).toLowerCase().includes(query.trim().toLowerCase())
   );
-  console.log("------------filteredAll",filteredAll)
 
   if(loading){
     return(
@@ -150,6 +150,8 @@ export default function Operations() {
     )
   }
   return (
+    <SubModuleProtectedRoute>
+
     <div className="container py-8 px-8 mx-auto bg-white">
       <section className='px-8'>
         <h5 className="text-base font-semibold text-blackText mb-4">All Services</h5>
@@ -166,5 +168,6 @@ export default function Operations() {
         </div>
       </section>
     </div>
+      </SubModuleProtectedRoute>
   );
 }

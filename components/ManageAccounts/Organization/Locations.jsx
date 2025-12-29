@@ -123,9 +123,9 @@ export default function Locations() {
       <div className="bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4">
         <div className="p-6 border-b border-gray-200 flex flex-row justify-between items-center">
           <h4 className="text-lg font-semibold text-gray-900">Locations</h4>
-          {allUserPermissions.includes("HRMS:LOCATION:WRITE")&&
+          {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")&&
             <div className="flex gap-2">
-              <button onClick={openAdd} className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded " disabled={!allUserPermissions.includes("HRMS:LOCATION:WRITE")}>
+              <button onClick={openAdd} className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded " >
                 Add Location
               </button>
             </div>}

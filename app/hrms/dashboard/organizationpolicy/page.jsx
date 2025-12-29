@@ -1,13 +1,17 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useContext } from "react";
 import axios from "axios";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { toast } from "sonner";
+import { AuthContext } from "@/context/authContext";
+import { Trash2 } from 'lucide-react';
+import SubModuleProtectedRoute from "@/lib/routeProtection/SubModuleProtectedRoute";
 
 export default function OrganizationPolicy() {
   const [openModal, setOpenModal] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const {allUserPermissions}=useContext(AuthContext)
 
   const [files, setFiles] = useState([]);
 
@@ -106,6 +110,7 @@ export default function OrganizationPolicy() {
   }
 
   return (
+    <SubModuleProtectedRoute>
     <div className="w-full bg-white min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm">
@@ -113,12 +118,12 @@ export default function OrganizationPolicy() {
           Organization Files
         </h3>
 
-        <button
+        {allUserPermissions.includes('HRMS:COMPANY_POLICY:WRITE')&&<button
           onClick={() => setOpenModal(true)}
           className="px-4 py-2 text-sm font-medium bg-[#FF7B30] text-white rounded-md"
         >
           Manage
-        </button>
+        </button>}
       </div>
 
       {/* Empty State */}
@@ -170,13 +175,13 @@ export default function OrganizationPolicy() {
                     view
                   </a>
 
-                  <button
+                  {allUserPermissions.includes('HRMS:COMPANY_POLICY:DELETE')&&<button
                     onClick={() => handleDelete(file._id)}
                     className="text-red-500 hover:text-red-700"
                     title="Delete file"
                   >
-                    🗑️
-                  </button>
+                    <Trash2 size={16} className="text-red-600" />
+                  </button>}
                 </div>
               </div>
             ))}
@@ -293,5 +298,6 @@ export default function OrganizationPolicy() {
         </div>
       )}
     </div>
+    </SubModuleProtectedRoute>
   );
 }

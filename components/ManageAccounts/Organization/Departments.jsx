@@ -112,7 +112,7 @@ export default function Departments() {
       <div className='bg-white h-full rounded-2xl border-[0.3px] border-[#D0D5DD] p-4'>
         <div className='p-6 border-b border-gray-200 flex flex-row justify-between items-center'>
           <h4 className='text-lg font-semibold text-gray-900'>Departments</h4>
-          {allUserPermissions.includes("HRMS:DEPARTMENT:WRITE")&&<button
+          {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")&&<button
             onClick={openAdd}
             className='px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded hover:bg-orange-600'
           >
@@ -193,7 +193,7 @@ export default function Departments() {
                         </button>
 
                         {/* EDIT */}
-                        {allUserPermissions.includes("HRMS:DEPARTMENT:EDIT")&&<button
+                        {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")&&<button
                           onClick={(e) => {
                             e.stopPropagation();
                             openEdit(dept, e);
@@ -201,7 +201,7 @@ export default function Departments() {
                           aria-label={`Edit ${dept.name}`}
                           title='Edit'
                           className='p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]'
-                          disabled={!allUserPermissions.includes("HRMS:DEPARTMENT:EDIT")}
+                          disabled={!allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")}
                         >
                           <Edit2
                             size={16}
@@ -210,7 +210,7 @@ export default function Departments() {
                         </button>}
 
                         {/* DELETE */}
-                        {allUserPermissions.includes("HRMS:DEPARTMENT:DELETE")&&<button
+                        {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")&&<button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(dept._id);
@@ -218,7 +218,7 @@ export default function Departments() {
                           aria-label={`Delete ${dept.name}`}
                           title='Delete'
                           className='p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300'
-                          disabled={!allUserPermissions.includes("HRMS:DEPARTMENT:DELETE")}
+                          disabled={!allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")}
                         >
                           <Trash2 size={16} className='text-red-600' />
                         </button>}
@@ -249,7 +249,7 @@ export default function Departments() {
         isVisible={modalVisible}
         onClose={handleModalClose}
         onSaved={handleSaved}
-        deletePermission={allUserPermissions.includes("HRMS:DEPARTMENT:DELETE")}
+        deletePermission={allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")}
         onDeleted={(id) => {
           setDepartments((prev) => prev.filter((d) => d._id !== id));
           handleModalClose();

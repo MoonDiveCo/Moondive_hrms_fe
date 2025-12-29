@@ -54,10 +54,12 @@ export function MenuProvider({ children }) {
           top: [
             { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview" },
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
+            { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
             { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents" },
+            { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy" },
           ],
 
           bottom: [
@@ -76,7 +78,8 @@ export function MenuProvider({ children }) {
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
             { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents" },
-          
+            { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy" },
+            
           ],
           bottom: [
             { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations" },
@@ -213,6 +216,10 @@ export function MenuProvider({ children }) {
  
     };
 
+    const AdditionalPermittedMenu={
+      "HRMS:MANAGE_ACCOUNT:VIEW":"/hrms/dashboard/operations/manage-accounts/"
+    }
+
     const rules = [];
     Object.entries(MENU).forEach(([moduleName, roles]) => {
       Object.entries(roles).forEach(([roleName, menuObj]) => {
@@ -229,7 +236,7 @@ export function MenuProvider({ children }) {
       });
     });
     
-    const routePermissionMap = buildRoutePermissionMap(MENU);
+    const routePermissionMap = buildRoutePermissionMap(MENU,AdditionalPermittedMenu);
 
     return {
       rules,
@@ -241,7 +248,7 @@ export function MenuProvider({ children }) {
   return <MenuContext.Provider value={menus}>{children}</MenuContext.Provider>;
 }
 
-const buildRoutePermissionMap = (MENU) => {
+const buildRoutePermissionMap = (MENU, AdditionalPermittedMenu = {}) => {
   const map = {};
 
   Object.entries(MENU).forEach(([moduleName, roles]) => {
@@ -258,13 +265,38 @@ const buildRoutePermissionMap = (MENU) => {
     });
   });
 
-  Object.keys(map).forEach((k) => (map[k] = Array.from(map[k])));
+  // convert Sets → Arrays
+  Object.keys(map).forEach((k) => {
+    map[k] = Array.from(map[k]);
+  });
+
+  Object.entries(AdditionalPermittedMenu).forEach(([permKey, route]) => {
+    const [module, role] = permKey.split(":");
+    const permission = `${module}:${role}`;
+
+    if (!map[route]) {
+      map[route] = [];
+    }
+
+    // example special-case handling
+    if (route.includes("manage-accounts")) {
+      map[route] = Array.from(
+        new Set([...map[route], "HRMS:MANAGE_ACCOUNT"])
+      );
+    }
+
+    if (!map[route].includes(permission)) {
+      map[route].push(permission);
+    }
+  });
 
   return map;
 };
+
 
 export function useMenus() {
   const ctx = useContext(MenuContext);
   if (!ctx) throw new Error('useMenus must be used within MenuProvider');
   return ctx;
 }
+
