@@ -109,7 +109,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
             className="flex items-center gap-2 rounded-full hover:bg-gray-50 p-1"
           >
             <img
-              src={user?.imageUrl }
+              src={user?.imageUrl || null }
               alt="Profile"
               className="w-9 h-9 rounded-full "
             />
