@@ -45,18 +45,18 @@ export default function AssignGeneralRoleModal({ role, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-      {/* backdrop */}
+      
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* modal */}
+      
       <div
         ref={modalRef}
         className="relative bg-white rounded-2xl shadow-xl w-full max-w-[720px] mx-4 p-6"
       >
-        {/* Header */}
+        
         <div className="flex justify-between items-start mb-6">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
@@ -72,7 +72,7 @@ export default function AssignGeneralRoleModal({ role, onClose, onSuccess }) {
           </button>
         </div>
 
-        {/* Form */}
+        
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -93,7 +93,7 @@ export default function AssignGeneralRoleModal({ role, onClose, onSuccess }) {
             </select>
           </div>
 
-          {/* Actions */}
+         
           <div className="flex justify-end">
             <button
               onClick={assignRole}

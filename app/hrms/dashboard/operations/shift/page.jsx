@@ -17,7 +17,6 @@ export default function Shifts() {
   const [selectedShift, setSelectedShift] = useState(null);
   const lastFocusedRef = useRef(null);
   const {allUserPermissions}=useContext(AuthContext)
-  console.log("----------0",allUserPermissions)
 
   useEffect(() => {
     fetchShifts();

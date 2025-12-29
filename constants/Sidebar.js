@@ -265,7 +265,7 @@ const buildRoutePermissionMap = (MENU, AdditionalPermittedMenu = {}) => {
     });
   });
 
-  // convert Sets → Arrays
+  
   Object.keys(map).forEach((k) => {
     map[k] = Array.from(map[k]);
   });
@@ -278,7 +278,7 @@ const buildRoutePermissionMap = (MENU, AdditionalPermittedMenu = {}) => {
       map[route] = [];
     }
 
-    // example special-case handling
+    
     if (route.includes("manage-accounts")) {
       map[route] = Array.from(
         new Set([...map[route], "HRMS:MANAGE_ACCOUNT"])

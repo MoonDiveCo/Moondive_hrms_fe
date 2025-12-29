@@ -57,7 +57,6 @@ export default function AssignPermission() {
   return (
     <div className="w-full h-full">
       <div className="bg-white rounded-2xl border border-[#d0d5dd] shadow-sm">
-        {/* Header */}
         <div className="p-6  flex justify-between items-center">
           <h4 className="text-lg font-semibold text-gray-900">
             Assign Additional Permission
@@ -74,14 +73,12 @@ export default function AssignPermission() {
           </button>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="px-6 py-3 text-sm text-red-600 border-b">
             {error}
           </div>
         )}
 
-        {/* Content */}
         {assignedUsers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
             {assignedUsers.map((emp) => (
@@ -89,9 +86,7 @@ export default function AssignPermission() {
                 key={emp._id}
                 className="flex items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3 shadow-sm border border-gray-100 hover:shadow-md transition"
               >
-                {/* Left: avatar + info */}
                 <div className="flex items-center gap-4">
-                  {/* Avatar */}
                   <div className="h-14 w-14 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-lg font-semibold text-gray-600">
                     {emp.imageUrl ? (
                       <img
@@ -104,7 +99,6 @@ export default function AssignPermission() {
                     )}
                   </div>
 
-                  {/* Info */}
                   <div>
                     <p className="font-semibold text-gray-900 leading-tight">
                       {emp.firstName} {emp.lastName}
@@ -118,9 +112,7 @@ export default function AssignPermission() {
                   </div>
                 </div>
 
-                {/* Right: actions */}
                 <div className="flex items-center gap-2">
-                  {/* Edit */}
                   <button
                     className="p-1 rounded hover:bg-gray-100"
                     onClick={() => {
@@ -132,7 +124,6 @@ export default function AssignPermission() {
                     <Pencil size={15} className="text-gray-500" />
                   </button>
 
-                  {/* Revoke */}
                   <button
                     className="p-1 rounded hover:bg-gray-100"
                     onClick={() => {
@@ -154,7 +145,6 @@ export default function AssignPermission() {
         )}
       </div>
 
-      {/* Assign / Edit Modal */}
       {showAssignModal && (
         <AssignAdditionalPermissionModal
           employee={editEmployee}
@@ -170,7 +160,6 @@ export default function AssignPermission() {
         />
       )}
 
-      {/* Confirm Revoke Modal */}
       {showConfirm && selectedEmployee && (
         <ConfirmRemoveRoleModal
           mode="revoke-permission"

@@ -21,9 +21,6 @@ export default function AddEditRoleModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  /* --------------------------------------------
-     Init edit mode
-  --------------------------------------------- */
   useEffect(() => {
     if (mode === 'edit' && role) {
       setRoleName(role.name || '');
@@ -31,9 +28,6 @@ export default function AddEditRoleModal({
     }
   }, [mode, role]);
 
-  /* --------------------------------------------
-     Build module → actions map from ACTION_PERMISSIONS
-  --------------------------------------------- */
   const permissionMatrix = useMemo(() => {
     const matrix = {};
 
@@ -54,9 +48,7 @@ export default function AddEditRoleModal({
     }));
   }, []);
 
-  /* --------------------------------------------
-     Toggle permission
-  --------------------------------------------- */
+
   const togglePermission = (permission) => {
     setPermissions((prev) =>
       prev.includes(permission)
@@ -65,9 +57,7 @@ export default function AddEditRoleModal({
     );
   };
 
-  /* --------------------------------------------
-     Submit
-  --------------------------------------------- */
+
   const handleSubmit = async () => {
     if (!roleName.trim()) {
       setError('Role name is required');
@@ -100,18 +90,18 @@ export default function AddEditRoleModal({
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center">
-      {/* backdrop */}
+      
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* modal */}
+      
       <div
         ref={modalRef}
         className="relative w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden"
       >
-        {/* header */}
+        
         <div className="flex items-center justify-between px-6 py-5 border-b">
           <div>
             <h3 className="text-xl font-semibold">
@@ -126,9 +116,9 @@ export default function AddEditRoleModal({
           </button>
         </div>
 
-        {/* body */}
+        
         <div className="px-6 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
-          {/* role name */}
+          
           <div className="max-w-md">
             <label className="block text-sm font-medium">
               Role Name <span className="text-red-500">*</span>
@@ -141,7 +131,7 @@ export default function AddEditRoleModal({
             />
           </div>
 
-          {/* permissions table */}
+          
           <div>
             <h4 className="text-sm font-medium mb-3">Permissions</h4>
 

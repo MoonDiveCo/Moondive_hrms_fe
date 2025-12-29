@@ -166,11 +166,11 @@ export default function Locations() {
                           <Eye size={16} className="text-[var(--color-primary)]" />
                         </button>
 
-                        {allUserPermissions.includes("HRMS:LOCATION:EDIT") && <button onClick={(e) => { e.stopPropagation(); openEdit(loc, e); }} aria-label={`Edit ${loc.name}`} title="Edit" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" disabled={!allUserPermissions.includes("HRMS:LOCATION:EDIT")}>
+                        {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW") && <button onClick={(e) => { e.stopPropagation(); openEdit(loc, e); }} aria-label={`Edit ${loc.name}`} title="Edit" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" disabled={!allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")}>
                           <Edit2 size={16} className="text-[var(--color-primaryText)]" />
                         </button>}
 
-                        {allUserPermissions.includes("HRMS:LOCATION:DELETE") && <button onClick={(e) => { e.stopPropagation(); handleDelete(loc._id); }} aria-label={`Delete ${loc.name}`} title="Delete" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300" disabled={!allUserPermissions.includes("HRMS:LOCATION:DELETE")}>
+                        {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW") && <button onClick={(e) => { e.stopPropagation(); handleDelete(loc._id); }} aria-label={`Delete ${loc.name}`} title="Delete" className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300" disabled={!allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")}>
                           <Trash2 size={16} className="text-red-600" />
                         </button>}
                       </div>

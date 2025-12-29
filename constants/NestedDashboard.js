@@ -221,7 +221,7 @@ export function hasPermission(user, permission) {
     (role) => ROLE_ACTION_PERMISSIONS[role] || []
   );
 
-  /* SUPER ADMIN shortcut */
+  
   if (rolePermissions.includes('*')) {
     return true;
   }

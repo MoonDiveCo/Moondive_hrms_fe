@@ -29,7 +29,7 @@ export default function AssignAdditionalPermissionModal({
 
   const [loading, setLoading] = useState(false);
 
-  /* Build module → actions map from ACTION_PERMISSIONS */
+
   const permissionMatrix = useMemo(() => {
     const matrix = {};
 
@@ -47,7 +47,7 @@ export default function AssignAdditionalPermissionModal({
     }));
   }, []);
 
-  /* Fetch employees in create mode */
+ 
   useEffect(() => {
     if (!isEdit) {
       axios.get('/hrms/employee/list').then((res) => {
@@ -56,7 +56,7 @@ export default function AssignAdditionalPermissionModal({
     }
   }, [isEdit]);
 
-  /* Toggle permission */
+  
   const togglePermission = (permission) => {
     setPermissions((prev) =>
       prev.includes(permission)
@@ -65,7 +65,7 @@ export default function AssignAdditionalPermissionModal({
     );
   };
 
-  /* Submit */
+ 
   const handleSubmit = async () => {
     setLoading(true);
     try {
@@ -90,7 +90,7 @@ export default function AssignAdditionalPermissionModal({
       />
 
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[1000px] mx-4">
-        {/* Header */}
+        
         <div className="flex items-center justify-between px-6 py-5 border-b">
           <div>
             <h3 className="text-xl font-semibold">
@@ -103,9 +103,9 @@ export default function AssignAdditionalPermissionModal({
           <button onClick={onClose}>✕</button>
         </div>
 
-        {/* Body */}
+        
         <div className="px-6 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
-          {/* Employee */}
+          
           {isEdit ? (
             <input
               disabled
@@ -127,7 +127,7 @@ export default function AssignAdditionalPermissionModal({
             </select>
           )}
 
-          {/* Permissions */}
+          
           <div>
             <h4 className="text-sm font-medium mb-3">Permissions</h4>
 
@@ -225,7 +225,7 @@ export default function AssignAdditionalPermissionModal({
           </div>
         </div>
 
-        {/* Footer */}
+        
         <div className="flex justify-end gap-3 px-6 py-4 border-t">
           <button
             onClick={onClose}

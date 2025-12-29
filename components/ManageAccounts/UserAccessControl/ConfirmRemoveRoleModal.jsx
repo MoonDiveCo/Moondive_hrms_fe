@@ -3,7 +3,7 @@
 import { X } from 'lucide-react';
 
 export default function ConfirmRemoveRoleModal({
-  mode = 'remove-role', // 'remove-role' | 'revoke-permission' | 'delete-role'
+  mode = 'remove-role',
   user,
   role,
   onClose,
@@ -15,15 +15,12 @@ export default function ConfirmRemoveRoleModal({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[420px] mx-4 p-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">
             {isRevoke
@@ -37,7 +34,6 @@ export default function ConfirmRemoveRoleModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="text-center space-y-2">
           {isRevoke && (
             <p className="text-sm text-gray-600">
@@ -76,7 +72,6 @@ export default function ConfirmRemoveRoleModal({
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex justify-center gap-3 mt-6">
           <button
             onClick={onClose}
