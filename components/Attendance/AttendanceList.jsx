@@ -1,133 +1,187 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+
 import AttendanceCard from "@/components/Attendance/AttendanceCard";
 import CheckInButton from "@/components/Attendance/CheckInButton";
 import TimelineRow from "@/components/Attendance/TimelineRow";
-import WorkingTimeline from "@/components/Attendance/WorkingTimeline";
 import TodayRow from "@/components/Attendance/TodayRow";
 
-export default function AttendanceList() {
+function getWeekDates(baseDate = new Date()) {
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+
+
+  start.setDate(start.getDate() - start.getDay());
+
+  return Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+}
+
+
+function getMonthDates(baseDate) {
+  const year = baseDate.getFullYear();
+  const month = baseDate.getMonth();
+
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+
+  const days = [];
+  for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1)) {
+    days.push(new Date(d));
+  }
+  return days;
+}
+
+export default function AttendanceList({ currentDate, rangeMode }) {
+  const today = new Date();
+  const [attendanceMap, setAttendanceMap] = useState({});
+
+  const dates =
+    rangeMode === "week"
+      ? getWeekDates(currentDate)
+      : getMonthDates(currentDate);
+
+  /* ---------------- FETCH ATTENDANCE ---------------- */
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      const res = await axios.get("/hrms/attendance", {
+        params: {
+          type: rangeMode,
+          year: currentDate.getFullYear(),
+          month: currentDate.getMonth() + 1,
+           day: currentDate.toISOString(),
+        },
+      });
+
+      const map = {};
+      res.data.data.forEach((a) => {
+        const key = new Date(a.date).toDateString();
+        map[key] = a;
+      });
+
+      setAttendanceMap(map);
+    };
+
+    fetchAttendance();
+  }, [currentDate, rangeMode]);
+
   return (
-    <div className="h-screen flex flex-col text-gray-800 font-sans ">
-      
+    <div className="flex flex-col text-gray-800">
       {/* HEADER */}
-      <header className="sticky top-0 z-20 bg-gray-50 px-8  ">
-        <div className="flex items-center justify-center gap-4 text-sm font-medium">
-          <ChevronLeft className="cursor-pointer" />
-          <div>21-Dec-2025 - 27-Dec-2025</div>
-          <ChevronRight className="cursor-pointer" />
-        </div>
+      <div className="px-12 py-3">
+        <AttendanceCard className="flex justify-between items-center">
+          <h5 className="font-semibold text-primary">
+            General [ 9:00 AM - 6:00 PM ]
+          </h5>
+          <CheckInButton />
+        </AttendanceCard>
+      </div>
 
-        <div className="flex items-center justify-between mt-2">
+      {/* CONTENT */}
+      <div className="px-10 py-6 space-y-5">
+{dates.map((dateObj) => {
+  const key = dateObj.toDateString();
+  const record = attendanceMap[key];
 
-          <AttendanceCard className="flex justify-between items-center gap-3 flex-1 ml-6">
-            <h5 className="text-sm font-semibold whitespace-nowrap">
-              General [ 9:00 AM - 6:00 PM ]
-            </h5>
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-          
+  const isToday = dateObj.toDateString() === new Date().toDateString();
+  const isPast = dateObj < today;
+  const isFuture = dateObj > today;
+  const isSunday = dateObj.getDay() === 0;
 
-            <CheckInButton />
-          </AttendanceCard>
-        </div>
-      </header>
+  const day = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+  const date = dateObj.getDate();
 
-      {/* MAIN — SCROLLABLE */}
-      <main className="flex-1 overflow-y-auto px-10 py-6 space-y-6 bg-gray-50">
-        <div className="space-y-5">
+  /* ---------------- TODAY ---------------- */
+  if (isToday && record) {
+    return (
+      <TodayRow
+        key={key}
+        date={date}
+        checkIn={record.checkIn && new Date(record.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        checkOut={record.checkOut && new Date(record.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        late={record.anomalies?.includes("LATE_ENTRY") ? "00:16" : null}
+        early={record.anomalies?.includes("EARLY_EXIT") ? "01:32" : null}
+      />
+    );
+  }
 
-          <TimelineRow day="Mon" date="22" status="absent" hours="00:00" />
+  /* ---------------- FUTURE ---------------- */
+  if (isFuture) {
+    return (
+      <TimelineRow
+        key={key}
+        day={day}
+        date={date}
+        status="future"
+        hours="--:--"
+      />
+    );
+  }
 
-          <TodayRow
-            date="23"
-            checkIn="16:16"
-            checkOut="16:28"
-            late="07:16"
-            early="01:32"
-            hours="00:12"
-          />
+  /* ---------------- WEEKEND (SUNDAY) ---------------- */
+  if (isSunday) {
+    return (
+      <TimelineRow
+        key={key}
+        day={day}
+        date={date}
+        status="weekend"
+        hours="08:45"
+      />
+    );
+  }
 
-          <TodayRow
-            date="24"
-            checkIn="10:16"
-            late="07:16"
-            early="01:32"
-            hours="00:12"
-          />
-<TodayRow
-  date="25"
-  checkIn="10:16"
-  late="07:16"
-  early="01:32"
-  hours="00:12"
-/>
-<TodayRow
-  date="26"
-  checkIn="10:16"
-  late="07:16"
-  early="01:32"
-  hours="00:12"
-/>
-<TodayRow
-  date="27"
-  checkIn="10:16"
-  late="07:16"
-  early="01:32"
-  hours="00:12"
-/>
-<TodayRow
-  date="28"
-  checkIn="10:16"
-  late="07:16"
-  early="01:32"
-  hours="00:12"
-/>
-          {/* FUTURE */}
-          <div className="flex items-center gap-4 opacity-50">
-            {/* <DateCol day="Wed" date="25" /> */}
-            <div className="flex-1 h-24 bg-white rounded-xl flex items-center justify-center text-gray-400">
-              --
-            </div>
-          </div>
-        </div>
-      </main>
+  /* ---------------- ABSENT ---------------- */
+  if (!record && isPast) {
+    return (
+      <TimelineRow
+        key={key}
+        day={day}
+        date={date}
+        status="absent"
+        hours="00:00"
+      />
+    );
+  }
 
-      {/* FOOTER */}
-      <footer className="sticky -bottom-2 z-20 bg-white  px-6 py-4 flex items-center gap-8 text-sm">
-        <FooterStat label="Payable Days" value="2 Days" color="bg-yellow-400" />
-        <FooterStat label="Present" value="0 Days" color="bg-green-400" />
-        <FooterStat label="On Duty" value="0 Days" color="bg-purple-400" />
-        <FooterStat label="Paid Leave" value="0 Days" color="bg-indigo-400" />
-        <FooterStat label="Holidays" value="0 Days" color="bg-cyan-400" />
-        <FooterStat label="Weekend" value="2 Days" color="bg-orange-400" />
+  /* ---------------- PAST PRESENT ---------------- */
+const workedMinutes =
+  record?.checkIn && record?.checkOut
+    ? Math.floor(
+        (new Date(record.checkOut) - new Date(record.checkIn)) / 60000
+      )
+    : 0;
 
-        <div className="ml-auto font-medium text-sm">
-          General [ 9:00 AM - 6:00 PM ]
-        </div>
-      </footer>
-    </div>
-  );
-}
 
-/* ---------- helpers ---------- */
 
-function DateCol({ day, date }) {
+  const hours = `${String(Math.floor(workedMinutes / 60)).padStart(2, "0")}:${String(
+    workedMinutes % 60
+  ).padStart(2, "0")}`;
+
   return (
-    <div className="w-16 text-right">
-      <div className="text-sm text-gray-500">{day}</div>
-      <div className="text-xl font-bold">{date}</div>
-    </div>
+    <TimelineRow
+      key={key}
+      day={day}
+      date={date}
+      status="present"
+      hours={hours}
+      checkIn={record?.checkIn || null}
+      checkOut={record?.checkOut || null}
+    />
   );
-}
+})}
 
-function FooterStat({ label, value, color }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className={`w-1 h-6 rounded ${color}`} />
-      <div>
-        <div className="text-xs text-gray-400">{label}</div>
-        <div className="font-semibold">{value}</div>
+
+
       </div>
     </div>
   );
