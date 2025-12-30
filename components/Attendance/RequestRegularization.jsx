@@ -284,8 +284,9 @@ Adarsh`);
               Discard
             </button>
             <button 
+              disabled={records.length===0}
               onClick={handleSend}
-              className="px-6 py-3 rounded-lg bg-primary text-white font-bold text-sm shadow-lg shadow-blue-500/30 active:scale-95">
+              className={`px-6 py-3 rounded-lg ${records.length===0? "bg-gray-300 cursor-not-allowed":"bg-primary"} text-white font-bold text-sm shadow-lg shadow-blue-500/30 active:scale-95`}>
               Send
             </button>
           </div>
