@@ -32,7 +32,7 @@ export default function AddEditRoleModal({
     const matrix = {};
 
     Object.values(ACTION_PERMISSIONS).forEach((perm) => {
-      const parts = perm.split(':'); // HRMS:EMPLOYEE:WRITE
+      const parts = perm.split(':'); 
       if (parts.length !== 3) return;
 
       const module = parts[1];
@@ -70,7 +70,7 @@ export default function AddEditRoleModal({
 
       const payload = {
         name: roleName.trim(),
-        permissions,
+        permissionsObj:permissions,
       };
 
       if (mode === 'edit') {

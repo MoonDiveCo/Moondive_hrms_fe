@@ -102,8 +102,8 @@ export default function Operations() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter()
-  const {permissions,actionPermission}=useContext(AuthContext)
-  const userPermissions=[...permissions,...actionPermission]
+  const {allUserPermissions}=useContext(AuthContext)
+  const userPermissions=[...allUserPermissions]
 
 
   const allServices = useMemo(

@@ -28,7 +28,7 @@ import { AuthContext } from '@/context/authContext';
 const MenuContext = createContext(null);
 
 export function MenuProvider({ children }) {
-  const menus = useMemo(() => { 
+  const menus = useMemo(() => {
     const MENU = {
       HRMS: {
         SUPER_ADMIN: {
@@ -42,7 +42,7 @@ export function MenuProvider({ children }) {
             { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
             { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents" },
-          
+
           ],
           bottom: [
             { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations" },
@@ -54,7 +54,6 @@ export function MenuProvider({ children }) {
           top: [
             { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview" },
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
-            { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
             { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance" },
             { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker" },
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
@@ -70,7 +69,7 @@ export function MenuProvider({ children }) {
         HR: {
           top: [
             // { label: "Manage Accounts", icon: OverviewIcon, href: "/hrms/dashboard/manage-accounts/organization/organization-details" },
-            
+
             { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview" },
             { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees" },
             { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker" },
@@ -79,7 +78,7 @@ export function MenuProvider({ children }) {
             { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance" },
             { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents" },
             { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy" },
-            
+
           ],
           bottom: [
             { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations" },
@@ -149,7 +148,7 @@ export function MenuProvider({ children }) {
 
         ADMIN: {
           top: [
-             {
+            {
               label: "Inventory Management",
               icon: InventoryManagement,
               href: "/cms/dashboard/inventory-management",
@@ -163,8 +162,8 @@ export function MenuProvider({ children }) {
           bottom: [],
         },
       },
-      
-     CRM: {
+
+      CRM: {
         SALES: {
           top: [
             {
@@ -208,25 +207,136 @@ export function MenuProvider({ children }) {
               icon: TimeTrackerIcon,
               href: "/crm/dashboard/Finalised",
             },
-            
+
           ],
           bottom: [],
         },
       },
- 
+
     };
 
-    const AdditionalPermittedMenu={
-      "HRMS:MANAGE_ACCOUNT:VIEW":"/hrms/dashboard/operations/manage-accounts/"
+    const sidebarObject = {
+      "HRMS:OVERVIEW:VIEW": { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview", position: "top" },
+      "HRMS:EMPLOYES:VIEW": { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", position: "top" },
+      "HRMS:LEAVE_TRACKER:VIEW": { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker", position: "top" },
+      "HRMS:ATTENDANCE:VIEW": { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance", position: "top" },
+      "HRMS:TIME_TRACKER:VIEW": { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker", position: "top" },
+      "HRMS:COMPANY_POLICY:VIEW": { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy", position: "top" },
+      "HRMS:PERFORMANCE:VIEW": { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance", position: "top" },
+      "HRMS:DOCUMENTS:VIEW": { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents", position: "top" },
+      "CMS:OVERVIEW:VIEW": { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard", position: "top" },
+      "CMS:BLOGS:VIEW": { label: "Blogs", icon: Blog, href: "/cms/dashboard/blogs", position: "top" },
+      "CMS:TESTIMONIALS:VIEW": {
+        label: "Testimonials",
+        icon: Testimonial,
+        href: "/cms/dashboard/testimonials",
+        position: "top"
+      },
+      "CMS:CASE_STUDIES:VIEW":{
+              label: "Case Studies",
+              icon: CaseStudies,
+              href: "/cms/dashboard/case-studies",
+              position: "top"
+      },
+      "CMS:COMPARISIONS:VIEW":{
+              label: "Comparisions",
+              icon: Comparisons,
+              href: "/cms/dashboard/comparisons",
+              position: "top"
+      },
+      "CMS:SUMMARIES:VIEW":{
+              label: "Summaries",
+              icon: Summaries,
+              href: "/cms/dashboard/summaries",
+              position: "top"
+            },
+      "CMS:INDUSTARIES:VIEW":{
+              label: "Industries",
+              icon: Industry,
+              href: "/cms/dashboard/industries",
+              position: "top"
+      },
+      "CMS:WEBSITE_SEO_VIEW":{
+              label: "Website Meta SEO",
+              icon: SeoIcon,
+              href: "/cms/dashboard/website-meta-seo",
+              position: "top"
+            },
+      "CMS:CONTENT_PERFORMANCE:VIEW":{
+        label: "Content Performance",
+        icon: ContentPerformance,
+        href: "/cms/dashboard/ai-content-performance", 
+        position: "top"
+      },
+      "CMS:GENAI_VISIBILITY_VIEW":{
+              label: "Gen AI Visibility",
+              icon: GenAI,
+              href: "/cms/dashboard/gen-ai-visibility",
+              position: "top"
+      },
+      "CMS:INVENTORY:VIEW":{
+              label: "Inventory Management",
+              icon: InventoryManagement,
+              href: "/cms/dashboard/inventory-management",
+              position: "top"
+      },
+      "CRM:OVERVIEW:VIEW":{ label: "Overview", icon: OverviewIcon, href: "/crm/dashboard",position: "top" },
+      "CRM:SALES:VIEW":{
+              label: "Sales Dashboard",
+              icon: OverviewIcon,
+              href: "/crm/dashboard/sales",
+              position: "top"
+            },
+      "CRM:LEADS:VIEW":{
+              label: "Leads",
+              icon: CandidateIcon,
+              href: "/crm/dashboard/leads",
+              position: "top"
+            },
+      "CRM:IN_PROCESS:VIEW":{
+              label: "In Process",
+              icon: LeaveTrackerIcon,
+              href: "/crm/dashboard/InProcess",
+              position: "top"
+        },
+      "CRM:MEETING_SCHEDULE:VIEW":{
+              label: "Meeting Scheduled",
+              icon: AttendanceIcon,
+              href: "/crm/dashboard/MeetingSchedule",
+              position: "top"
+        },
+      "CRM:FINALISED:":{
+              label: "Finalised",
+              icon: TimeTrackerIcon,
+              href: "/crm/dashboard/Finalised",
+              position: "top"
+            },
+
+
+    "HRMS:OPERATIONS:VIEW": { label: "Operations", icon: OperationsIcon, href: "/hrms/dashboard/operations", position: "bottom" },
+      "HRMS:ANALYTICS:VIEW": { label: "Analytics", icon: AnalyticsIcon, href: "/hrms/dashboard/analytics", position: "bottom" },
+      "HRMS:SETTINGS:VIEW": { label: "Settings", icon: SettingIcon, href: "/hrms/dashboard/settings", position: "bottom" },
+
     }
+
+    const AdditionalPermittedMenu = {
+      "HRMS:MANAGE_ACCOUNT:VIEW": "/hrms/dashboard/operations/manage-accounts/",
+
+    }
+
+    // const AdditionalMenuItems={
+    //   "HRMS:EMPLOYEE:"
+    // }
+
+
 
     const rules = [];
     Object.entries(MENU).forEach(([moduleName, roles]) => {
       Object.entries(roles).forEach(([roleName, menuObj]) => {
         const requiredPermissionPrefixes =
-      roleName === "SUPER_ADMIN"
-        ? ["*"] 
-        : [`${moduleName}:${roleName}`];
+          roleName === "SUPER_ADMIN"
+            ? ["*"]
+            : [`${moduleName}:${roleName}`];
 
         rules.push({
           requiredPermissionPrefixes,
@@ -235,12 +345,13 @@ export function MenuProvider({ children }) {
         });
       });
     });
-    
-    const routePermissionMap = buildRoutePermissionMap(MENU,AdditionalPermittedMenu);
+
+    const routePermissionMap = buildRoutePermissionMap(MENU, AdditionalPermittedMenu);
 
     return {
       rules,
       menus: MENU,
+      sidebarObject,
       routePermissionMap
     };
   }, []);
@@ -265,7 +376,7 @@ const buildRoutePermissionMap = (MENU, AdditionalPermittedMenu = {}) => {
     });
   });
 
-  
+
   Object.keys(map).forEach((k) => {
     map[k] = Array.from(map[k]);
   });
@@ -278,7 +389,7 @@ const buildRoutePermissionMap = (MENU, AdditionalPermittedMenu = {}) => {
       map[route] = [];
     }
 
-    
+
     if (route.includes("manage-accounts")) {
       map[route] = Array.from(
         new Set([...map[route], "HRMS:MANAGE_ACCOUNT"])
@@ -289,9 +400,10 @@ const buildRoutePermissionMap = (MENU, AdditionalPermittedMenu = {}) => {
       map[route].push(permission);
     }
   });
-
   return map;
 };
+
+
 
 
 export function useMenus() {

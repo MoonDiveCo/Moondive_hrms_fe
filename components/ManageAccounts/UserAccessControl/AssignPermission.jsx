@@ -12,7 +12,6 @@ export default function AssignPermission() {
   const [assignedUsers, setAssignedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const {actionPermission}=useContext(AuthContext)
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [editEmployee, setEditEmployee] = useState(null);
 

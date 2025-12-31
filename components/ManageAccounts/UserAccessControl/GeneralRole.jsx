@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
   ChevronDown,
   ChevronUp,
@@ -33,7 +33,8 @@ export default function GeneralRole() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [removing, setRemoving] = useState(false);
   const [confirmMode, setConfirmMode] = useState('remove-role');
-  
+
+ 
 
   const fetchRoles = async () => {
     try {
@@ -53,7 +54,7 @@ export default function GeneralRole() {
   const deleteRole = async () => {
     try {
       setRemoving(true);
-      await axios.delete(`/hrms/roles/${selectedRole._id}`);
+      await axios.delete(`/hrms/roles/delete-role/${selectedRole._id}`);
       setRoles((prev) =>
         prev.filter((r) => r._id !== selectedRole._id)
       );

@@ -338,7 +338,7 @@ export default function Employees({ initialEmployees = [] }) {
               )}
             </div>
 
-            {allUserPermissions.includes("HRMS:EMPLOYEE:WRITE") &&<button
+            {allUserPermissions.includes("HRMS:EMPLOYES:WRITE") &&<button
               className='px-4 rounded-lg h-10  bg-[var(--color-primary)] text-white font-medium  hover:brightness-95 transition'
               aria-label='Add Employee(s)'
               onClick={openAdd}
@@ -424,8 +424,8 @@ export default function Employees({ initialEmployees = [] }) {
             onClose={closeView}
             onEdit={handleEditFromView}
             onDelete={deleteFromView}
-            deletePermission={allUserPermissions.includes("HRMS:EMPLOYEE:DELETE")}
-            editPermission={allUserPermissions.includes("HRMS:EMPLOYEE:EDIT")}
+            deletePermission={allUserPermissions.includes("HRMS:EMPLOYES:DELETE")}
+            editPermission={allUserPermissions.includes("HRMS:EMPLOYES:EDIT")}
           />
         )}
 
