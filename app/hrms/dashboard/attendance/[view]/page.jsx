@@ -25,8 +25,8 @@ export default function AttendanceViewPage() {
 
   return (
     <div className="flex flex-col w-full bg-white">
-      {/* 🔒 Sticky Header */}
-      <div className="sticky top-0 z-30 bg-white">
+
+      <div className="sticky top-0 bg-white">
         <div className="flex items-center justify-between px-6 py-3">
           {/* DATE NAVIGATOR */}
           <div className="flex-1 flex justify-center">
@@ -86,7 +86,7 @@ export default function AttendanceViewPage() {
         </div>
       </div>
 
-      {/* 📜 CONTENT */}
+
       <div className="flex-1 overflow-y-hidden px-6 py-4">
         {view === "list" && (
           <AttendanceList
@@ -106,10 +106,8 @@ export default function AttendanceViewPage() {
           <AttendanceCalendar currentDate={currentDate} />
         )}
       </div>
-
-      {/* 🧾 REGULARIZATION MODAL */}
-   
-        {showRegModal && <RequestRegularization />}
+    
+        {showRegModal && <RequestRegularization onClose={()=>setShowRegModal(false)} />}
      
     </div>
   );
