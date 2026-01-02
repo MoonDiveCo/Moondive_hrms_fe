@@ -7,6 +7,7 @@ import HolidayCalendar from "./HolidayCalender";
 import ApplyLeaveModal from "./ApplyLeaveModal";
 import EventDetailsModal from "./EventDetailsModal";
 import LeaveRequestsModal from "./LeaveRequestModal";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function LeaveTrackerDashboard({showCalender = true }) {
   const [viewModal, setViewModal] = useState(false);
@@ -164,6 +165,19 @@ useEffect(() => {
       setLoading(false);
     }
   };
+
+   if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} 
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
