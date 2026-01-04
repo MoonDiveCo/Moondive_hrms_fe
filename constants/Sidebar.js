@@ -216,7 +216,7 @@ export function MenuProvider({ children }) {
     };
 
     const sidebarObject = {
-      "HRMS:OVERVIEW:VIEW": { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview", position: "top" },
+      "HRMS:HRMS_OVERVIEW:VIEW": { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview", position: "top" },
       "HRMS:EMPLOYES:VIEW": { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", position: "top" },
       "HRMS:LEAVE_TRACKER:VIEW": { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker", position: "top" },
       "HRMS:ATTENDANCE:VIEW": { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance", position: "top" },
@@ -224,7 +224,7 @@ export function MenuProvider({ children }) {
       "HRMS:COMPANY_POLICY:VIEW": { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy", position: "top" },
       "HRMS:PERFORMANCE:VIEW": { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance", position: "top" },
       "HRMS:DOCUMENTS:VIEW": { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents", position: "top" },
-      "CMS:OVERVIEW:VIEW": { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard", position: "top" },
+      "CMS:CMS_OVERVIEW:VIEW": { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard", position: "top" },
       "CMS:BLOGS:VIEW": { label: "Blogs", icon: Blog, href: "/cms/dashboard/blogs", position: "top" },
       "CMS:TESTIMONIALS:VIEW": {
         label: "Testimonials",
@@ -268,7 +268,7 @@ export function MenuProvider({ children }) {
         href: "/cms/dashboard/ai-content-performance", 
         position: "top"
       },
-      "CMS:GENAI_VISIBILITY_VIEW":{
+      "CMS:GENAI_VISIBILITY:VIEW":{
               label: "Gen AI Visibility",
               icon: GenAI,
               href: "/cms/dashboard/gen-ai-visibility",
@@ -280,7 +280,7 @@ export function MenuProvider({ children }) {
               href: "/cms/dashboard/inventory-management",
               position: "top"
       },
-      "CRM:OVERVIEW:VIEW":{ label: "Overview", icon: OverviewIcon, href: "/crm/dashboard",position: "top" },
+      "CRM:CRM_OVERVIEW:VIEW":{ label: "Overview", icon: OverviewIcon, href: "/crm/dashboard",position: "top" },
       "CRM:SALES:VIEW":{
               label: "Sales Dashboard",
               icon: OverviewIcon,
@@ -321,6 +321,7 @@ export function MenuProvider({ children }) {
 
     const AdditionalPermittedMenu = {
       "HRMS:MANAGE_ACCOUNT:VIEW": "/hrms/dashboard/operations/manage-accounts/",
+      "HRMS:SHIFT:VIEW":"/hrms/dashboard/operations/shift/"
 
     }
 
@@ -346,7 +347,7 @@ export function MenuProvider({ children }) {
       });
     });
 
-    const routePermissionMap = buildRoutePermissionMap(MENU, AdditionalPermittedMenu);
+    const routePermissionMap = buildRoutePermissionMap(sidebarObject, AdditionalPermittedMenu);
 
     return {
       rules,
@@ -359,49 +360,52 @@ export function MenuProvider({ children }) {
   return <MenuContext.Provider value={menus}>{children}</MenuContext.Provider>;
 }
 
-const buildRoutePermissionMap = (MENU, AdditionalPermittedMenu = {}) => {
+const buildRoutePermissionMap = (
+  sidebarObject,
+  AdditionalPermittedMenu = {}
+) => {
   const map = {};
 
-  Object.entries(MENU).forEach(([moduleName, roles]) => {
-    Object.entries(roles).forEach(([roleName, menuObj]) => {
-      const permission =
-        roleName === "SUPER_ADMIN" ? "*" : `${moduleName}:${roleName}`;
+  // 1. Build from sidebarObject
+  Object.entries(sidebarObject).forEach(([permissionKey, item]) => {
+    const { href } = item;
 
-      [...menuObj.top, ...menuObj.bottom].forEach((item) => {
-        if (!map[item.href]) {
-          map[item.href] = new Set();
-        }
-        map[item.href].add(permission);
-      });
-    });
+    if (!map[href]) {
+      map[href] = new Set();
+    }
+
+    // normalize permission
+    // HRMS:OVERVIEW:VIEW -> HRMS:OVERVIEW
+    const parts = permissionKey.split(":");
+    const normalizedPermission = `${parts[0]}:${parts[1]}`;
+
+    map[href].add(normalizedPermission);
   });
 
-
-  Object.keys(map).forEach((k) => {
-    map[k] = Array.from(map[k]);
-  });
-
+  // 2. Handle additional permitted menus
   Object.entries(AdditionalPermittedMenu).forEach(([permKey, route]) => {
     const [module, role] = permKey.split(":");
     const permission = `${module}:${role}`;
 
     if (!map[route]) {
-      map[route] = [];
+      map[route] = new Set();
     }
-
 
     if (route.includes("manage-accounts")) {
-      map[route] = Array.from(
-        new Set([...map[route], "HRMS:MANAGE_ACCOUNT"])
-      );
+      map[route].add("HRMS:MANAGE_ACCOUNT");
     }
 
-    if (!map[route].includes(permission)) {
-      map[route].push(permission);
-    }
+    map[route].add(permission);
   });
+
+  // 3. Convert Sets to Arrays
+  Object.keys(map).forEach((k) => {
+    map[k] = Array.from(map[k]);
+  });
+
   return map;
 };
+
 
 
 

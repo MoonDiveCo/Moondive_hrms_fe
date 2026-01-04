@@ -61,7 +61,11 @@ export function AuthProvider({ children }) {
     setUser(payload.user);
     setPermissions(payload.permissions);
     setIsSignedIn(true);
-    setAllUserPermissions([...payload?.permissions,...payload?.user?.additionalPermissions])
+    if(payload.permissions.includes["*"]){
+      setAllUserPermissions([...Object.values(ACTION_PERMISSIONS),"HRMS:EMPLOYEE:VIEW"])
+    }else{
+      setAllUserPermissions([...payload?.permissions,...payload?.user?.additionalPermissions])
+    }
     localStorage.setItem("user", JSON.stringify(payload.user));
   };
 
