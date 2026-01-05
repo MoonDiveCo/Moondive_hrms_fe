@@ -5,6 +5,7 @@ import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
+import FaceModal from "./FaceModal";
  
 export default function AppLayout({ module, children, showMainNavbar = true }) {
   const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
@@ -15,6 +16,17 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   const accessPermissions = menus.rules ?? [];
   const subSet = new Set();
 const [collapsed, setCollapsed] = useState(false);
+
+ const [faceModalOpen, setFaceModalOpen] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+
+  const openFaceModal = () => setFaceModalOpen(true);
+  const closeFaceModal = () => setFaceModalOpen(false);
+
+  const handleCheckInSuccess = () => {
+    setIsCheckedIn(true);
+    closeFaceModal();
+  };
   useEffect(() => {
     if (authLoading || rbacLoading) return;
  
@@ -105,7 +117,13 @@ return (
       <div className="sticky top-0 z-0">
         {showMainNavbar && (
           <header className="bg-white border-b border-gray-200 h-16 flex items-center">
-            <MainNavbar setCollapsed={setCollapsed} collapsed={collapsed} />
+              <MainNavbar
+              collapsed={collapsed}
+              setCollapsed={setCollapsed}
+              isCheckedIn={isCheckedIn}
+              onCheckInClick={openFaceModal}   
+              onCheckOut={() => setIsCheckedIn(false)}
+            />
           </header>
         )}
       </div>
@@ -117,6 +135,12 @@ return (
         {children}
       </main>
     </div>
+       {faceModalOpen && (
+        <FaceModal
+          onClose={closeFaceModal}
+          onSuccess={handleCheckInSuccess}
+        />
+      )}
   </div>
 );
  

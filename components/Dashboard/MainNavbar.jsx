@@ -6,16 +6,24 @@ import { useRouter } from 'next/navigation';
 import { Bell, Clock, LogIn, LogOut } from 'lucide-react';
 import { AuthContext } from '@/context/authContext';
 
-export default function MainNavbar({ setCollapsed, collapsed }) {
+export default function MainNavbar({
+  collapsed,
+  setCollapsed,
+  isCheckedIn,
+  onCheckInClick,
+  onCheckOut,
+}) {
   const router = useRouter();
   const avatarRef = useRef(null);
   const [openProfile, setOpenProfile] = useState(false);
-  const {user} = useContext(AuthContext)
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const { user } = useContext(AuthContext);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
-    if (!isCheckedIn) return;
+    if (!isCheckedIn) {
+      setElapsedSeconds(0);
+      return;
+    }
 
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
@@ -26,10 +34,9 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
 
   const handleCheckToggle = () => {
     if (isCheckedIn) {
-      setIsCheckedIn(false);
-      setElapsedSeconds(0);
+      onCheckOut();      
     } else {
-      setIsCheckedIn(true);
+      onCheckInClick();   
     }
   };
 
@@ -44,6 +51,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
     <div className="w-full px-6 md:px-8 z-20 bg-white shadow-sm">
       <div className="flex items-center justify-between h-16">
 
+        {/* LEFT */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -68,6 +76,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
           </button>
         </div>
 
+        {/* RIGHT */}
         <div className="flex items-center gap-4">
 
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium">
@@ -109,9 +118,9 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
             className="flex items-center gap-2 rounded-full hover:bg-gray-50 p-1"
           >
             <img
-              src={user?.imageUrl || null }
+              src={user?.imageUrl || ''}
               alt="Profile"
-              className="w-9 h-9 rounded-full "
+              className="w-9 h-9 rounded-full"
             />
           </button>
         </div>
