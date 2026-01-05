@@ -13,7 +13,13 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   const router = useRouter();
   const pathname = usePathname();
   const menus = useMenus();
-  const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
+    const {
+    canAccessModule,
+    canAccessSubmodule,
+    authLoading,
+    rbacLoading,
+    submodules,
+  } = useContext(RBACContext);
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
   const accessPermissions = menus.rules ?? [];
