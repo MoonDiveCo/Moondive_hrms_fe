@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { createContext, useEffect, useState } from "react";
 import {fetchIPData} from '@/helper/tracking'
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
+import {ACTION_PERMISSIONS} from '@/constants/NestedDashboard'
 
 export const AuthContext = createContext();
 
@@ -13,6 +14,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [allUserPermissions,setAllUserPermissions]=useState([])
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -34,6 +36,11 @@ export function AuthProvider({ children }) {
       const data = res?.data?.result
       setUser(data?.user);
       setPermissions(data?.userPermissions);
+      if(data?.userPermissions.includes('*')){
+        setAllUserPermissions([...Object.values(ACTION_PERMISSIONS),"HRMS:EMPLOYEE:VIEW"])
+      }else{
+        setAllUserPermissions([...data?.userPermissions,...data?.user?.additionalPermissions])
+      }
       setIsSignedIn(true);
       localStorage.setItem("user", JSON.stringify(data?.user));
     } catch(err) {
@@ -52,9 +59,13 @@ export function AuthProvider({ children }) {
     const token = Cookies.get("token")
     axios.defaults.headers.common["token"] = token;
     setUser(payload.user);
-    setPermissions(payload.permissions);
+    setPermissions(payload?.permissions);
     setIsSignedIn(true);
-
+    if(payload?.permissions.includes("*")){
+      setAllUserPermissions([...Object.values(ACTION_PERMISSIONS),"HRMS:EMPLOYEE:VIEW"])
+    }else{
+      setAllUserPermissions([...payload?.permissions,...payload?.user?.additionalPermissions])
+    }
     localStorage.setItem("user", JSON.stringify(payload.user));
   };
 
@@ -66,6 +77,8 @@ export function AuthProvider({ children }) {
     setIsSignedIn(false);
     setUser(null);
     setPermissions([]);
+    setAllUserPermissions([])
+
   };
 
 const getSessionTrackingInfo = async () => {
@@ -89,6 +102,7 @@ const getSessionTrackingInfo = async () => {
         login,
         logout,
         loading,
+        allUserPermissions
       }}
     >
       {children}

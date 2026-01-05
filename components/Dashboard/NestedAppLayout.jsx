@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { MANAGE_ACCOUNTS_HEADER, LEAVE_TRACKER_HEADER } from "@/constants/NestedDashboard";
 import { DASHBOARD_HEADERS } from "@/constants/NestedDashboard";
 import { detectModuleKey, findMatchingPattern } from "@/utils/utils";
+import SubModuleProtectedRoute from "@/lib/routeProtection/SubModuleProtectedRoute";
 
 
 export default function NestedAppLayout({ children }) {
@@ -41,6 +42,8 @@ if (headerList.length === 1) {
 
   const showSidebar = activeHeader?.layoutType === "SIDEBAR";
   return (
+    <SubModuleProtectedRoute>
+
     <div className=" hide-scrollbar  w-full h-full ">
       <div className=" flex flex-col gap-4">
         <div className="bg-white rounded-2xl p-4 overflow-auto sticky top-0">
@@ -66,7 +69,7 @@ if (headerList.length === 1) {
                             ? "text-primary font-semibold border-b-2 border-primary pb-2"
                             : "text-primaryText hover:text-primary"
                         }
-                      >
+                        >
                         {header.label}
                       </Link>
                     </li>
@@ -83,17 +86,17 @@ if (headerList.length === 1) {
                 {activeHeader.sections.map((section) => {
                   const href = `${activeHeader.basePath}/${section.slug}`;
                   const isActive = pathname.startsWith(href);
-
+                  
                   return (
                     <li key={section.slug}>
                       <Link
                         href={href}
                         className={`block px-3 py-2 rounded text-primaryText  ${
                           isActive
-                            ? "bg-gray-100 font-semibold"
-                            : "hover:bg-gray-50"
+                          ? "bg-gray-100 font-semibold"
+                          : "hover:bg-gray-50"
                         }`}
-                      >
+                        >
                         <span className="text-sm">
                           {section.label}
                         </span>
@@ -110,5 +113,6 @@ if (headerList.length === 1) {
         </div>
       </div>
     </div>
+                        </SubModuleProtectedRoute>
   );
 }

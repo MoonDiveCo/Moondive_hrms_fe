@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState,useContext } from 'react';
 import { X } from 'lucide-react';
 import axios from 'axios';
 
@@ -24,6 +24,7 @@ export default function AddDepartmentModal({
   onClose,
   onSaved,
   onDeleted,
+  deletePermission
 }) {
   const modalRef = useRef(null);
   const [form, setForm] = useState({
@@ -204,7 +205,7 @@ export default function AddDepartmentModal({
 
           <div className='flex items-center gap-3'>
             {/* Only show Delete when editing */}
-            {isEdit && (
+            {isEdit && deletePermission  &&(
               <button
                 onClick={handleDelete}
                 disabled={loading}

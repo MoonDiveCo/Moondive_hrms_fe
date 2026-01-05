@@ -6,7 +6,7 @@ import { AuthContext } from "./authContext";
 export const RBACContext = createContext();
 
 export function RBACProvider({ children }) {
-  const { permissions: userPermissions,isSignedIn , loading: authLoading } = useContext(AuthContext);
+  const { permissions: userPermissions,isSignedIn , loading: authLoading,allUserPermissions } = useContext(AuthContext);
 
   const [modules, setModules] = useState([]);
   const [submodules, setSubmodules] = useState([]);
@@ -44,7 +44,7 @@ export function RBACProvider({ children }) {
     const subSet = new Set();
     const actionSet = new Set();
 
-    userPermissions.forEach((p) => {
+        [...allUserPermissions].forEach((p) => {
       const parts = p.split(":");
       const [module, submodule, action] = parts;
 
@@ -58,7 +58,7 @@ export function RBACProvider({ children }) {
     setActions([...actionSet]);
     setRbacLoading(false);
 
-  }, [userPermissions, isSignedIn, authLoading]);  
+  }, [userPermissions, isSignedIn, authLoading,allUserPermissions,]);  
   const canAccessModule = (module) =>
     modules.includes("*") || modules.includes(module);
 
