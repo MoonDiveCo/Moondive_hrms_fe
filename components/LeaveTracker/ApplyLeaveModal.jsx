@@ -6,10 +6,16 @@ import { useEffect, useMemo, useState } from "react";
 function getDatesBetween(start, end) {
   const dates = [];
   let current = new Date(start);
+  let last = new Date(end);
 
-  while (current <= new Date(end)) {
+  current.setHours(0, 0, 0, 0);
+  last.setHours(0, 0, 0, 0);
+
+  while (current <= last) {
+    const local = new Date(current);
+
     dates.push({
-      date: current.toISOString().split("T")[0],
+      date: local.toLocaleDateString("en-CA"), // YYYY-MM-DD (local safe)
       isHalfDay: false,
       session: "FULL",
       enabled: true,
@@ -18,8 +24,10 @@ function getDatesBetween(start, end) {
 
     current.setDate(current.getDate() + 1);
   }
+
   return dates;
 }
+
 
 
 export default function ApplyLeaveModal({
@@ -43,7 +51,7 @@ export default function ApplyLeaveModal({
     return d;
   }, []);
   // today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
+const todayStr = today.toLocaleDateString("en-CA");
 
   const isOptionalLeave = leaveType === "OL";
 
@@ -89,7 +97,7 @@ export default function ApplyLeaveModal({
     const set = new Set();
 
     allLeaves.forEach((leave) => {
-      if (leave.status !== "Approved") return;
+      if (leave.leaveStatus  !== "Approved") return;
 
       const start = new Date(leave.startDate);
       const end = new Date(leave.endDate);

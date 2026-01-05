@@ -1,32 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
-
+import { useContext } from "react";
+import { AuthContext } from "@/context/authContext";
 import AttendanceCard from "@/components/Attendance/AttendanceCard";
 import CheckInButton from "@/components/Attendance/CheckInButton";
 import TimelineRow from "@/components/Attendance/TimelineRow";
 import TodayRow from "@/components/Attendance/TodayRow";
-
+import { useHolidays } from "@/hooks/useHolidays";
+import { useLeaves } from "@/hooks/useLeave";
+import { useAttendanceCalendar } from "@/hooks/useAttendanceCalendar";
+import { resolveDayStatus } from "@/helper/resolveDayStatus";
+import { calculateWorkedHours } from "@/helper/time"; // or inline
 function getWeekDates(baseDate = new Date()) {
   const start = new Date(baseDate);
   start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay()); // Sunday start
 
-
-  start.setDate(start.getDate() - start.getDay());
-
-  return Array.from({ length: 7 }).map((_, i) => {
+  return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
     return d;
   });
 }
 
-
 function getMonthDates(baseDate) {
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();
-
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
 
@@ -37,152 +36,115 @@ function getMonthDates(baseDate) {
   return days;
 }
 
-export default function AttendanceList({ currentDate, rangeMode }) {
-  const today = new Date();
-  const [attendanceMap, setAttendanceMap] = useState({});
+export default function AttendanceList({ currentDate, rangeMode = "week" }) {
+  const { user } = useContext(AuthContext);
 
-  const dates =
-    rangeMode === "week"
-      ? getWeekDates(currentDate)
-      : getMonthDates(currentDate);
+  const { data: attendanceMap = {} } = useAttendanceCalendar({
+    rangeMode,
+    currentDate,
+  });
 
-  /* ---------------- FETCH ATTENDANCE ---------------- */
+  const { data: holidayMap = {} } = useHolidays(currentDate.getFullYear());
+  const { data: leaveMap = {} } = useLeaves({ rangeMode, currentDate, userId: user?._id });
 
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      const res = await axios.get("/hrms/attendance", {
-        params: {
-          type: rangeMode,
-          year: currentDate.getFullYear(),
-          month: currentDate.getMonth() + 1,
-           day: currentDate.toISOString(),
-        },
-      });
+  const dates = rangeMode === "week" ? getWeekDates(currentDate) : getMonthDates(currentDate);
 
-      const map = {};
-      res.data.data.forEach((a) => {
-        const key = new Date(a.date).toDateString();
-        map[key] = a;
-      });
-
-      setAttendanceMap(map);
-    };
-
-    fetchAttendance();
-  }, [currentDate, rangeMode]);
+  const todayStr = new Date().toDateString();
 
   return (
     <div className="flex flex-col text-gray-800">
-      {/* HEADER */}
       <div className="px-12 py-3">
-        <AttendanceCard className="flex justify-between items-center">
-          <h5 className="font-semibold text-primary">
-            General [ 9:00 AM - 6:00 PM ]
-          </h5>
+        {/* <AttendanceCard className="flex justify-between items-center">
+         
           <CheckInButton />
-        </AttendanceCard>
+        </AttendanceCard> */}
       </div>
 
-      {/* CONTENT */}
       <div className="px-10 py-6 space-y-5">
-{dates.map((dateObj) => {
-  const key = dateObj.toDateString();
-  const record = attendanceMap[key];
+        {dates.map((dateObj) => {
+          const key = dateObj.toDateString();
+          const attendance = attendanceMap[key];
+          const holiday = holidayMap[key];
+          const leave = leaveMap[key];
+console.log("attendance",attendance?.checkOut)
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+          const holidayName =
+            holiday &&
+            (holiday.type === "PUBLIC"
+              ? holiday.name
+              : holiday.type === "OPTIONAL" && holiday.isActive
+              ? `Optional Leave (${holiday.name})`
+              : null);
 
-  const isToday = dateObj.toDateString() === new Date().toDateString();
-  const isPast = dateObj < today;
-  const isFuture = dateObj > today;
-  const isSunday = dateObj.getDay() === 0;
+          const { status, label } = resolveDayStatus({
+            dateObj,
+            attendance,
+            holiday,
+            leave,
+          });
 
-  const day = dateObj.toLocaleDateString("en-US", { weekday: "short" });
-  const date = dateObj.getDate();
+          const day = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+          const dateNum = dateObj.getDate();
+          // Special Today Row
+          if (status === "present" && key === todayStr) {
+            return (
+              <TodayRow
+                key={key}
+                date={dateNum}
+                checkIn={attendance?.checkIn
+                  ? new Date(attendance.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                  : null}
+                checkOut={attendance?.checkOut
+                  ? new Date(attendance.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                  : null}
+                late={attendance?.anomalies?.includes("LATE_ENTRY") ? "Late" : null}
+                early={attendance?.anomalies?.includes("EARLY_EXIT") ? "Early" : null}
+              />
+            );
+          }
 
-  /* ---------------- TODAY ---------------- */
-  if (isToday && record) {
-    return (
-      <TodayRow
-        key={key}
-        date={date}
-        checkIn={record.checkIn && new Date(record.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        checkOut={record.checkOut && new Date(record.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        late={record.anomalies?.includes("LATE_ENTRY") ? "00:16" : null}
-        early={record.anomalies?.includes("EARLY_EXIT") ? "01:32" : null}
-      />
-    );
-  }
-
-  /* ---------------- FUTURE ---------------- */
-  if (isFuture) {
-    return (
-      <TimelineRow
-        key={key}
-        day={day}
-        date={date}
-        status="future"
-        hours="--:--"
-      />
-    );
-  }
-
-  /* ---------------- WEEKEND (SUNDAY) ---------------- */
-  if (isSunday) {
-    return (
-      <TimelineRow
-        key={key}
-        day={day}
-        date={date}
-        status="weekend"
-        hours="08:45"
-      />
-    );
-  }
-
-  /* ---------------- ABSENT ---------------- */
-  if (!record && isPast) {
-    return (
-      <TimelineRow
-        key={key}
-        day={day}
-        date={date}
-        status="absent"
-        hours="00:00"
-      />
-    );
-  }
-
-  /* ---------------- PAST PRESENT ---------------- */
-const workedMinutes =
-  record?.checkIn && record?.checkOut
-    ? Math.floor(
-        (new Date(record.checkOut) - new Date(record.checkIn)) / 60000
-      )
-    : 0;
-
-
-
-  const hours = `${String(Math.floor(workedMinutes / 60)).padStart(2, "0")}:${String(
-    workedMinutes % 60
-  ).padStart(2, "0")}`;
-
+          // Calculate hours (fallback if backend doesn't send workedHours)
+          let hours = "00:00";
+        // Inside the map loop, for TodayRow:
+if (status === "present" && key === todayStr) {
   return (
-    <TimelineRow
+    <TodayRow
       key={key}
-      day={day}
-      date={date}
-      status="present"
-      hours={hours}
-      checkIn={record?.checkIn || null}
-      checkOut={record?.checkOut || null}
+      date={dateNum}
+      checkIn={attendance?.checkIn || null}       // ← RAW ISO string
+      checkOut={attendance?.checkOut || null}     // ← RAW ISO string
+      late={attendance?.anomalies?.includes("LATE_ENTRY") ? "Late" : null}
+      early={attendance?.anomalies?.includes("EARLY_EXIT") ? "Early" : null}
     />
   );
-})}
+}
+const hasCheckIn = Boolean(attendance?.checkIn);
+const isLeaveStatus =
+  status === "leave" ||
+  status === "leave-first-half" ||
+  status === "leave-second-half";
 
+// 1) If no check-in and leave → force pure leave row (no timeline)
+const effectiveStatus =
+  !hasCheckIn && isLeaveStatus ? "leave" : status;
 
-
+// For regular TimelineRow (already correct in previous version)
+return (
+  <TimelineRow
+    key={key}
+    day={day}
+    date={dateNum}
+    status={status}
+    hours={hours}
+    checkIn={attendance?.checkIn || null}       // ← Keep RAW for WorkingTimeline
+    checkOut={attendance?.checkOut || null}
+    holidayName={holidayName}
+    leaveLabel={label}
+  />
+);
+        })}
       </div>
+      
     </div>
   );
 }
