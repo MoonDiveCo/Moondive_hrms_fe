@@ -8,11 +8,17 @@ import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
 import FaceModal from "./FaceModal";
- 
+import { useAttendance } from "@/context/attendanceContext";
+import { toast } from "sonner";
+
 export default function AppLayout({ module, children, showMainNavbar = true }) {
+
+
+  const menus = useMenus();
+  const { checkIn, checkOut, isOnBreak } = useAttendance();
+
   const router = useRouter();
   const pathname = usePathname();
-  const menus = useMenus();
     const {
     canAccessModule,
     canAccessSubmodule,
@@ -22,23 +28,66 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   } = useContext(RBACContext);
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
-  const accessPermissions = menus.rules ?? [];
-  const subSet = new Set();
-const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [faceModalOpen, setFaceModalOpen] = useState(false);
+  const [faceActionType, setFaceActionType] = useState('checkIn');
 
- const [faceModalOpen, setFaceModalOpen] = useState(false);
-  const [isFaceVerified, setIsFaceVerified] = useState(false);
+  // ✅ FIXED: Now properly accepts the action type parameter
+  const openFaceModal = (type) => {
+    if (type === 'checkOut' && isOnBreak) {
+      toast.error('Please end your break before checking out.');
+      return;
+    }
+    setFaceActionType(type);
+    setFaceModalOpen(true);
+  };
 
-  const openFaceModal = () => setFaceModalOpen(true);
   const closeFaceModal = () => setFaceModalOpen(false);
-const handleCheckInSuccess = async () => {
-  setIsFaceVerified(true);
-  closeFaceModal();
-  try {
-    await checkIn(); 
-  } catch (err) {
-    console.error(err);
+
+  const handleFaceSuccess = async () => {
+    closeFaceModal();
+
+    if (faceActionType === 'checkIn') {
+       toast.promise(checkIn(), {
+        loading: 'Checking in...',
+        success: 'Checked in successfully! 👋',
+        error: (err) => err?.message || 'Failed to check in',
+      });
+    } else {
+       toast.promise(checkOut(), {
+        loading: 'Checking out...',
+        success: 'Checked out successfully! 💼',
+        error: (err) => err?.message || 'Failed to check out',
+      });
+    }
+  };
+
+  // ✅ FIXED: Proper toArray helper with parameter
+  const toArray = (value)=> {
+    if (Array.isArray(value)) return value;
+    if (value == null) return [];
+    return [value];
+  };
+
+  const keyOf = (item) =>
+    (item && (item.href || item.label)) || JSON.stringify(item);
+
+  // ✅ FIXED: Calls toArray with correct argument
+const mergeUnique = (existing, additions) => {
+  const safeExisting = toArray(existing);   // ✅ FIX
+  const safeAdditions = toArray(additions);
+
+  const seen = new Set(safeExisting.map(keyOf));
+  const merged = [...safeExisting];
+
+  for (const it of safeAdditions) {
+    const k = keyOf(it);
+    if (!seen.has(k)) {
+      seen.add(k);
+      merged.push(it);
+    }
   }
+  return merged;
 };
 
 
@@ -131,7 +180,6 @@ return (
               <MainNavbar
                collapsed={collapsed}
   setCollapsed={setCollapsed}
-  isFaceVerified={isFaceVerified}
   onCheckInClick={openFaceModal}
             />
           </header>
@@ -142,13 +190,18 @@ return (
         className="flex-1 w-full max-w-full overflow-auto p-4"
         style={{ height: "calc(100vh - 4rem)" }}
       >
-        {children}
-      </main>
-    </div>
-       {faceModalOpen && (
+            {children}
+</main>
+</div>
+                
+
+     
+      {faceModalOpen && (
         <FaceModal
           onClose={closeFaceModal}
-          onSuccess={handleCheckInSuccess}
+          onSuccess={handleFaceSuccess}
+          actionType={faceActionType}
+           onCheckInClick={openFaceModal}
         />
       )}
   </div>
