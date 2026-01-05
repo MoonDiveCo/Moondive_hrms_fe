@@ -6,30 +6,46 @@ import Webcam from 'react-webcam';
 import { ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function FaceModal({ onClose, onSuccess }) {
-  const webcamRef = useRef(null);
-  const [loading, setLoading] = useState(false);
+// ... permission functions unchanged ...
 
-  const captureAndVerify = async () => {
+export default function FaceModal({
+  onClose,
+  onSuccess,
+  actionType = 'checkIn', // ← Fixed typo: was "ctionType"
+}) {
+  const webcamRef = useRef(null);
+  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [cameraAllowed, setCameraAllowed] = useState(false);
+  const [checkingPermission, setCheckingPermission] = useState(true);
+  const [secondsLeft, setSecondsLeft] = useState(5);
+
+  // ... all useEffects unchanged ...
+
+  const captureAndSend = async () => {
     setLoading(true);
 
     const imageSrc = webcamRef.current?.getScreenshot();
     if (!imageSrc) {
+      toast.error('Failed to capture image');
       setLoading(false);
       return;
     }
 
-    const blob = await fetch(imageSrc).then((res) => res.blob());
-    const formData = new FormData();
-    formData.append('file', blob, 'face.jpg');
-
     try {
+      const blob = await fetch(imageSrc).then((res) => res.blob());
+      const formData = new FormData();
+      formData.append('image', blob, 'face.jpg'); // recommended: give filename
+
       await axios.post('/hrms/attendance/verify-face', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      toast.success('Face verified successfully');
+
+      // Only call onSuccess after successful verification
       onSuccess();
-    } catch {
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Face verification failed');
+    } finally {
       setLoading(false);
     }
   };
