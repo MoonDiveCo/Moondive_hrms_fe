@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 export default function MainNavbar({
   collapsed,
   setCollapsed,
-  onFaceModalOpen, // new prop: opens modal with correct action type
+  onCheckInClick 
 }) {
   const router = useRouter();
 
@@ -87,27 +87,26 @@ export default function MainNavbar({
           </div>
 
           {/* Unified Check In / Out Button */}
-          <button
-            onClick={handleMainButtonClick}
-            disabled={isOnBreak}
-            className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold transition ${
-              isCheckedIn
-                ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                : 'bg-primary text-white hover:opacity-90'
-            } ${isOnBreak ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isCheckedIn ? (
-              <>
-                <LogOut size={14} />
-                Check Out
-              </>
-            ) : (
-              <>
-                <LogIn size={14} />
-                Check In
-              </>
-            )}
-          </button>
+       <button
+  onClick={() => onCheckInClick(isCheckedIn ? "checkOut" : "checkIn")}
+  disabled={isOnBreak}
+  className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold ${
+    isCheckedIn
+      ? "bg-red-100 text-red-600 hover:bg-red-200"
+      : "bg-primary text-white hover:opacity-90"
+  }`}
+>
+  {isCheckedIn ? (
+    <>
+      <LogOut size={14} /> Check Out
+    </>
+  ) : (
+    <>
+      <LogIn size={14} /> Check In
+    </>
+  )}
+</button>
+
 
           {/* Break Button */}
           {isCheckedIn && (

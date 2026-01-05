@@ -30,7 +30,7 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   const [bottomItems, setBottomItems] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
   const [faceModalOpen, setFaceModalOpen] = useState(false);
-  const [faceActionType, setFaceActionType] = useState<'checkIn' | 'checkOut'>('checkIn');
+  const [faceActionType, setFaceActionType] = useState('checkIn');
 
   // ✅ FIXED: Now properly accepts the action type parameter
   const openFaceModal = (type) => {
@@ -48,13 +48,13 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
     closeFaceModal();
 
     if (faceActionType === 'checkIn') {
-      await toast.promise(checkIn(), {
+       toast.promise(checkIn(), {
         loading: 'Checking in...',
         success: 'Checked in successfully! 👋',
         error: (err) => err?.message || 'Failed to check in',
       });
     } else {
-      await toast.promise(checkOut(), {
+       toast.promise(checkOut(), {
         loading: 'Checking out...',
         success: 'Checked out successfully! 💼',
         error: (err) => err?.message || 'Failed to check out',
@@ -73,20 +73,23 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
     (item && (item.href || item.label)) || JSON.stringify(item);
 
   // ✅ FIXED: Calls toArray with correct argument
-  const mergeUnique = (existing, additions) => {
-    const safeAdditions = toArray(additions);
-    const seen = new Set(existing.map(keyOf));
-    const merged = [...existing];
+const mergeUnique = (existing, additions) => {
+  const safeExisting = toArray(existing);   // ✅ FIX
+  const safeAdditions = toArray(additions);
 
-    for (const it of safeAdditions) {
-      const k = keyOf(it);
-      if (!seen.has(k)) {
-        seen.add(k);
-        merged.push(it);
-      }
+  const seen = new Set(safeExisting.map(keyOf));
+  const merged = [...safeExisting];
+
+  for (const it of safeAdditions) {
+    const k = keyOf(it);
+    if (!seen.has(k)) {
+      seen.add(k);
+      merged.push(it);
     }
-    return merged;
-  };
+  }
+  return merged;
+};
+
 
 
   const { isSignedIn, allUserPermissions } = useContext(AuthContext);
@@ -177,7 +180,6 @@ return (
               <MainNavbar
                collapsed={collapsed}
   setCollapsed={setCollapsed}
-  isFaceVerified={isFaceVerified}
   onCheckInClick={openFaceModal}
             />
           </header>
@@ -199,6 +201,7 @@ return (
           onClose={closeFaceModal}
           onSuccess={handleFaceSuccess}
           actionType={faceActionType}
+           onCheckInClick={openFaceModal}
         />
       )}
   </div>
