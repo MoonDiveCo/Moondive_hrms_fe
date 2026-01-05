@@ -7,25 +7,33 @@ import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
-
+import FaceModal from "./FaceModal";
+ 
 export default function AppLayout({ module, children, showMainNavbar = true }) {
   const router = useRouter();
   const pathname = usePathname();
   const menus = useMenus();
+  const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
+  const [topItems, setTopItems] = useState([]);
+  const [bottomItems, setBottomItems] = useState([]);
+  const accessPermissions = menus.rules ?? [];
+  const subSet = new Set();
+const [collapsed, setCollapsed] = useState(false);
 
-  const {
-    canAccessModule,
-    canAccessSubmodule,
-    authLoading,
-    rbacLoading,
-    submodules,
-  } = useContext(RBACContext);
+ const [faceModalOpen, setFaceModalOpen] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+
+  const openFaceModal = () => setFaceModalOpen(true);
+  const closeFaceModal = () => setFaceModalOpen(false);
+
+  const handleCheckInSuccess = () => {
+    setIsCheckedIn(true);
+    closeFaceModal();
+  };
+
 
   const { isSignedIn, allUserPermissions } = useContext(AuthContext);
 
-  const [topItems, setTopItems] = useState([]);
-  const [bottomItems, setBottomItems] = useState([]);
-  const [collapsed, setCollapsed] = useState(false);
 
   const moduleName = module ? module.toUpperCase() : "";
   const routePermissionMap = menus.routePermissionMap;
@@ -95,34 +103,45 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
     return null;
   }
 
-  return (
-    <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
-      <aside
-        className={`${
-          collapsed ? "w-20" : "w-[19vw]"
-        } bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen transition-all`}
-      >
-        <Sidebar
-          topItems={topItems}
-          bottomItems={bottomItems}
-          collapsed={collapsed}
-        />
-      </aside>
-
-      <div className="grid grid-rows-[auto_1fr] h-screen w-full">
+return (
+  <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
+    <aside
+      className={`${
+        collapsed ? "w-20" : "w-[19vw]"
+      } max-w-full bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen self-start overflow-hidden md:block transition-all duration-200`}
+    >
+      <Sidebar topItems={topItems} bottomItems={bottomItems} collapsed={collapsed} />
+    </aside>
+ 
+    <div className="grid grid-rows-[auto_1fr] h-screen w-full z-10">
+      <div className="sticky top-0 z-0">
         {showMainNavbar && (
-          <header className="bg-white border-b h-16 flex items-center sticky top-0">
-            <MainNavbar
-              setCollapsed={setCollapsed}
+          <header className="bg-white border-b border-gray-200 h-16 flex items-center">
+              <MainNavbar
               collapsed={collapsed}
+              setCollapsed={setCollapsed}
+              isCheckedIn={isCheckedIn}
+              onCheckInClick={openFaceModal}  
+              onCheckOut={() => setIsCheckedIn(false)}
             />
           </header>
         )}
-
-        <main className="flex-1 overflow-auto p-4">
-          {children}
-        </main>
       </div>
+ 
+      <main
+        className="flex-1 w-full max-w-full overflow-auto p-4"
+        style={{ height: "calc(100vh - 4rem)" }}
+      >
+        {children}
+      </main>
     </div>
-  );
+       {faceModalOpen && (
+        <FaceModal
+          onClose={closeFaceModal}
+          onSuccess={handleCheckInSuccess}
+        />
+      )}
+  </div>
+);
+ 
 }
