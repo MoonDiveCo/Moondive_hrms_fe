@@ -7,6 +7,7 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { Toaster } from 'sonner';
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 import { AttendanceProvider } from "@/context/attendanceContext";
+import ReactQueryProvider from "@/providers/ReactQueryProvider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -41,7 +42,7 @@ export default function RootLayout({ children }) {
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+        >
           <Toaster richColors position="top-right" />
         {/* Skip to main content link for accessibility */}
         <a href="#main-content" className="skip-to-main">
@@ -49,7 +50,7 @@ export default function RootLayout({ children }) {
         </a>
 
         <WebVitals />
-
+        <ReactQueryProvider>
         <AuthProvider>
           <RBACProvider>
             <AttendanceProvider>
@@ -58,6 +59,7 @@ export default function RootLayout({ children }) {
             </AttendanceProvider>
             </RBACProvider>
         </AuthProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

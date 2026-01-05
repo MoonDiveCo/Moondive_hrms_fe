@@ -9,8 +9,8 @@ import AttendanceCalendar from "@/components/Attendance/AttendanceCalendar";
 import AttendanceTabular from "@/components/Attendance/AttendanceTabular";
 import DateNavigator from "@/components/Attendance/DateNavigator";
 import FilterDropdown from "@/components/Attendance/FilterDropdown";
-import Modal from "@/components/common/Modal";
 import RequestRegularization from "@/components/Attendance/RequestRegularization";
+import TimeScaleFooter from "@/components/Attendance/TimeScaleFooter";
 
 export default function AttendanceViewPage() {
   const { view } = useParams();
@@ -24,87 +24,92 @@ export default function AttendanceViewPage() {
   const effectiveRange = isCalendar ? "month" : rangeMode;
 
   return (
-    <div className="flex flex-col w-full bg-white">
+    <div>
+      {/* STICKY HEADER */}
+      <div className="  sticky top-0 z-30  bg-white  p-4 mb-2 ">
+        {/* Top Orange Bar - Optional Decor */}
 
-      <div className="sticky top-0 bg-white">
-        <div className="flex items-center justify-between px-6 py-3">
-          {/* DATE NAVIGATOR */}
-          <div className="flex-1 flex justify-center">
-            <DateNavigator
-              view={view}
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
-              rangeMode={rangeMode}
-            />
-          </div>
+        <div className="px-10 py-4 ">
+          <div className="flex items-center justify-between">
+            {/* LEFT: General Shift Info */}
+            <div className="flex items-center gap-8">
+              <h5 className="text-xl font-semibold text-orange-600">
+                General [ 9:00 AM - 6:00 PM ]
+              </h5>
+            </div>
 
-          {/* RIGHT CONTROLS */}
-          <div className="flex items-center gap-2">
-            <ViewButton
-              active={view === "list"}
-              onClick={() =>
-                router.push("/hrms/dashboard/attendance/list")
-              }
-            >
-              <List size={18} />
-            </ViewButton>
-
-            <ViewButton
-              active={view === "tabular"}
-              onClick={() =>
-                router.push("/hrms/dashboard/attendance/tabular")
-              }
-            >
-              <Table size={18} />
-            </ViewButton>
-
-            <ViewButton
-              active={view === "calendar"}
-              onClick={() =>
-                router.push("/hrms/dashboard/attendance/calendar")
-              }
-            >
-              <Calendar size={18} />
-            </ViewButton>
-
-            {!isCalendar && (
-              <FilterDropdown
-                value={rangeMode}
-                onChange={setRangeMode}
+            {/* CENTER: Date Navigator */}
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <DateNavigator
+                view={view}
+                currentDate={currentDate}
+                setCurrentDate={setCurrentDate}
+                rangeMode={rangeMode}
               />
-            )}
+            </div>
 
-            {/* 📝 Regularization Button */}
-            <button
-              onClick={() => setShowRegModal(true)}
-              className="ml-2 flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90"
-            >
-              <FileText size={16} />
-              Regularize
-            </button>
+            {/* RIGHT: View Buttons + Actions */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                <ViewButton
+                  active={view === "list"}
+                  onClick={() => router.push("/hrms/dashboard/attendance/list")}
+                >
+                  <List size={18} />
+                </ViewButton>
+
+                <ViewButton
+                  active={view === "tabular"}
+                  onClick={() => router.push("/hrms/dashboard/attendance/tabular")}
+                >
+                  <Table size={18} />
+                </ViewButton>
+
+                <ViewButton
+                  active={view === "calendar"}
+                  onClick={() => router.push("/hrms/dashboard/attendance/calendar")}
+                >
+                  <Calendar size={18} />
+                </ViewButton>
+              </div>
+
+              {!isCalendar && (
+                <FilterDropdown value={rangeMode} onChange={setRangeMode} />
+              )}
+
+              <button
+                onClick={() => setShowRegModal(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition shadow-sm"
+              >
+                <FileText size={16} />
+                Regularize
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* SCROLLABLE CONTENT AREA */}
+      <div className=" pb-10">
+        <div className="max-w-8xl mx-auto px-6 py-8">
+          {view === "list" && (
+            <AttendanceList
+              currentDate={currentDate}
+              rangeMode={effectiveRange}
+            />
+          )}
 
-      <div className="flex-1 overflow-y-hidden px-6 py-4">
-        {view === "list" && (
-          <AttendanceList
-            currentDate={currentDate}
-            rangeMode={effectiveRange}
-          />
-        )}
+          {view === "tabular" && (
+            <AttendanceTabular
+              currentDate={currentDate}
+              rangeMode={effectiveRange}
+            />
+          )}
 
-        {view === "tabular" && (
-          <AttendanceTabular
-            currentDate={currentDate}
-            rangeMode={effectiveRange}
-          />
-        )}
-
-        {view === "calendar" && (
-          <AttendanceCalendar currentDate={currentDate} />
-        )}
+          {view === "calendar" && (
+            <AttendanceCalendar currentDate={currentDate} />
+          )}
+        </div>
       </div>
     
         {showRegModal && <RequestRegularization onClose={()=>setShowRegModal(false)} />}
@@ -117,12 +122,11 @@ function ViewButton({ active, children, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`p-2 rounded-lg border transition
-        ${
-          active
-            ? "bg-primary text-white border-primary"
-            : "bg-white text-gray-500 border-gray-300"
-        }`}
+      className={`p-3 rounded-md transition-all ${
+        active
+          ? "bg-orange-500 text-white shadow-sm"
+          : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+      }`}
     >
       {children}
     </button>

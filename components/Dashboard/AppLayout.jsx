@@ -18,15 +18,23 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
 const [collapsed, setCollapsed] = useState(false);
 
  const [faceModalOpen, setFaceModalOpen] = useState(false);
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [isFaceVerified, setIsFaceVerified] = useState(false);
 
   const openFaceModal = () => setFaceModalOpen(true);
   const closeFaceModal = () => setFaceModalOpen(false);
+const handleCheckInSuccess = async () => {
+  setIsFaceVerified(true);
+  closeFaceModal();
 
-  const handleCheckInSuccess = () => {
-    setIsCheckedIn(true);
-    closeFaceModal();
-  };
+  // ACTUAL CHECK-IN happens here
+  try {
+    await checkIn(); // 🔥 real attendance check-in
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
   useEffect(() => {
     if (authLoading || rbacLoading) return;
  
@@ -118,11 +126,10 @@ return (
         {showMainNavbar && (
           <header className="bg-white border-b border-gray-200 h-16 flex items-center">
               <MainNavbar
-              collapsed={collapsed}
-              setCollapsed={setCollapsed}
-              isCheckedIn={isCheckedIn}
-              onCheckInClick={openFaceModal}   
-              onCheckOut={() => setIsCheckedIn(false)}
+               collapsed={collapsed}
+  setCollapsed={setCollapsed}
+  isFaceVerified={isFaceVerified}
+  onCheckInClick={openFaceModal}
             />
           </header>
         )}
