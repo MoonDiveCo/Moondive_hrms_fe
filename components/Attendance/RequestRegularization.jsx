@@ -9,12 +9,15 @@ const ANOMALY_REASON_MAP = {
   BREAK_TOO_LONG: "Break Exceeded",
 };
 
+const baseInput =
+  "mt-1 w-full px-4 py-3 rounded-md border border-gray-300 bg-gray-50 text-sm text-[var(--color-primaryText)] transition focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed";
+
 export default function RequestRegularization({ onClose }) {
   const [loading, setLoading] = useState(true);
-
   const [records, setRecords] = useState([]);
+  const [reportingManagers, setReportingManagers] = useState([]);
+
   const [selectedRecordId, setSelectedRecordId] = useState("");
-const [reportingManagers, setReportingManagers] = useState([]);
   const [displayDate, setDisplayDate] = useState("");
   const [lockedReason, setLockedReason] = useState("");
 
@@ -25,26 +28,24 @@ const [reportingManagers, setReportingManagers] = useState([]);
   const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
-   async function fetchAnomalies() {
-  try {
-    const res = await axios.get("/hrms/attendance/regularization");
+    async function fetchAnomalies() {
+      try {
+        const res = await axios.get("/hrms/attendance/regularization");
+        const { records = [], reportingManagers = [] } = res.data.data || {};
 
-    const { records = [], reportingManagers = [] } = res.data.data || {};
+        setRecords(records);
+        setReportingManagers(reportingManagers);
 
-    setRecords(records);
-    setReportingManagers(reportingManagers);
-
-    if (records.length) {
-      setSelectedRecordId(records[0]._id);
-      applyRecord(records[0]);
+        if (records.length) {
+          setSelectedRecordId(records[0]._id);
+          applyRecord(records[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch anomalies:", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  } catch (error) {
-    console.error("Failed to fetch anomalies:", error);
-  } finally {
-    setLoading(false);
-  }
-}
-
 
     fetchAnomalies();
   }, []);
@@ -76,28 +77,6 @@ Regards,
 Adarsh`);
   };
 
-  const handleSend = async () => {
-  try {
-    const selectedRecord = records.find(
-      (r) => r._id === selectedRecordId
-    );
-
-    await axios.post("/hrms/attendance/submit-regularization", {
-      attendanceId: selectedRecord._id,
-      date: selectedRecord.date,
-      reason: lockedReason,
-      subject,
-      message,
-      imageUrl,
-    });
-
-    onClose(); 
-  } catch (err) {
-    console.error("Failed to send regularization:", err);
-  }
-};
-
-
   const handleDateChange = (e) => {
     const record = records.find((r) => r._id === e.target.value);
     if (!record) return;
@@ -106,12 +85,33 @@ Adarsh`);
     applyRecord(record);
   };
 
+  const handleSend = async () => {
+    try {
+      const selectedRecord = records.find(
+        (r) => r._id === selectedRecordId
+      );
+
+      await axios.post("/hrms/attendance/submit-regularization", {
+        attendanceId: selectedRecord._id,
+        date: selectedRecord.date,
+        reason: lockedReason,
+        subject,
+        message,
+        imageUrl,
+      });
+
+      onClose();
+    } catch (err) {
+      console.error("Failed to send regularization:", err);
+    }
+  };
+
   const handleImageChange = async (e) => {
-    const imageFile = e.target.files[0];
-    if (!imageFile) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
     const formData = new FormData();
-    formData.append("imageFile", imageFile);
+    formData.append("imageFile", file);
 
     try {
       const { data } = await axios.post(
@@ -131,7 +131,9 @@ Adarsh`);
 
   const handleRemoveImage = async () => {
     try {
-      await axios.post("/hrms/attendance/remove-regularization-image", { imageUrl });
+      await axios.post("/hrms/attendance/remove-regularization-image", {
+        imageUrl,
+      });
       setImageUrl("");
       setImagePreview("");
     } catch (err) {
@@ -142,155 +144,158 @@ Adarsh`);
   if (loading) return null;
 
   return (
-    <div className="bg-background-light font-display h-screen p-4">
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-0"
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
+      <div className="flex flex-col w-full max-w-5xl bg-white rounded-xl shadow-2xl overflow-hidden max-h-[90vh]">
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="flex flex-col w-full max-w-5xl bg-white rounded-xl shadow-2xl overflow-hidden max-h-[90vh]">
+        {/* HEADER */}
+        <div className="px-6 py-5 border-b">
+          <h4 className="text-primaryText">
+            Compose Regularization Request
+          </h4>
+          <p className="text-sm text-gray-500 mt-1">
+            This request will be sent to HR / Manager for approval
+          </p>
+        </div>
 
-          {/* HEADER */}
-          <div className="px-6 py-5 border-b border-gray-200 bg-white">
-            <h4 className="text-primaryText">
-              Compose Regularization Request
-            </h4>
-            <p className="text-gray-500 text-sm mt-1">
-              This request will be sent to HR / Manager for approval
-            </p>
+        {/* BODY */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+
+          {/* Date */}
+          <div>
+            <label className="text-sm font-medium text-[var(--color-primaryText)]">
+              Date
+            </label>
+            <select
+              value={selectedRecordId}
+              onChange={handleDateChange}
+              className={baseInput}
+            >
+              {records.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {new Date(r.date).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-
-            <div>
-              <label className="text-gray-700 font-medium pb-2 block">
-                Date
-              </label>
-              <select
-                value={selectedRecordId}
-                onChange={handleDateChange}
-                className="w-full h-14 rounded-lg bg-gray-100 border border-gray-300 px-4 cursor-pointer"
-              >
-                {records.map((r) => (
-                  <option key={r._id} value={r._id}>
-                    {new Date(r.date).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-gray-700 font-medium pb-2 block">
-                To
-              </label>
-             <input
+          {/* To */}
+          <div>
+            <label className="text-sm font-medium text-[var(--color-primaryText)]">
+              To
+            </label>
+            <input
               disabled
               value={
                 reportingManagers.length
                   ? reportingManagers.map((m) => m.name).join(", ")
                   : "HR Department"
               }
-              className="w-full h-14 rounded-lg bg-gray-100 border border-gray-300 px-4 text-gray-600 cursor-not-allowed"
+              className={baseInput}
             />
-
-            </div>
-
-            <div>
-              <label className="text-gray-700 font-medium pb-2 block">
-                Subject
-              </label>
-              <input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full h-14 rounded-lg bg-gray-50 border border-gray-300 px-4 focus:ring-primary/50"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-700 font-medium pb-2 block">
-                Reason Category
-              </label>
-              <input
-                disabled
-                value={lockedReason}
-                className="w-full h-14 rounded-lg bg-gray-100 border border-gray-300 px-4 text-gray-600 cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-700 font-medium pb-2 block">
-                Message
-              </label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full min-h-[160px] rounded-lg bg-gray-50 border border-gray-300 p-4 focus:ring-primary/50 leading-relaxed"
-              />
-            </div>
-
-            <div>
-              <p className="text-gray-700 font-medium pb-2">
-                Attach Supporting Document (Optional)
-              </p>
-
-              {!imagePreview ? (
-                <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition">
-                  <input
-                    type="file"
-                    onChange={handleImageChange}
-                    className="hidden"
-                    id="upload"
-                  />
-                  <label htmlFor="upload" className="cursor-pointer">
-                    <p className="text-sm text-gray-500">
-                      <span className="text-primary font-semibold">
-                        Click to upload
-                      </span>{" "}
-                      or drag & drop
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      PDF, JPG, PNG (Max 5MB)
-                    </p>
-                  </label>
-                </div>
-              ) : (
-                <div className="flex items-center gap-4">
-                  <img
-                    src={imagePreview}
-                    alt="attachment"
-                    className="h-20 rounded border"
-                  />
-                  <button
-                    onClick={handleRemoveImage}
-                    className="text-red-500 text-sm font-medium"
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
 
-          <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 rounded-lg text-gray-700 font-bold text-sm hover:bg-gray-200"
-            >
-              Discard
-            </button>
-            <button 
-              disabled={records.length===0}
-              onClick={handleSend}
-              className={`px-6 py-3 rounded-lg ${records.length===0? "bg-gray-300 cursor-not-allowed":"bg-primary"} text-white font-bold text-sm shadow-lg shadow-blue-500/30 active:scale-95`}>
-              Send
-            </button>
+          {/* Subject */}
+          <div>
+            <label className="text-sm font-medium text-[var(--color-primaryText)]">
+              Subject
+            </label>
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className={baseInput}
+            />
           </div>
 
+          {/* Reason */}
+          <div>
+            <label className="text-sm font-medium text-[var(--color-primaryText)]">
+              Reason Category
+            </label>
+            <input disabled value={lockedReason} className={baseInput} />
+          </div>
+
+          {/* Message */}
+          <div>
+            <label className="text-sm font-medium text-[var(--color-primaryText)]">
+              Message
+            </label>
+            <textarea
+              rows={5}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className={`${baseInput} resize-none leading-relaxed`}
+            />
+          </div>
+
+          {/* Attachment */}
+          <div>
+            <label className="text-sm font-medium text-[var(--color-primaryText)]">
+              Attach Supporting Document (Optional)
+            </label>
+
+            {!imagePreview ? (
+              <label
+                htmlFor="upload"
+                className="mt-1 flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-md bg-gray-50 hover:border-[var(--color-primary)] hover:bg-gray-100 cursor-pointer transition"
+              >
+                <input
+                  type="file"
+                  id="upload"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <p className="text-sm text-gray-500">
+                  <span className="text-[var(--color-primary)] font-semibold">
+                    Click to upload
+                  </span>{" "}
+                  or drag & drop
+                </p>
+                <p className="text-xs text-gray-400">
+                  PDF, JPG, PNG (Max 5MB)
+                </p>
+              </label>
+            ) : (
+              <div className="flex items-center gap-4 mt-2">
+                <img
+                  src={imagePreview}
+                  alt="attachment"
+                  className="h-20 rounded-md border"
+                />
+                <button
+                  onClick={handleRemoveImage}
+                  className="text-sm font-medium text-red-500 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-3 py-1 rounded-full text-sm font-semibold text-primary border border-primary"
+          >
+            Discard
+          </button>
+
+          <button
+            disabled={records.length === 0}
+            onClick={handleSend}
+            className={`px-3 py-1 rounded-full text-sm font-semibold text-white transition active:scale-95 ${
+              records.length === 0
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-primary shadow-lg shadow-blue-500/30"
+            }`}
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>
