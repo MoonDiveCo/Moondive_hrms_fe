@@ -59,9 +59,9 @@ export function AuthProvider({ children }) {
     const token = Cookies.get("token")
     axios.defaults.headers.common["token"] = token;
     setUser(payload.user);
-    setPermissions(payload.permissions);
+    setPermissions(payload?.permissions);
     setIsSignedIn(true);
-    if(payload.permissions.includes("*")){
+    if(payload?.permissions.includes("*")){
       setAllUserPermissions([...Object.values(ACTION_PERMISSIONS),"HRMS:EMPLOYEE:VIEW"])
     }else{
       setAllUserPermissions([...payload?.permissions,...payload?.user?.additionalPermissions])

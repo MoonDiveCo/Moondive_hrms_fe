@@ -58,7 +58,7 @@ export function RBACProvider({ children }) {
     setActions([...actionSet]);
     setRbacLoading(false);
 
-  }, [userPermissions, isSignedIn, authLoading]);  
+  }, [userPermissions, isSignedIn, authLoading,allUserPermissions,]);  
   const canAccessModule = (module) =>
     modules.includes("*") || modules.includes(module);
 
