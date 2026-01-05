@@ -22,7 +22,6 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
   } = useContext(RBACContext);
 
   const { isSignedIn, allUserPermissions } = useContext(AuthContext);
-  console.log("----allUserPermissions-----",allUserPermissions)
 
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
@@ -38,38 +37,40 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
       return ["HRMS:MANAGE_ACCOUNT"];
     }
 
-    if (pathname.includes("/hrms/dashboard/overview")) {
-      return ["HRMS:OVERVIEW"];
-    }
 
-    const exactMatch = routePermissionMap[pathname];
-    return exactMatch || [];
+    return routePermissionMap[pathname] || [];
   }, [pathname, routePermissionMap]);
 
-  if (authLoading || rbacLoading) {
-    return null;
-  }
+  
 
-  if (!isSignedIn) {
-    router.replace("/login");
-    return null;
-  }
-
-  if (!canAccessModule(moduleName)) {
-    router.replace("/unauthorized");
-    return null;
-  }
-
-  const hasRouteAccess =
-    submodules?.includes("*") ||
-    requiredPermissions.some((perm) =>
-      canAccessSubmodule(perm.toUpperCase())
+  const isRouteAllowed =
+    isSignedIn &&
+    canAccessModule(moduleName) &&
+    (
+      submodules?.includes("*") ||
+      requiredPermissions.some((perm) => canAccessSubmodule(perm))
     );
 
-  if (!hasRouteAccess) {
-    router.replace("/unauthorized");
-    return null;
-  }
+
+
+  useEffect(() => {
+    if (authLoading || rbacLoading) return;
+
+    if (!isSignedIn) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!isRouteAllowed) {
+      router.replace("/unauthorized");
+    }
+  }, [
+    authLoading,
+    rbacLoading,
+    isSignedIn,
+    isRouteAllowed,
+    router,
+  ]);
 
   useEffect(() => {
     const newTop = [];
@@ -89,12 +90,17 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
     setBottomItems(newBottom);
   }, [menus.sidebarObject, allUserPermissions, moduleName]);
 
+
+  if (authLoading || rbacLoading || !isRouteAllowed) {
+    return null;
+  }
+
   return (
     <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
       <aside
         className={`${
           collapsed ? "w-20" : "w-[19vw]"
-        } max-w-full bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen self-start overflow-hidden md:block transition-all duration-200`}
+        } bg-white border-r border-gray-200 shrink-0 sticky top-0 h-screen transition-all`}
       >
         <Sidebar
           topItems={topItems}
@@ -103,22 +109,17 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
         />
       </aside>
 
-      <div className="grid grid-rows-[auto_1fr] h-screen w-full z-10">
-        <div className="sticky top-0 z-0">
-          {showMainNavbar && (
-            <header className="bg-white border-b border-gray-200 h-16 flex items-center">
-              <MainNavbar
-                setCollapsed={setCollapsed}
-                collapsed={collapsed}
-              />
-            </header>
-          )}
-        </div>
+      <div className="grid grid-rows-[auto_1fr] h-screen w-full">
+        {showMainNavbar && (
+          <header className="bg-white border-b h-16 flex items-center sticky top-0">
+            <MainNavbar
+              setCollapsed={setCollapsed}
+              collapsed={collapsed}
+            />
+          </header>
+        )}
 
-        <main
-          className="flex-1 w-full max-w-full overflow-auto p-4"
-          style={{ height: "calc(100vh - 4rem)" }}
-        >
+        <main className="flex-1 overflow-auto p-4">
           {children}
         </main>
       </div>

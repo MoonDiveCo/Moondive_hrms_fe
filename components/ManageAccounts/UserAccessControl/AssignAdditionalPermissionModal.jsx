@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { ACTION_PERMISSIONS } from '@/constants/NestedDashboard';
 
@@ -17,11 +17,11 @@ export default function AssignAdditionalPermissionModal({
   onSuccess,
 }) {
   const isEdit = !!employee;
-
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(
     employee?._id || ''
   );
+  const [rolePermissions, setRolePermissions] = useState([]);
 
   const [permissions, setPermissions] = useState(
     employee?.additionalPermissions || []
@@ -50,11 +50,32 @@ export default function AssignAdditionalPermissionModal({
  
   useEffect(() => {
     if (!isEdit) {
-      axios.get('/hrms/employee/list').then((res) => {
+      axios.get('/hrms/roles//list-employee-to-assign').then((res) => {
         setEmployees(res.data.result || []);
       });
     }
   }, [isEdit]);
+
+useEffect(() => {
+  if (!isEdit || !employee?._id) return;
+
+  getRolePermissions();
+  setPermissions(employee.additionalPermissions || []);
+}, [isEdit, employee]);
+
+const getRolePermissions = async () => {
+  if (!employee?._id) return;
+
+  try {
+    const res = await axios.get(
+      `/hrms/roles/fetch-user-role-permissions/${employee._id}`
+    );
+    setRolePermissions(res.data.result || []);
+  } catch (err) {
+    console.error("error fetching role permissions", err);
+  }
+};
+
 
   
   const togglePermission = (permission) => {
@@ -115,7 +136,15 @@ export default function AssignAdditionalPermissionModal({
           ) : (
             <select
               value={selectedEmployee}
-              onChange={(e) => setSelectedEmployee(e.target.value)}
+              onChange={(e) => {
+                const emp = employees.find(
+                  (x) => x._id === e.target.value
+                );
+
+                setSelectedEmployee(e.target.value);
+                setRolePermissions(emp?.rolePermissions || []);
+                setPermissions(emp?.additionalPermissions || []);
+              }}
               className="w-full max-w-md rounded-md border px-3 py-2"
             >
               <option value="">Select employee</option>
@@ -166,7 +195,8 @@ export default function AssignAdditionalPermissionModal({
 
                         const checked =
                           permission &&
-                          permissions.includes(permission);
+                          (permissions.includes(permission) ||
+                            rolePermissions.includes(permission));
 
                         const allowed = actions.includes(value);
 
@@ -209,7 +239,13 @@ export default function AssignAdditionalPermissionModal({
                             `}
                             >
                             {checked && (
-                                <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
+                              <div
+                                className={`h-2.5 w-2.5 rounded-full ${
+                                  rolePermissions.includes(permission)
+                                    ? 'bg-orange-600'
+                                    : 'bg-[var(--color-primary)]'
+                                }`}
+                              />
                             )}
                             </div>
 

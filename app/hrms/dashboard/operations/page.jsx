@@ -110,11 +110,11 @@ export default function Operations() {
     () => [
       { id: 'manage-accounts/organization/organization-details', title: 'Manage Accounts', icon: 'onboarding', requiredPermissions:'HRMS:MANAGE_ACCOUNT:VIEW' },
       { id: 'employeeInfo', title: 'Employee Info', icon: 'employee', requiredPermissions:'HRMS:EMPLOYEE:VIEW'},
-      { id: 'leave-tracker/leave-policy', title: 'Leave Tracker', icon: 'leave',requiredPermissions:'HRMS:LEAVE_POLICY:VIEW' },
+      { id: 'leave-tracker/leave-policy', title: 'Leave Tracker', icon: 'leave',requiredPermissions:'HRMS:LEAVE:VIEW' },
       { id: '/accounts', title: 'Accounts', icon: 'files',requiredPermissions:'CRM:ACCOUNTS:VIEW' },
       { id: 'attendance', title: 'Attendance', icon: 'time',requiredPermissions:'HRMS:ATTENDANCE:VIEW'  },
       { id: 'shift', title: 'Shift', icon: 'employee',requiredPermissions:'HRMS:SHIFT:VIEW' },
-      { id: 'timeTracker', title: 'Time Tracker', icon: 'time',requiredPermissions:'HRMS:EMPLOYEE:VIEW' },
+      { id: 'timeTracker', title: 'Time Tracker', icon: 'time',requiredPermissions:'HRMS:TIME_TRACKER:VIEW' },
       { id: 'performance', title: 'Performance', icon: 'performance',requiredPermissions:'HRMS:PERFORMANCE:VIEW' },
       // { id: 'onboarding', title: 'Onboarding', subtitle: '', icon: 'onboarding' },
       // { id: 'hrletters', title: 'HR Letters', subtitle: '', icon: 'files', },
