@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState,useContext } from 'react';
 import axios from 'axios';
 import { Eye, Edit2, Trash2 } from 'lucide-react';
 import AddDesignationModal from './AddDesignationModal';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { AuthContext } from '@/context/authContext';
 
 export default function Designations() {
   const [designations, setDesignations] = useState([]);
@@ -14,6 +15,7 @@ export default function Designations() {
   const [modalMode, setModalMode] = useState('add'); // add | edit | view
   const [selectedDesignation, setSelectedDesignation] = useState(null);
   const lastFocusedRef = useRef(null);
+  const {allUserPermissions}=useContext(AuthContext)
 
   useEffect(() => {
     fetchDesignations();
@@ -105,14 +107,14 @@ export default function Designations() {
     {/* HEADER */}
     <div className="p-6 border-b border-gray-200 flex flex-row justify-between items-center">
       <h4 className="text-lg font-semibold text-gray-900">Designations</h4>
-      <div className="flex gap-2">
+      {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")&&<div className="flex gap-2">
         <button
           onClick={openAdd}
           className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded"
         >
           Add Designation
         </button>
-      </div>
+      </div>}
     </div>
 
     {/* TABLE */}
@@ -190,18 +192,19 @@ export default function Designations() {
                       <Eye size={16} className="text-[var(--color-primary)]" />
                     </button>
 
-                    <button
+                    {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")&&<button
                       onClick={(e) => {
                         e.stopPropagation();
                         openEdit(des, e);
                       }}
                       title="Edit"
                       className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                      
                     >
                       <Edit2 size={16} className="text-[var(--color-primaryText)]" />
-                    </button>
+                    </button>}
 
-                    <button
+                    {allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")&&<button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(des._id);
@@ -210,7 +213,7 @@ export default function Designations() {
                       className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300"
                     >
                       <Trash2 size={16} className="text-red-600" />
-                    </button>
+                    </button>}
                   </div>
                 </td>
               </tr>
@@ -241,6 +244,7 @@ export default function Designations() {
       setDesignations((prev) => prev.filter((d) => d._id !== id));
       handleModalClose();
     }}
+    deletePermissions={allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")}
   />
 </div>
 

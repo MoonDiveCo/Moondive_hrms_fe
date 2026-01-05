@@ -2,7 +2,7 @@
 import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 
-export default function EmployeeModal({ employee, onClose, onEdit, onDelete }) {
+export default function EmployeeModal({ employee, onClose, onEdit, onDelete,deletePermission,editPermission }) {
   const modalRef = useRef(null);
   const confirmRef = useRef(null); 
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
@@ -29,9 +29,6 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose, openConfirmModal]); 
 
-  useEffect(() => {
-    console.log("Confirmation visible:", openConfirmModal, "Mode:", modalMode); 
-  }, [openConfirmModal, modalMode]);
 
   const deleteEmployee = async () => {
     try {
@@ -283,20 +280,20 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete }) {
                   Close
                 </button>
 
-                <button
+                {deletePermission&&<button
                   onClick={handleDeleteClick}
                   className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm font-semibold hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isDeleting}
                 >
                   {isDeleting ? 'Deleting...' : 'Delete'}
-                </button>
+                </button>}
 
-                <button
+                {editPermission&& <button
                   onClick={handleEditClick}
                   className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm font-semibold hover:brightness-95"
                 >
                   Edit Profile
-                </button>
+                </button>}
               </div>
             </div>
           </div>

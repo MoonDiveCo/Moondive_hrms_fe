@@ -4,7 +4,7 @@ import React from "react";
 
 export default function LeaveTrackerLayout({ children }) {
   return (
-  <SubModuleProtectedRoute requiredPermissionPrefixes={["*"]}>
+  <SubModuleProtectedRoute >
 
       <NestedAppLayout>{children}</NestedAppLayout>
   </SubModuleProtectedRoute>)

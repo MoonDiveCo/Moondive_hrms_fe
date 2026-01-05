@@ -1,5 +1,7 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
+
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
@@ -8,9 +10,16 @@ import { AuthContext } from "@/context/authContext";
 import FaceModal from "./FaceModal";
  
 export default function AppLayout({ module, children, showMainNavbar = true }) {
-  const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
-  const { isSignedIn } = useContext(AuthContext)
+  const router = useRouter();
+  const pathname = usePathname();
   const menus = useMenus();
+    const {
+    canAccessModule,
+    canAccessSubmodule,
+    authLoading,
+    rbacLoading,
+    submodules,
+  } = useContext(RBACContext);
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
   const accessPermissions = menus.rules ?? [];
@@ -25,92 +34,86 @@ const [collapsed, setCollapsed] = useState(false);
 const handleCheckInSuccess = async () => {
   setIsFaceVerified(true);
   closeFaceModal();
-
-  // ACTUAL CHECK-IN happens here
   try {
-    await checkIn(); // 🔥 real attendance check-in
+    await checkIn(); 
   } catch (err) {
     console.error(err);
   }
 };
 
 
+
+  const { isSignedIn, allUserPermissions } = useContext(AuthContext);
+
+
+  const moduleName = module ? module.toUpperCase() : "";
+  const routePermissionMap = menus.routePermissionMap;
+
+  const requiredPermissions = useMemo(() => {
+    if (!routePermissionMap) return [];
+
+    if (pathname.includes("manage-accounts")) {
+      return ["HRMS:MANAGE_ACCOUNT"];
+    }
+
+
+    return routePermissionMap[pathname] || [];
+  }, [pathname, routePermissionMap]);
+
+  
+
+  const isRouteAllowed =
+    isSignedIn &&
+    canAccessModule(moduleName) &&
+    (
+      submodules?.includes("*") ||
+      requiredPermissions.some((perm) => canAccessSubmodule(perm))
+    );
+
+
+
   useEffect(() => {
     if (authLoading || rbacLoading) return;
- 
-    const moduleName = module ? module.toUpperCase() : "";
- 
-    const isModuleAccessible = canAccessModule(moduleName);
- 
-    if (!isSignedIn || !isModuleAccessible) {
-      setTopItems([]);
-      setBottomItems([]);
+
+    if (!isSignedIn) {
+      router.replace("/login");
       return;
     }
- 
-    const keyOf = (item) =>
-      (item && (item.href || item.label)) || JSON.stringify(item);
- 
-    const mergeUnique = (existing = [], additions = []) => {
-      const seen = new Set(existing.map((it) => keyOf(it)));
-      const merged = [...existing];
- 
-      for (const it of additions || []) {
-        const k = keyOf(it);
-        if (!seen.has(k)) {
-          seen.add(k);
-          merged.push(it);
-        }
-      }
-      return merged;
-    };
- 
-    let computedTop = [];
-    let computedBottom = [];
- 
-    if (menus && menus[moduleName.toLowerCase()]) {
-      computedTop = [...(menus[moduleName.toLowerCase()].top || [])];
-      computedBottom = [...(menus[moduleName.toLowerCase()].bottom || [])];
+
+    if (!isRouteAllowed) {
+      router.replace("/unauthorized");
     }
- 
-    const moduleRules = accessPermissions.filter(
-      (rule) => rule.module?.toUpperCase() === moduleName
-    );
- 
-    moduleRules.forEach((permission) => {
-      if (!permission) return;
- 
-      const prefixes = Array.isArray(permission.requiredPermissionPrefixes)
-        ? permission.requiredPermissionPrefixes
-        : [permission.requiredPermissionPrefixes];
- 
-      const isSubmodulesAccessible = prefixes.some((p) =>
-        canAccessSubmodule(p.toUpperCase())
-      );
- 
-      if (isSubmodulesAccessible) {
-        computedTop = mergeUnique(computedTop, permission.menu?.top || []);
-        computedBottom = mergeUnique(
-          computedBottom,
-          permission.menu?.bottom || []
-        );
-      }
-    });
- 
-    setTopItems(computedTop);
-    setBottomItems(computedBottom);
   }, [
-    module,
-    menus,
-    accessPermissions,
-    canAccessModule,
-    canAccessSubmodule,
     authLoading,
     rbacLoading,
     isSignedIn,
+    isRouteAllowed,
+    router,
   ]);
- 
- 
+
+  useEffect(() => {
+    const newTop = [];
+    const newBottom = [];
+
+    Object.entries(menus.sidebarObject).forEach(([permission, item]) => {
+      if (
+        allUserPermissions.includes(permission) &&
+        permission.includes(moduleName)
+      ) {
+        if (item.position === "top") newTop.push(item);
+        if (item.position === "bottom") newBottom.push(item);
+      }
+    });
+
+    setTopItems(newTop);
+    setBottomItems(newBottom);
+  }, [menus.sidebarObject, allUserPermissions, moduleName]);
+
+
+  if (authLoading || rbacLoading || !isRouteAllowed) {
+    return null;
+  }
+
 return (
   <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
     <aside
@@ -152,5 +155,3 @@ return (
 );
  
 }
- 
- 

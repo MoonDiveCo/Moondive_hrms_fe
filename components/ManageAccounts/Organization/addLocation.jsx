@@ -29,6 +29,7 @@ export default function AddLocationModal({
     contactNumber: "",
     mailAlias: ""
   };
+  
 
   const activeData = location || editingLocation || null;
   const isViewMode = mode === "view";

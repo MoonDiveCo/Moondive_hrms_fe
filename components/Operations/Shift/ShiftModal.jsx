@@ -12,6 +12,7 @@ export default function ShiftModal({
   onClose,
   onSaved,
   onDeleted,
+  deletePermission
 }) {
   const [form, setForm] = useState({
     name: '',
@@ -192,7 +193,7 @@ export default function ShiftModal({
     setLoading(false);
   }
 }
-  const rightHeaderContent = isEdit ? (
+  const rightHeaderContent = isEdit ? (deletePermission&&
     <button
       onClick={handleDelete}
       className="px-3 py-2 rounded-md bg-red-50 text-red-600 border border-red-100 hover:bg-red-100"
