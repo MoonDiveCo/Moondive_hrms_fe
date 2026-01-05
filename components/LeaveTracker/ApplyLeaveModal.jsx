@@ -97,16 +97,18 @@ const todayStr = today.toLocaleDateString("en-CA");
     const set = new Set();
 
     allLeaves.forEach((leave) => {
-      if (leave.leaveStatus  !== "Approved") return;
+      if (leave.leaveStatus  === "Rejected") return;
 
       const start = new Date(leave.startDate);
       const end = new Date(leave.endDate);
 
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
+      // start.setHours(0, 0, 0, 0);
+      // end.setHours(0, 0, 0, 0);
 
       while (start <= end) {
-        set.add(start.toISOString().split("T")[0]);
+       set.add(
+        start.toLocaleDateString("en-CA") 
+      );
         start.setDate(start.getDate() + 1);
       }
     });
