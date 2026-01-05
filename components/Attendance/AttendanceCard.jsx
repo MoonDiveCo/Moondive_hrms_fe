@@ -6,5 +6,6 @@ export default function AttendanceCard({ children, className = "" }) {
     >
       {children}
     </div>
+  
   );
-}
+} 
