@@ -111,15 +111,9 @@ export default function AttendanceViewPage() {
           )}
         </div>
       </div>
-
-      {/* Regularization Modal */}
-      {showRegModal && (
-        <Modal onClose={() => setShowRegModal(false)}>
-          <RequestRegularization onClose={() => setShowRegModal(false)} />
-        </Modal>
-      )}
-            <TimeScaleFooter />
-
+    
+        {showRegModal && <RequestRegularization onClose={()=>setShowRegModal(false)} />}
+     
     </div>
   );
 }

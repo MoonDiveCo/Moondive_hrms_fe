@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useRef, useState,useEffect } from 'react';
 import ProfileSlideOver from './ProfileSlideOver';
 import { useRouter } from 'next/navigation';
 import { Bell, Clock, LogIn, LogOut, Coffee } from 'lucide-react';
@@ -8,11 +8,14 @@ import { AuthContext } from '@/context/authContext';
 import { useAttendance } from '@/context/attendanceContext';
 import { toast } from 'sonner';
 
-export default function MainNavbar({ setCollapsed, collapsed }) {
+export default function MainNavbar({
+  collapsed,
+  setCollapsed,
+  isFaceVerified,
+  onCheckInClick,
+  onCheckOut,
+}) {
   const router = useRouter();
-  const avatarRef = React.useRef(null);
-  const [openProfile, setOpenProfile] = React.useState(false);
-  const { user } = useContext(AuthContext);
 
   const {
     isCheckedIn,
@@ -25,6 +28,31 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
     breakIn,
     breakOut,
   } = useAttendance();
+  const avatarRef = useRef(null);
+  const [openProfile, setOpenProfile] = useState(false);
+  const { user } = useContext(AuthContext);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!isCheckedIn) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isCheckedIn]);
+
+  const handleCheckToggle = () => {
+    if (isFaceVerified) {
+      onCheckOut();      
+    } else {
+      onCheckInClick();   
+    }
+  };
 
   const formatTime = (secs) => {
     if (secs === undefined || secs === null || secs < 0) return "00:00:00";
@@ -34,11 +62,11 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
     return `${h}:${m}:${s}`;
   };
 
-  const handleCheckIn = () => toast.promise(checkIn(), {
-    loading: 'Checking in...',
-    success: 'Checked in successfully! 👋',
-    error: (err) => err.message || 'Failed to check in',
-  });
+  // const handleCheckIn = () => toast.promise(checkIn(), {
+  //   loading: 'Checking in...',
+  //   success: 'Checked in successfully! 👋',
+  //   error: (err) => err.message || 'Failed to check in',
+  // });
 
   const handleCheckOut = () => {
     if (isOnBreak) {
@@ -68,6 +96,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
     <div className="w-full px-6 md:px-8 z-20 bg-white shadow-sm">
       <div className="flex items-center justify-between h-16">
 
+        {/* LEFT */}
         <div className="flex items-center gap-3">
           <button onClick={() => setCollapsed(!collapsed)} className="rounded hover:bg-primary/20 p-1">
             <svg className={`w-5 h-5 transition-transform ${collapsed ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="orange">
@@ -80,6 +109,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
           </button>
         </div>
 
+        {/* RIGHT */}
         <div className="flex items-center gap-4">
 
           {/* Worked Time */}
@@ -106,7 +136,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
 
           {/* Check In / Out */}
           <button
-            onClick={isCheckedIn ? handleCheckOut : handleCheckIn}
+            onClick={onCheckInClick}
             disabled={isOnBreak}
             className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold transition ${
               isCheckedIn
@@ -154,7 +184,7 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
             onClick={() => setOpenProfile(true)}
             className="flex items-center gap-2 rounded-full hover:bg-gray-50 p-1"
           >
-            <img src={user?.imageUrl || null} alt="Profile" className="w-9 h-9 rounded-full" />
+            <img src  ={user?.imageUrl || null} alt="Profile" className="w-9 h-9 rounded-full" />
           </button>
         </div>
       </div>
