@@ -1,186 +1,119 @@
 'use client';
 
 import axios from 'axios';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Webcam from 'react-webcam';
+import { ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
-async function requestCameraPermission() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user' },
-            audio: false,
-        });
-        stream.getTracks().forEach((track) => track.stop());
-        return true;
-    } catch (err) {
-        console.error('[Camera] Permission error:', err);
-        return false;
-    }
-}
-
-async function checkCameraPermission() {
-    if (navigator.permissions?.query) {
-        try {
-            const status = await navigator.permissions.query({ name: 'camera' });
-            return status.state;
-        } catch { }
-    }
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-        });
-        stream.getTracks().forEach((t) => t.stop());
-        return 'granted';
-    } catch {
-        return 'prompt';
-    }
-}
-
 export default function FaceModal({ onClose, onSuccess }) {
-    const webcamRef = useRef(null);
-    const [mounted, setMounted] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [cameraAllowed, setCameraAllowed] = useState(false);
-    const [checkingPermission, setCheckingPermission] = useState(true);
-    const [secondsLeft, setSecondsLeft] = useState(5);
+  const webcamRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (!mounted) return;
+  const captureAndVerify = async () => {
+    setLoading(true);
 
-        const interval = setInterval(() => {
-            setSecondsLeft((s) => s - 1);
-        }, 1000);
+    const imageSrc = webcamRef.current?.getScreenshot();
+    if (!imageSrc) {
+      setLoading(false);
+      return;
+    }
 
-        const timeout = setTimeout(() => {
-            toast.info('Face verification timed out');
-            onClose();
-        }, 5000);
+    const blob = await fetch(imageSrc).then((res) => res.blob());
+    const formData = new FormData();
+    formData.append('file', blob, 'face.jpg');
 
-        return () => {
-            clearInterval(interval);
-            clearTimeout(timeout);
-        };
-    }, [mounted, onClose]);
+    try {
+      await axios.post('/hrms/attendance/verify-face', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success('Face verified successfully');
+      onSuccess();
+    } catch {
+      setLoading(false);
+    }
+  };
 
+  return (
+    <div className='fixed inset-0 z-50 bg-black/40 flex items-center justify-center backdrop-blur-sm'>
+      <div className='w-[420px] bg-white rounded-2xl shadow-xl px-8 py-8 text-center'>
+        {/* Heading */}
+        <h4 className='text-xl font-semibold text-gray-900'>
+          Face Verification
+        </h4>
+        <p className='text-sm text-gray-500 mt-1'>
+          Align your face within the frame
+        </p>
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+        {/* Face Frame */}
+        <div className='relative mt-10 flex items-center justify-center'>
+          <div className='relative w-60 h-60 flex items-center justify-center'>
+            {/* Gradient Background */}
+            <div className='absolute inset-0 rounded-full bg-gradient from-orange-200 to-orange-100' />
 
-    useEffect(() => {
-        if (!mounted) return;
+            {/* SVG DOTTED RING */}
+            <svg
+              className='absolute inset-0'
+              viewBox='0 0 200 200'
+              width='100%'
+              height='100%'
+            >
+              <circle
+                cx='100'
+                cy='100'
+                r='90'
+                fill='none'
+                stroke='#F2994A'
+                strokeWidth='2'
+                strokeDasharray='10 14'
+                strokeLinecap='round'
+              />
+            </svg>
 
-        (async () => {
-            const status = await checkCameraPermission();
-            if (status === 'granted') {
-                setCameraAllowed(true);
-            }
-            setCheckingPermission(false);
-        })();
-    }, [mounted]);
-
-    if (!mounted || checkingPermission) return null;
-
-    const enableCamera = async () => {
-        const allowed = await requestCameraPermission();
-        setCameraAllowed(allowed);
-    };
-
-    const captureAndSend = async () => {
-        setLoading(true);
-
-        const imageSrc = webcamRef.current?.getScreenshot();
-        if (!imageSrc) {
-            toast.error('Failed to capture image');
-            setLoading(false);
-            return;
-        }
-
-        const blob = await fetch(imageSrc).then((res) => res.blob());
-
-        const formData = new FormData();
-        formData.append('image', blob);
-
-        await axios.post('/hrms/attendance/verify-face', formData);
-
-        setLoading(false);
-        onSuccess();
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-            <div className="bg-white rounded-xl p-2 w-[60vw] h-[80vh]">
-
-                {/* <h3 className="text-lg font-semibold mb-4 text-center">
-          Face Check-In
-        </h3> */}
-
-                {!cameraAllowed ? (
-                    <div className="flex flex-col items-center gap-4">
-                        <p className="text-sm text-gray-600 text-center">
-                            Camera access is required to check in
-                        </p>
-
-                        <button
-                            onClick={enableCamera}
-                            className="px-4 py-2 rounded bg-orange-500 text-white"
-                        >
-                            Enable Camera
-                        </button>
-
-                        <button
-                            onClick={onClose}
-                            className="text-sm text-gray-500"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        {/* CAMERA */}
-                        <div className="relative w-full h-[86%] aspect-video rounded-xl overflow-hidden bg-black">
-                            <Webcam
-                                ref={webcamRef}
-                                audio={false}
-                                mirrored
-                                screenshotFormat="image/jpeg"
-                                videoConstraints={{ facingMode: 'user' }}
-                                className="absolute inset-0 w-full h-full object-cover"
-                            />
-
-                            {/* FACE GUIDE */}
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="w-[45%] h-[80%] rounded-full border-4 border-orange-500">
-                                    <div className="absolute inset-0 border border-dashed border-orange-300 rounded-full" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-between gap-3 mt-6">
-                            <button
-                                onClick={onClose}
-                                className="text-sm px-3 py-1 border border-primary text-primary rounded-full"
-                            >
-                                Cancel
-                            </button>
-                            <span className="text-xs text-red-400 text-center mt-2">
-                                Auto-closing in {secondsLeft}s
-                            </span>
-
-                            <button
-                                disabled={loading}
-                                onClick={captureAndSend}
-                                className="px-3 py-1 text-sm rounded-full bg-primary text-white"
-                            >
-                                {loading ? 'Capturing…' : 'Capture'}
-                            </button>
-                        </div>
-                    </>
-                )}
+            {/* Webcam / Face */}
+            <div className='relative w-48 h-48 rounded-full overflow-hidden bg-black z-10'>
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                mirrored
+                screenshotFormat='image/jpeg'
+                videoConstraints={{ facingMode: 'user' }}
+                className='w-full h-full object-cover'
+              />
             </div>
+          </div>
         </div>
-    );
+
+        {/* Processing */}
+        {loading && (
+          <div className='flex items-center justify-center gap-2 text-sm text-gray-500 mt-5'>
+            <span className='w-3 h-3 rounded-full bg-orange-400 animate-pulse' />
+            Processing...
+          </div>
+        )}
+
+        {/* CTA BUTTONS */}
+        <div className='mt-10 flex gap-4'>
+          {/* Cancel */}
+          <button
+            onClick={onClose}
+            className='flex-1 py-3 rounded-xl border border-gray-300 text-gray-500 text-sm font-medium
+               hover:bg-gray-50 transition'
+          >
+            Cancel
+          </button>
+
+          {/* Verify */}
+          <button
+            onClick={captureAndVerify}
+            disabled={loading}
+            className='flex-1 py-3 rounded-xl bg-orange-500 text-white text-sm font-medium
+             transition shadow-md disabled:opacity-50'
+          >
+            {loading ? 'Verifying…' : 'Verify'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
