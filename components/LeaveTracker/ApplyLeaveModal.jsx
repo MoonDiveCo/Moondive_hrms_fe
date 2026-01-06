@@ -324,8 +324,8 @@ const todayStr = today.toLocaleDateString("en-CA");
               onChange={(e) => handleOptionalHolidaySelect(e.target.value)}
             >
               <option value="">Select Optional Holiday</option>
-              {optionalHolidays.map((h) => (
-                <option key={h.date} value={h.date}>
+              {optionalHolidays.map((h, index) => (
+                <option key={index} value={h.date}>
                   {h.name} ({h.date})
                 </option>
               ))}
