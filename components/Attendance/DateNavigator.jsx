@@ -59,8 +59,8 @@ export default function DateNavigator({
 
       {/* DATE PILL */}
       <div className="flex items-center gap-2 px-3 py-2 text-primary rounded-md  text-sm font-medium">
-        <Calendar size={16} className="text-primary"/>
-        {label}
+        <Calendar size={18} className="text-primary"/>
+        <h5>{label}</h5>
       </div>
 
       {/* RIGHT ARROW */}

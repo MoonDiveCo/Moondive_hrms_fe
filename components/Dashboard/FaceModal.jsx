@@ -121,7 +121,7 @@ export default function FaceModal({
 
           {/* Verify */}
           <button
-            onClick={captureAndVerify}
+            onClick={captureAndSend}
             disabled={loading}
             className='flex-1 py-3 rounded-xl bg-orange-500 text-white text-sm font-medium
              transition shadow-md disabled:opacity-50'

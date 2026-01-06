@@ -33,13 +33,7 @@ export default function AttendanceViewPage() {
           <div className="flex items-center justify-between">
             {/* LEFT: General Shift Info */}
             <div className="flex items-center gap-8">
-              <h5 className="text-xl font-semibold text-orange-600">
-                General [ 9:00 AM - 6:00 PM ]
-              </h5>
-            </div>
-
-            {/* CENTER: Date Navigator */}
-            <div className="absolute left-1/2 -translate-x-1/2">
+               <div className="absolute left-1/4 -translate-x-1/2">
               <DateNavigator
                 view={view}
                 currentDate={currentDate}
@@ -47,9 +41,16 @@ export default function AttendanceViewPage() {
                 rangeMode={rangeMode}
               />
             </div>
+            </div>
+
+            {/* CENTER: Date Navigator */}
+
 
             {/* RIGHT: View Buttons + Actions */}
             <div className="flex items-center gap-3">
+                     {!isCalendar && (
+                <FilterDropdown value={rangeMode} onChange={setRangeMode} />
+              )}
               <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
                 <ViewButton
                   active={view === "list"}
@@ -73,9 +74,7 @@ export default function AttendanceViewPage() {
                 </ViewButton>
               </div>
 
-              {!isCalendar && (
-                <FilterDropdown value={rangeMode} onChange={setRangeMode} />
-              )}
+       
 
               <button
                 onClick={() => setShowRegModal(true)}
