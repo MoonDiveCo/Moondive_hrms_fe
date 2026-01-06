@@ -1,7 +1,8 @@
-"use client"
-import { useEffect, useState } from "react";
-import WorkingTimeline from "./WorkingTimeline";
-import { diffTime } from "@/helper/time";
+'use client';
+
+import { useEffect, useState } from 'react';
+import WorkingTimeline from './WorkingTimeline';
+import CheckInBadge from './CheckInBadge';
 
 export default function TodayRow({
   date,
@@ -9,68 +10,85 @@ export default function TodayRow({
   checkOut,
   late,
   early,
+  hours = '00:00',
 }) {
-  const [worked, setWorked] = useState(
-    checkOut ? "00:12" : diffTime(checkIn)
-  );
+  const [workedHours, setWorkedHours] = useState('00:00');
 
-  // ⏱ live counter
+  const effectiveCheckOut =
+    checkOut && !isNaN(new Date(checkOut).getTime()) ? checkOut : new Date();
+  function formatTime(value) {
+    if (!value) return null;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  const calculateWorked = () => {
+    if (!checkIn) return '00:00';
+
+    const start = new Date(checkIn);
+    if (isNaN(start.getTime())) return '00:00';
+
+    const end = effectiveCheckOut ? new Date(effectiveCheckOut) : new Date();
+
+    const diffMs = Math.max(0, end - start);
+    const minutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  };
+
   useEffect(() => {
-    if (checkOut) return;
+    setWorkedHours(calculateWorked());
 
-    const timer = setInterval(() => {
-      setWorked(diffTime(checkIn));
-    }, 60000); // update every minute
+    if (effectiveCheckOut) return;
 
-    return () => clearInterval(timer);
-  }, [checkOut, checkIn]);
+    const interval = setInterval(() => {
+      setWorkedHours(calculateWorked());
+    }, 1000); // ← visible live updates
+
+    return () => clearInterval(interval);
+  }, [checkIn, effectiveCheckOut]);
 
   return (
-    <div className="flex items-center gap-4">
-      {/* date */}
-      <div className="w-16 text-right">
-        <div className="text-sm text-gray-500">Today</div>
-        <div className="w-9 h-9 bg-orange-500 text-white rounded-lg flex items-center justify-center font-bold ml-auto">
+    <div className='flex items-center gap-4'>
+      <div className='w-16 text-right'>
+        <div className='text-sm text-gray-500'>Today</div>
+
+        <div className='w-9 h-9 bg-orange-500 text-white rounded-lg flex items-center justify-center font-bold ml-auto'>
           {date}
         </div>
       </div>
 
-      {/* card */}
-      <div className="flex-1 h-24 bg-white rounded-xl flex items-center px-6 gap-6 shadow-sm">
-        {/* in */}
-        <div className="w-28">
-          <div className="font-semibold">{checkIn} PM</div>
-          <div className="text-xs text-orange-500">
-            Late by {late}
-          </div>
+      <div className='flex-1 h-24 bg-white rounded-xl flex items-center px-6 gap-6 shadow-sm ring-1 ring-green-300'>
+        <div className='w-28'>
+          <div className='font-semibold'>{formatTime(checkIn)}</div>
+          {/* {late && <div className="text-xs text-orange-600 mt-1">Late by {late}</div>} */}
+          <CheckInBadge />
         </div>
 
-        {/* timeline */}
-        <div className="flex-1">
-          <WorkingTimeline
-            inTime={checkIn}
-            outTime={checkOut}
-          />
+        <div className='flex-1 relative'>
+          <WorkingTimeline checkIn={checkIn} checkOut={checkOut || null} />
         </div>
 
-        {/* out */}
         {checkOut && (
-          <div className="w-28 text-right">
-            <div className="font-semibold">
-              {checkOut} PM
-            </div>
-            <div className="text-xs text-orange-500">
-              Early by {early}
-            </div>
+          <div className='w-28 text-right'>
+            <div className='font-semibold'>{formatTime(checkOut)}</div>
+            {early && (
+              <div className='text-xs text-orange-600 mt-1'>
+                Early by {early}
+              </div>
+            )}
           </div>
         )}
 
-        {/* hours */}
-        <div className="w-20 text-right">
-          <div className="font-bold">{worked}</div>
-          <div className="text-xs text-gray-400">
-            HRS WORKED
-          </div>
+        <div className='w-24 text-right'>
+          <div className='font-bold text-lg'>{hours}</div>
+          <div className='text-xs text-gray-500'>Hrs worked</div>
         </div>
       </div>
     </div>

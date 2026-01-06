@@ -1,15 +1,34 @@
 'use client';
 
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import ProfileSlideOver from './ProfileSlideOver';
 import { useRouter } from 'next/navigation';
 import { Clock, LogIn, LogOut, Bell } from 'lucide-react';
 import { AuthContext } from '@/context/authContext';
 import NotificationSlideOver from '@/components/Notification/NotificationList';
 import { useNotifications } from '@/context/notificationcontext';
+import { Bell, Clock, LogIn, LogOut, Coffee } from 'lucide-react';
+import { AuthContext } from '@/context/authContext';
+import { useAttendance } from '@/context/attendanceContext';
+import { toast } from 'sonner';
 
-export default function MainNavbar({ setCollapsed, collapsed }) {
+export default function MainNavbar({
+  collapsed,
+  setCollapsed,
+  onCheckInClick,
+}) {
   const router = useRouter();
+
+  const {
+    isCheckedIn,
+    isOnBreak,
+    workedSeconds,
+    breakSeconds,
+    breakIn,
+    breakOut,
+    isCheckedOut,
+  } = useAttendance();
+
   const avatarRef = useRef(null);
   const [openProfile, setOpenProfile] = useState(false);
   const [openNotifications, setOpenNotifications] = useState(false);
@@ -43,8 +62,13 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
       setIsCheckedIn(true);
     }
   };
+  const { user } = useContext(AuthContext);
+  const canCheckInNow = !isCheckedIn || isCheckedOut; // either never checked in or already checked out
+  const showAsCheckedIn = isCheckedIn && !isCheckedOut; // only this state should show "Check Out"
+  const isActiveCheckIn = isCheckedIn && !isCheckedOut;
 
   const formatTime = (secs) => {
+    if (secs === undefined || secs === null || secs < 0) return '00:00:00';
     const h = String(Math.floor(secs / 3600)).padStart(2, '0');
     const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
     const s = String(secs % 60).padStart(2, '0');
@@ -55,24 +79,53 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
     <div className="w-full px-6 md:px-8 z-20 bg-white shadow-sm">
       <div className="flex items-center justify-between h-16">
         <div className="flex items-center gap-3">
+  const handleBreakIn = () =>
+    toast.promise(breakIn(), {
+      loading: 'Starting break...',
+      success: 'Enjoy your break! ☕',
+      error: (err) => err.message || 'Could not start break',
+    });
+
+  const handleBreakOut = () =>
+    toast.promise(breakOut(), {
+      loading: 'Ending break...',
+      success: 'Back to work!',
+      error: (err) => err.message || 'Could not end break',
+    });
+
+  // Always open face modal – the modal will decide check-in or check-out
+  const handleMainButtonClick = () => {
+    if (isOnBreak) {
+      toast.error('Please end your break first.');
+      return;
+    }
+
+    // This tells the modal what action to perform after verification
+    onFaceModalOpen(isCheckedIn ? 'checkOut' : 'checkIn');
+  };
+
+  return (
+    <div className='w-full px-6 md:px-8 z-20 bg-white shadow-sm'>
+      <div className='flex items-center justify-between h-16'>
+        {/* LEFT */}
+        <div className='flex items-center gap-3'>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="rounded hover:bg-primary/20 p-1"
+            className='rounded hover:bg-primary/20 p-1'
           >
             <svg
               className={`w-5 h-5 transition-transform ${
                 collapsed ? 'rotate-180' : ''
               }`}
-              viewBox="0 0 20 20"
-              fill="orange"
+              viewBox='0 0 20 20'
+              fill='orange'
             >
-              <path d="M6 4L14 10L6 16V4Z" />
+              <path d='M6 4L14 10L6 16V4Z' />
             </svg>
           </button>
-
           <button
             onClick={() => router.back()}
-            className="px-4 py-1.5 text-xs rounded-full bg-gray-100 hover:bg-gray-200"
+            className='px-4 py-1.5 text-xs rounded-full bg-gray-100 hover:bg-gray-200'
           >
             ← Back
           </button>
@@ -82,25 +135,35 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium">
             <Clock size={14} className="text-gray-500" />
             <span>{formatTime(elapsedSeconds)}</span>
+        {/* RIGHT */}
+        <div className='flex items-center gap-4'>
+          <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium'>
+            <Clock size={14} className='text-gray-500' />
+            <span>{formatTime(workedSeconds)}</span>
           </div>
 
+          <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium'>
+            <Coffee size={14} className='text-gray-500' />
+            <span>{formatTime(breakSeconds)}</span>
+          </div>
+
+          {/* Unified Check In / Out Button */}
           <button
-            onClick={handleCheckToggle}
-            className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold transition ${
-              isCheckedIn
-                ? 'bg-red-100 text-red-600'
-                : 'bg-primary text-white'
+            onClick={() => onCheckInClick(isCheckedIn ? 'checkOut' : 'checkIn')}
+            disabled={isOnBreak}
+            className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold ${
+              isActiveCheckIn
+                ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                : 'bg-primary text-white hover:opacity-90'
             }`}
           >
             {isCheckedIn ? (
               <>
-                <LogOut size={14} />
-                Check Out
+                <LogOut size={14} /> Check Out
               </>
             ) : (
               <>
-                <LogIn size={14} />
-                Check In
+                <LogIn size={14} /> Check In
               </>
             )}
           </button>
@@ -116,17 +179,39 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
+          {/* Break Button */}
+          {isCheckedIn && (
+            <button
+              onClick={isOnBreak ? handleBreakOut : handleBreakIn}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition ${
+                isOnBreak
+                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+            >
+              <Coffee size={14} />
+              {isOnBreak ? 'End Break' : 'Break'}
+            </button>
+          )}
+
+          <button className='relative p-2 rounded-full hover:bg-gray-100'>
+            <Bell size={18} />
+            <span className='absolute -top-1 -right-1 w-4 h-4 text-[10px] flex items-center justify-center rounded-full bg-orange-500 text-white'>
+              3
+            </span>
           </button>
 
           <button
             ref={avatarRef}
             onClick={() => setOpenProfile(true)}
-            className="flex items-center gap-2 rounded-full hover:bg-gray-50 p-1"
+            className='flex items-center gap-2 rounded-full hover:bg-gray-50 p-1'
           >
             <img
               src={user?.imageUrl || '/default-avatar.png'}
               alt="Profile"
               className="w-9 h-9 rounded-full object-cover"
+              alt='Profile'
+              className='w-9 h-9 rounded-full object-cover'
             />
           </button>
         </div>

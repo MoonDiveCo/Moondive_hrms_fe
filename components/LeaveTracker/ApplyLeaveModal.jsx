@@ -10,10 +10,16 @@ import { useNotifications } from "../../context/notificationcontext"; // Import 
 function getDatesBetween(start, end) {
   const dates = [];
   let current = new Date(start);
+  let last = new Date(end);
 
-  while (current <= new Date(end)) {
+  current.setHours(0, 0, 0, 0);
+  last.setHours(0, 0, 0, 0);
+
+  while (current <= last) {
+    const local = new Date(current);
+
     dates.push({
-      date: current.toISOString().split("T")[0],
+      date: local.toLocaleDateString("en-CA"), // YYYY-MM-DD (local safe)
       isHalfDay: false,
       session: "FULL",
       enabled: true,
@@ -22,8 +28,11 @@ function getDatesBetween(start, end) {
 
     current.setDate(current.getDate() + 1);
   }
+
   return dates;
 }
+
+
 
 export default function ApplyLeaveModal({
   context,
@@ -50,6 +59,8 @@ export default function ApplyLeaveModal({
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
+  // today.setHours(0, 0, 0, 0);
+// const todayStr = today.toLocaleDateString("en-CA");
 
   const todayStr = today.toISOString().split("T")[0];
   const isOptionalLeave = leaveType === "OL";
@@ -96,16 +107,18 @@ export default function ApplyLeaveModal({
     const set = new Set();
 
     allLeaves.forEach((leave) => {
-      if (leave.status !== "Approved") return;
+      if (leave.leaveStatus  === "Rejected") return;
 
       const start = new Date(leave.startDate);
       const end = new Date(leave.endDate);
 
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
+      // start.setHours(0, 0, 0, 0);
+      // end.setHours(0, 0, 0, 0);
 
       while (start <= end) {
-        set.add(start.toISOString().split("T")[0]);
+       set.add(
+        start.toLocaleDateString("en-CA") 
+      );
         start.setDate(start.getDate() + 1);
       }
     });
@@ -350,8 +363,8 @@ export default function ApplyLeaveModal({
               onChange={(e) => handleOptionalHolidaySelect(e.target.value)}
             >
               <option value="">Select Optional Holiday</option>
-              {optionalHolidays.map((h) => (
-                <option key={h.date} value={h.date}>
+              {optionalHolidays.map((h, index) => (
+                <option key={index} value={h.date}>
                   {h.name} ({h.date})
                 </option>
               ))}

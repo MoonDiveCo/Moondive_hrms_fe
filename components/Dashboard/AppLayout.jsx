@@ -1,96 +1,168 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
+
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
- 
+import FaceModal from "./FaceModal";
+import { useAttendance } from "@/context/attendanceContext";
+import { toast } from "sonner";
+
 export default function AppLayout({ module, children, showMainNavbar = true }) {
-  const { canAccessModule, canAccessSubmodule, authLoading, rbacLoading } = useContext(RBACContext)
-  const { isSignedIn } = useContext(AuthContext)
+
+
   const menus = useMenus();
-  const [topItems, setTopItems] = useState([]);
-  const [bottomItems, setBottomItems] = useState([]);
-  const accessPermissions = menus.rules ?? [];
-  const subSet = new Set();
-const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    if (authLoading || rbacLoading) return;
- 
-    const moduleName = module ? module.toUpperCase() : "";
- 
-    const isModuleAccessible = canAccessModule(moduleName);
- 
-    if (!isSignedIn || !isModuleAccessible) {
-      setTopItems([]);
-      setBottomItems([]);
-      return;
-    }
- 
-    const keyOf = (item) =>
-      (item && (item.href || item.label)) || JSON.stringify(item);
- 
-    const mergeUnique = (existing = [], additions = []) => {
-      const seen = new Set(existing.map((it) => keyOf(it)));
-      const merged = [...existing];
- 
-      for (const it of additions || []) {
-        const k = keyOf(it);
-        if (!seen.has(k)) {
-          seen.add(k);
-          merged.push(it);
-        }
-      }
-      return merged;
-    };
- 
-    let computedTop = [];
-    let computedBottom = [];
- 
-    if (menus && menus[moduleName.toLowerCase()]) {
-      computedTop = [...(menus[moduleName.toLowerCase()].top || [])];
-      computedBottom = [...(menus[moduleName.toLowerCase()].bottom || [])];
-    }
- 
-    const moduleRules = accessPermissions.filter(
-      (rule) => rule.module?.toUpperCase() === moduleName
-    );
- 
-    moduleRules.forEach((permission) => {
-      if (!permission) return;
- 
-      const prefixes = Array.isArray(permission.requiredPermissionPrefixes)
-        ? permission.requiredPermissionPrefixes
-        : [permission.requiredPermissionPrefixes];
- 
-      const isSubmodulesAccessible = prefixes.some((p) =>
-        canAccessSubmodule(p.toUpperCase())
-      );
- 
-      if (isSubmodulesAccessible) {
-        computedTop = mergeUnique(computedTop, permission.menu?.top || []);
-        computedBottom = mergeUnique(
-          computedBottom,
-          permission.menu?.bottom || []
-        );
-      }
-    });
- 
-    setTopItems(computedTop);
-    setBottomItems(computedBottom);
-  }, [
-    module,
-    menus,
-    accessPermissions,
+  const { checkIn, checkOut, isOnBreak } = useAttendance();
+
+  const router = useRouter();
+  const pathname = usePathname();
+    const {
     canAccessModule,
     canAccessSubmodule,
     authLoading,
     rbacLoading,
+    submodules,
+  } = useContext(RBACContext);
+  const [topItems, setTopItems] = useState([]);
+  const [bottomItems, setBottomItems] = useState([]);
+  const [collapsed, setCollapsed] = useState(false);
+  const [faceModalOpen, setFaceModalOpen] = useState(false);
+  const [faceActionType, setFaceActionType] = useState('checkIn');
+
+  // ✅ FIXED: Now properly accepts the action type parameter
+  const openFaceModal = (type) => {
+    if (type === 'checkOut' && isOnBreak) {
+      toast.error('Please end your break before checking out.');
+      return;
+    }
+    setFaceActionType(type);
+    setFaceModalOpen(true);
+  };
+
+  const closeFaceModal = () => setFaceModalOpen(false);
+
+  const handleFaceSuccess = async () => {
+    closeFaceModal();
+
+    if (faceActionType === 'checkIn') {
+       toast.promise(checkIn(), {
+        loading: 'Checking in...',
+        success: 'Checked in successfully! 👋',
+        error: (err) => err?.message || 'Failed to check in',
+      });
+    } else {
+       toast.promise(checkOut(), {
+        loading: 'Checking out...',
+        success: 'Checked out successfully! 💼',
+        error: (err) => err?.message || 'Failed to check out',
+      });
+    }
+  };
+
+  // ✅ FIXED: Proper toArray helper with parameter
+  const toArray = (value)=> {
+    if (Array.isArray(value)) return value;
+    if (value == null) return [];
+    return [value];
+  };
+
+  const keyOf = (item) =>
+    (item && (item.href || item.label)) || JSON.stringify(item);
+
+  // ✅ FIXED: Calls toArray with correct argument
+const mergeUnique = (existing, additions) => {
+  const safeExisting = toArray(existing);   // ✅ FIX
+  const safeAdditions = toArray(additions);
+
+  const seen = new Set(safeExisting.map(keyOf));
+  const merged = [...safeExisting];
+
+  for (const it of safeAdditions) {
+    const k = keyOf(it);
+    if (!seen.has(k)) {
+      seen.add(k);
+      merged.push(it);
+    }
+  }
+  return merged;
+};
+
+
+
+  const { isSignedIn, allUserPermissions } = useContext(AuthContext);
+
+
+  const moduleName = module ? module.toUpperCase() : "";
+  const routePermissionMap = menus.routePermissionMap;
+
+  const requiredPermissions = useMemo(() => {
+    if (!routePermissionMap) return [];
+
+    if (pathname.includes("manage-accounts")) {
+      return ["HRMS:MANAGE_ACCOUNT"];
+    }
+
+
+    return routePermissionMap[pathname] || [];
+  }, [pathname, routePermissionMap]);
+
+  
+
+  const isRouteAllowed =
+    isSignedIn &&
+    canAccessModule(moduleName) &&
+    (
+      submodules?.includes("*") ||
+      requiredPermissions.some((perm) => canAccessSubmodule(perm))
+    );
+
+
+
+  useEffect(() => {
+    if (authLoading || rbacLoading) return;
+
+    if (!isSignedIn) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!isRouteAllowed) {
+      router.replace("/unauthorized");
+    }
+  }, [
+    authLoading,
+    rbacLoading,
     isSignedIn,
+    isRouteAllowed,
+    router,
   ]);
- 
- 
+
+  useEffect(() => {
+    const newTop = [];
+    const newBottom = [];
+
+    Object.entries(menus.sidebarObject).forEach(([permission, item]) => {
+      if (
+        allUserPermissions.includes(permission) &&
+        permission.includes(moduleName)
+      ) {
+        if (item.position === "top") newTop.push(item);
+        if (item.position === "bottom") newBottom.push(item);
+      }
+    });
+
+    setTopItems(newTop);
+    setBottomItems(newBottom);
+  }, [menus.sidebarObject, allUserPermissions, moduleName]);
+
+
+  if (authLoading || rbacLoading || !isRouteAllowed) {
+    return null;
+  }
+
 return (
   <div className="max-h-screen h-screen w-full max-w-full overflow-x-hidden flex">
     <aside
@@ -105,7 +177,11 @@ return (
       <div className="sticky top-0 z-0">
         {showMainNavbar && (
           <header className="bg-white border-b border-gray-200 h-16 flex items-center">
-            <MainNavbar setCollapsed={setCollapsed} collapsed={collapsed} />
+              <MainNavbar
+               collapsed={collapsed}
+  setCollapsed={setCollapsed}
+  onCheckInClick={openFaceModal}
+            />
           </header>
         )}
       </div>
@@ -114,12 +190,21 @@ return (
         className="flex-1 w-full max-w-full overflow-auto p-4"
         style={{ height: "calc(100vh - 4rem)" }}
       >
-        {children}
-      </main>
-    </div>
+            {children}
+</main>
+</div>
+                
+
+     
+      {faceModalOpen && (
+        <FaceModal
+          onClose={closeFaceModal}
+          onSuccess={handleFaceSuccess}
+          actionType={faceActionType}
+           onCheckInClick={openFaceModal}
+        />
+      )}
   </div>
 );
  
 }
- 
- 

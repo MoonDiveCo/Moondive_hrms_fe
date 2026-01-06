@@ -17,7 +17,6 @@ export default function AddEditEmployeeModal({
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
   const [imagePreview, setImagePreview] = useState(null);
   const [imageHovered, setImageHovered] = useState(false);
   const [autoEmployee, setAutoEmployee] = useState(false);

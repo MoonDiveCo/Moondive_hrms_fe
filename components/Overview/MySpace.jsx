@@ -6,11 +6,13 @@ import { AuthContext } from "@/context/authContext";
 import { Building, Building2, Calendar, Contact2, Dot, MailIcon, MapPin, MapPinCheck, PencilIcon, PhoneCallIcon } from "lucide-react";
 import LeaveTrackerDashboard from "../LeaveTracker/LeaveDashboard";
 import ProfileSlideOver from "../Dashboard/ProfileSlideOver";
+import { useRouter } from "next/navigation";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 
 export default function HRMSOverviewPage() {
-  const { user, loading } = useContext(AuthContext);
-
+  const { user } = useContext(AuthContext);
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("leave");
 
   const [reportingManager, setReportingManager] = useState(null);
@@ -19,6 +21,7 @@ export default function HRMSOverviewPage() {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [startTs, setStartTs] = useState(null);
   const [elapsed, setElapsed] = useState(0);
+  const [loading, setLoading] = useState(true);
   const timerRef = useRef(null);
 
   // ---------------- FALLBACK IMAGE ----------------
@@ -62,6 +65,7 @@ export default function HRMSOverviewPage() {
 
     const fetchReportingManager = async () => {
       try {
+        setLoading(true)
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API}/hrms/employee/view-employee/${user.reportingManagerId}`,
           {
@@ -72,8 +76,10 @@ export default function HRMSOverviewPage() {
         );
 
         setReportingManager(res.data?.data);
+        setLoading(false)
       } catch (err) {
         setReportingManager(null);
+        setLoading(false)
       }
     };
 
@@ -85,6 +91,7 @@ export default function HRMSOverviewPage() {
 
     const fetchDepartment = async () => {
       try {
+        setLoading(true)
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API}/hrms/organization/view-department/${user.departmentId}`,
           {
@@ -95,17 +102,28 @@ export default function HRMSOverviewPage() {
         );
         const dept = res.data?.result;
         setDepartmentMembers(dept?.employeeId || []);
+        setLoading(false)
       } catch (err) {
         setDepartmentMembers([]);
+        setLoading(false)
       }
     };
 
     fetchDepartment();
   }, [user?.departmentId]);
 
-  if (loading) {
-    return <div className="p-6">Loading dashboard...</div>;
-  }
+ if(loading){
+          return(
+            <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/5 backdrop-blur-sm rounded-2xl'>
+              <DotLottieReact
+                src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+                loop
+                autoplay
+                style={{ width: 100, height: 100, alignItems: 'center' }} 
+              />
+            </div>
+          )
+        }
 
   const currentAddress = user?.address?.find(
   (addr) => addr.addresstype === "Current"
@@ -193,7 +211,7 @@ const formattedAddress = currentAddress
           <h4 className="text-primaryText">
             Attendance Summary
           </h4>
-          <p className="text-sm text-gray-400">Current Week Overview</p>
+          <p className=" text-gray-400">Current Week Overview</p>
         </div>
       </div>
 
@@ -259,7 +277,7 @@ const formattedAddress = currentAddress
             </span>
 
             <span
-              className={`text-xs font-semibold px-3 py-1 flex items-center rounded-full
+              className={`text-xs font-semibold  justify-start px-3 py-1 flex items-center rounded-full
                 ${
                   item.color === "green"
                     ? "bg-green-100 text-green-700"
@@ -301,7 +319,7 @@ const formattedAddress = currentAddress
           <div className="mb-5">
             <p className="text-xs text-gray-400 uppercase mb-2">Reports To</p>
 
-            <div className="flex items-center gap-4 border rounded-xl p-4">
+            <div className="flex items-center gap-4 border border-gray-300 rounded-xl p-4">
               <img
                 src={reportingManager?.imageUrl || avatarUrl}
                 className="w-12 h-12 rounded-full object-cover"
@@ -329,7 +347,7 @@ const formattedAddress = currentAddress
           <div className="mb-5">
             <p className="text-xs text-gray-400 uppercase mb-2">You</p>
 
-            <div className="flex items-center gap-4 border-2 border-orange-200 bg-orange-50 rounded-xl p-4">
+            <div className="flex items-center gap-4 border border-orange-200 bg-orange-50 rounded-xl p-4">
               <img
                 src={user?.imageUrl || avatarUrl}
                 className="w-12 h-12 rounded-full object-cover"
@@ -358,17 +376,17 @@ const formattedAddress = currentAddress
                 <h4 className="text-primaryText">
                   {user?.departmentName}
                 </h4>
-                <p className="text-sm text-gray-400">Department Members</p>
+                <p className="text-sm text-gray-400">Department Members ( <strong>{departmentMembers.length}</strong> )</p>
               </div>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-4 text-sm mb-5">
+          {/* <div className="flex items-center gap-4 text-sm text-primaryText mb-5">
             <span>
               TOTAL <strong>{departmentMembers.length}</strong>
             </span>
-          </div>
+          </div> */}
 
           {/* Members List */}
           <div className="space-y-4  max-h-[200px] overflow-y-auto">
@@ -414,7 +432,7 @@ const formattedAddress = currentAddress
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <button className="text-sm text-orange-500 font-semibold hover:underline">
+            <button onClick={()=>router.push("department")} className="text-sm text-orange-500 font-semibold hover:underline">
               View All Members →
             </button>
           </div>

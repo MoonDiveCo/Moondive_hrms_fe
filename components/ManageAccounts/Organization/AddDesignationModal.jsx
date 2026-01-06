@@ -21,6 +21,7 @@ export default function AddDesignationModal({
   onClose,
   onSaved,
   onDeleted,
+  deletePermissions
 }) {
   const modalRef = useRef(null);
   const [form, setForm] = useState({
@@ -177,7 +178,7 @@ export default function AddDesignationModal({
           </div>
 
           <div className="flex items-center gap-3">
-            {isEdit && (
+            {isEdit && deletePermissions&& (
               <button onClick={handleDelete} className="px-3 py-2 rounded-md bg-red-50 text-red-600 border border-red-100 hover:bg-red-100">
                 Delete
               </button>

@@ -2,11 +2,12 @@
 'use client';
 
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback,useContext } from 'react';
 import axios from 'axios';
 import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { AuthContext } from '@/context/authContext';
 
 export default function Employees({ initialEmployees = [] }) {
   const [employees, setEmployees] = useState(initialEmployees);
@@ -25,6 +26,7 @@ export default function Employees({ initialEmployees = [] }) {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filterLabel, setFilterLabel] = useState('All Employees');
   const filterDropdownRef = useRef(null);
+  const {allUserPermissions}=useContext(AuthContext)
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -35,6 +37,7 @@ export default function Employees({ initialEmployees = [] }) {
         axios.get("/hrms/organization/get-shifts")
       ]);
 
+
       setOrganizationData({
         departments: departmentRes?.data?.result || [],
         designations: designationRes?.data?.result || [],
@@ -42,10 +45,9 @@ export default function Employees({ initialEmployees = [] }) {
       });
     } catch (err) {
       console.error("Failed to load dropdown data:", err);
-    } finally {
-      setLoading(false);
-    }
+    } 
   }, []);
+
 
   useEffect(() => {
     loadData();
@@ -233,7 +235,7 @@ export default function Employees({ initialEmployees = [] }) {
 
   if (error) {
     return (
-      <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
+      <SubModuleProtectedRoute >
         <div className='container py-6'>
           <div className='text-center py-8 text-red-500'>{error}</div>
           <button
@@ -251,13 +253,13 @@ export default function Employees({ initialEmployees = [] }) {
   }
 
   return (
-    <SubModuleProtectedRoute requiredPermissionPrefixes={['HRMS:HR']}>
+    <SubModuleProtectedRoute >
       <div className='container py-6'>
         <div className='flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 mt-3'>
           <div>
-            <h3 className='text-[var(--font-size-h2)] font-extrabold text-[var(--color-blackText)] leading-tight'>
+            <h4 className='text-primaryText leading-tight'>
               Employees
-            </h3>
+            </h4>
           </div>
           <div className='flex items-center gap-3'>
             {/* Filter Dropdown */}
@@ -334,13 +336,13 @@ export default function Employees({ initialEmployees = [] }) {
               )}
             </div>
 
-            <button
+            {allUserPermissions.includes("HRMS:EMPLOYES:WRITE") &&<button
               className='px-4 rounded-lg h-10  bg-[var(--color-primary)] text-white font-medium  hover:brightness-95 transition'
               aria-label='Add Employee(s)'
               onClick={openAdd}
             >
               Add Employee(s)
-            </button>
+            </button>}
             <button className='p-2 rounded-md text-gray-500 hover:bg-gray-50' title='Toggle layout'>
               <svg width='18' height='18' viewBox='0 0 24 24' fill='none'>
                 <path
@@ -420,6 +422,8 @@ export default function Employees({ initialEmployees = [] }) {
             onClose={closeView}
             onEdit={handleEditFromView}
             onDelete={deleteFromView}
+            deletePermission={allUserPermissions.includes("HRMS:EMPLOYES:DELETE")}
+            editPermission={allUserPermissions.includes("HRMS:EMPLOYES:EDIT")}
           />
         )}
 
