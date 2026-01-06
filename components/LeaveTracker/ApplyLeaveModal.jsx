@@ -1,7 +1,11 @@
+// ApplyLeaveModal.jsx
 "use client";
 
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import { useNotifications } from "../../context/notificationcontext"; // Import notification context
+
+
 
 function getDatesBetween(start, end) {
   const dates = [];
@@ -21,7 +25,6 @@ function getDatesBetween(start, end) {
   return dates;
 }
 
-
 export default function ApplyLeaveModal({
   context,
   leaveBalances,
@@ -29,6 +32,8 @@ export default function ApplyLeaveModal({
   onClose,
   holidays,
   allLeaves,
+  currentUser, // Add current user prop (contains user info)
+  reportingManager, // Add reporting manager prop
 }) {
   const [leaveType, setLeaveType] = useState("");
   const [fromDate, setFromDate] = useState(context.startDate || "");
@@ -37,14 +42,16 @@ export default function ApplyLeaveModal({
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Get notification context
+  const { storeNotification } = useNotifications();
+
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
-  // today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
 
+  const todayStr = today.toISOString().split("T")[0];
   const isOptionalLeave = leaveType === "OL";
 
   const optionalHolidays = useMemo(() => {
@@ -163,7 +170,7 @@ export default function ApplyLeaveModal({
         }
       }
 
-      i = end; 
+      i = end;
     }
 
     setDays(res);
@@ -175,7 +182,6 @@ export default function ApplyLeaveModal({
     isOptionalLeave,
     today,
   ]);
-
 
   const totalRequested = useMemo(() => {
     return days.reduce((sum, d) => {
@@ -225,7 +231,7 @@ export default function ApplyLeaveModal({
       if (pendingForType > 0) {
         return `You already have ${pendingForType} pending ${name} leave(s).`;
       }
-      return `You don’t have any ${name} leaves available.`;
+      return `You don't have any ${name} leaves available.`;
     }
 
     if (totalRequested > effectiveAvailable) {
@@ -241,6 +247,31 @@ export default function ApplyLeaveModal({
     totalRequested,
     name,
   ]);
+
+  // 🔔 Send notification to reporting manager
+ const sendLeaveNotification = async (reportingManagerId) => {
+  try {
+    if (!reportingManagerId) {
+      console.log("No reporting manager to notify");
+      return;
+    }
+    const leaveTypeName = balance?.name || leaveType;
+    const daysText = totalRequested === 1 ? "day" : "days";
+    const payload = {
+      receiverId: reportingManagerId,
+      notificationTitle: "New Leave Request",
+      notificationMessage: `${currentUser?.name || "An employee"} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
+      relatedDomainType: "Leave Management",
+      priority: totalRequested >= 5 ? "High" : "Medium",
+      senderId: currentUser?._id,
+    };
+
+    await storeNotification(payload);
+  } catch (error) {
+    console.error(" Failed to store notification:", error);
+  }
+};
+
 
   async function handleSubmit() {
     if (!canSubmit || !leaveType) return;
@@ -260,12 +291,17 @@ export default function ApplyLeaveModal({
             reasonType: d.reason,
           })),
       };
-
-      await axios.post("/hrms/leave/add-leave", payload);
+      // Submit leave application
+      const response = await axios.post("/hrms/leave/add-leave", payload);
+      if (response.data?.data?.length) {
+      const reportingManagerId = response.data.data[0].reportingIds;
+      await sendLeaveNotification(reportingManagerId);
+}
       context?.refreshCalendar?.();
       onClose();
     } catch (err) {
       console.error("Failed to apply leave", err);
+      alert("Failed to submit leave application. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -323,64 +359,70 @@ export default function ApplyLeaveModal({
           )}
 
           {/* DAYS */}
-        {days.length>0 &&  <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
-            {days.map((d) => {
-              const isDisabled =d.reason=== "SANDWICH"? d.enabled :!d.enabled ;
-              const reasonLabel = {
-                PAST: "Past date",
-                WEEKEND: "Weekend",
-                HOLIDAY: "Holiday",
-                APPLIED: "Already applied",
-                SANDWICH: "Sandwich",
-              }[d.reason];
+          {days.length > 0 && (
+            <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
+              {days.map((d) => {
+                const isDisabled = d.reason === "SANDWICH" ? d.enabled : !d.enabled;
+                const reasonLabel = {
+                  PAST: "Past date",
+                  WEEKEND: "Weekend",
+                  HOLIDAY: "Holiday",
+                  APPLIED: "Already applied",
+                  SANDWICH: "Sandwich",
+                }[d.reason];
 
-              const reasonColor = {
-                PAST: "bg-gray-200 text-gray-600",
-                WEEKEND: "bg-blue-100 text-blue-600",
-                HOLIDAY: "bg-purple-100 text-purple-600",
-                APPLIED: "bg-red-100 text-red-600",
-                SANDWICH: "bg-yellow-100 text-yellow-700",
-              }[d.reason];
+                const reasonColor = {
+                  PAST: "bg-gray-200 text-gray-600",
+                  WEEKEND: "bg-blue-100 text-blue-600",
+                  HOLIDAY: "bg-purple-100 text-purple-600",
+                  APPLIED: "bg-red-100 text-red-600",
+                  SANDWICH: "bg-yellow-100 text-yellow-700",
+                }[d.reason];
 
-              return (
-
-                <div
-                  key={d.date}
-                  className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${d.enabled
-                    ? "bg-white hover:bg-gray-100"
-                    : "bg-gray-100 text-gray-400"
+                return (
+                  <div
+                    key={d.date}
+                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
+                      d.enabled
+                        ? "bg-white hover:bg-gray-100"
+                        : "bg-gray-100 text-gray-400"
                     }`}
-                >
-                  <span>{d.date}</span>
-                  {isDisabled && ( <span className={`text-xs px-2 py-0.5 rounded-full ${reasonColor}`} > {reasonLabel} </span> )}
+                  >
+                    <span>{d.date}</span>
+                    {isDisabled && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${reasonColor}`}>
+                        {reasonLabel}
+                      </span>
+                    )}
 
-                  {d.enabled && d.reason!=="SANDWICH" && (
-                    <select
-                      value={d.session}
-                      onChange={(e) =>
-                        setDays((prev) =>
-                          prev.map((x) =>
-                            x.date === d.date
-                              ? {
-                                ...x,
-                                isHalfDay: e.target.value !== "FULL",
-                                session: e.target.value,
-                              }
-                              : x
+                    {d.enabled && d.reason !== "SANDWICH" && (
+                      <select
+                        value={d.session}
+                        onChange={(e) =>
+                          setDays((prev) =>
+                            prev.map((x) =>
+                              x.date === d.date
+                                ? {
+                                    ...x,
+                                    isHalfDay: e.target.value !== "FULL",
+                                    session: e.target.value,
+                                  }
+                                : x
+                            )
                           )
-                        )
-                      }
-                      className="border px-2 py-1 rounded text-xs"
-                    >
-                      <option value="FULL">Full Day</option>
-                      <option value="First Half">1st Half</option>
-                      <option value="Second Half">2nd Half</option>
-                    </select>
-                  )}
-                </div>
-              )
-            })}
-          </div>}
+                        }
+                        className="border px-2 py-1 rounded text-xs"
+                      >
+                        <option value="FULL">Full Day</option>
+                        <option value="First Half">1st Half</option>
+                        <option value="Second Half">2nd Half</option>
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <textarea
             placeholder="Reason"
@@ -394,10 +436,11 @@ export default function ApplyLeaveModal({
             <button
               disabled={!canSubmit || submitting}
               onClick={handleSubmit}
-              className={`px-3 py-1 rounded-full text-xs ${canSubmit && !submitting
-                ? "bg-primary text-white"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+              className={`px-3 py-1 rounded-full text-xs ${
+                canSubmit && !submitting
+                  ? "bg-primary text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
               {submitting ? "Submitting..." : "Submit"}
             </button>

@@ -3,16 +3,25 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import ProfileSlideOver from './ProfileSlideOver';
 import { useRouter } from 'next/navigation';
-import { Bell, Clock, LogIn, LogOut } from 'lucide-react';
+import { Clock, LogIn, LogOut, Bell } from 'lucide-react';
 import { AuthContext } from '@/context/authContext';
+import NotificationSlideOver from '@/components/Notification/NotificationList';
+import { useNotifications } from '@/context/notificationcontext';
 
 export default function MainNavbar({ setCollapsed, collapsed }) {
   const router = useRouter();
   const avatarRef = useRef(null);
   const [openProfile, setOpenProfile] = useState(false);
-  const {user} = useContext(AuthContext)
+  const [openNotifications, setOpenNotifications] = useState(false);
+  const { user } = useContext(AuthContext);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  
+  // Add unread count state (you'll need to fetch this from your API)
+  const {unreadCount} = useNotifications();
+  useEffect(() => {
+    console.log("=======================", unreadCount);
+  }, [unreadCount]);
 
   useEffect(() => {
     if (!isCheckedIn) return;
@@ -23,6 +32,8 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
 
     return () => clearInterval(interval);
   }, [isCheckedIn]);
+
+
 
   const handleCheckToggle = () => {
     if (isCheckedIn) {
@@ -43,7 +54,6 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
   return (
     <div className="w-full px-6 md:px-8 z-20 bg-white shadow-sm">
       <div className="flex items-center justify-between h-16">
-
         <div className="flex items-center gap-3">
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -69,7 +79,6 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
         </div>
 
         <div className="flex items-center gap-4">
-
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium">
             <Clock size={14} className="text-gray-500" />
             <span>{formatTime(elapsedSeconds)}</span>
@@ -96,11 +105,17 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
             )}
           </button>
 
-          <button className="relative p-2 rounded-full hover:bg-gray-100">
-            <Bell size={18} />
-            <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] flex items-center justify-center rounded-full bg-orange-500 text-white">
-              3
-            </span>
+          {/* Notification Button with Badge */}
+          <button
+            onClick={() => setOpenNotifications(true)}
+            className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <Bell size={20} className="text-gray-600" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </button>
 
           <button
@@ -109,9 +124,9 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
             className="flex items-center gap-2 rounded-full hover:bg-gray-50 p-1"
           >
             <img
-              src={user?.imageUrl || null }
+              src={user?.imageUrl || '/default-avatar.png'}
               alt="Profile"
-              className="w-9 h-9 rounded-full "
+              className="w-9 h-9 rounded-full object-cover"
             />
           </button>
         </div>
@@ -120,6 +135,11 @@ export default function MainNavbar({ setCollapsed, collapsed }) {
       <ProfileSlideOver
         isOpen={openProfile}
         onClose={() => setOpenProfile(false)}
+      />
+      
+      <NotificationSlideOver
+        isOpen={openNotifications}
+        onClose={() => setOpenNotifications(false)}
       />
     </div>
   );

@@ -103,7 +103,7 @@ useEffect(() => {
 
   eventSource.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    console.log("Received SSE event:", data);
+    // console.log("Received SSE event:", data);
     if (data.type === "LEAVE_APPLIED") {
       fetchLeaveRequests();
     }
@@ -157,7 +157,7 @@ useEffect(() => {
     const fetchLeaveRequests = async () => {
     try {
       const leaveRes = await axios.get("/hrms/leave/get-leave");
-      console.log(leaveRes?.data?.leaveRequests )
+      // console.log(leaveRes?.data?.leaveRequests )
       setPendingLeaves(leaveRes?.data?.leaveRequests || []);
     } catch (err) {
       console.error("Failed to load leaves", err);
