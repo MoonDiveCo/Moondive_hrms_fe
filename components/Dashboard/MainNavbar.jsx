@@ -1,6 +1,6 @@
 'use client';
  
-import React, { useContext, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import ProfileSlideOver from './ProfileSlideOver';
 import { useRouter } from 'next/navigation';
 import { Bell, Clock, LogIn, LogOut, Coffee } from 'lucide-react';
@@ -29,13 +29,30 @@ export default function MainNavbar({
  
   const avatarRef = useRef(null);
   const [openProfile, setOpenProfile] = useState(false);
-  const { user } = useContext(AuthContext);
+  const { user, authLoading, isSignedIn  } = useContext(AuthContext);
   const [openNotifications, setOpenNotifications] = useState(false);
-  const canCheckInNow = !isCheckedIn || isCheckedOut; // either never checked in or already checked out
-  const showAsCheckedIn = isCheckedIn && !isCheckedOut; // only this state should show "Check Out"
+  const canCheckInNow = !isCheckedIn || isCheckedOut;
+  const showAsCheckedIn = isCheckedIn && !isCheckedOut;
   const isActiveCheckIn = isCheckedIn && !isCheckedOut;
-  const {unreadCount} = useNotifications()
- 
+  
+  // ✅ Get unreadCount and loading state
+  const { unreadCount, loading, fetchNotifications } = useNotifications();
+  
+// const { user, authLoading, isSignedIn } = useContext(AuthContext);
+
+useEffect(() => {
+  if (isSignedIn && !authLoading) {
+    console.log("✅ Auth ready, fetching notifications");
+    fetchNotifications();
+  }
+}, [isSignedIn, authLoading]);
+
+
+  useEffect(() => {
+    console.log("🔔 MainNavbar - unreadCount changed:", unreadCount);
+    console.log("🔔 MainNavbar - loading:", loading);
+  }, [unreadCount, loading]);
+
   const formatTime = (secs) => {
     if (secs === undefined || secs === null || secs < 0) return '00:00:00';
     const h = String(Math.floor(secs / 3600)).padStart(2, '0');
@@ -58,15 +75,12 @@ export default function MainNavbar({
       error: (err) => err.message || 'Could not end break',
     });
  
-  // Always open face modal – the modal will decide check-in or check-out
   const handleMainButtonClick = () => {
     if (isOnBreak) {
       toast.error('Please end your break first.');
       return;
     }
- 
-    // This tells the modal what action to perform after verification
-    onFaceModalOpen(isCheckedIn ? 'checkOut' : 'checkIn');
+    onCheckInClick(isCheckedIn ? 'checkOut' : 'checkIn');
   };
  
   return (
@@ -129,7 +143,6 @@ export default function MainNavbar({
             )}
           </button>
  
- 
           {/* Break Button */}
           {isCheckedIn && (
             <button
@@ -145,18 +158,24 @@ export default function MainNavbar({
             </button>
           )}
  
-           <button
-          onClick={() => setOpenNotifications(true)}
-          className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
-        >
-          <Bell size={20} className="text-gray-600" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </button>
- 
+          {/* Notification Button with Badge */}
+          <button
+            onClick={() => setOpenNotifications(true)}
+            className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            {loading ? (
+              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500" />
+            ) : (
+              <>
+                <Bell size={20} className="text-gray-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </>
+            )}
+          </button>
  
           <button
             ref={avatarRef}
@@ -183,5 +202,3 @@ export default function MainNavbar({
     </div>
   );
 }
- 
- 

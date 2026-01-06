@@ -12,6 +12,7 @@ import { getToken, onMessage } from "firebase/messaging";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { messaging } from "../firebase";
+   import { AuthContext } from "@/context/authContext";
 
 const NotificationContext = createContext();
 
@@ -20,6 +21,10 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fcmToken, setFcmToken] = useState(null);
+   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+
+const { isSignedIn, loading: authLoading } = useContext(AuthContext);
   const [permission, setPermission] = useState(
     typeof window !== "undefined" && "Notification" in window
       ? Notification.permission
@@ -60,7 +65,16 @@ export const NotificationProvider = ({ children }) => {
     return userId || null;
   };
 
-  const isAuthenticated = Boolean(getAuthToken());
+
+
+
+
+useEffect(() => {
+  if (!authLoading) {
+    setIsAuthenticated(isSignedIn);
+  }
+}, [isSignedIn, authLoading]);
+
 
   // Create a stable API instance using useRef
   const apiRef = useRef(null);
