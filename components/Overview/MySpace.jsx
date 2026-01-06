@@ -6,13 +6,28 @@ import { AuthContext } from "@/context/authContext";
 import { Building, Building2, Calendar, Contact2, Dot, MailIcon, MapPin, MapPinCheck, PencilIcon, PhoneCallIcon } from "lucide-react";
 import LeaveTrackerDashboard from "../LeaveTracker/LeaveDashboard";
 import ProfileSlideOver from "../Dashboard/ProfileSlideOver";
+import dayjs from "dayjs";
 
+function getCurrentWorkWeekDays(base = new Date()) {
+  const today = new Date(base);
+  const day = today.getDay(); // 0=Sun..6=Sat [web:5][web:22]
+  const diffToMonday = day === 0 ? -6 : 1 - day; // adjust when Sunday [web:9]
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday);
 
+  const days= [];
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    days.push(d);
+  }
+  return days;
+}
 export default function HRMSOverviewPage() {
   const { user, loading } = useContext(AuthContext);
 
   const [activeTab, setActiveTab] = useState("leave");
-
+const [weekAttendance, setWeekAttendance] = useState({});
   const [reportingManager, setReportingManager] = useState(null);
   const [departmentMembers, setDepartmentMembers] = useState([]);
   const [openProfile, setOpenProfile] = useState(false);
@@ -20,6 +35,34 @@ export default function HRMSOverviewPage() {
   const [startTs, setStartTs] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
+useEffect(() => {
+    const fetchWeek = async () => {
+      const days = getCurrentWorkWeekDays(); // Mon–Fri
+      const results = {};
+
+      await Promise.all(
+        days.map(async (d) => {
+          const dayStr = dayjs(d).format("YYYY-MM-DD"); // [web:25][web:30]
+          const res = await axios.get(
+            `${process.env.NEXT_PUBLIC_API}/hrms/attendance?type=day&day=${dayStr}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          results[dayStr] = res.data; // { count, data }
+        })
+      );
+
+      setWeekAttendance(results);
+    };
+
+    fetchWeek();
+  }, []);
+
+  const days = getCurrentWorkWeekDays();
+
 
   // ---------------- FALLBACK IMAGE ----------------
   const avatarUrl =
@@ -121,6 +164,75 @@ const formattedAddress = currentAddress
       .join(", ")
   : "—";
 
+// build UI items from fetched attendance - UPDATED
+const attendanceItems = days.map((d) => {
+  const key = dayjs(d).format("YYYY-MM-DD");
+  const att = (weekAttendance )[key];
+  const record = att?.data?.[0];
+
+  // format times if exist
+  const inTime = record?.checkIn 
+    ? dayjs(record.checkIn).format("hh:mm A") 
+    : null;
+  const outTime = record?.checkOut 
+    ? dayjs(record.checkOut).format("hh:mm A") 
+    : null;
+
+  let hours = "0h";
+  let status = "Absent";
+  let color = "orange";
+
+  if (record?.checkIn && record?.checkOut) {
+    const checkInMs = new Date(record.checkIn).getTime();
+    const checkOutMs = new Date(record.checkOut).getTime();
+
+    // subtract total break time
+    let totalBreakMs = 0;
+    if (record.breaks?.length > 0) {
+      record.breaks.forEach((b) => {
+        if (b.start && b.end) {
+          totalBreakMs += new Date(b.end).getTime() - new Date(b.start).getTime();
+        }
+      });
+    }
+
+    const workingMs = checkOutMs - checkInMs - totalBreakMs;
+    const workingHours = Math.round(workingMs / (1000 * 60 * 60) * 10) / 10; // 1 decimal
+
+    hours = `${workingHours}h`;
+
+    // status logic based on schema enum
+    if (record.status === "Present") {
+      status = "Present";
+      color = "green";
+    } else if (record.status === "First Half" || record.status === "Second Half") {
+      status = "Half Day";
+      color = "orange";
+    } else if (record.status === "On Leave") {
+      status = "On Leave";
+      color = "yellow";
+    } else {
+      status = record.status || "Absent";
+      color = "orange";
+    }
+  } else if (record?.checkIn && !record.checkOut) {
+    status = "Checked In";
+    color = "blue"; // or green
+  } else if (record?.status === "On Leave") {
+    status = "On Leave";
+    color = "yellow";
+  }
+
+  return {
+    day: dayjs(d).format("dddd, MMM DD"),
+    time: inTime && outTime ? `${inTime} - ${outTime}` : 
+          inTime ? `${inTime} - —` : 
+          "—",
+    hours,
+    status,
+    color,
+  };
+});
 
   return (
     <div className="max-w-full mx-auto px-6 md:px-8">
@@ -200,43 +312,7 @@ const formattedAddress = currentAddress
       <div>
 
     <div className="space-y-2">
-      {[
-        {
-          day: "Monday, Dec 18",
-          time: "09:00 AM - 05:30 PM",
-          hours: "8.5h",
-          status: "Present",
-          color: "green",
-        },
-        {
-          day: "Tuesday, Dec 19",
-          time: "09:15 AM - 05:45 PM",
-          hours: "8.5h",
-          status: "Late",
-          color: "yellow",
-        },
-        {
-          day: "Wednesday, Dec 20",
-          time: "08:55 AM - 05:25 PM",
-          hours: "8.5h",
-          status: "Present",
-          color: "green",
-        },
-        {
-          day: "Thursday, Dec 21",
-          time: "09:00 AM - 05:30 PM",
-          hours: "8.5h",
-          status: "Present",
-          color: "green",
-        },
-        {
-          day: "Friday, Dec 22",
-          time: "09:05 AM - 01:30 PM",
-          hours: "4.5h",
-          status: "Half Day",
-          color: "orange",
-        },
-      ].map((item, index) => (
+      {attendanceItems.map((item, index) => (
         <div
           key={index}
           className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2"

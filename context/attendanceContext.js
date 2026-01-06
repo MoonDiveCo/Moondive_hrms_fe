@@ -226,6 +226,7 @@ const updateTodayInCalendar = (status) => {
         checkOut,
         breakIn,
         breakOut,
+        isCheckedOut
       }}
     >
       {children}

@@ -22,6 +22,7 @@ export default function MainNavbar({
     breakSeconds,
     breakIn,
     breakOut,
+    isCheckedOut
   } = useAttendance();
 
   const avatarRef = useRef(null);
@@ -87,7 +88,7 @@ export default function MainNavbar({
           </div>
 
           {/* Unified Check In / Out Button */}
-       <button
+<button
   onClick={() => onCheckInClick(isCheckedIn ? "checkOut" : "checkIn")}
   disabled={isOnBreak}
   className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold ${
@@ -106,6 +107,7 @@ export default function MainNavbar({
     </>
   )}
 </button>
+
 
 
           {/* Break Button */}
