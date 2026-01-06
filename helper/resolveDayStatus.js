@@ -1,51 +1,40 @@
+// in @/helper/resolveDayStatus.js
 export function resolveDayStatus({ dateObj, attendance, holiday, leave }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const date = new Date(dateObj);
-  date.setHours(0, 0, 0, 0);
+  // ✅ session-aware: check firstCheckIn OR checkIn
+  const hasAttendance = attendance?.firstCheckIn || attendance?.checkIn;
+  const isToday = dateObj.toDateString() === new Date().toDateString();
 
-  const isTodayOrPast = date <= today;
-  const isFuture = date > today;
-  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-  // 1. Leave - highest priority
-  if (leave) {
-    if (leave.isHalfDay) {
-      return {
-        status:
-          leave.session === "First Half" ? "leave-first-half" : "leave-second-half",
-        label: leave.session === "First Half" ? "Leave (1st Half)" : "Leave (2nd Half)",
-      };
-    }
-    return {
-      status: "leave",
-      label: leave.leaveType || "Full Day Leave",
-    };
-  }
-
-  // 2. Holiday
-  if (holiday?.isActive && (holiday.type === "PUBLIC" || holiday.type === "OPTIONAL")) {
-    return {
-      status: "holiday",
-      label: holiday.name,
-    };
-  }
-
-  // 3. Present (has checkIn)
-  if (attendance?.checkIn) {
-    return { status: "present", label: "Present" };
-  }
-
-  // 4. Weekend
-  if (isWeekend) {
+  // weekend
+  if ([0, 6].includes(dateObj.getDay())) {
     return { status: "weekend", label: "Weekend" };
   }
 
-  // 5. Future
-  if (isFuture) {
-    return { status: "future", label: "--" };
+  // holiday
+  if (holiday?.type === "PUBLIC") {
+    return { status: "holiday", label: holiday.name };
   }
 
-  // 6. Absent
-  return { status: "absent", label: "Absent" };
+  // leave
+  if (leave) {
+    if (leave.status === "First Half") {
+      return { status: "leave-first-half", label: "LH" };
+    }
+    if (leave.status === "Second Half") {
+      return { status: "leave-second-half", label: "SH" };
+    }
+    return { status: "leave", label: "Leave" };
+  }
+
+  // ✅ attendance exists → Present (even if legacy checkIn is null)
+  if (hasAttendance) {
+    return { status: "present", label: "Present" };
+  }
+
+  // no attendance record → Absent (only for past days)
+  if (!isToday) {
+    return { status: "absent", label: "Absent" };
+  }
+
+  // today with no record yet → neutral
+  return { status: "pending", label: "" };
 }

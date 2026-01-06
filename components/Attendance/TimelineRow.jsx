@@ -26,7 +26,15 @@
 
     const isAnyLeave = isLeave || isFirstHalfLeave || isSecondHalfLeave;
     const isNonWorking = isAbsent || isWeekend || isHoliday || isAnyLeave;
-
+function formatTime(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
     const getStatusInfo = () => {
       if (isWeekend) return { icon: <Sun className="w-5 h-5" />, label: "Weekend", color: "yellow" };
       if (isAbsent) return { icon: <AlertCircle className="w-5 h-5" />, label: "Absent", color: "red" };

@@ -193,7 +193,7 @@ const formattedAddress = currentAddress
           <h4 className="text-primaryText">
             Attendance Summary
           </h4>
-          <p className="text-sm text-gray-400">Current Week Overview</p>
+          <p className=" text-gray-400">Current Week Overview</p>
         </div>
       </div>
 
@@ -259,7 +259,7 @@ const formattedAddress = currentAddress
             </span>
 
             <span
-              className={`text-xs font-semibold px-3 py-1 flex items-center rounded-full
+              className={`text-xs font-semibold  justify-start px-3 py-1 flex items-center rounded-full
                 ${
                   item.color === "green"
                     ? "bg-green-100 text-green-700"
