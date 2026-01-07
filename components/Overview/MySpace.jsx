@@ -141,7 +141,7 @@ const formattedAddress = currentAddress
 
 
   return (
-    <div className="max-w-full mx-auto px-6 md:px-8">
+    <div className="max-w-full mx-auto px-6 md:px-8 p-6">
       {/* HERO */}
         <div className="bg-white rounded-2xl primaryShadow p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
