@@ -50,7 +50,7 @@ const LEAVE_TRACKER_HEADER = [
 
   {
     key: "leave-calender",
-    label: "Leave Calender ",
+    label: "Leave Calendar",
     basePath: "/hrms/dashboard/operations/leave-tracker/leave-calender",
         layoutType: "HEADER", 
 
