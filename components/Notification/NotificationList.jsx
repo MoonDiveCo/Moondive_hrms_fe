@@ -65,7 +65,7 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
     <div className="fixed inset-0 z-[9999] pointer-events-none">
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300
+        className={`absolute inset-0 bg-white backdrop-blur-sm transition-opacity duration-300
           ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0"}`}
       />
 
@@ -81,7 +81,7 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold">Notifications</h2>
             {unreadCount > 0 && (
-              <span className="px-2 py-1 text-xs bg-blue-600 text-white rounded-full">
+              <span className="px-2 py-1 text-xs bg-orange-400 text-white rounded-full">
                 {unreadCount}
               </span>
             )}

@@ -860,41 +860,82 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   // Add new notification to local state with proper duplicate checking
-  const addNotification = useCallback((notification) => {
-    const notifId = notification._id || notification.id;
+  // const addNotification = useCallback((notification) => {
+  //   const notifId = notification._id || notification.id;
     
+  //   // Check if already processed
+  //   if (processedNotificationIds.current.has(notifId)) {
+  //     console.log("⚠️ Duplicate notification ignored (already processed):", notifId);
+  //     return;
+  //   }
+
+  //   setNotifications((prev) => {
+  //     // Double check for duplicates in current state
+  //     const exists = prev.some((n) => n._id === notifId);
+
+  //     if (!exists) {
+  //       console.log("✅ Adding new notification:", notifId);
+        
+  //       // Mark as processed
+  //       processedNotificationIds.current.add(notifId);
+        
+  //       // Only increment unread count if notification is unread
+  //       if (!notification.viewed) {
+  //         setUnreadCount((prevCount) => {
+  //           const newCount = prevCount + 1;
+  //           console.log("📈 Incrementing unread count:", prevCount, "->", newCount);
+  //           return newCount;
+  //         });
+  //       }
+        
+  //       return [notification, ...prev];
+  //     }
+      
+  //     console.log("⚠️ Duplicate notification ignored:", notifId);
+  //     return prev;
+  //   });
+  // }, []);
+
+    const addNotification = useCallback((notification) => {
+    const notifId = notification._id || notification.id;
+   
     // Check if already processed
     if (processedNotificationIds.current.has(notifId)) {
       console.log("⚠️ Duplicate notification ignored (already processed):", notifId);
       return;
     }
-
+ 
     setNotifications((prev) => {
       // Double check for duplicates in current state
       const exists = prev.some((n) => n._id === notifId);
-
+ 
       if (!exists) {
         console.log("✅ Adding new notification:", notifId);
-        
+       
         // Mark as processed
         processedNotificationIds.current.add(notifId);
-        
+       
         // Only increment unread count if notification is unread
-        if (!notification.viewed) {
-          setUnreadCount((prevCount) => {
-            const newCount = prevCount + 1;
-            console.log("📈 Incrementing unread count:", prevCount, "->", newCount);
-            return newCount;
-          });
-        }
-        
+        // if (!notification.viewed) {
+        //   setUnreadCount((prevCount) => {
+        //     const newCount = prevCount + 1;
+        //     console.log("📈 Incrementing unread count:", prevCount, "->", newCount);
+        //     return newCount;
+        //   });
+        // }
+       
         return [notification, ...prev];
       }
-      
+     
       console.log("⚠️ Duplicate notification ignored:", notifId);
       return prev;
     });
+    setUnreadCount ((prev)=>{
+      const newCount=prev+1;
+      return newCount
+    })
   }, []);
+ 
 
   // Combined foreground and background notification handler
   useEffect(() => {

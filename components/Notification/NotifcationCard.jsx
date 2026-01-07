@@ -77,10 +77,10 @@ const NotificationCard = ({ notification, onMarkAsRead, onDelete }) => {
         <div className="flex items-center gap-2 flex-1">
           <span className="text-sm">{getDomainIcon(notification.relatedDomainType)}</span>
           <div className="flex-1">
-            <p className="font-bold text-gray-900 text-md leading-tight">
+            <p className="font-bold text-black text-md leading-tight">
               {notification.notificationTitle || notification.title || 'Notification'}
             </p>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-black">
               {notification.relatedDomainType || 'General'}
             </span>
           </div>
