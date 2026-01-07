@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import axios from "axios";
 import useSWR, { mutate } from "swr";
 import { AuthContext } from "@/context/authContext";
@@ -11,6 +11,8 @@ import ProfileSlideOver from "../Dashboard/ProfileSlideOver";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 dayjs.extend(relativeTime);
 
@@ -41,8 +43,10 @@ const fetcherWithAuth = async (url) => {
 };
 
 export default function HRMSOverviewPage() {
-  const { user, loading } = useContext(AuthContext);
+
   const { workedSeconds = 0 } = useAttendance();
+  const { user } = useContext(AuthContext);
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("leave");
   const [weekAttendance, setWeekAttendance] = useState({});
   const [reportingManager, setReportingManager] = useState(null);
@@ -50,6 +54,11 @@ export default function HRMSOverviewPage() {
   const [openProfile, setOpenProfile] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [startTs, setStartTs] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const timerRef = useRef(null);
 
   // New states for confirmation
   const [confirmAction, setConfirmAction] = useState(null); // "approve" | "reject" | null
@@ -108,7 +117,7 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
           imageUrl: member.avatar || avatarUrl,
           designationId: { name: member.designation || "Employee" },
           department: member.department || "General",
-          isOnline: member.isOnline === true,
+          isOnline: member.isOnline,
         }))
       );
     } else {
@@ -116,25 +125,65 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
     }
   }, [membersData]);
 
+  console.log(departmentMembers)
+
   useEffect(() => {
     if (!user?.reportingManagerId) return;
     const fetchReportingManager = async () => {
       try {
+        setLoading(true)
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API}/hrms/employee/view-employee/${user.reportingManagerId}`,
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
         setReportingManager(res.data?.data);
-      } catch {
+        setLoading(false)
+      } catch (err) {
         setReportingManager(null);
+        setLoading(false)
       }
     };
     fetchReportingManager();
   }, [user?.reportingManagerId]);
 
-  if (loading || membersLoading) {
-    return <div className="p-6">Loading dashboard...</div>;
-  }
+  // useEffect(() => {
+  //   if (!user?.departmentId) return;
+
+  //   const fetchDepartment = async () => {
+  //     try {
+  //       setLoading(true)
+  //       const res = await axios.get(
+  //         `${process.env.NEXT_PUBLIC_API}/hrms/organization/view-department/${user.departmentId}`,
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //           },
+  //         }
+  //       );
+  //       const dept = res.data?.result;
+  //       // setDepartmentMembers(dept?.employeeId || []);
+  //       setLoading(false)
+  //     } catch (err) {
+  //       setDepartmentMembers([]);
+  //       setLoading(false)
+  //     }
+  //   };
+
+  //   fetchDepartment();
+  // }, [user?.departmentId]);
+
+ if(loading){
+          return(
+            <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/5 backdrop-blur-sm rounded-2xl'>
+              <DotLottieReact
+                src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+                loop
+                autoplay
+                style={{ width: 100, height: 100, alignItems: 'center' }} 
+              />
+            </div>
+          )
+        }
 
   const currentAddress = user?.address?.find(
     (addr) => addr.addresstype === "Current"
@@ -216,7 +265,7 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
   };
 
   return (
-    <div className="max-w-full mx-auto px-6 md:px-8">
+    <div className="max-w-full mx-auto px-6 md:px-8 p-6">
       <div className="bg-white rounded-2xl primaryShadow p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div className="flex items-center gap-6 min-w-0">
           <div className="relative shrink-0">
@@ -323,7 +372,8 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
           </div>
           <div className="mb-5">
             <p className="text-xs text-gray-400 uppercase mb-2">Reports To</p>
-            <div className="flex items-center gap-4 border rounded-xl p-4">
+
+            <div className="flex items-center gap-4 border border-gray-300 rounded-xl p-4">
               <img
                 src={reportingManager?.imageUrl || avatarUrl}
                 className="w-12 h-12 rounded-full object-cover"
@@ -347,7 +397,8 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
 
           <div>
             <p className="text-xs text-gray-400 uppercase mb-2">You</p>
-            <div className="flex items-center gap-4 border-2 border-orange-200 bg-orange-50 rounded-xl p-4">
+
+            <div className="flex items-center gap-4 border border-orange-200 bg-orange-50 rounded-xl p-4">
               <img
                 src={user?.imageUrl || avatarUrl}
                 className="w-12 h-12 rounded-full object-cover"
@@ -374,16 +425,16 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
                 <h4 className="text-primaryText">
                   {user?.departmentName || "My Department"}
                 </h4>
-                <p className="text-sm text-gray-400">Department Members</p>
+                <p className="text-sm text-gray-400">Department Members ( <strong>{departmentMembers.length}</strong> )</p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-sm mb-5">
-            <span>
-              TOTAL <strong>{departmentMembers.length}</strong>
-            </span>
-          </div>
+          {/* <div className="flex items-center gap-4 text-sm mb-5"> */}
+            {/* <span> */}
+              {/* TOTAL <strong>{departmentMembers.length}</strong> */}
+            {/* </span> */}
+          {/* </div> */}
           <div className="space-y-3 max-h-[300px] overflow-y-auto">
             {[...departmentMembers]
               .sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0))
@@ -435,7 +486,7 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
           </div>
 
           <div className="mt-6 text-center">
-            <button className="text-sm text-orange-500 font-semibold hover:underline">
+            <button onClick={()=>router.push("department")} className="text-sm text-orange-500 font-semibold hover:underline">
               View All Members →
             </button>
           </div>

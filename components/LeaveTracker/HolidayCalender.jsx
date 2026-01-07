@@ -64,7 +64,6 @@ export default function HolidayCalender({
         status: l.status,
         backgroundColor: LEAVE_COLORS[l.status],
       })) || [];
-console.log(leaveEvents)
     setEvents([...holidayEvents, ...leaveEvents]);
   }
 

@@ -45,9 +45,7 @@ export default function Employees({ initialEmployees = [] }) {
       });
     } catch (err) {
       console.error("Failed to load dropdown data:", err);
-    } finally {
-      setLoading(false);
-    }
+    } 
   }, []);
 
 
@@ -259,9 +257,9 @@ export default function Employees({ initialEmployees = [] }) {
       <div className='container py-6'>
         <div className='flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 mt-3'>
           <div>
-            <h3 className='text-[var(--font-size-h2)] font-extrabold text-[var(--color-blackText)] leading-tight'>
+            <h4 className='text-primaryText leading-tight'>
               Employees
-            </h3>
+            </h4>
           </div>
           <div className='flex items-center gap-3'>
             {/* Filter Dropdown */}
