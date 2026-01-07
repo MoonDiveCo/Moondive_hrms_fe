@@ -36,7 +36,7 @@ export default function LeaveRequestsModal({
 
       if (action === "Approved") {
         notificationTitle = "Leave Request Approved ";
-        notificationMessage = `Your ${leaveTypeName} leave request from ${startDate} to ${endDate} has been approved by your manager.`;
+        notificationMessage = ` Your ${leaveTypeName} leave request from ${startDate} to ${endDate} has been approved by your manager.`;
         priority = "Medium";
       } else if (action === "Rejected") {
         notificationTitle = "Leave Request Rejected ";
@@ -54,7 +54,7 @@ export default function LeaveRequestsModal({
         reportingManagerId: currentUser?._id || currentUser?.id,
       });
 
-      console.log(`✓ Notification sent to ${employeeName}`);
+      console.log(`✓ Notification sent to -------------------- ${employeeName}`);
     } catch (error) {
       console.error("Failed to send leave decision notification:", error);
       // Don't block the leave approval/rejection if notification fails

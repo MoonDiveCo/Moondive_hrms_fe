@@ -671,28 +671,28 @@ export const NotificationProvider = ({ children }) => {
  
   // Mark notification as read
   const markAsRead = async (notificationId) => {
-    try {
-      const response = await api.patch(`/mark-as-read/${notificationId}`);
- 
-      if (response.data.success) {
-        setNotifications((prev) =>
-          prev.map((notif) =>
-            notif._id === notificationId ? { ...notif, viewed: true } : notif
-          )
-        );
- 
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-      throw error;
+  try {
+    const { data } = await api.put(`/mark-as-read/${notificationId}`);
+
+    if (data.success) {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === notificationId ? { ...n, isRead: true } : n
+        )
+      );
+
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
     }
-  };
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+  }
+};
+
  
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
-      const response = await api.patch("/mark-all-read");
+      const response = await api.put("/mark-all-read");
  
       if (response.data.success) {
         setNotifications((prev) =>
@@ -1037,7 +1037,7 @@ export const NotificationProvider = ({ children }) => {
           console.log("✅ Service Worker registered:", registration);
         })
         .catch((err) => {
-          console.error("❌ Service Worker registration failed:", err);
+          console.error(" Service Worker registration failed:", err);
         });
     }
   }, []);

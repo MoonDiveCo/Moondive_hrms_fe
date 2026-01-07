@@ -262,28 +262,71 @@ export default function ApplyLeaveModal({
   ]);
 
   // 🔔 Send notification to reporting manager
- const sendLeaveNotification = async (reportingManagerId) => {
+//  const sendLeaveNotification = async (reportingManagerId) => {
+//   try {
+//     if (!reportingManagerId) {
+//       console.log("No reporting manager to notify");
+//       return;
+//     }
+//     const leaveTypeName = balance?.name || leaveType;
+//     const daysText = totalRequested === 1 ? "day" : "days";
+//     const payload = {
+//       receiverId: reportingManagerId,
+//       notificationTitle: "New Leave Request",
+//       notificationMessage: `${currentUser?.name || "An employee"} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
+//       relatedDomainType: "Leave Management",
+//       priority: totalRequested >= 5 ? "High" : "Medium",
+//       senderId: currentUser?._id,
+//     };
+
+//     await storeNotification(payload);
+//   } catch (error) {
+//     console.error(" Failed to store notification:", error);
+//   }
+// };
+const getSenderName = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user) return "An employee";
+
+    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "An employee";
+  } catch (error) {
+    return "An employee";
+  }
+};
+
+console.log("Sender Name--------------------:", getSenderName());
+
+
+const sendLeaveNotification = async (reportingManagerId) => {
   try {
     if (!reportingManagerId) {
       console.log("No reporting manager to notify");
       return;
     }
+
+    const senderName = getSenderName(); // ✅ FETCHED FROM STORAGE
     const leaveTypeName = balance?.name || leaveType;
     const daysText = totalRequested === 1 ? "day" : "days";
+
     const payload = {
       receiverId: reportingManagerId,
+      senderId: currentUser?._id || currentUser?.id,
+      senderName, 
       notificationTitle: "New Leave Request",
-      notificationMessage: `${currentUser?.name || "An employee"} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
+      notificationMessage: `${senderName} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
       relatedDomainType: "Leave Management",
       priority: totalRequested >= 5 ? "High" : "Medium",
-      senderId: currentUser?._id,
     };
 
     await storeNotification(payload);
   } catch (error) {
-    console.error(" Failed to store notification:", error);
+    console.error("Failed to store notification:", error);
   }
 };
+
+
 
 
   async function handleSubmit() {
@@ -308,6 +351,7 @@ export default function ApplyLeaveModal({
       const response = await axios.post("/hrms/leave/add-leave", payload);
       if (response.data?.data?.length) {
       const reportingManagerId = response.data.data[0].reportingIds;
+      
       await sendLeaveNotification(reportingManagerId);
 }
       context?.refreshCalendar?.();
