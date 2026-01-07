@@ -4,6 +4,7 @@ import { AuthContext } from "@/context/authContext";
 import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import AdminOverview from '../../../../components/Overview/adminOverview'
 
 export default function OverviewPage() {
   const { user, loading } = useContext(AuthContext);
@@ -39,5 +40,5 @@ export default function OverviewPage() {
     );
   }
 
-  return <div>overview</div>;
+  return <AdminOverview />;
 }
