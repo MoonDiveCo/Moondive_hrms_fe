@@ -116,6 +116,7 @@ export default function Operations() {
       { id: 'shift', title: 'Shift', icon: 'employee',requiredPermissions:'HRMS:SHIFT:VIEW' },
       { id: 'timeTracker', title: 'Time Tracker', icon: 'time',requiredPermissions:'HRMS:TIME_TRACKER:VIEW' },
       { id: 'performance', title: 'Performance', icon: 'performance',requiredPermissions:'HRMS:PERFORMANCE:VIEW' },
+      {id:'hr-helpdesk',title:'HR Helpdesk',icon:'employee',requiredPermissions:'HRMS:HR HELPDESK:VIEW'}
       // { id: 'onboarding', title: 'Onboarding', subtitle: '', icon: 'onboarding' },
       // { id: 'hrletters', title: 'HR Letters', subtitle: '', icon: 'files', },
       
