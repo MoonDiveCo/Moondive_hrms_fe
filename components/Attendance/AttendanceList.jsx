@@ -1,16 +1,15 @@
-"use client";
+'use client';
 
-import { useContext } from "react";
-import { AuthContext } from "@/context/authContext";
-import AttendanceCard from "@/components/Attendance/AttendanceCard";
-import CheckInButton from "@/components/Attendance/CheckInButton";
-import TimelineRow from "@/components/Attendance/TimelineRow";
-import TodayRow from "@/components/Attendance/TodayRow";
-import { useHolidays } from "@/hooks/useHolidays";
-import { useLeaves } from "@/hooks/useLeave";
-import { useAttendanceCalendar } from "@/hooks/useAttendanceCalendar";
-import { resolveDayStatus } from "@/helper/resolveDayStatus";
-import { calculateWorkedHours } from "@/helper/time"; // or inline
+import { useContext } from 'react';
+import { AuthContext } from '@/context/authContext';
+import TimelineRow from '@/components/Attendance/TimelineRow';
+import TodayRow from '@/components/Attendance/TodayRow';
+import { useHolidays } from '@/hooks/useHolidays';
+import { useLeaves } from '@/hooks/useLeave';
+import { useAttendanceCalendar } from '@/hooks/useAttendanceCalendar';
+import { resolveDayStatus } from '@/helper/resolveDayStatus';
+import { useAttendance } from '@/context/attendanceContext';
+
 function getWeekDates(baseDate = new Date()) {
   const start = new Date(baseDate);
   start.setHours(0, 0, 0, 0);
@@ -36,8 +35,31 @@ function getMonthDates(baseDate) {
   return days;
 }
 
-export default function AttendanceList({ currentDate, rangeMode = "week" }) {
+// ✅ COMPLETE breakSeconds function
+function getBreakSeconds(attendance, isToday, liveBreakSeconds = 0) {
+  if (isToday) {
+    // LIVE break time from context
+    return liveBreakSeconds;
+  }
+
+  // Historical: calculate from breaks array
+  if (attendance?.breaks && attendance.breaks.length > 0) {
+    let total = 0;
+    attendance.breaks.forEach((b) => {
+      if (!b.start || !b.end) return;
+      const end = new Date(b.end);
+      const start = new Date(b.start);
+      total += (end - start) / 1000;
+    });
+    return Math.floor(total);
+  }
+
+  return 0;
+}
+
+export default function AttendanceList({ currentDate, rangeMode = 'week' }) {
   const { user } = useContext(AuthContext);
+  const { workedSeconds, breakSeconds: liveBreakSeconds } = useAttendance(); // live timers
 
   const { data: attendanceMap = {} } = useAttendanceCalendar({
     rangeMode,
@@ -45,34 +67,33 @@ export default function AttendanceList({ currentDate, rangeMode = "week" }) {
   });
 
   const { data: holidayMap = {} } = useHolidays(currentDate.getFullYear());
-  const { data: leaveMap = {} } = useLeaves({ rangeMode, currentDate, userId: user?._id });
+  const { data: leaveMap = {} } = useLeaves({
+    rangeMode,
+    currentDate,
+    userId: user?._id,
+  });
 
-  const dates = rangeMode === "week" ? getWeekDates(currentDate) : getMonthDates(currentDate);
+  const dates =
+    rangeMode === 'week'
+      ? getWeekDates(currentDate)
+      : getMonthDates(currentDate);
 
   const todayStr = new Date().toDateString();
 
   return (
-    <div className="flex flex-col text-gray-800">
-      <div className="px-12 py-3">
-        {/* <AttendanceCard className="flex justify-between items-center">
-         
-          <CheckInButton />
-        </AttendanceCard> */}
-      </div>
-
-      <div className="px-10 py-6 space-y-5">
+    <div className='flex flex-col text-gray-800'>
+      <div className='py-4 space-y-4 '>
         {dates.map((dateObj) => {
           const key = dateObj.toDateString();
           const attendance = attendanceMap[key];
           const holiday = holidayMap[key];
           const leave = leaveMap[key];
-console.log("attendance",attendance?.checkOut)
 
           const holidayName =
             holiday &&
-            (holiday.type === "PUBLIC"
+            (holiday.type === 'PUBLIC'
               ? holiday.name
-              : holiday.type === "OPTIONAL" && holiday.isActive
+              : holiday.type === 'OPTIONAL' && holiday.isActive
               ? `Optional Leave (${holiday.name})`
               : null);
 
@@ -83,68 +104,85 @@ console.log("attendance",attendance?.checkOut)
             leave,
           });
 
-          const day = dateObj.toLocaleDateString("en-US", { weekday: "short" });
+          const day = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
           const dateNum = dateObj.getDate();
-          // Special Today Row
-          if (status === "present" && key === todayStr) {
+          const isToday = key === todayStr;
+
+          // ----- session-based times -----
+          const firstCheckIn =
+            attendance?.firstCheckIn || attendance?.checkIn || null;
+          const lastCheckOut =
+            attendance?.lastCheckOut || attendance?.checkOut || null;
+
+          const checkInTime = firstCheckIn || null;
+          const checkOutTime = lastCheckOut || null;
+ 
+          // ----- worked hours -----
+          let hours = '00:00';
+          if (isToday) {
+            const total = workedSeconds;
+            const h = String(Math.floor(total / 3600)).padStart(2, '0');
+            const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+            hours = `${h}:${m}`;
+          } else if (attendance?.workedSeconds != null) {
+            const total = attendance.workedSeconds;
+            const h = String(Math.floor(total / 3600)).padStart(2, '0');
+            const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+            hours = `${h}:${m}`;
+          }
+
+          // ----- ✅ breakSeconds (live + historical) -----
+          const breakSeconds = getBreakSeconds(
+            attendance,
+            isToday,
+            liveBreakSeconds
+          );
+
+          // ----- Today row -----
+          if (status === 'present' && isToday) {
             return (
               <TodayRow
                 key={key}
                 date={dateNum}
-                checkIn={attendance?.checkIn
-                  ? new Date(attendance.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                  : null}
-                checkOut={attendance?.checkOut
-                  ? new Date(attendance.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                  : null}
-                late={attendance?.anomalies?.includes("LATE_ENTRY") ? "Late" : null}
-                early={attendance?.anomalies?.includes("EARLY_EXIT") ? "Early" : null}
+                checkIn={checkInTime}
+                checkOut={checkOutTime}
+                late={
+                  attendance?.anomalies?.includes('LATE_ENTRY') ? 'Late' : null
+                }
+                early={
+                  attendance?.anomalies?.includes('EARLY_EXIT') ? 'Early' : null
+                }
+                hours={hours}
+                breakSeconds={breakSeconds} // ✅ passes to TodayRow
               />
             );
           }
 
-          // Calculate hours (fallback if backend doesn't send workedHours)
-          let hours = "00:00";
-        // Inside the map loop, for TodayRow:
-if (status === "present" && key === todayStr) {
-  return (
-    <TodayRow
-      key={key}
-      date={dateNum}
-      checkIn={attendance?.checkIn || null}       // ← RAW ISO string
-      checkOut={attendance?.checkOut || null}     // ← RAW ISO string
-      late={attendance?.anomalies?.includes("LATE_ENTRY") ? "Late" : null}
-      early={attendance?.anomalies?.includes("EARLY_EXIT") ? "Early" : null}
-    />
-  );
-}
-const hasCheckIn = Boolean(attendance?.checkIn);
-const isLeaveStatus =
-  status === "leave" ||
-  status === "leave-first-half" ||
-  status === "leave-second-half";
+          // leave + no checkin → pure leave row
+          const hasCheckIn = Boolean(firstCheckIn);
+          const isLeaveStatus =
+            status === 'leave' ||
+            status === 'leave-first-half' ||
+            status === 'leave-second-half';
+          const effectiveStatus =
+            !hasCheckIn && isLeaveStatus ? 'leave' : status;
 
-// 1) If no check-in and leave → force pure leave row (no timeline)
-const effectiveStatus =
-  !hasCheckIn && isLeaveStatus ? "leave" : status;
-
-// For regular TimelineRow (already correct in previous version)
-return (
-  <TimelineRow
-    key={key}
-    day={day}
-    date={dateNum}
-    status={status}
-    hours={hours}
-    checkIn={attendance?.checkIn || null}       // ← Keep RAW for WorkingTimeline
-    checkOut={attendance?.checkOut || null}
-    holidayName={holidayName}
-    leaveLabel={label}
-  />
-);
+          return (
+            <TimelineRow
+              key={key}
+              day={day}
+              date={dateNum}
+              status={effectiveStatus}
+              hours={hours}
+              breakSeconds={breakSeconds} // ✅ pass to TimelineRow too
+              checkIn={checkInTime}
+              checkOut={checkOutTime}
+              holidayName={holidayName}
+              leaveLabel={label}
+            />
+          );
         })}
       </div>
-      
     </div>
   );
 }

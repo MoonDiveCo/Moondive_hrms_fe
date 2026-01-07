@@ -94,6 +94,7 @@ const updateTodayInCalendar = (status) => {
         breakSeconds = 0,
         currentBreakStart,
         isCheckedOut
+
       } = res.data;
 
       setIsCheckedIn(isCheckedIn);
@@ -120,19 +121,19 @@ const updateTodayInCalendar = (status) => {
 
   /* ---------------- TIMER LOGIC ---------------- */
 
-  useEffect(() => {
-    if (!isCheckedIn || isCheckedOut) {
-      stopWorkTimer();
-      stopBreakTimer();
-      return;
-    }
+ useEffect(() => {
+  if (!isCheckedIn) {
+    stopWorkTimer();
+    stopBreakTimer();
+    return;
+  }
 
-    if (isOnBreak) {
-      startCurrentBreakTimer();
-    } else {
-      startWorkTimer();
-    }
-  }, [isCheckedIn,isCheckedOut, isOnBreak]);
+  if (isOnBreak) {
+    startCurrentBreakTimer();
+  } else {
+    startWorkTimer();
+  }
+}, [isCheckedIn, isOnBreak]);
 
   /* ---------------- ACTIONS ---------------- */
 
@@ -152,7 +153,7 @@ const updateTodayInCalendar = (status) => {
       return { message: "Checked in successfully" };
     } catch (err) {
       throw err.response?.data || { message: "Check-in failed" };
-    }
+    } 
   };
 
   const checkOut = async () => {
@@ -222,6 +223,7 @@ const updateTodayInCalendar = (status) => {
         workedSeconds,
         breakSeconds,
         currentBreakElapsed,
+        isCheckedOut,       
         checkIn,
         checkOut,
         breakIn,

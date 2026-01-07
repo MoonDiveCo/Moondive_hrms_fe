@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 
 const OVERVIEW_TABS = [
-  { label: "MySpace", path: "/hrms/dashboard/overview/myspace" },
+  { label: "My Space", path: "/hrms/dashboard/overview/myspace" },
   { label: "Department", path: "/hrms/dashboard/overview/department" },
 ];
 

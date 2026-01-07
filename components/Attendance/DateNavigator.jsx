@@ -52,21 +52,21 @@ export default function DateNavigator({
       {/* LEFT ARROW */}
       <button
         onClick={goPrev}
-        className="p-2 bg-primary rounded-md  hover:bg-orange-300 "
+        className="p-2 bg-primary rounded-md  hover:bg-orange-300 cursor-pointer"
       >
         <ChevronLeft size={16} className="text-white" />
       </button>
 
       {/* DATE PILL */}
       <div className="flex items-center gap-2 px-3 py-2 text-primary rounded-md  text-sm font-medium">
-        <Calendar size={16} className="text-primary"/>
-        {label}
+        <Calendar size={18} className="text-primary"/>
+        <h5>{label}</h5>
       </div>
 
       {/* RIGHT ARROW */}
       <button
         onClick={goNext}
-        className="p-2 bg-primary rounded-md  hover:bg-orange-300"
+        className="p-2 bg-primary rounded-md  hover:bg-orange-300 cursor-pointer"
       >
         <ChevronRight size={16} className="text-white"/>
       </button>

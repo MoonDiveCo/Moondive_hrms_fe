@@ -58,12 +58,13 @@ export default function HolidayCalender({
         title: l.leaveType,
         start: l.startDate,
         end: l.endDate,
-        allDay: true,
+        allDay: l.isHalfDay,
+        session: l.isHalfDay ? l.session : "Full Day",
         source: "LEAVE",
         status: l.status,
         backgroundColor: LEAVE_COLORS[l.status],
       })) || [];
-
+console.log(leaveEvents)
     setEvents([...holidayEvents, ...leaveEvents]);
   }
 
@@ -86,7 +87,6 @@ today.setHours(0, 0, 0, 0);
 
   function handleEventClick(info) {
    const { extendedProps, startStr, title, endStr } = info.event;
-
     if (extendedProps?.source) {
       onViewLeave({extendedProps , startDate: startStr, endDate: endStr, title });
     }
@@ -123,6 +123,7 @@ today.setHours(0, 0, 0, 0);
         //     end: `${currentYear + 1}-01-01`,
         //   }}
         datesSet={fetchCalendarData}
+        displayEventTime={false}
         headerToolbar={{
           left: "prev title next",
           center: "",

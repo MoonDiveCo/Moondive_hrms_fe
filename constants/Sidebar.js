@@ -36,7 +36,7 @@ export function MenuProvider({ children }) {
       "HRMS:EMPLOYES:VIEW": { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", position: "top" },
       "HRMS:LEAVE_TRACKER:VIEW": { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker", position: "top" },
       "HRMS:ATTENDANCE:VIEW": { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance/list", position: "top" },
-      "HRMS:TIME_TRACKER:VIEW": { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker", position: "top" },
+      // "HRMS:TIME_TRACKER:VIEW": { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker", position: "top" },
       "HRMS:COMPANY_POLICY:VIEW": { label: "OrganizationPolicy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy", position: "top" },
       "HRMS:PERFORMANCE:VIEW": { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance", position: "top" },
       "HRMS:DOCUMENTS:VIEW": { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents", position: "top" },

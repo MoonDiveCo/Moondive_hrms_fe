@@ -122,7 +122,7 @@ console.log("holiday map",holidayMap)
   return (
     <div className="rounded-xl bg-white overflow-hidden ">
       {/* WEEK HEADER */}
-      <div className="grid grid-cols-7 bg-gray-50 shadow-lg boder-gray-50">
+      <div className="grid grid-cols-7 bg-gray-50  border-2  border-gray-200">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
@@ -134,7 +134,7 @@ console.log("holiday map",holidayMap)
       </div>
 
       {/* CALENDAR GRID */}
-      <div className="grid grid-cols-7 auto-rows-[90px] font-semibold text-primaryText">
+      <div className="grid grid-cols-7 auto-rows-[90px]  border-1  border-gray-100 font-semibold text-primaryText">
         {days.map((day, i) => (
           <CalendarCell key={i} day={day} />
         ))}
