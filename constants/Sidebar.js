@@ -34,7 +34,7 @@ export function MenuProvider({ children }) {
     const sidebarObject = {
       "HRMS:HRMS_OVERVIEW:VIEW": { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview", position: "top" },
       "HRMS:EMPLOYES:VIEW": { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", position: "top" },
-      // "HRMS:LEAVE_TRACKER:VIEW": { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker", position: "top" },
+      "HRMS:LEAVE_TRACKER:VIEW": { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker", position: "top" },
       "HRMS:PROJECTS:VIEW":{label:"Projects",icon:OverviewIcon,href:"/hrms/dashboard/projects",position:"top"},
       "HRMS:ATTENDANCE:VIEW": { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance/list", position: "top" },
       "HRMS:TIME_TRACKER:VIEW": { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker", position: "top" },
@@ -150,6 +150,7 @@ export function MenuProvider({ children }) {
       "/hrms/dashboard/operations/leave-tracker/employment-group":"HRMS:LEAVE:VIEW",
       "/hrms/dashboard/operations/leave-tracker/leave-calender":"HRMS:LEAVE:VIEW",
       "/hrms/dashboard/operations/employeeInfo":"HRMS:EMPLOYEE:VIEW",
+      "/hrms/dashboard/operations/hr-helpdesk":"HRMS:HR HELPDESK:VIEW"
     }
 
 
