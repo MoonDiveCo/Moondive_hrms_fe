@@ -47,7 +47,7 @@ export default function OverviewLayout({ children }) {
       </div>}
 
       {/* SUB PAGE CONTENT */}
-      <div className="p-6">{children}</div>
+      <div className="">{children}</div>
     </div>
   );
 }
