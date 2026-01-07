@@ -153,7 +153,7 @@ const updateTodayInCalendar = (status) => {
       return { message: "Checked in successfully" };
     } catch (err) {
       throw err.response?.data || { message: "Check-in failed" };
-    }
+    } 
   };
 
   const checkOut = async () => {
@@ -228,6 +228,7 @@ const updateTodayInCalendar = (status) => {
         checkOut,
         breakIn,
         breakOut,
+        isCheckedOut
       }}
     >
       {children}

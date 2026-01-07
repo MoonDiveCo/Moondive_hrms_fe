@@ -110,6 +110,7 @@ export default function AttendanceViewPage() {
           )}
         </div>
       </div>
+        {/* <TimeScaleFooter/> */}
     
         {showRegModal && <RequestRegularization onClose={()=>setShowRegModal(false)} />}
      
@@ -121,7 +122,7 @@ function ViewButton({ active, children, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`p-3 rounded-md transition-all ${
+      className={`p-3 rounded-md transition-all cursor-pointer ${
         active
           ? "bg-orange-500 text-white shadow-sm"
           : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
