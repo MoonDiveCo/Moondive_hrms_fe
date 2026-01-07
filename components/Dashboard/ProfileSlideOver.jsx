@@ -546,7 +546,7 @@ export default function ProfileSlideOver({
               className='absolute inset-0 bg-black/40 backdrop-blur-sm'
               onClick={cancelLogout}
             />
-            <div className='relative bg-white rounded-xl shadow-2xl w-[min(500px,90%)] p-6 z-10'>
+            <div className='relative bg-black/5 rounded-xl shadow-2xl w-[min(500px,90%)] p-6 z-10'>
               {/* lottie centered */}
               <div className='flex justify-center'>
                 <div className='w-48 '>

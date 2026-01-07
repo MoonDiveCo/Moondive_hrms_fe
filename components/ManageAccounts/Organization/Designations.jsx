@@ -88,7 +88,7 @@ export default function Designations() {
 
     if(loading){
         return(
-          <div className='absolute inset-0 z-20 flex items-center justify-center bg-white backdrop-blur-sm rounded-2xl'>
+          <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/5 backdrop-blur-sm rounded-2xl'>
             <DotLottieReact
               src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
               loop
