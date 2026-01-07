@@ -34,11 +34,11 @@ export default function LeaveRequestsModal({
       let priority = "Medium";
 
       if (action === "Approved") {
-        notificationTitle = "Leave Request Approved ✓";
+        notificationTitle = "Leave Request Approved ";
         notificationMessage = `Your ${leaveTypeName} leave request from ${startDate} to ${endDate} has been approved by your manager.`;
         priority = "Medium";
       } else if (action === "Rejected") {
-        notificationTitle = "Leave Request Rejected ✗";
+        notificationTitle = "Leave Request Rejected ";
         notificationMessage = `Your ${leaveTypeName} leave request from ${startDate} to ${endDate} has been rejected.${reason ? ` Reason: ${reason}` : ""}`;
         priority = "High";
       }

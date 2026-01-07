@@ -38,7 +38,6 @@ export default function MainNavbar({
   // ✅ Get unreadCount and loading state
   const { unreadCount, loading, fetchNotifications } = useNotifications();
   
-// const { user, authLoading, isSignedIn } = useContext(AuthContext);
 
 useEffect(() => {
   if (isSignedIn && !authLoading) {
@@ -47,11 +46,6 @@ useEffect(() => {
   }
 }, [isSignedIn, authLoading]);
 
-
-  useEffect(() => {
-    console.log("🔔 MainNavbar - unreadCount changed:", unreadCount);
-    console.log("🔔 MainNavbar - loading:", loading);
-  }, [unreadCount, loading]);
 
   const formatTime = (secs) => {
     if (secs === undefined || secs === null || secs < 0) return '00:00:00';

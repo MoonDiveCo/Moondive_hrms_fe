@@ -4,9 +4,6 @@ import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 
 const NotificationCard = ({ notification, onMarkAsRead, onDelete }) => {
-  // Add debugging to see the actual data structure
-//   console.log('Single notification:', notification);
-
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High':
@@ -53,7 +50,6 @@ const NotificationCard = ({ notification, onMarkAsRead, onDelete }) => {
     }
   };
 
-  // Get the message from various possible property names
   const getMessage = () => {
     return notification.notificationMessage || 
            notification.message || 
@@ -65,7 +61,7 @@ const NotificationCard = ({ notification, onMarkAsRead, onDelete }) => {
 
   return (
     <div
-      className={`relative p-4 mb-3 rounded-lg border-l-4 transition-all duration-200 hover:shadow-md ${
+      className={`relative p-3 mb-2 rounded-lg border-l-4 transition-all duration-200 hover:shadow-md ${
         notification.viewed
           ? 'bg-white border-gray-300'
           : 'bg-blue-50 border-blue-500'
@@ -73,17 +69,17 @@ const NotificationCard = ({ notification, onMarkAsRead, onDelete }) => {
     >
       {/* Unread indicator */}
       {!notification.viewed && (
-        <div className="absolute top-4 right-4 w-2 h-2 bg-blue-500 rounded-full"></div>
+        <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full"></div>
       )}
 
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 flex-1">
-          <span className="text-2xl">{getDomainIcon(notification.relatedDomainType)}</span>
+          <span className="text-sm">{getDomainIcon(notification.relatedDomainType)}</span>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 text-sm">
+            <p className="font-bold text-gray-900 text-md leading-tight">
               {notification.notificationTitle || notification.title || 'Notification'}
-            </h3>
+            </p>
             <span className="text-xs text-gray-500">
               {notification.relatedDomainType || 'General'}
             </span>
@@ -93,7 +89,7 @@ const NotificationCard = ({ notification, onMarkAsRead, onDelete }) => {
         {/* Priority badge */}
         {notification.priority && (
           <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(
+            className={`px-2 py-0.5 text-xs font-medium rounded-full ${getPriorityColor(
               notification.priority
             )}`}
           >
@@ -102,13 +98,13 @@ const NotificationCard = ({ notification, onMarkAsRead, onDelete }) => {
         )}
       </div>
 
-      {/* Message */}
-      <p className="text-gray-700 text-sm mb-3 line-clamp-2">
+      {/* Message - Now smaller */}
+      <p className="text-gray-600 text-xs mb-2 line-clamp-2 leading-relaxed">
         {getMessage()}
       </p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-2">
         <span className="text-xs text-gray-500">
           {formatTime(notification.createdAt)}
         </span>
