@@ -21,6 +21,7 @@ export default function LeaveRequestsModal({
   
   // Send notification to employee
   const sendLeaveDecisionNotification = async (leave, action, reason = "") => {
+    console.log("leave  ",leave)
     try {
       const employeeName = `${leave.employee.firstName} ${leave.employee.lastName}`;
       const leaveTypeName = leave.leaveType;
@@ -208,12 +209,14 @@ export default function LeaveRequestsModal({
             ))}
 
           {activeTab !== "MY_LEAVES" &&
-            visibleRequests.map((l) => (
-              <div
+            visibleRequests.map((l) => {
+              console.log("leave  ",l)
+              return <div
                 key={l.leaveId}
                 className="border rounded-lg p-4 relative transition-all hover:shadow-md"
               >
                 {processingId === l.leaveId && (
+                
                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-10 backdrop-blur-sm">
                     <div className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
@@ -314,7 +317,7 @@ export default function LeaveRequestsModal({
                   </div>
                 )}
               </div>
-            ))}
+            })}
         </div>
       </div>
     </div>

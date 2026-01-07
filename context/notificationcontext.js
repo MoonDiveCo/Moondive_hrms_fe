@@ -1,5 +1,5 @@
 // "use client";
-
+ 
 // import React, {
 //   createContext,
 //   useContext,
@@ -13,27 +13,27 @@
 // import Cookies from "js-cookie";
 // import { messaging } from "../firebase";
 // import { AuthContext } from "@/context/authContext";
-
+ 
 // const NotificationContext = createContext();
-
+ 
 // export const NotificationProvider = ({ children }) => {
 //   const [notifications, setNotifications] = useState([]);
 //   const [unreadCount, setUnreadCount] = useState(0);
 //   const [loading, setLoading] = useState(false);
 //   const [fcmToken, setFcmToken] = useState(null);
 //    const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-
+ 
+ 
 // const { isSignedIn, loading: authLoading } = useContext(AuthContext);
 //   const [permission, setPermission] = useState(
 //     typeof window !== "undefined" && "Notification" in window
 //       ? Notification.permission
 //       : "default"
 //   );
-
+ 
 //   // API base URL
 //   const API_BASE_URL = "http://localhost:2000/api/v1/hrms/notification";
-
+ 
 //   // Get auth token from cookies
 //   const getAuthToken = () => {
 //     if (typeof window !== "undefined") {
@@ -41,7 +41,7 @@
 //     }
 //     return null;
 //   };
-
+ 
 //   // Get user from localStorage
 //   const getUser = () => {
 //     if (typeof window !== "undefined") {
@@ -57,28 +57,28 @@
 //     }
 //     return null;
 //   };
-
+ 
 //   // Get userId from localStorage - handle different possible structures
 //   const getUserId = () => {
 //     const user = getUser();
 //     const userId = user?._id || user?.id || user?.userId || user?.user?._id;
 //     return userId || null;
 //   };
-
-
-
-
-
+ 
+ 
+ 
+ 
+ 
 // useEffect(() => {
 //   if (!authLoading) {
 //     setIsAuthenticated(isSignedIn);
 //   }
 // }, [isSignedIn, authLoading]);
-
-
+ 
+ 
 //   // Create a stable API instance using useRef
 //   const apiRef = useRef(null);
-  
+ 
 //   if (!apiRef.current) {
 //     apiRef.current = axios.create({
 //       baseURL: API_BASE_URL,
@@ -86,7 +86,7 @@
 //         "Content-Type": "application/json",
 //       },
 //     });
-
+ 
 //     // Add auth token to requests
 //     apiRef.current.interceptors.request.use((config) => {
 //       const token = getAuthToken();
@@ -96,9 +96,9 @@
 //       return config;
 //     });
 //   }
-
+ 
 //   const api = apiRef.current;
-
+ 
 //   // Fetch notifications from server - now stable with useRef
 //   const fetchNotifications = useCallback(
 //     async (page = 1, limit = 20) => {
@@ -106,7 +106,7 @@
 //         console.log("User not authenticated");
 //         return;
 //       }
-
+ 
 //       setLoading(true);
 //       try {
 //         const response = await api.get("/list-notification", {
@@ -116,7 +116,7 @@
 //             _t: Date.now(), // Bypass cache
 //           },
 //         });
-
+ 
 //         // Check both possible response structures
 //         if (response.data.success) {
 //           const notifs = response.data.data.notifications;
@@ -141,19 +141,19 @@
 //     },
 //     [isAuthenticated, api]
 //   );
-
+ 
 //   // Mark notification as read
 //   const markAsRead = async (notificationId) => {
 //     try {
 //       const response = await api.patch(`/mark-as-read/${notificationId}`);
-
+ 
 //       if (response.data.success) {
 //         setNotifications((prev) =>
 //           prev.map((notif) =>
 //             notif._id === notificationId ? { ...notif, viewed: true } : notif
 //           )
 //         );
-
+ 
 //         setUnreadCount((prev) => Math.max(0, prev - 1));
 //       }
 //     } catch (error) {
@@ -161,17 +161,17 @@
 //       throw error;
 //     }
 //   };
-
+ 
 //   // Mark all notifications as read
 //   const markAllAsRead = async () => {
 //     try {
 //       const response = await api.patch("/mark-all-read");
-
+ 
 //       if (response.data.success) {
 //         setNotifications((prev) =>
 //           prev.map((notif) => ({ ...notif, viewed: true }))
 //         );
-
+ 
 //         setUnreadCount(0);
 //       }
 //     } catch (error) {
@@ -179,7 +179,7 @@
 //       throw error;
 //     }
 //   };
-
+ 
 //   // Send/Store notification
 //   const storeNotification = async ({
 //     receiverId,
@@ -201,7 +201,7 @@
 //       );
 //       return;
 //     }
-
+ 
 //     const payload = {
 //       receiverId,
 //       notificationTitle,
@@ -209,10 +209,10 @@
 //       relatedDomainType,
 //       priority,
 //     };
-
+ 
 //     if (policyId) payload.policyId = policyId;
 //     if (senderId) payload.senderId = senderId;
-
+ 
 //     try {
 //       const response = await api.post("/send", payload);
 //       console.log("✅ Notification API response:", response.data);
@@ -225,12 +225,12 @@
 //       throw error;
 //     }
 //   };
-
+ 
 //   // Delete notification
 //   const deleteNotification = async (notificationId) => {
 //     try {
 //       const response = await api.delete(`/delete/${notificationId}`);
-
+ 
 //       if (response.data.success) {
 //         setNotifications((prev) =>
 //           prev.filter((notif) => notif._id !== notificationId)
@@ -241,27 +241,27 @@
 //       throw error;
 //     }
 //   };
-
+ 
 //   // Clear all notifications from state
 //   const clearNotifications = () => {
 //     setNotifications([]);
 //   };
-
+ 
 //   // Save FCM token to server
 //   const saveFCMTokenToServer = async (token) => {
 //     try {
 //       const userId = getUserId();
-
+ 
 //       const payload = { fcmToken: token };
 //       console.log("Preparing to save FCM token:", payload);
-
+ 
 //       if (userId) {
 //         payload.userId = userId;
 //         console.log("Saving FCM token for user:", userId);
 //       } else {
 //         console.warn("No userId found in localStorage");
 //       }
-
+ 
 //       const response = await api.post("/token", payload);
 //       console.log("FCM token saved successfully:", response.data);
 //       return response.data;
@@ -270,7 +270,7 @@
 //       throw error;
 //     }
 //   };
-
+ 
 //   // Get FCM token
 //   const getFCMToken = async () => {
 //     try {
@@ -278,22 +278,22 @@
 //         console.log("Messaging not initialized");
 //         return null;
 //       }
-
+ 
 //       const permission = await Notification.requestPermission();
 //       if (permission !== "granted") {
 //         console.log("Notification permission denied");
 //         return null;
 //       }
-
+ 
 //       const token = await getToken(messaging, {
 //         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
 //       });
-
+ 
 //       if (!token) {
 //         console.log("Token not generated");
 //         return null;
 //       }
-
+ 
 //       console.log("FCM token:", token);
 //       setFcmToken(token);
 //       await saveFCMTokenToServer(token);
@@ -303,7 +303,7 @@
 //       return null;
 //     }
 //   };
-
+ 
 //   // Request notification permission
 //   const requestNotificationPermission = useCallback(async () => {
 //     try {
@@ -311,10 +311,10 @@
 //         console.log("This browser does not support notifications");
 //         return false;
 //       }
-
+ 
 //       const permission = await Notification.requestPermission();
 //       setPermission(permission);
-
+ 
 //       if (permission === "granted") {
 //         const token = await getFCMToken();
 //         return !!token;
@@ -327,16 +327,16 @@
 //       return false;
 //     }
 //   }, []);
-
+ 
 //   // Add new notification to local state with proper duplicate checking
 //   const addNotification = useCallback((notification) => {
 //     setNotifications((prev) => {
 //       // Check for duplicates by _id
 //       const exists = prev.some((n) => n._id === notification._id);
-
+ 
 //       if (!exists) {
 //         console.log("✅ Adding new notification:", notification._id);
-        
+       
 //         // Only increment unread count if notification is unread
 //         if (!notification.viewed) {
 //           setUnreadCount((prevCount) => {
@@ -345,28 +345,28 @@
 //             return newCount;
 //           });
 //         }
-        
+       
 //         return [notification, ...prev];
 //       }
-      
+     
 //       console.log("⚠️ Duplicate notification ignored:", notification._id);
 //       return prev;
 //     });
 //   }, []);
-
  
-
-
+ 
+ 
+ 
 //   // Combined foreground and background notification handler
 //   useEffect(() => {
 //     if (typeof window === "undefined" || !messaging) return;
 //     // 1. Foreground message listener (onMessage)
 //     const unsubscribe = onMessage(messaging, (payload) => {
-      
+     
 //       console.log("📱 FOREGROUND notification received:", payload);
-
+ 
 //       if (!payload?.data) return;
-
+ 
 //       const notificationData = {
 //         _id: payload.data._id ?? Date.now().toString(),
 //         notificationTitle: payload.data.notificationTitle ?? "New Notification",
@@ -376,24 +376,24 @@
 //         viewed: false,
 //         createdAt: payload.data.createdAt ?? new Date().toISOString(),
 //       };
-
+ 
 //       // Add to notifications list
 //       addNotification(notificationData);
 //     });
-
+ 
 //     // 2. Service worker message listener (background notifications)
 //     const handleServiceWorkerMessage = (event) => {
 //       if (event.data?.firebaseMessaging) {
 //         const currentUserId = getUserId();
 //         const targetUserId = event.data.targetUserId;
-
+ 
 //         // Check if notification is for this user
 //         if (!targetUserId || targetUserId === currentUserId) {
 //           if (event.data.notificationClick) {
 //             fetchNotifications();
 //           } else if (event.data.isBackground) {
 //             console.log("🌙 BACKGROUND notification received");
-
+ 
 //             // Option A: Add immediately + refresh (faster UI, ensures sync)
 //             const newNotification = {
 //               _id: event.data.payload.data._id || Date.now().toString(),
@@ -404,19 +404,19 @@
 //               viewed: false,
 //               createdAt: event.data.payload.data.createdAt || new Date().toISOString(),
 //             };
-
+ 
 //             addNotification(newNotification);
-//             setTimeout(() => fetchNotifications(), 1000); 
+//             setTimeout(() => fetchNotifications(), 1000);
 //           }
-//         } 
+//         }
 //         } else if (event.data?.checkUserVisibility) {
 //         const targetUserId = event.data.targetUserId;
 //         const currentUserId = getUserId();
 //         const notificationId = event.data.notificationId;
-
+ 
 //         const isTargetUser = !targetUserId || targetUserId === currentUserId;
 //         const isWindowVisible = document.visibilityState === "visible";
-
+ 
 //         navigator.serviceWorker.controller?.postMessage({
 //           userVisibilityResponse: true,
 //           notificationId: notificationId,
@@ -425,14 +425,14 @@
 //         });
 //       }
 //     };
-
+ 
 //     if ("serviceWorker" in navigator) {
 //       navigator.serviceWorker.addEventListener(
 //         "message",
 //         handleServiceWorkerMessage
 //       );
 //     }
-
+ 
 //     // Cleanup both listeners
 //     return () => {
 //       unsubscribe();
@@ -444,7 +444,7 @@
 //       }
 //     };
 //   }, [addNotification, fetchNotifications]);
-
+ 
 //   // Register service worker
 //   useEffect(() => {
 //     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -458,7 +458,7 @@
 //         });
 //     }
 //   }, []);
-
+ 
 //   // Initialize FCM token on mount - only when authenticated
 //   useEffect(() => {
    
@@ -472,18 +472,18 @@
 //         await getFCMToken();
 //       }
 //     };
-
+ 
 //     const timer = setTimeout(initFCM, 500);
 //     return () => clearTimeout(timer);
 //   }, [isAuthenticated, fcmToken]);
-
+ 
 //   // Fetch initial notifications when authenticated - FIXED dependency array
 //   useEffect(() => {
 //     if (isAuthenticated) {
 //       fetchNotifications();
 //     }
 //   }, [isAuthenticated]); // ✅ Only depend on isAuthenticated, not fetchNotifications
-
+ 
 //   const value = {
 //     notifications,
 //     unreadCount,
@@ -499,14 +499,14 @@
 //     clearNotifications,
 //     requestNotificationPermission,
 //   };
-
+ 
 //   return (
 //     <NotificationContext.Provider value={value}>
 //       {children}
 //     </NotificationContext.Provider>
 //   );
 // };
-
+ 
 // // Custom hook to use notification context
 // export const useNotifications = () => {
 //   const context = useContext(NotificationContext);
@@ -517,11 +517,11 @@
 //   }
 //   return context;
 // };
-
+ 
 // export default NotificationContext;
-
+ 
 "use client";
-
+ 
 import React, {
   createContext,
   useContext,
@@ -535,29 +535,29 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { messaging } from "../firebase";
 import { AuthContext } from "@/context/authContext";
-
+ 
 const NotificationContext = createContext();
-
+ 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fcmToken, setFcmToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   // Track processed notification IDs to prevent duplicates
   const processedNotificationIds = useRef(new Set());
-
-  const { isSignedIn, loading: authLoading } = useContext(AuthContext);
+ 
+  const { isSignedIn, loading: authLoading,user } = useContext(AuthContext);
   const [permission, setPermission] = useState(
     typeof window !== "undefined" && "Notification" in window
       ? Notification.permission
       : "default"
   );
-
+ 
+ 
   // API base URL
   const API_BASE_URL = "http://localhost:2000/api/v1/hrms/notification";
-
+ 
   // Get auth token from cookies
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
@@ -565,7 +565,7 @@ export const NotificationProvider = ({ children }) => {
     }
     return null;
   };
-
+ 
   // Get user from localStorage
   const getUser = () => {
     if (typeof window !== "undefined") {
@@ -581,23 +581,23 @@ export const NotificationProvider = ({ children }) => {
     }
     return null;
   };
-
+ 
   // Get userId from localStorage - handle different possible structures
   const getUserId = () => {
     const user = getUser();
     const userId = user?._id || user?.id || user?.userId || user?.user?._id;
     return userId || null;
   };
-
+ 
   useEffect(() => {
     if (!authLoading) {
       setIsAuthenticated(isSignedIn);
     }
   }, [isSignedIn, authLoading]);
-
+ 
   // Create a stable API instance using useRef
   const apiRef = useRef(null);
-
+ 
   if (!apiRef.current) {
     apiRef.current = axios.create({
       baseURL: API_BASE_URL,
@@ -605,7 +605,7 @@ export const NotificationProvider = ({ children }) => {
         "Content-Type": "application/json",
       },
     });
-
+ 
     // Add auth token to requests
     apiRef.current.interceptors.request.use((config) => {
       const token = getAuthToken();
@@ -615,9 +615,9 @@ export const NotificationProvider = ({ children }) => {
       return config;
     });
   }
-
+ 
   const api = apiRef.current;
-
+ 
   // Fetch notifications from server - now stable with useRef
   const fetchNotifications = useCallback(
     async (page = 1, limit = 20) => {
@@ -625,7 +625,7 @@ export const NotificationProvider = ({ children }) => {
         console.log("User not authenticated");
         return;
       }
-
+ 
       setLoading(true);
       try {
         const response = await api.get("/list-notification", {
@@ -635,25 +635,25 @@ export const NotificationProvider = ({ children }) => {
             _t: Date.now(), // Bypass cache
           },
         });
-
+ 
         // Check both possible response structures
         if (response.data.success) {
           const notifs = response.data.data.notifications;
           setNotifications(notifs);
           setUnreadCount(response.data.data.unreadCount);
-          
+         
           // Update processed IDs set
           notifs.forEach(n => processedNotificationIds.current.add(n._id));
-          
+         
           return response.data.data;
         } else if (response.data.notifications) {
           const notifs = response.data.notifications;
           setNotifications(notifs);
           setUnreadCount(response.data.unreadCount || 0);
-          
+         
           // Update processed IDs set
           notifs.forEach(n => processedNotificationIds.current.add(n._id));
-          
+         
           return response.data;
         } else {
           console.error("Unexpected response structure");
@@ -668,19 +668,19 @@ export const NotificationProvider = ({ children }) => {
     },
     [isAuthenticated, api]
   );
-
+ 
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
       const response = await api.patch(`/mark-as-read/${notificationId}`);
-
+ 
       if (response.data.success) {
         setNotifications((prev) =>
           prev.map((notif) =>
             notif._id === notificationId ? { ...notif, viewed: true } : notif
           )
         );
-
+ 
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
@@ -688,17 +688,17 @@ export const NotificationProvider = ({ children }) => {
       throw error;
     }
   };
-
+ 
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
       const response = await api.patch("/mark-all-read");
-
+ 
       if (response.data.success) {
         setNotifications((prev) =>
           prev.map((notif) => ({ ...notif, viewed: true }))
         );
-
+ 
         setUnreadCount(0);
       }
     } catch (error) {
@@ -706,7 +706,7 @@ export const NotificationProvider = ({ children }) => {
       throw error;
     }
   };
-
+ 
   // Send/Store notification
   const storeNotification = async ({
     receiverId,
@@ -728,7 +728,7 @@ export const NotificationProvider = ({ children }) => {
       );
       return;
     }
-
+ 
     const payload = {
       receiverId,
       notificationTitle,
@@ -736,10 +736,10 @@ export const NotificationProvider = ({ children }) => {
       relatedDomainType,
       priority,
     };
-
+ 
     if (policyId) payload.policyId = policyId;
     if (senderId) payload.senderId = senderId;
-
+ 
     try {
       const response = await api.post("/send", payload);
       console.log("✅ Notification API response:", response.data);
@@ -752,17 +752,17 @@ export const NotificationProvider = ({ children }) => {
       throw error;
     }
   };
-
+ 
   // Delete notification
   const deleteNotification = async (notificationId) => {
     try {
       const response = await api.delete(`/delete/${notificationId}`);
-
+ 
       if (response.data.success) {
         setNotifications((prev) =>
           prev.filter((notif) => notif._id !== notificationId)
         );
-        
+       
         // Remove from processed IDs
         processedNotificationIds.current.delete(notificationId);
       }
@@ -771,28 +771,28 @@ export const NotificationProvider = ({ children }) => {
       throw error;
     }
   };
-
+ 
   // Clear all notifications from state
   const clearNotifications = () => {
     setNotifications([]);
     processedNotificationIds.current.clear();
   };
-
+ 
   // Save FCM token to server
   const saveFCMTokenToServer = async (token) => {
     try {
       const userId = getUserId();
-
+ 
       const payload = { fcmToken: token };
       console.log("Preparing to save FCM token:", payload);
-
+ 
       if (userId) {
         payload.userId = userId;
         console.log("Saving FCM token for user:", userId);
       } else {
         console.warn("No userId found in localStorage");
       }
-
+ 
       const response = await api.post("/token", payload);
       console.log("FCM token saved successfully:", response.data);
       return response.data;
@@ -801,7 +801,7 @@ export const NotificationProvider = ({ children }) => {
       throw error;
     }
   };
-
+ 
   // Get FCM token
   const getFCMToken = async () => {
     try {
@@ -809,22 +809,22 @@ export const NotificationProvider = ({ children }) => {
         console.log("Messaging not initialized");
         return null;
       }
-
+ 
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         console.log("Notification permission denied");
         return null;
       }
-
+ 
       const token = await getToken(messaging, {
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
       });
-
+ 
       if (!token) {
         console.log("Token not generated");
         return null;
       }
-
+ 
       console.log("FCM token:", token);
       setFcmToken(token);
       await saveFCMTokenToServer(token);
@@ -834,7 +834,7 @@ export const NotificationProvider = ({ children }) => {
       return null;
     }
   };
-
+ 
   // Request notification permission
   const requestNotificationPermission = useCallback(async () => {
     try {
@@ -842,10 +842,10 @@ export const NotificationProvider = ({ children }) => {
         console.log("This browser does not support notifications");
         return false;
       }
-
+ 
       const permission = await Notification.requestPermission();
       setPermission(permission);
-
+ 
       if (permission === "granted") {
         const token = await getFCMToken();
         return !!token;
@@ -858,27 +858,27 @@ export const NotificationProvider = ({ children }) => {
       return false;
     }
   }, []);
-
+ 
   // Add new notification to local state with proper duplicate checking
   // const addNotification = useCallback((notification) => {
   //   const notifId = notification._id || notification.id;
-    
+   
   //   // Check if already processed
   //   if (processedNotificationIds.current.has(notifId)) {
   //     console.log("⚠️ Duplicate notification ignored (already processed):", notifId);
   //     return;
   //   }
-
+ 
   //   setNotifications((prev) => {
   //     // Double check for duplicates in current state
   //     const exists = prev.some((n) => n._id === notifId);
-
+ 
   //     if (!exists) {
   //       console.log("✅ Adding new notification:", notifId);
-        
+       
   //       // Mark as processed
   //       processedNotificationIds.current.add(notifId);
-        
+       
   //       // Only increment unread count if notification is unread
   //       if (!notification.viewed) {
   //         setUnreadCount((prevCount) => {
@@ -887,15 +887,15 @@ export const NotificationProvider = ({ children }) => {
   //           return newCount;
   //         });
   //       }
-        
+       
   //       return [notification, ...prev];
   //     }
-      
+     
   //     console.log("⚠️ Duplicate notification ignored:", notifId);
   //     return prev;
   //   });
   // }, []);
-
+ 
     const addNotification = useCallback((notification) => {
     const notifId = notification._id || notification.id;
    
@@ -936,17 +936,18 @@ export const NotificationProvider = ({ children }) => {
     })
   }, []);
  
-
+ 
   // Combined foreground and background notification handler
   useEffect(() => {
     if (typeof window === "undefined" || !messaging) return;
-    
+   
     // 1. Foreground message listener (onMessage)
     const unsubscribe = onMessage(messaging, (payload) => {
       console.log("📱 FOREGROUND notification received:", payload);
-
+      if(payload.data.receiverId!==user._id) return
+ 
       if (!payload?.data) return;
-
+ 
       const notificationData = {
         _id: payload.data._id ?? Date.now().toString(),
         notificationTitle: payload.data.notificationTitle ?? "New Notification",
@@ -956,24 +957,24 @@ export const NotificationProvider = ({ children }) => {
         viewed: false,
         createdAt: payload.data.createdAt ?? new Date().toISOString(),
       };
-
+ 
       // Add to notifications list
       addNotification(notificationData);
     });
-
+ 
     // 2. Service worker message listener (background notifications)
     const handleServiceWorkerMessage = (event) => {
       if (event.data?.firebaseMessaging) {
         const currentUserId = getUserId();
         const targetUserId = event.data.targetUserId;
-
+ 
         // Check if notification is for this user
         if (!targetUserId || targetUserId === currentUserId) {
           if (event.data.notificationClick) {
             fetchNotifications();
           } else if (event.data.isBackground) {
             console.log("🌙 BACKGROUND notification received");
-
+ 
             const newNotification = {
               _id: event.data.payload.data._id || Date.now().toString(),
               notificationTitle: event.data.payload.data.notificationTitle,
@@ -983,10 +984,10 @@ export const NotificationProvider = ({ children }) => {
               viewed: false,
               createdAt: event.data.payload.data.createdAt || new Date().toISOString(),
             };
-
+ 
             // Add notification - the addNotification function will handle duplicates
             addNotification(newNotification);
-            
+           
             // Refresh from server after a delay (this won't add duplicates due to our check)
             setTimeout(() => fetchNotifications(), 1500);
           }
@@ -995,10 +996,10 @@ export const NotificationProvider = ({ children }) => {
         const targetUserId = event.data.targetUserId;
         const currentUserId = getUserId();
         const notificationId = event.data.notificationId;
-
+ 
         const isTargetUser = !targetUserId || targetUserId === currentUserId;
         const isWindowVisible = document.visibilityState === "visible";
-
+ 
         navigator.serviceWorker.controller?.postMessage({
           userVisibilityResponse: true,
           notificationId: notificationId,
@@ -1007,14 +1008,14 @@ export const NotificationProvider = ({ children }) => {
         });
       }
     };
-
+ 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener(
         "message",
         handleServiceWorkerMessage
       );
     }
-
+ 
     // Cleanup both listeners
     return () => {
       unsubscribe();
@@ -1026,7 +1027,7 @@ export const NotificationProvider = ({ children }) => {
       }
     };
   }, [addNotification, fetchNotifications]);
-
+ 
   // Register service worker
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -1040,7 +1041,7 @@ export const NotificationProvider = ({ children }) => {
         });
     }
   }, []);
-
+ 
   // Initialize FCM token on mount - only when authenticated
   useEffect(() => {
     const initFCM = async () => {
@@ -1053,18 +1054,18 @@ export const NotificationProvider = ({ children }) => {
         await getFCMToken();
       }
     };
-
+ 
     const timer = setTimeout(initFCM, 500);
     return () => clearTimeout(timer);
   }, [isAuthenticated, fcmToken]);
-
+ 
   // Fetch initial notifications when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchNotifications();
     }
   }, [isAuthenticated]);
-
+ 
   const value = {
     notifications,
     unreadCount,
@@ -1080,14 +1081,14 @@ export const NotificationProvider = ({ children }) => {
     clearNotifications,
     requestNotificationPermission,
   };
-
+ 
   return (
     <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
 };
-
+ 
 // Custom hook to use notification context
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
@@ -1098,5 +1099,6 @@ export const useNotifications = () => {
   }
   return context;
 };
-
+ 
 export default NotificationContext;
+ 
