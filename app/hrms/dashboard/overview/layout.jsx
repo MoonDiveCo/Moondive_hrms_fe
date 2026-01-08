@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useContext } from "react";
 
 const OVERVIEW_TABS = [
-  { label: "MySpace", path: "/hrms/dashboard/overview/myspace" },
+  { label: "My Space", path: "/hrms/dashboard/overview/myspace" },
   { label: "Department", path: "/hrms/dashboard/overview/department" },
 ];
 
