@@ -65,7 +65,6 @@ export default function OrganizationPolicy() {
 
     try {
       setUploading(true);
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('fileName', form.fileName);

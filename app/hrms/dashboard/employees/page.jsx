@@ -19,7 +19,7 @@ export default function Employees({ initialEmployees = [] }) {
   const [showViewModal, setShowViewModal] = useState(false);
   const lastFocusedRef = useRef(null);
   const [organizationData, setOrganizationData] = useState(null);
-  
+
   // Filter states
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedDesignation, setSelectedDesignation] = useState('');
