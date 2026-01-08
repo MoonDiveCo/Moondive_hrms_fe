@@ -53,7 +53,9 @@ export default function HolidayCalender({
     });
 
     const leaveEvents =
-      leaveRes.data?.leaves?.map((l) => ({
+      leaveRes.data?.leaves
+      ?.filter((l) => l.status !== "Pending")
+      .map((l) => ({
         id: l.id,
         title: l.leaveType,
         start: l.startDate,
