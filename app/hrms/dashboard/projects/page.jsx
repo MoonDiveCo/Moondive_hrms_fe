@@ -403,7 +403,7 @@ export default function ProjectPage() {
 
                             if (teamMembers.length === 0) return null;
 
-                            const membersPerRow = 5;
+                            const membersPerRow = 3;
                             const rows = [];
 
                             for (
