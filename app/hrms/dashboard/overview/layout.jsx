@@ -17,7 +17,7 @@ export default function OverviewLayout({ children }) {
   return (
     <div>
       {/* OVERVIEW SUB TABS */}
-     {!user.userRole.includes("SuperAdmin") && <div className="bg-white px-6">
+     {!user.userRole.includes("SuperAdmin") && <div className=" px-6">
         <div className="flex gap-10">
           {OVERVIEW_TABS.map((tab) => {
             const isActive = pathname.startsWith(tab.path);

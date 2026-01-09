@@ -4,8 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { X, Check } from 'lucide-react';
-
+import { X, Check, Users, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 
 function formatTime(value) {
   if (!value) return '—';
@@ -25,7 +24,6 @@ function formatDate(value) {
   });
 }
 
-
 const TABS = [
   { key: 'leave', label: 'Leave' },
   { key: 'online', label: 'Online Now' },
@@ -39,37 +37,33 @@ const LEAVE_SUB_TABS = [
   { key: 'pending', label: 'Pending' },
 ];
 
-
 const TAB_META = {
-leave: {
-  title: 'Employees on Leave',
-  columns: [
-    { key: 'name', label: 'Employee' },
-    { key: 'employeeId', label: 'Emp ID' },
-    { key: 'department', label: 'Department' },
-    {
-      key: 'status',
-      label: 'Status',
-      render: row => (
-        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-600">
-          {row.status}
-        </span>
-      ),
-    },
-    {
+  leave: {
+    title: 'Employees on Leave',
+    columns: [
+      { key: 'name', label: 'Employee' },
+      { key: 'employeeId', label: 'Emp ID' },
+      { key: 'department', label: 'Department' },
+      {
+        key: 'status',
+        label: 'Status',
+        render: (row) => (
+          <span className='px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-600'>
+            {row.status}
+          </span>
+        ),
+      },
+      {
         key: 'dayType',
         label: 'Day',
-        render: row => (
-            <span className="text-xs text-gray-600">
-            {row.isHalfDay
-                ? `Half Day (${row.session})`
-                : 'Full Day'}
-            </span>
+        render: (row) => (
+          <span className='text-xs text-gray-600'>
+            {row.isHalfDay ? `Half Day (${row.session})` : 'Full Day'}
+          </span>
         ),
-        },
-  ],
-},
-
+      },
+    ],
+  },
 
   online: {
     title: 'Online Employees',
@@ -77,10 +71,10 @@ leave: {
       {
         key: 'name',
         label: 'Employee',
-        render: row => (
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            <span>{row.name}</span>
+        render: (row) => (
+          <div className='flex items-center gap-2'>
+            <span className='h-2.5 w-2.5 rounded-full bg-red-500' />
+            <span className='font-medium text-gray-800'>{row.name}</span>
           </div>
         ),
       },
@@ -89,17 +83,17 @@ leave: {
       {
         key: 'checkInTime',
         label: 'Check-in Time',
-        render: row => formatTime(row.checkInTime),
+        render: (row) => formatTime(row.checkInTime),
       },
-        {
-      key: 'workType',
-      label: 'Work Type',
-      render: row => (
-        <span className="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-600">
-          {row.workType || '—'}
-        </span>
-      ),
-    },
+      {
+        key: 'workType',
+        label: 'Work Type',
+        render: (row) => (
+          <span className='px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-600'>
+            {row.workType || '—'}
+          </span>
+        ),
+      },
     ],
   },
 
@@ -112,7 +106,7 @@ leave: {
       {
         key: 'checkInTime',
         label: 'Check-in Time',
-        render: row => formatTime(row.checkInTime),
+        render: (row) => formatTime(row.checkInTime),
       },
     ],
   },
@@ -126,7 +120,7 @@ leave: {
       {
         key: 'dateOfJoining',
         label: 'Date of Joining',
-        render: row => formatDate(row.dateOfJoining),
+        render: (row) => formatDate(row.dateOfJoining),
       },
     ],
   },
@@ -134,13 +128,21 @@ leave: {
   absent: {
     title: 'Absent Today',
     columns: [
-      { key: 'name', label: 'Employee' },
+      {
+        key: 'name',
+        label: 'Employee',
+        render: (row) => (
+          <div className='flex items-center gap-3'>
+            <span className='h-2.5 w-2.5 rounded-full bg-red-500' />
+            <span className='font-medium text-gray-800'>{row.name}</span>
+          </div>
+        ),
+      },
       { key: 'employeeId', label: 'Emp ID' },
       { key: 'department', label: 'Department' },
     ],
   },
 };
-
 
 export default function Analytics() {
   const searchParams = useSearchParams();
@@ -149,9 +151,7 @@ export default function Analytics() {
   const tabFromUrl = searchParams.get('tab');
 
   const [activeTab, setActiveTab] = useState(
-    tabFromUrl && TABS.some(t => t.key === tabFromUrl)
-      ? tabFromUrl
-      : 'leave'
+    tabFromUrl && TABS.some((t) => t.key === tabFromUrl) ? tabFromUrl : 'leave'
   );
 
   const [data, setData] = useState([]);
@@ -170,7 +170,7 @@ export default function Analytics() {
 
     axios
       .get(`/hrms/organization/analytics?type=${activeTab}`)
-      .then(res => {
+      .then((res) => {
         if (!alive) return;
         setData(res.data.employees || []);
         setStats(res.data.stats || null);
@@ -182,15 +182,15 @@ export default function Analytics() {
   }, [activeTab]);
 
   return (
-    <div className="p-6 bg-[#F7F8FA] min-h-screen space-y-6">
+    <div className='p-6  space-y-6'>
       <div>
-        <h4 className="text-primaryText">Analytics</h4>
-        <p className="text-sm text-gray-500">Real-time workforce insights</p>
+        <h4 className='text-primaryText'>Analytics</h4>
+        <p className='text-sm text-gray-500'>Real-time workforce insights</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-3 flex-wrap">
-        {TABS.map(tab => (
+      <div className='flex gap-3 flex-wrap'>
+        {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => {
@@ -208,11 +208,11 @@ export default function Analytics() {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 relative">
+      <div className='bg-white rounded-xl shadow-sm p-6 relative'>
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+          <div className='absolute inset-0 flex items-center justify-center bg-white/60 z-10'>
             <DotLottieReact
-              src="https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie"
+              src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
               loop
               autoplay
               style={{ width: 90, height: 90 }}
@@ -231,7 +231,6 @@ export default function Analytics() {
   );
 }
 
-
 function AnalyticsTab({ type, data, stats, loading }) {
   const [leaveTab, setLeaveTab] = useState('approved');
   const [approvedLeaves, setApprovedLeaves] = useState(data);
@@ -243,8 +242,8 @@ function AnalyticsTab({ type, data, stats, loading }) {
   if (type === 'leave') {
     return (
       <>
-        <div className="flex gap-2 mb-4">
-          {LEAVE_SUB_TABS.map(t => (
+        <div className='flex gap-2 mb-4'>
+          {LEAVE_SUB_TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setLeaveTab(t.key)}
@@ -261,7 +260,7 @@ function AnalyticsTab({ type, data, stats, loading }) {
 
         {leaveTab === 'approved' && (
           <AnalyticsEmployeeTable
-            title="Employees on Leave"
+            title='Employees on Leave'
             columns={TAB_META.leave.columns}
             data={approvedLeaves}
             stats={{ count: approvedLeaves.length }}
@@ -270,8 +269,8 @@ function AnalyticsTab({ type, data, stats, loading }) {
 
         {leaveTab === 'pending' && (
           <PendingLeaveTable
-            onApprovedToday={leave =>
-              setApprovedLeaves(prev => [leave, ...prev])
+            onApprovedToday={(leave) =>
+              setApprovedLeaves((prev) => [leave, ...prev])
             }
           />
         )}
@@ -290,39 +289,71 @@ function AnalyticsTab({ type, data, stats, loading }) {
   );
 }
 
+function AnalyticsEmployeeTable({ title, columns, data }) {
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
 
-function AnalyticsEmployeeTable({ title, columns, data, stats }) {
+  useEffect(() => {
+    setPage(1);
+  }, [data]);
+
+  const totalPages = Math.ceil(data.length / PAGE_SIZE);
+
+  const paginatedData = React.useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return data.slice(start, start + PAGE_SIZE);
+  }, [data, page]);
+
   if (!data.length) {
     return (
-      <div className="py-10 text-center text-sm text-gray-400">
-        No data available
+      <div className='py-14 flex flex-col items-center text-gray-400'>
+        <Info size={22} />
+        <p className='mt-2 text-sm'>No data available</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between">
-        <h5 className="text-primaryText">{title}</h5>
-        {/* {stats && <span>Total: {stats.count}</span>} */}
+    <div className='space-y-4'>
+      {/* Header */}
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-2'>
+          <div className='h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center'>
+            <Users size={18} className='text-primary' />
+          </div>
+          <h5 className='text-[15px] font-medium text-gray-900'>{title}</h5>
+        </div>
+
+        <span className='text-xs text-gray-500'>{data.length} records</span>
       </div>
 
-      <div className="overflow-x-auto border rounded-xl">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+      {/* Table */}
+      <div className='relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm'>
+        <table className='w-full text-sm'>
+          <thead className='sticky top-0 bg-gray-50/80 backdrop-blur border-b border-gray-200'>
             <tr>
-              {columns.map(c => (
-                <th key={c.key} className="px-4 py-3 text-left">
+              {columns.map((c) => (
+                <th
+                  key={c.key}
+                  className='px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide'
+                >
                   {c.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {data.map(row => (
-              <tr key={row._id || row.leaveId} className="">
-                {columns.map(col => (
-                  <td key={col.key} className="px-4 py-3">
+
+          <tbody className='divide-y divide-gray-100'>
+            {paginatedData.map((row) => (
+              <tr
+                key={row._id || row.leaveId}
+                className='hover:bg-gray-50 transition-colors'
+              >
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className='px-4 py-3 text-gray-700 whitespace-nowrap'
+                  >
                     {col.render ? col.render(row) : row[col.key] || '—'}
                   </td>
                 ))}
@@ -330,11 +361,48 @@ function AnalyticsEmployeeTable({ title, columns, data, stats }) {
             ))}
           </tbody>
         </table>
+
+        {/* Height stabilizer */}
+        {paginatedData.length < PAGE_SIZE && (
+          <div
+            style={{
+              height: (PAGE_SIZE - paginatedData.length) * 48,
+            }}
+          />
+        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className='flex items-center justify-between pt-2'>
+          <span className='text-xs text-gray-500'>
+            Page {page} of {totalPages}
+          </span>
+
+          <div className='flex items-center gap-1'>
+            <button
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 1}
+              className='flex items-center gap-1 px-3 py-1 text-xs rounded-md border text-gray-600 hover:bg-gray-50 disabled:opacity-40'
+            >
+              <ChevronLeft size={14} />
+              Prev
+            </button>
+
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page === totalPages}
+              className='flex items-center gap-1 px-3 py-1 text-xs rounded-md border text-gray-600 hover:bg-gray-50 disabled:opacity-40'
+            >
+              Next
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
 
 function PendingLeaveTable({ onApprovedToday }) {
   const [rows, setRows] = useState([]);
@@ -346,45 +414,45 @@ function PendingLeaveTable({ onApprovedToday }) {
       .get('/hrms/leave/get-leave', {
         params: { year: new Date().getFullYear() },
       })
-      .then(res => setRows(res.data?.leaveRequests || []))
+      .then((res) => setRows(res.data?.leaveRequests || []))
       .catch(console.error);
   }, []);
 
-async function handleAction(row, action) {
-  setProcessingId(row.leaveId);
+  async function handleAction(row, action) {
+    setProcessingId(row.leaveId);
 
-  try {
-    await axios.put('/hrms/leave/update-leave-decision', {
-      leaveEntryId: row.leaveId,
-      action,
-    });
+    try {
+      await axios.put('/hrms/leave/update-leave-decision', {
+        leaveEntryId: row.leaveId,
+        action,
+      });
 
-    setRows(prev => prev.filter(r => r.leaveId !== row.leaveId));
+      setRows((prev) => prev.filter((r) => r.leaveId !== row.leaveId));
 
-    if (
-      action === 'Approved' &&
-      new Date(row.startDate) <= new Date() &&
-      new Date(row.endDate) >= new Date()
-    ) {
-     onApprovedToday({
-        _id: row.employee._id,
-        name: `${row.employee.firstName} ${row.employee.lastName}`,
-        employeeId: row.employee.employeeId,
-        department: row.employee.department,
-        status: 'Approved',
-        isHalfDay: row.isHalfDay,
-        session: row.session,
+      if (
+        action === 'Approved' &&
+        new Date(row.startDate) <= new Date() &&
+        new Date(row.endDate) >= new Date()
+      ) {
+        onApprovedToday({
+          _id: row.employee._id,
+          name: `${row.employee.firstName} ${row.employee.lastName}`,
+          employeeId: row.employee.employeeId,
+          department: row.employee.department,
+          status: 'Approved',
+          isHalfDay: row.isHalfDay,
+          session: row.session,
         });
+      }
+    } finally {
+      setProcessingId(null);
+      setConfirmAction(null);
     }
-  } finally {
-    setProcessingId(null);
-    setConfirmAction(null);
   }
-}
 
   if (!rows.length) {
     return (
-      <div className="py-10 text-center text-sm text-gray-400">
+      <div className='py-10 text-center text-sm text-gray-400'>
         No pending leave requests
       </div>
     );
@@ -393,40 +461,35 @@ async function handleAction(row, action) {
   const columns = [
     { key: 'name', label: 'Employee' },
     { key: 'leaveType', label: 'Type' },
-   {
-        key: 'duration',
-        label: 'Date',
-        render: r => (
-            <div className="flex flex-col">
-            <span>{formatDate(r.startDate)}</span>
-            <span className="text-xs text-gray-400">
-                {r.isHalfDay
-                ? `Half Day (${r.session || '—'})`
-                : 'Full Day'}
-            </span>
-            </div>
-        ),
-        },
+    {
+      key: 'duration',
+      label: 'Date',
+      render: (r) => (
+        <div className='flex flex-col'>
+          <span>{formatDate(r.startDate)}</span>
+          <span className='text-xs text-gray-400'>
+            {r.isHalfDay ? `Half Day (${r.session || '—'})` : 'Full Day'}
+          </span>
+        </div>
+      ),
+    },
 
     {
       key: 'actions',
       label: 'Actions',
-      render: r => (
-        <div className="flex gap-2">
+      render: (r) => (
+        <div className='flex gap-2'>
           <button
             disabled={processingId === r.leaveId}
-           onClick={() =>
-                setConfirmAction({ row: r, action: 'Rejected' })
-                }
-
-            className="h-8 w-8 border cursor-pointer border-primary text-primary rounded-full flex items-center justify-center"
+            onClick={() => setConfirmAction({ row: r, action: 'Rejected' })}
+            className='h-8 w-8 border cursor-pointer border-primary text-primary rounded-full flex items-center justify-center'
           >
             <X size={14} />
           </button>
           <button
             disabled={processingId === r.leaveId}
-            onClick={() =>  setConfirmAction({ row: r, action: 'Approved' })}
-            className="h-8 w-8 bg-primary cursor-pointer text-white rounded-full flex items-center justify-center"
+            onClick={() => setConfirmAction({ row: r, action: 'Approved' })}
+            className='h-8 w-8 bg-primary cursor-pointer text-white rounded-full flex items-center justify-center'
           >
             <Check size={14} />
           </button>
@@ -435,28 +498,28 @@ async function handleAction(row, action) {
     },
   ];
 
-  return (<>
-    <AnalyticsEmployeeTable
-      title="Pending Leave Requests"
-      columns={columns}
-      data={rows.map(r => ({
-        ...r,
-        name: `${r.employee.firstName} ${r.employee.lastName}`,
-      }))}
-      stats={{ count: rows.length }}
-    />
-    {confirmAction && (
-  <ConfirmLeaveActionModal
-    action={confirmAction.action}
-    loading={processingId === confirmAction.row.leaveId}
-    onCancel={() => setConfirmAction(null)}
-    onConfirm={() =>
-      handleAction(confirmAction.row, confirmAction.action)
-    }
-  />
-)}
-</>
-    
+  return (
+    <>
+      <AnalyticsEmployeeTable
+        title='Pending Leave Requests'
+        columns={columns}
+        data={rows.map((r) => ({
+          ...r,
+          name: `${r.employee.firstName} ${r.employee.lastName}`,
+        }))}
+        stats={{ count: rows.length }}
+      />
+      {confirmAction && (
+        <ConfirmLeaveActionModal
+          action={confirmAction.action}
+          loading={processingId === confirmAction.row.leaveId}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() =>
+            handleAction(confirmAction.row, confirmAction.action)
+          }
+        />
+      )}
+    </>
   );
 }
 
@@ -464,25 +527,25 @@ function ConfirmLeaveActionModal({ action, onCancel, onConfirm, loading }) {
   const isApprove = action === 'Approved';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl w-full max-w-sm p-6">
-        <h4 className="text-lg font-semibold mb-2">
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm'>
+      <div className='bg-white rounded-xl w-full max-w-sm p-6'>
+        <h4 className='text-lg font-semibold mb-2'>
           Confirm {isApprove ? 'Approval' : 'Rejection'}
         </h4>
 
-        <p className="text-sm text-gray-500 mb-6">
+        <p className='text-sm text-gray-500 mb-6'>
           Are you sure you want to{' '}
-          <span className="font-medium">
+          <span className='font-medium'>
             {isApprove ? 'approve' : 'reject'}
           </span>{' '}
           this leave request?
         </p>
 
-        <div className="flex justify-end gap-2">
+        <div className='flex justify-end gap-2'>
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 text-sm border rounded-lg"
+            className='px-4 py-2 text-sm border rounded-lg'
           >
             Cancel
           </button>
@@ -501,4 +564,3 @@ function ConfirmLeaveActionModal({ action, onCancel, onConfirm, loading }) {
     </div>
   );
 }
-

@@ -26,7 +26,7 @@ export default function AttendanceViewPage() {
   return (
     <div>
       {/* STICKY HEADER */}
-      <div className="  sticky top-0 z-30  bg-white  p-4 mb-2 ">
+      <div className="  sticky top-0 z-30  p-4 mb-2 ">
         {/* Top Orange Bar - Optional Decor */}
 
         <div className="px-10 py-4 ">
