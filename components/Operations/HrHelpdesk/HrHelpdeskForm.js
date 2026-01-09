@@ -140,6 +140,25 @@ export default function HRHelpdeskForm({ request, onSaved }) {
     toast.success('Request resubmitted');
     onSaved();
   }
+  async function updateRequest() {
+  if (!requestId) return;
+
+  if (!form.category || !form.subject || !form.description) {
+    return toast.error('All fields are required');
+  }
+
+  await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
+    category: form.category,
+    subject: form.subject,
+    description: form.description,
+    priority: form.priority,
+    recipients: form.recipients,
+  });
+
+  toast.success('Request updated');
+  onSaved();
+}
+
 
   async function approve() {
     await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
@@ -153,7 +172,7 @@ export default function HRHelpdeskForm({ request, onSaved }) {
 
   async function reject() {
     if (!form.rejectReason) {
-      return toast.error('Rejection reason required');
+      return toast.error('Rejection reason');
     }
 
     await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
@@ -356,7 +375,7 @@ export default function HRHelpdeskForm({ request, onSaved }) {
 
           <div className='space-y-6'>
             <Textarea
-              label='Rejection Reason (Optional)'
+              label='Rejection Reason'
               value={form.rejectReason}
               placeholder='Provide a reason if rejecting this request'
               onChange={(e) => update('rejectReason', e.target.value)}
@@ -381,32 +400,46 @@ export default function HRHelpdeskForm({ request, onSaved }) {
       )}
 
       {/* Action Buttons */}
-      <div className=' flex pt-2 items-center justify-center flex '>
-        {isCreate && (
-          <button
-            onClick={submit}
-            className='w-64  bg-primary cursor-pointer  text-white  py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]'
-          >
-            Submit Request
-          </button>
-        )}
+      
+<div className="flex pt-4 items-center justify-center gap-4">
+  
+  {/* CREATE */}
+  {isCreate && (
+    <button
+      onClick={submit}
+      className="w-64 bg-primary text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
+    >
+      Submit Request
+    </button>
+  )}
 
-        {isUserView && request?.status === 'Rejected' && (
-          <button
-            onClick={resubmit}
-            className='w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]'
-          >
-            Resubmit Request
-          </button>
-        )}
-      </div>
+  {/* UPDATE (OPEN / REJECTED) */}
+  {!isCreate && isUserView && canEdit && request?.status === 'Open' && (
+    <button
+      onClick={updateRequest}
+      className="w-64 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
+    >
+      Update Request
+    </button>
+  )}
+
+  {/* RESUBMIT (REJECTED ONLY) */}
+  {!isCreate && isUserView && request?.status === 'Rejected' && (
+    <button
+      onClick={resubmit}
+      className="w-64 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
+    >
+      Update & Resubmit
+    </button>
+  )}
+</div>
+
     </div>
   );
 }
 
 /* ---------------- FORM COMPONENTS ---------------- */
 
-/* ---------------- FORM COMPONENTS ---------------- */
 
 function Input({ label, ...props }) {
   return (
