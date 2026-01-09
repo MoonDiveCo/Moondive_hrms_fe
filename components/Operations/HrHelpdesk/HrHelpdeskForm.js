@@ -31,8 +31,7 @@ export default function HRHelpdeskForm({ request, onSaved }) {
 
   const [me, setMe] = useState(null);
 
-  const isHR =
-    Array.isArray(me?.userRole) && me.userRole.includes('HR');
+  const isHR = Array.isArray(me?.userRole) && me.userRole.includes('HR');
 
   const isUserView = hasRequest && !isHR;
 
@@ -76,9 +75,7 @@ export default function HRHelpdeskForm({ request, onSaved }) {
       subject: request.subject ?? '',
       description: request.description ?? '',
       priority: request.priority ?? 'Medium',
-      recipients: Array.isArray(request.recipients)
-        ? request.recipients
-        : [],
+      recipients: Array.isArray(request.recipients) ? request.recipients : [],
       rejectReason: '',
     });
   }, [request]);
@@ -90,10 +87,7 @@ export default function HRHelpdeskForm({ request, onSaved }) {
   (isUserView && ['Open', 'Rejected'].includes(request?.status));
 
 
-  const canHrAct =
-    isHR &&
-    hasRequest &&
-    request?.status === 'Open';
+  const canHrAct = isHR && hasRequest && request?.status === 'Open';
 
   /* ---------------- DERIVED DATA ---------------- */
 
@@ -171,240 +165,265 @@ export default function HRHelpdeskForm({ request, onSaved }) {
   }
 
   /* ---------------- UI ---------------- */
-
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      
-        
-        <div className="p-6 space-y-6">
-          
-          {/* Request Meta Information */}
-          {hasRequest && (
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-gray-900">Request Information</h4>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[request.status] || 'bg-gray-100 text-gray-800'}`}>
-                  {request.status}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Raised By:</span>
-                  <p className="font-medium text-gray-900 mt-1">
-                    {request.raisedBy
-                      ? `${request.raisedBy.firstName} ${request.raisedBy.lastName}`
-                      : '—'}
-                  </p>
-                </div>
-                
-                <div>
-                  <span className="text-gray-500">Recipients:</span>
-                  <p className="font-medium text-gray-900 mt-1">
-                    {request.recipients?.length
-                      ? request.recipients
-                          .map((u) => `${u.firstName} ${u.lastName}`)
-                          .join(', ')
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-
-              {request.status === 'Rejected' && request.hrNote && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm font-medium text-red-900">Rejection Reason:</p>
-                  <p className="text-sm text-red-700 mt-1">{request.hrNote}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Request Details Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-5">
-            <h4 className="font-semibold text-gray-900 pb-2 border-b border-gray-200">
-              Request Details
+    <div className='max-w-2xl mx-auto pb-24'>
+      {/* Request Meta Information */}
+      {hasRequest && (
+        <div className='mb-8 pb-6 border-b border-gray-200'>
+          <div className='flex items-center justify-between mb-4'>
+            <h4 className='text-lg font-semibold text-gray-900'>
+              Request Information
             </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <Select
-                label="Category"
-                value={form.category}
-                disabled={!canEdit}
-                options={CATEGORY_OPTIONS}
-                onChange={(e) => update('category', e.target.value)}
-              />
-
-              <Select
-                label="Priority"
-                value={form.priority}
-                disabled={!isCreate && !isHR}
-                options={PRIORITY_OPTIONS}
-                onChange={(e) => update('priority', e.target.value)}
-                badge={form.priority ? PRIORITY_COLORS[form.priority] : ''}
-              />
-            </div>
-
-            <Input
-              label="Subject"
-              value={form.subject}
-              disabled={!canEdit}
-              placeholder="Enter a brief subject line"
-              onChange={(e) => update('subject', e.target.value)}
-            />
-
-            <Textarea
-              label="Description"
-              value={form.description}
-              disabled={!canEdit}
-              placeholder="Provide detailed information about your request"
-              onChange={(e) => update('description', e.target.value)}
-            />
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                STATUS_COLORS[request.status] || 'bg-gray-100 text-gray-800'
+              }`}
+            >
+              {request.status}
+            </span>
           </div>
 
-          {/* Recipient Selection Section */}
-          {canEdit && (
-            <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
-              <h4 className="font-semibold text-gray-900 pb-2 border-b border-gray-200">
-                Select Recipients
-              </h4>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter by Designation
-                </label>
-                <select
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg   transition-colors [&>option:checked]:bg-orange-500 [&>option:checked]:text-white"
-                  value={selectedDesignation}
-                  onChange={(e) => setSelectedDesignation(e.target.value)}
-                >
-                  <option value="">-- Select a Designation --</option>
-                  {Object.keys(designations).map((d) => (
-                    <option key={d} value={d}>
-                      {d} ({designations[d].length})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedDesignation && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <p className="text-sm font-medium text-gray-700 mb-3">
-                    {selectedDesignation} Team Members
-                  </p>
-                  <div className="space-y-2">
-                    {designations[selectedDesignation].map((u) => (
-                      <label
-                        key={u._id}
-                        className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-orange-600 border-gray-300 rounded "
-                          checked={form.recipients.includes(u._id)}
-                          onChange={() => toggleRecipient(u._id)}
-                        />
-                        <span className="text-sm font-medium text-gray-900">
-                          {u.firstName} {u.lastName}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedUsers.length > 0 && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-orange-900 mb-2">
-                    Selected Recipients ({selectedUsers.length})
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUsers.map((u) => (
-                      <span
-                        key={u._id}
-                        className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-orange-300 rounded-full text-sm text-orange-900"
-                      >
-                        {u.firstName} {u.lastName}
-                        <button
-                          onClick={() => toggleRecipient(u._id)}
-                          className="text-orange-600 hover:text-orange-800 font-bold"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-6 text-sm'>
+            <div>
+              <span className='text-gray-500 text-xs uppercase tracking-wide'>
+                Raised By
+              </span>
+              <p className='font-medium text-gray-900 mt-1'>
+                {request.raisedBy
+                  ? `${request.raisedBy.firstName} ${request.raisedBy.lastName}`
+                  : '—'}
+              </p>
             </div>
-          )}
 
-          {/* HR Action Panel */}
-          {canHrAct && (
-            <div className="bg-amber-50 rounded-lg border border-amber-200 p-5 space-y-4">
-              <h4 className="font-semibold text-gray-900 pb-2 border-b border-amber-300">
-                HR Review Actions
-              </h4>
-
-              <Textarea
-                label="Rejection Reason (Optional)"
-                value={form.rejectReason}
-                placeholder="Provide a reason if rejecting this request"
-                onChange={(e) => update('rejectReason', e.target.value)}
-              />
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={approve}
-                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-                >
-                  Approve Request
-                </button>
-                <button
-                  onClick={reject}
-                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-                >
-                  Reject Request
-                </button>
-              </div>
+            <div>
+              <span className='text-gray-500 text-xs uppercase tracking-wide'>
+                Recipients
+              </span>
+              <p className='font-medium text-gray-900 mt-1'>
+                {request.recipients?.length
+                  ? request.recipients
+                      .map((u) => `${u.firstName} ${u.lastName}`)
+                      .join(', ')
+                  : '—'}
+              </p>
             </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="pt-4 border-t border-gray-200">
-            {isCreate && (
-              <button
-                onClick={submit}
-                className="w-full px-6 py-3 bg-orange-400 hover:bg-orange-500 text-white font-medium rounded-lg transition-colors shadow-sm"
-              >
-                Submit Request
-              </button>
-            )}
-
-            {isUserView && request?.status === 'Rejected' && (
-              <button
-                onClick={resubmit}
-                className="w-full px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-              >
-                Resubmit Request
-              </button>
-            )}
           </div>
+
+          {request.status === 'Rejected' && request.hrNote && (
+            <div className='mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded'>
+              <p className='text-sm font-medium text-red-900'>
+                Rejection Reason:
+              </p>
+              <p className='text-sm text-red-700 mt-1'>{request.hrNote}</p>
+            </div>
+          )}
         </div>
-    
+      )}
+
+      {/* Request Details Section */}
+      <section className='mb-12'>
+        <div className='space-y-8'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+            <Select
+              label='Category'
+              value={form.category}
+              disabled={!canEdit}
+              options={CATEGORY_OPTIONS}
+              onChange={(e) => update('category', e.target.value)}
+            />
+
+            <Select
+              label='Priority'
+              value={form.priority}
+              disabled={!isCreate && !isHR}
+              options={PRIORITY_OPTIONS}
+              onChange={(e) => update('priority', e.target.value)}
+              badge={form.priority ? PRIORITY_COLORS[form.priority] : ''}
+            />
+          </div>
+
+          <Input
+            label='Subject'
+            value={form.subject}
+            disabled={!canEdit}
+            placeholder='Enter a brief subject line'
+            onChange={(e) => update('subject', e.target.value)}
+          />
+
+          <Textarea
+            label='Description'
+            value={form.description}
+            disabled={!canEdit}
+            placeholder='Provide detailed information about your request'
+            onChange={(e) => update('description', e.target.value)}
+          />
+        </div>
+      </section>
+
+      {/* Recipient Selection Section */}
+      {canEdit && (
+        <section className='mb-12'>
+          <h5 className='text-lg font-semibold mb-8'>Select Recipients</h5>
+
+          <div className='space-y-8'>
+            <div>
+              <label className='block text-sm font-medium text-gray-500 mb-1.5'>
+                Filter by Designation
+              </label>
+              <select
+                className='ghost-input w-full py-2 text-gray-900 focus:outline-none focus:border-orange-500'
+                value={selectedDesignation}
+                onChange={(e) => setSelectedDesignation(e.target.value)}
+                style={{
+                  borderTop: 'none',
+                  borderLeft: 'none',
+                  borderRight: 'none',
+                  borderBottom: '2px solid #E2E8F0',
+                  backgroundColor: 'transparent',
+                  paddingLeft: 0,
+                  paddingRight: 0,
+                  borderRadius: 0,
+                }}
+              >
+                <option value=''>-- Select a Designation --</option>
+                {Object.keys(designations).map((d) => (
+                  <option key={d} value={d}>
+                    {d} ({designations[d].length})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedDesignation && (
+              <div className='space-y-3'>
+                <p className='text-sm font-medium text-gray-700'>
+                  {selectedDesignation} Team Members
+                </p>
+                <div className='space-y-2 max-h-64 overflow-y-auto'>
+                  {designations[selectedDesignation].map((u) => (
+                    <label
+                      key={u._id}
+                      className='flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded transition-colors'
+                    >
+                      <input
+                        type='checkbox'
+                        className='w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500'
+                        checked={form.recipients.includes(u._id)}
+                        onChange={() => toggleRecipient(u._id)}
+                      />
+                      <span className='text-sm text-gray-900'>
+                        {u.firstName} {u.lastName}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedUsers.length > 0 && (
+              <div>
+                <p className='text-sm font-medium text-gray-700 mb-3'>
+                  Selected Recipients ({selectedUsers.length})
+                </p>
+                <div className='flex flex-wrap gap-2'>
+                  {selectedUsers.map((u) => (
+                    <span
+                      key={u._id}
+                      className='inline-flex items-center gap-2 px-3 py-1 bg-white border border-gray-300 rounded-full text-sm text-gray-700'
+                    >
+                      {u.firstName} {u.lastName}
+                      <button
+                        onClick={() => toggleRecipient(u._id)}
+                        className='text-gray-400 hover:text-gray-600 font-bold text-base leading-none'
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* HR Action Panel */}
+      {canHrAct && (
+        <section className='mb-8 p-6 bg-amber-50 border border-amber-200 rounded-xl'>
+          <h4 className='font-semibold text-gray-900 mb-6 text-lg'>
+            HR Review Actions
+          </h4>
+
+          <div className='space-y-6'>
+            <Textarea
+              label='Rejection Reason (Optional)'
+              value={form.rejectReason}
+              placeholder='Provide a reason if rejecting this request'
+              onChange={(e) => update('rejectReason', e.target.value)}
+            />
+
+            <div className='flex flex-col sm:flex-row gap-3'>
+              <button
+                onClick={approve}
+                className='flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors'
+              >
+                Approve Request
+              </button>
+              <button
+                onClick={reject}
+                className='flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors'
+              >
+                Reject Request
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Action Buttons */}
+      <div className=' flex pt-2 items-center justify-center flex '>
+        {isCreate && (
+          <button
+            onClick={submit}
+            className='w-64  bg-primary cursor-pointer  text-white  py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]'
+          >
+            Submit Request
+          </button>
+        )}
+
+        {isUserView && request?.status === 'Rejected' && (
+          <button
+            onClick={resubmit}
+            className='w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98]'
+          >
+            Resubmit Request
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ---------------- FORM COMPONENTS ---------------- */
 
+/* ---------------- FORM COMPONENTS ---------------- */
+
 function Input({ label, ...props }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
+    <div className='space-y-1.5'>
+      <label className='block text-sm font-medium text-gray-500'>{label}</label>
       <input
-        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition-colors disabled:bg-gray-100 disabled:text-gray-500"
+        className='w-full py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-500 disabled:text-gray-400'
+        style={{
+          borderTop: 'none',
+          borderLeft: 'none',
+          borderRight: 'none',
+          borderBottom: '2px solid #E2E8F0',
+          backgroundColor: 'transparent',
+          paddingLeft: 0,
+          paddingRight: 0,
+          borderRadius: 0,
+        }}
         {...props}
       />
     </div>
@@ -413,12 +432,20 @@ function Input({ label, ...props }) {
 
 function Textarea({ label, ...props }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
+    <div className='space-y-1.5'>
+      <label className='block text-sm font-medium text-gray-500'>{label}</label>
       <textarea
-        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg transition-colors resize-none disabled:bg-gray-100 disabled:text-gray-500"
+        className='w-full py-2 text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:border-orange-500 disabled:text-gray-400'
+        style={{
+          borderTop: 'none',
+          borderLeft: 'none',
+          borderRight: 'none',
+          borderBottom: '2px solid #E2E8F0',
+          backgroundColor: 'transparent',
+          paddingLeft: 0,
+          paddingRight: 0,
+          borderRadius: 0,
+        }}
         rows={4}
         {...props}
       />
@@ -428,28 +455,29 @@ function Textarea({ label, ...props }) {
 
 function Select({ label, options, badge, ...props }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg   transition-colors disabled:bg-gray-100 disabled:text-gray-500 appearance-none [&>option:checked]:bg-orange-500"
-          {...props}
-        >
-          <option value="">-- Select --</option>
-          {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-        {/* {badge && props.value && (
-          <span className={`absolute right-12 top-1/2 -translate-y-1/2 px-2 py-1 rounded text-xs font-medium border ${badge}`}>
-            {props.value}
-          </span>
-        )} */}
-      </div>
+    <div className='space-y-1.5'>
+      <label className='block text-sm font-medium text-gray-500'>{label}</label>
+      <select
+        className='w-full py-2 text-gray-900 focus:outline-none focus:border-orange-500 disabled:text-gray-400'
+        style={{
+          borderTop: 'none',
+          borderLeft: 'none',
+          borderRight: 'none',
+          borderBottom: '2px solid #E2E8F0',
+          backgroundColor: 'transparent',
+          paddingLeft: 0,
+          paddingRight: 0,
+          borderRadius: 0,
+        }}
+        {...props}
+      >
+        <option value=''>-- Select --</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
