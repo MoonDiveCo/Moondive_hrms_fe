@@ -1,6 +1,8 @@
 "use client";
 
+import { AuthContext } from "@/context/authContext";
 import { usePathname, useRouter } from "next/navigation";
+import { useContext } from "react";
 
 const OVERVIEW_TABS = [
   { label: "MySpace", path: "/hrms/dashboard/overview/myspace" },
@@ -10,11 +12,12 @@ const OVERVIEW_TABS = [
 export default function OverviewLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const {user} = useContext(AuthContext)
 
   return (
     <div>
       {/* OVERVIEW SUB TABS */}
-      <div className="bg-white px-6">
+     {!user.userRole.includes("SuperAdmin") && <div className="bg-white px-6">
         <div className="flex gap-10">
           {OVERVIEW_TABS.map((tab) => {
             const isActive = pathname.startsWith(tab.path);
@@ -41,10 +44,10 @@ export default function OverviewLayout({ children }) {
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {/* SUB PAGE CONTENT */}
-      <div className="p-6">{children}</div>
+      <div className="">{children}</div>
     </div>
   );
 }

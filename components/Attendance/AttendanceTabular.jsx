@@ -83,10 +83,7 @@ function calculateBreakMinutes(record) {
 
 /* ---------------- MAIN COMPONENT ---------------- */
 
-export default function AttendanceTabular({
-  currentDate,
-  rangeMode = 'week',
-}) {
+export default function AttendanceTabular({ currentDate, rangeMode = 'week' }) {
   const today = startOfDay(new Date());
   const { user } = useContext(AuthContext);
   const { workedSeconds, isCheckedIn } = useAttendance();
@@ -119,8 +116,7 @@ export default function AttendanceTabular({
   }).map((date) => {
     const key = startOfDay(date).toDateString();
     const record = attendanceMap[key];
-    const isToday =
-      startOfDay(date).getTime() === startOfDay(today).getTime();
+    const isToday = startOfDay(date).getTime() === startOfDay(today).getTime();
 
     const future = isAfter(date, today);
     const weekend = isWeekend(date);
@@ -132,9 +128,7 @@ export default function AttendanceTabular({
     if (weekend) status = 'Weekend';
     else if (holidayMap[key]) status = 'Holiday';
     else if (leaveMap[key]) {
-      status = leaveMap[key].isHalfDay
-        ? leaveMap[key].session
-        : 'On Leave';
+      status = leaveMap[key].isHalfDay ? leaveMap[key].session : 'On Leave';
     } else if (future) status = null;
     else if (record?.status) status = record.status;
     else status = 'Absent';
@@ -147,6 +141,12 @@ export default function AttendanceTabular({
     let payableHours = '-';
 
     // 🔹 TODAY (LIVE)
+    if (record?.sessions?.length) {
+      firstIn = getFirstIn(record);
+      lastOut = getLastOut(record);
+    }
+
+    // 🔹 TODAY (LIVE HOURS)
     if (isToday && isCheckedIn) {
       const payableMinutes = Math.floor(workedSeconds / 60);
       const h = Math.floor(payableMinutes / 60);
@@ -155,14 +155,12 @@ export default function AttendanceTabular({
       totalHours = `${h.toString().padStart(2, '0')}:${m
         .toString()
         .padStart(2, '0')}`;
+
       payableHours = totalHours;
     }
 
-    // 🔹 PAST DAYS (FROM SESSIONS)
+    // 🔹 PAST DAYS (FINALIZED)
     else if (record?.sessions?.length) {
-      firstIn = getFirstIn(record);
-      lastOut = getLastOut(record);
-
       const totalMinutes = calculateTotalMinutesFromSessions(record);
       const breakMinutes = calculateBreakMinutes(record);
       const payableMinutes = Math.max(totalMinutes - breakMinutes, 0);
@@ -181,7 +179,6 @@ export default function AttendanceTabular({
         .toString()
         .padStart(2, '0')}`;
     }
-
     return {
       date,
       status,
@@ -196,10 +193,10 @@ export default function AttendanceTabular({
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+    <div className='bg-white rounded-2xl border border-gray-200 overflow-hidden'>
+      <div className='overflow-x-auto'>
+        <table className='min-w-full divide-y divide-gray-200'>
+          <thead className='bg-gray-50'>
             <tr>
               {[
                 'Date',
@@ -213,7 +210,7 @@ export default function AttendanceTabular({
               ].map((header) => (
                 <th
                   key={header}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                  className='px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider'
                 >
                   {header}
                 </th>
@@ -221,42 +218,40 @@ export default function AttendanceTabular({
             </tr>
           </thead>
 
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className='bg-white divide-y divide-gray-200'>
             {rows.map((row, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-900">
+              <tr key={i} className='hover:bg-gray-50'>
+                <td className='px-6 py-4 text-sm text-gray-900'>
                   {format(row.date, 'EEE, dd MMM yyyy')}
                 </td>
 
-                <td className="px-6 py-4 text-sm text-gray-700">
+                <td className='px-6 py-4 text-sm text-gray-700'>
                   {row.future || !row.firstIn
                     ? '-'
                     : format(parseISO(row.firstIn), 'HH:mm')}
                 </td>
 
-                <td className="px-6 py-4 text-sm text-gray-700">
+                <td className='px-6 py-4 text-sm text-gray-700'>
                   {row.future || !row.lastOut
                     ? '-'
                     : format(parseISO(row.lastOut), 'HH:mm')}
                 </td>
 
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                <td className='px-6 py-4 text-sm font-medium text-gray-900'>
                   {row.totalHours}
                 </td>
 
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                <td className='px-6 py-4 text-sm font-medium text-gray-900'>
                   {row.payableHours}
                 </td>
 
-                <td className="px-6 py-4">
+                <td className='px-6 py-4'>
                   {row.status && <StatusBadge status={row.status} />}
                 </td>
 
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  General
-                </td>
+                <td className='px-6 py-4 text-sm text-gray-500'>General</td>
 
-                <td className="px-6 py-4 text-sm text-gray-500">-</td>
+                <td className='px-6 py-4 text-sm text-gray-500'>-</td>
               </tr>
             ))}
           </tbody>

@@ -16,7 +16,7 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
 
   const menus = useMenus();
   const { checkIn, checkOut, isOnBreak } = useAttendance();
-
+  const {user} = useContext(AuthContext)
   const router = useRouter();
   const pathname = usePathname();
     const {
@@ -144,16 +144,32 @@ const mergeUnique = (existing, additions) => {
     const newTop = [];
     const newBottom = [];
 
-    Object.entries(menus.sidebarObject).forEach(([permission, item]) => {
-      if (
-        allUserPermissions.includes(permission) &&
-        permission.includes(moduleName)
-      ) {
-        if (item.position === "top") newTop.push(item);
-        if (item.position === "bottom") newBottom.push(item);
-      }
-    });
+     const isSuperAdmin = user?.userRole?.includes("SuperAdmin") 
 
+     const SUPERADMIN_TOP_HIDDEN = [
+      "HRMS:LEAVE_TRACKER:VIEW",
+      "HRMS:ATTENDANCE:VIEW",
+    ];
+    
+    Object.entries(menus.sidebarObject).forEach(([permission, item]) => {
+ if (
+      !allUserPermissions.includes(permission) ||
+      !permission.includes(moduleName)
+    ) {
+      return;
+    }
+
+    if (
+      isSuperAdmin &&
+      item.position === "top" &&
+      SUPERADMIN_TOP_HIDDEN.includes(permission)
+    ) {
+      return;
+    }
+
+    if (item.position === "top") newTop.push(item);
+    if (item.position === "bottom") newBottom.push(item);
+  });
     setTopItems(newTop);
     setBottomItems(newBottom);
   }, [menus.sidebarObject, allUserPermissions, moduleName]);
@@ -179,9 +195,9 @@ return (
           <header className="bg-white border-b border-gray-200 h-16 flex items-center">
               <MainNavbar
                collapsed={collapsed}
-  setCollapsed={setCollapsed}
-  onCheckInClick={openFaceModal}
-            />
+          setCollapsed={setCollapsed}
+          onCheckInClick={openFaceModal}
+                    />
           </header>
         )}
       </div>

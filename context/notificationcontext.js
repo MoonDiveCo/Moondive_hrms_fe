@@ -739,7 +739,7 @@ export const NotificationProvider = ({ children }) => {
  
     if (policyId) payload.policyId = policyId;
     if (senderId) payload.senderId = senderId;
- 
+ console.log("Payload for storing notification-------------------------:", payload);
     try {
       const response = await api.post("/send", payload);
       console.log("✅ Notification API response:", response.data);

@@ -2,12 +2,14 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/authContext";
 import { RBACProvider } from "@/context/rbacContext";
+import { NotificationProvider } from "../context/notificationcontext"; // ✅ Import NotificationProvider
 import { WebVitals } from "@/components/WebVitals";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { Toaster } from 'sonner';
 import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 import { AttendanceProvider } from "@/context/attendanceContext";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -42,8 +44,9 @@ export default function RootLayout({ children }) {
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <Toaster richColors position="top-right" />
+      >
+        <Toaster richColors position="top-right" />
+        
         {/* Skip to main content link for accessibility */}
         <a href="#main-content" className="skip-to-main">
           Skip to main content
@@ -51,14 +54,15 @@ export default function RootLayout({ children }) {
 
         <WebVitals />
         <ReactQueryProvider>
-        <AuthProvider>
-          <RBACProvider>
-            <AttendanceProvider>
-
-            {children}
-            </AttendanceProvider>
-            </RBACProvider>
-        </AuthProvider>
+          <AuthProvider>
+            <NotificationProvider> {/* ✅ Add NotificationProvider here */}
+              <RBACProvider>
+                <AttendanceProvider>
+                  {children}
+                </AttendanceProvider>
+              </RBACProvider>
+            </NotificationProvider>
+          </AuthProvider>
         </ReactQueryProvider>
       </body>
     </html>

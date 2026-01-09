@@ -106,53 +106,53 @@ useEffect(() => {
  
         {/* RIGHT */}
         <div className='flex items-center gap-4'>
-          <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium'>
-            <Clock size={14} className='text-gray-500' />
-            <span>{formatTime(workedSeconds)}</span>
-          </div>
- 
-          <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium'>
-            <Coffee size={14} className='text-gray-500' />
-            <span>{formatTime(breakSeconds)}</span>
-          </div>
- 
-          {/* Unified Check In / Out Button */}
+         {!user.userRole.includes("SuperAdmin") &&  <>
+        <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium'>
+          <Clock size={14} className='text-gray-500' />
+          <span>{formatTime(workedSeconds)}</span>
+        </div>
+
+        <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium'>
+          <Coffee size={14} className='text-gray-500' />
+          <span>{formatTime(breakSeconds)}</span>
+        </div>
+
+        {/* Unified Check In / Out Button */}
+        <button
+          onClick={() => onCheckInClick(isCheckedIn ? 'checkOut' : 'checkIn')}
+          disabled={isOnBreak}
+          className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold ${
+            isActiveCheckIn
+              ? 'bg-red-100 text-red-600 hover:bg-red-200'
+              : 'bg-primary text-white hover:opacity-90'
+          }`}
+        >
+          {isCheckedIn ? (
+            <>
+              <LogOut size={14} /> Check Out
+            </>
+          ) : (
+            <>
+              <LogIn size={14} /> Check In
+            </>
+          )}
+        </button>
+
+        {/* Break Button */}
+        {isCheckedIn && (
           <button
-            onClick={() => onCheckInClick(isCheckedIn ? 'checkOut' : 'checkIn')}
-            disabled={isOnBreak}
-            className={`flex items-center gap-2 px-4 py-1.5 w-[130px] justify-center rounded-full text-xs font-semibold ${
-              isActiveCheckIn
-                ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                : 'bg-primary text-white hover:opacity-90'
+            onClick={isOnBreak ? handleBreakOut : handleBreakIn}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition ${
+              isOnBreak
+                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
             }`}
           >
-            {isCheckedIn ? (
-              <>
-                <LogOut size={14} /> Check Out
-              </>
-            ) : (
-              <>
-                <LogIn size={14} /> Check In
-              </>
-            )}
+            <Coffee size={14} />
+            {isOnBreak ? 'End Break' : 'Break'}
           </button>
- 
-          {/* Break Button */}
-          {isCheckedIn && (
-            <button
-              onClick={isOnBreak ? handleBreakOut : handleBreakIn}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition ${
-                isOnBreak
-                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}
-            >
-              <Coffee size={14} />
-              {isOnBreak ? 'End Break' : 'Break'}
-            </button>
-          )}
- 
-          {/* Notification Button with Badge */}
+        )}
+      </>}
           <button
             onClick={() => setOpenNotifications(true)}
             className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
