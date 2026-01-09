@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Eye, Plus } from 'lucide-react';
+import { Eye, Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import EntityTable from '@/components/Common/EntityTable';
 import HRHelpdeskSlideOver from '@/components/Operations/HrHelpdesk/HrHelpdeskSlideOver';
@@ -27,16 +27,16 @@ export default function HRHelpdeskPage() {
           ? '/hrms/hrhelpdesk/sent'
           : '/hrms/hrhelpdesk/received'
       );
-      setRows(
-  Array.isArray(res.data?.result) ? res.data.result : []
-);
 
-    } catch (e) {
+      setRows(Array.isArray(res.data?.result) ? res.data.result : []);
+    } catch {
       toast.error('Failed to load requests');
     } finally {
       setLoading(false);
     }
   }
+
+  /* ---------- MODAL HANDLERS ---------- */
 
   function openAdd(e) {
     lastFocusedRef.current = e?.currentTarget;
@@ -56,6 +56,32 @@ export default function HRHelpdeskPage() {
     lastFocusedRef.current?.focus();
   }
 
+  /* ---------- DELETE ---------- */
+
+  async function deleteRequest(row) {
+    if (!confirm('Are you sure you want to delete this request?')) return;
+
+    try {
+      await axios.delete(`/hrms/hrhelpdesk/${row._id}`);
+      toast.success('Request deleted');
+      fetchData();
+    } catch {
+      toast.error('Failed to delete request');
+    }
+  }
+
+  /* ---------- PERMISSION HELPERS ---------- */
+
+  function canEdit(row) {
+    return row.status === 'Open' || row.status === 'Rejected';
+  }
+
+  function canDelete(row) {
+    return true; // creator can always delete (per your rules)
+  }
+
+  /* ---------- TABLE COLUMNS ---------- */
+
   const columns = [
     { key: 'subject', header: 'Subject' },
     { key: 'category', header: 'Category' },
@@ -71,17 +97,49 @@ export default function HRHelpdeskPage() {
     { key: 'status', header: 'Status' },
     {
       key: 'actions',
-      header: 'action',
+      header: 'Actions',
       render: (r) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openView(r, e);
-          }}
-          className="p-2 rounded-md hover:bg-gray-100"
-        >
-          <Eye size={16} />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* VIEW */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openView(r, e);
+            }}
+            className="p-2 rounded-md hover:bg-gray-100"
+            title="View"
+          >
+            <Eye size={16} />
+          </button>
+
+          {/* EDIT (SENT TAB ONLY) */}
+          {tab === 'sent' && canEdit(r) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openView(r, e); // form decides editability
+              }}
+              className="p-2 rounded-md hover:bg-gray-100"
+              title="Edit"
+            >
+              <Pencil size={16} />
+            </button>
+          )}
+
+          {/* DELETE (SENT TAB ONLY) */}
+          {tab === 'sent' && canDelete(r) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteRequest(r);
+              }}
+              className="p-2 rounded-md hover:bg-red-100 text-red-600"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
       ),
     },
   ];
@@ -90,6 +148,7 @@ export default function HRHelpdeskPage() {
     <div className="container">
       <Toaster richColors position="top-right" />
 
+      {/* HEADER */}
       <div className="flex items-center justify-between p-4">
         <h3 className="text-blackText">HR Help Desk</h3>
         <button
@@ -100,6 +159,7 @@ export default function HRHelpdeskPage() {
         </button>
       </div>
 
+      {/* TABS */}
       <div className="flex gap-3 px-4 mb-4">
         {['sent', 'received'].map((t) => (
           <button
@@ -114,6 +174,7 @@ export default function HRHelpdeskPage() {
         ))}
       </div>
 
+      {/* TABLE */}
       <EntityTable
         data={rows}
         columns={columns}
@@ -122,6 +183,7 @@ export default function HRHelpdeskPage() {
         onRowClick={(r, e) => openView(r, e)}
       />
 
+      {/* SLIDE OVER */}
       <HRHelpdeskSlideOver
         isOpen={open}
         onClose={close}
