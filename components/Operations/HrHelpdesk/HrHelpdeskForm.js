@@ -82,7 +82,10 @@ export default function HRHelpdeskForm({ request, onSaved }) {
 
   /* ---------------- PERMISSIONS ---------------- */
 
-  const canEdit = isCreate || (isUserView && request?.status === 'Rejected');
+ const canEdit =
+  isCreate ||
+  (isUserView && ['Open', 'Rejected'].includes(request?.status));
+
 
   const canHrAct = isHR && hasRequest && request?.status === 'Open';
 
