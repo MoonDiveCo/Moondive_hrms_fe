@@ -276,7 +276,7 @@ export function AttendanceProvider({ children }) {
   /* ---------------- TIMER CONTROL ---------------- */
     const fetchUserssData=async()=>{
     try{
-      const res=await axios.get("/hrms/employee/list")
+      const res=await axios.get("/hrms/roles/get-employee")
     console.log("-------------------",res.data.result)}catch(err){
       console.log("-------------------------Failed to fetch user data for attendance context:",err)
     }}
@@ -427,19 +427,18 @@ export function AttendanceProvider({ children }) {
       });
 //array[i].usrRole.includes("SuperAdmin")
       // 3️⃣ HR Users
-      for (const hr of hrUsers || []) {
-        await notify({
-          receiverId: hr._id,
+      userData.forEach((u)=>{
+        if(u.userRole.includes("HR")){
+          await notify({
+          receiverId: U._id,
           notificationTitle: "⏰ Late Check-In (HR)",
           notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
           relatedDomainType: "Attendance",
           priority: "Low",
           senderId: user._id,
         });
-      }
-
-      // 4️⃣ Admin Users
-      for (const admin of adminUsers || []) {
+        }
+        if(u.userRole.includes("Admin")){
         await notify({
           receiverId: admin._id,
           notificationTitle: "🚨 Late Check-In (Admin)",
@@ -448,9 +447,8 @@ export function AttendanceProvider({ children }) {
           priority: "High",
           senderId: user._id,
         });
-      }
-
-
+        }
+        if(u.userRole.includes("SuperAdmin")){
         await notify({
           receiverId: "6948e367580596d9f92e6326",
           notificationTitle: "🚨 Late Check-In (CEO)",
@@ -459,6 +457,11 @@ export function AttendanceProvider({ children }) {
           priority: "High",
           senderId: user._id,
         });
+        }
+
+      })
+
+
       
 
       console.log("✅ All late check-in notifications stored successfully");
