@@ -1,11 +1,96 @@
 'use client';
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import CreateProjectDrawer from './CreateProjectDrawer';
 import { AuthContext } from '@/context/authContext';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Users, Clock } from 'lucide-react';
+
+function useMembersPerRow(ref) {
+  const [count, setCount] = useState(4);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width;
+
+      if (width < 500) setCount(1);
+      else if (width < 700) setCount(2);
+      else if (width < 1000) setCount(3);
+      else setCount(4);
+    });
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return count;
+}
+
+function TeamMembers({ members }) {
+  const containerRef = useRef(null);
+  const membersPerRow = useMembersPerRow(containerRef);
+
+  if (!members || members.length === 0) return null;
+
+  const rows = [];
+  for (let i = 0; i < members.length; i += membersPerRow) {
+    rows.push(members.slice(i, i + membersPerRow));
+  }
+
+  return (
+    <div ref={containerRef} className='relative w-full'>
+      {rows.map((rowMembers, rowIndex) => (
+        <div key={rowIndex} className='relative w-full mb-4'>
+          <div className="flex justify-between items-center absolute top-0 left-0 right-0 px-16">
+            <div className="h-0.5 bg-[#5e888d] flex-1" />
+          </div>
+
+          <div
+            className='grid gap-6 w-full px-8'
+            style={{
+              gridTemplateColumns: `repeat(${rowMembers.length}, 1fr)`,
+            }}
+          >
+            {rowMembers.map((member) => (
+              <div
+                key={member._id}
+                className='flex flex-col items-center relative justify-self-center'
+              >
+                <div className='w-0.5 h-10 bg-[#5e888d]' />
+
+                <img
+                  className='w-16 h-16 rounded-full border-4 border-white shadow-md object-cover'
+                  src={
+                    member.imageUrl ||
+                    'https://img.freepik.com/free-photo/waist-up-portrait-handsome-serious-unshaven-male-keeps-hands-together-dressed-dark-blue-shirt-has-talk-with-interlocutor-stands-against-white-wall-self-confident-man-freelancer_273609-16320.jpg'
+                  }
+                  alt={member.firstName}
+                />
+
+                <div className='bg-white border border-[#5e888d] rounded-xl px-4 py-2 text-center mt-2 shadow-sm w-48'>
+                  <p className='font-semibold text-sm text-gray-900'>
+                    {member.firstName}{' '}
+                    {member.lastName}
+                  </p>
+                  <p className='text-xs text-gray-500 mt-0.5'>
+                    Team Member
+                  </p>
+                </div>
+
+                {rowIndex < rows.length - 1 && (
+                  <div className='w-0.5 h-10 bg-[#5e888d] mt-2' />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function ProjectPage() {
   const [openProject, setOpenProject] = useState(null);
@@ -76,7 +161,6 @@ export default function ProjectPage() {
     }
     setOpenMenuId(null);
   };
-
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
     setEditingProject(null);
@@ -360,8 +444,8 @@ export default function ProjectPage() {
                         Team Hierarchy
                       </div>
 
-                      <div className='overflow-x-auto hide-scrollbar pt-12'>
-                        <div className='min-w-[900px] flex flex-col items-center'>
+                      <div className='overflow-x-auto hide-scrollbar pt-12 max-w-full'>
+                        <div className='w-full flex flex-col items-center'>
                           {/* ================= PROJECT LEAD ================= */}
                           <div className='flex flex-col items-center group relative'>
                             <div className='relative mb-3'>
@@ -395,91 +479,8 @@ export default function ProjectPage() {
                           )}
 
                           {/* ================= TEAM MEMBERS ================= */}
-                          {(() => {
-                            const teamMembers =
-                              project.projectMembers?.filter(
-                                (m) => m._id !== project.projectManager?._id
-                              ) || [];
+                          <TeamMembers members={project.projectMembers?.filter((m) => m._id !== project.projectManager?._id) || []} />
 
-                            if (teamMembers.length === 0) return null;
-
-                            const membersPerRow = 3;
-                            const rows = [];
-
-                            for (
-                              let i = 0;
-                              i < teamMembers.length;
-                              i += membersPerRow
-                            ) {
-                              rows.push(
-                                teamMembers.slice(i, i + membersPerRow)
-                              );
-                            }
-
-                            return (
-                              <div className='relative w-full'>
-                                {rows.map((rowMembers, rowIndex) => (
-                                  <div
-                                    key={rowIndex}
-                                    className='relative w-full mb-4'
-                                  >
-                                    <div className='relative w-full h-0 flex items-center justify-center'>
-                                      <div
-                                        className='absolute bg-[#5e888d] h-0.5'
-                                        style={{
-                                          left: `calc(${
-                                            (100 / rowMembers.length) * 0.5
-                                          }% + 2rem)`,
-                                          right: `calc(${
-                                            (100 / rowMembers.length) * 0.5
-                                          }% + 2rem)`,
-                                        }}
-                                      />
-                                    </div>
-
-                                    <div
-                                      className='grid gap-6 w-full px-8'
-                                      style={{
-                                        gridTemplateColumns: `repeat(${rowMembers.length}, minmax(0, 1fr))`,
-                                      }}
-                                    >
-                                      {rowMembers.map((member) => (
-                                        <div
-                                          key={member._id}
-                                          className='flex flex-col items-center relative justify-self-center'
-                                        >
-                                          <div className='w-0.5 h-8 bg-[#5e888d] mb-0' />
-
-                                          <img
-                                            className='w-16 h-16 rounded-full border-4 border-white shadow-md object-cover'
-                                            src={
-                                              member.imageUrl ||
-                                              'https://img.freepik.com/free-photo/waist-up-portrait-handsome-serious-unshaven-male-keeps-hands-together-dressed-dark-blue-shirt-has-talk-with-interlocutor-stands-against-white-wall-self-confident-man-freelancer_273609-16320.jpg'
-                                            }
-                                            alt={member.firstName}
-                                          />
-
-                                          <div className='bg-white border border-[#5e888d] rounded-xl px-4 py-2 text-center mt-2 shadow-sm w-48'>
-                                            <p className='font-semibold text-sm text-gray-900'>
-                                              {member.firstName}{' '}
-                                              {member.lastName}
-                                            </p>
-                                            <p className='text-xs text-gray-500 mt-0.5'>
-                                              Team Member
-                                            </p>
-                                          </div>
-
-                                          {rowIndex < rows.length - 1 && (
-                                            <div className='w-0.5 h-8 bg-[#5e888d] mt-2' />
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })()}
                         </div>
                       </div>
                     </div>

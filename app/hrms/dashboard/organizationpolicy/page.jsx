@@ -226,6 +226,7 @@ export default function OrganizationPolicy() {
                       className={`w-10 h-10 rounded-lg flex items-center justify-center ${meta.bg}`}
                     >
                       <Icon className={`w-5 h-5 ${meta.text}`} />
+                      
                     </div>
                     <div>
                       <p className='text-sm font-medium text-gray-900'>
