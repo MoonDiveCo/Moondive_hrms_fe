@@ -90,7 +90,7 @@ console.log(user)
   if (!user) return null;
 
   return (
-    <div className="p-6 bg-whiteBg rounded-lg">
+    <div className="p-6  rounded-lg">
       <div className="flex justify-between items-center mb-10">
         <div className="flex gap-4 justify-center items-center">
         <img

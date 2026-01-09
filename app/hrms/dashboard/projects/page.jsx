@@ -117,7 +117,7 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className='bg-background-light font-body text-gray-800 min-h-screen'>
+    <div className='bg-background-light font-body text-gray-800 '>
       {/* ================= GLOBAL CSS ================= */}
       <style jsx global>{`
         .tree-line-vertical {
