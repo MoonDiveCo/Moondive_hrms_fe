@@ -1,18 +1,27 @@
 'use client';
+
 import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { toast } from 'sonner';
 import { AuthContext } from '@/context/authContext';
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
+import AddOrganizationFileModal from '@/components/OrganizationFileComponent/AddOrganizationFileModal';
+import ApproveCompanyPolicyModal from '@/components/OrganizationFileComponent/ApproveCompanyPolicyModal';
+import AcknowledgementStatusModal from '@/components/OrganizationFileComponent/AcknowledgementStatusModal';
+import ConfirmDeleteModal from '@/components/OrganizationFileComponent/ConfirmDeleteModal';
+
 import {
   FileText,
   ShieldCheck,
   ScrollText,
   Search,
   Trash2,
-  ArrowRight,
+  User,
+  Eye,
+  ThumbsUp,
 } from 'lucide-react';
+
 const CATEGORY_META = {
   'Company Docs': {
     icon: FileText,
@@ -33,358 +42,670 @@ const CATEGORY_META = {
     pill: 'bg-slate-200 text-slate-700',
   },
 };
-const FILTERS = ['All Files', 'Company Docs', 'HR Policies'];
+
+const ITEMS_PER_PAGE = 10;
 
 export default function OrganizationPolicy() {
+  const { allUserPermissions = [], user } = useContext(AuthContext);
+
+  const canManagePolicies = allUserPermissions.includes(
+    'HRMS:COMPANY_POLICY:WRITE'
+  );
+
+  const isSuperAdmin = user?.userRole?.includes('SuperAdmin');
+  const isEmployeeOnly = !isSuperAdmin && !canManagePolicies;
+
+  const FILTERS = [
+    'All Files',
+    'Company Docs',
+    'HR Policies',
+    ...(canManagePolicies ? ['Pending Policies'] : []),
+  ];
+
+  const [files, setFiles] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+
   const [openModal, setOpenModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [fileBeingEdited, setFileBeingEdited] = useState(null);
+  
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
+
+  const [ackModalOpen, setAckModalOpen] = useState(false);
+  const [ackPolicy, setAckPolicy] = useState(null);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [pageLoading, setPageLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const { allUserPermissions } = useContext(AuthContext);
+
   const [activeFilter, setActiveFilter] = useState('All Files');
-  const [files, setFiles] = useState([]);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [form, setForm] = useState({
     fileName: '',
     description: '',
     folder: '',
-    entryDate: '',
   });
 
   const [file, setFile] = useState(null);
 
-  const update = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const update = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  /* ---------------- FETCH USERS ---------------- */
+  const fetchUsers = async () => {
+    const res = await axios.get('/hrms/employee/list');
+    setUsers(res.data?.result || []);
+  };
+
+  /* ---------------- FETCH FILES ---------------- */
+  const fetchFiles = async () => {
+    try {
+      setPageLoading(true);
+      const res = await axios.get('/hrms/organization/getOrganizationFile');
+      setFiles(res.data?.data || []);
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, search]);
+
+  /* ---------------- ACTIONS ---------------- */
+
+  const handleApprovePolicy = async (id) => {
+    try {
+      await axios.patch(
+        `/hrms/organization/organization-policy/status/${id}`,
+        { status: 'PUBLISHED' }
+      );
+      toast.success('Policy approved');
+      setApprovalModalOpen(false);
+      fetchFiles();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to approve policy');
+    }
+  };
+
+  const handleRejectPolicy = async (id, reason) => {
+    try {
+      await axios.patch(
+        `/hrms/organization/organization-policy/status/${id}`,
+        {
+          status: 'REJECTED',
+          rejectionReason: reason,
+        }
+      );
+      toast.success('Policy rejected');
+      setApprovalModalOpen(false);
+      fetchFiles();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to reject policy');
+    }
+  };
+
+  const handleSuggestChanges = async (id, suggestions) => {
+    try {
+      await axios.patch(
+        `/hrms/organization/organization-policy/status/${id}`,
+        {
+          status: 'CHANGES_REQUESTED',
+          suggestedChanges: suggestions, // ✅ Matches backend expectation
+        }
+      );
+      toast.success('Changes requested successfully');
+      setApprovalModalOpen(false);
+      fetchFiles();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to suggest changes');
+    }
+  };
+
+  const handleAcknowledge = async (id) => {
+    try {
+      await axios.patch(
+        `/hrms/organization/organization-policy/${id}/acknowledge`
+      );
+      toast.success('Policy acknowledged');
+      fetchFiles();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to acknowledge');
+    }
+  };
+
+  const openDeleteModal = (file) => {
+    setFileToDelete(file);
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (!isDeleting) {
+      setDeleteModalOpen(false);
+      setFileToDelete(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      
+      // Optimistically remove from UI
+      const deletedFileId = fileToDelete._id;
+      setFiles(prevFiles => prevFiles.filter(f => f._id !== deletedFileId));
+      
+      await axios.delete(
+        `/hrms/organization/deleteOrganizationFile/${deletedFileId}`
+      );
+      
+      toast.success('File deleted');
+      closeDeleteModal();
+      
+      // Refresh to ensure consistency
+      fetchFiles();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete file');
+      // Revert optimistic update on error
+      fetchFiles();
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleFileUpload = async () => {
-    if (!file || !form.fileName || !form.folder) {
-      toast.error('File name, folder and file are required');
-      return;
-    }
-
     try {
+      // Validation
+      if (!editMode && !file) {
+        toast.error('Please select a file');
+        return;
+      }
+
+      if (!form.fileName.trim()) {
+        toast.error('Please enter a file name');
+        return;
+      }
+
+      if (!form.folder) {
+        toast.error('Please select a folder');
+        return;
+      }
+
+      if (selectedUsers.length === 0) {
+        toast.error('Please select at least one user');
+        return;
+      }
+
       setUploading(true);
+
+      // Create FormData
       const formData = new FormData();
-      formData.append('file', file);
+      
+      // IMPORTANT: Append file with name "file" to match multer.any("file")
+      if (file) {
+        formData.append('file', file);
+      }
+      
       formData.append('fileName', form.fileName);
       formData.append('description', form.description);
       formData.append('folder', form.folder);
+      formData.append('allowedUsers', JSON.stringify(selectedUsers));
 
-      await axios.post(
-        'http://localhost:2000/api/v1/hrms/organization/organization-files',
-        formData
-      );
+      let response;
+      
+      if (editMode && fileBeingEdited) {
+        // Update existing file
+        response = await axios.patch(
+          `/hrms/organization/organization-files/${fileBeingEdited._id}`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+        
+        // Show appropriate message based on whether approval is required
+        if (response.data.requiresApproval) {
+          toast.success('File updated and sent for approval');
+        } else if (isSuperAdmin) {
+          toast.success('File updated successfully');
+        } else {
+          toast.success('New users added successfully');
+        }
+        
+        // Optimistically update the UI
+        setFiles(prevFiles => 
+          prevFiles.map(f => 
+            f._id === fileBeingEdited._id 
+              ? { ...f, ...response.data.data }
+              : f
+          )
+        );
+      } else {
+        // Upload new file
+        response = await axios.post(
+          '/hrms/organization/organization-files', 
+          formData, 
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
 
-      toast.success('File uploaded successfully');
+        toast.success(
+          isSuperAdmin
+            ? 'File published successfully'
+            : 'File sent for approval'
+        );
+        
+        // Optimistically add the new file to the UI
+        setFiles(prevFiles => [response.data.data, ...prevFiles]);
+      }
 
-      setOpenModal(false);
-      setForm({
-        fileName: '',
-        description: '',
-        folder: '',
-      });
+      // Reset form
+      setForm({ fileName: '', description: '', folder: '' });
       setFile(null);
+      setSelectedUsers([]);
+      setEditMode(false);
+      setFileBeingEdited(null);
+      setOpenModal(false);
 
-      // ✅ THIS IS THE KEY FIX
+      // Refresh files to ensure consistency
       fetchFiles();
     } catch (error) {
-      console.error(error);
-      toast.error('Upload failed');
+      toast.error(error.response?.data?.message || `Failed to ${editMode ? 'update' : 'upload'} file`);
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(
-        `http://localhost:2000/api/v1/hrms/organization/deleteOrganizationFile/${id}`
-      );
-
-      toast.error('File Delete Successfully');
-      fetchFiles();
-    } catch (error) {
-      console.error('Delete failed', error);
-    }
+  const openAddModal = () => {
+    setEditMode(false);
+    setFileBeingEdited(null);
+    setForm({ fileName: '', description: '', folder: '' });
+    setFile(null);
+    setSelectedUsers([]);
+    setOpenModal(true);
   };
 
-  const fetchFiles = async () => {
-    try {
-      setPageLoading(true);
-      const res = await axios.get('/hrms/organization/getOrganizationFile');
-      setFiles(res.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch files', error);
-    } finally {
-      setPageLoading(false);
-    }
+  const openEditModal = (file) => {
+    setEditMode(true);
+    setFileBeingEdited(file);
+    setOpenModal(true);
   };
+
+  /* ---------------- FILTER + PAGINATION ---------------- */
+
   const filteredFiles = files.filter((f) => {
+    const matchSearch = f.fileName
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
+
+    if (activeFilter === 'Pending Policies') {
+      return (
+        canManagePolicies &&
+        (f.status === 'PENDING_APPROVAL' || f.status === 'REJECTED' || f.status === 'CHANGES_REQUESTED') &&
+        matchSearch
+      );
+    }
+
     const matchFilter =
       activeFilter === 'All Files' || f.folder === activeFilter;
-
-    const matchSearch = f.fileName.toLowerCase().includes(search.toLowerCase());
 
     return matchFilter && matchSearch;
   });
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-  if (pageLoading) {
-    return (
-      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
-        <DotLottieReact
-          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
-          loop
-          autoplay
-          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
-        />
-      </div>
-    );
-  }
+  const totalPages = Math.ceil(filteredFiles.length / ITEMS_PER_PAGE);
+
+  const paginatedFiles = filteredFiles.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <SubModuleProtectedRoute>
-      <div className='p-6 bg-[#F7F8FA] min-h-screen space-y-6'>
-        {/* ---------------- HEADER ---------------- */}
-        <div className='flex items-center justify-between'>
+      {pageLoading && (
+        <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm z-50'>
+          <DotLottieReact
+            src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+            loop
+            autoplay
+            style={{ width: 100, height: 100, alignItems: 'center' }}
+          />
+        </div>
+      )}
+
+      <div className="p-6 bg-[#F7F8FA] min-h-screen space-y-6">
+
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className='text-lg font-semibold text-gray-900'>
-              Organization Files
-            </h3>
-            <p className='text-sm text-gray-500'>
+            <h3 className="text-lg font-semibold">Organization Files</h3>
+            <p className="text-sm text-gray-500">
               Manage and access organizational documents
             </p>
           </div>
 
-          <div className='flex items-center gap-3'>
-            <div className='relative w-72'>
-              <Search className='absolute left-3 top-2.5 w-4 h-4 text-gray-400' />
+          <div className="flex items-center gap-3">
+            <div className="relative w-72">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder='Search files...'
-                className='w-full pl-10 pr-4 py-2 text-sm rounded-lg border bg-white'
+                placeholder="Search files..."
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border bg-white"
               />
             </div>
 
-            {allUserPermissions.includes('HRMS:COMPANY_POLICY:WRITE') && (
+            {canManagePolicies && (
               <button
-                onClick={() => setOpenModal(true)}
-                className='px-4 py-2 rounded-lg bg-[#FF7B30] text-white text-sm font-medium'
+                onClick={openAddModal}
+                className="px-4 py-2 rounded-lg bg-[#FF7B30] text-white text-sm font-medium"
               >
-                Manage
+                Add File
               </button>
             )}
           </div>
         </div>
 
-        {/* ---------------- FILTER TABS ---------------- */}
-        <div className='flex gap-3'>
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition ${
-                activeFilter === f
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white border text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* ---------------- FILE LIST ---------------- */}
-        <div className='bg-white rounded-xl shadow-sm'>
-          <div className='grid grid-cols-12 px-6 py-3 text-xs font-semibold text-gray-500 border-b'>
-            <div className='col-span-6'>DOCUMENT</div>
-            <div className='col-span-3'>CATEGORY</div>
-            <div className='col-span-2'>DATE</div>
-            <div className='col-span-1 text-right'>ACTION</div>
+        {/* FILTERS */}
+        <div className="flex justify-between items-center">
+          <div className="flex gap-3">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setActiveFilter(f)}
+                className={`px-5 py-2 rounded-full text-sm ${
+                  activeFilter === f
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-white border text-gray-600'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
           </div>
 
-          {filteredFiles.length === 0 ? (
-            <div className='py-12 text-center text-sm text-gray-500'>
-              No shared files to display
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-2 py-1 rounded bg-orange-500 text-white disabled:bg-gray-300"
+              >
+                ←
+              </button>
+              <span className="text-sm text-gray-500">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2 py-1 rounded bg-orange-500 text-white disabled:bg-gray-300"
+              >
+                →
+              </button>
             </div>
-          ) : (
-            filteredFiles.map((file) => {
-              const meta = CATEGORY_META[file.folder] || CATEGORY_META.Internal;
-              const Icon = meta.icon;
-
-              return (
-                <div
-                  key={file._id}
-                  className='grid grid-cols-12 px-6 py-4 items-center border-b last:border-b-0 hover:bg-gray-50'
-                >
-                  <div className='col-span-6 flex items-center gap-4'>
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${meta.bg}`}
-                    >
-                      <Icon className={`w-5 h-5 ${meta.text}`} />
-                    </div>
-                    <div>
-                      <p className='text-sm font-medium text-gray-900'>
-                        {file.fileName}
-                      </p>
-                      {file.description && (
-                        <p className='text-xs text-gray-500'>
-                          {file.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className='col-span-3'>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${meta.pill}`}
-                    >
-                      {file.folder}
-                    </span>
-                  </div>
-
-                  <div className='col-span-2 text-sm text-gray-500'>
-                    {new Date(file.createdAt).toLocaleDateString('en-IN')}
-                  </div>
-
-                  <div className='col-span-1 flex justify-end items-center gap-3'>
-                    <a
-                      href={file.fileUrl}
-                      target='_blank'
-                      className='text-orange-500 text-sm flex items-center gap-1'
-                    >
-                      View <ArrowRight size={14} />
-                    </a>
-
-                    {allUserPermissions.includes(
-                      'HRMS:COMPANY_POLICY:DELETE'
-                    ) && (
-                      <button
-                        onClick={() => handleDelete(file._id)}
-                        className='text-red-500 hover:text-red-700'
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
           )}
         </div>
 
-        {/* Modal */}
-        {openModal && (
-          <div className='fixed inset-0 z-50 flex items-center justify-end bg-black/40'>
-            <div className='bg-white w-full max-w-xl rounded-xl shadow-xl p-6 relative max-h-[90vh] flex flex-col'>
-              <button
-                onClick={() => setOpenModal(false)}
-                className='absolute top-4 right-4 text-gray-400'
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className={`grid ${
+            activeFilter === 'Pending Policies' 
+              ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]' 
+              : isEmployeeOnly 
+                ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]'  // Employee: Document, Category, Date, Acknowledgement, Action
+                : 'grid-cols-12'  // Admin: Standard 12-column
+          } px-6 py-3 text-xs font-semibold text-gray-500 border-b`}>
+            <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-5'}>DOCUMENT</div>
+            <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-3'}>CATEGORY</div>
+            <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-2'}>DATE</div>
+            {activeFilter === 'Pending Policies' && (
+              <div className="text-center">STATUS</div>
+            )}
+            {isEmployeeOnly && activeFilter !== 'Pending Policies' && (
+              <div className="text-center">ACKNOWLEDGEMENT</div>
+            )}
+            <div className="text-right">ACTION</div>
+          </div>
+
+          {paginatedFiles.map((file) => {
+            const meta = CATEGORY_META[file.folder] || CATEGORY_META.Internal;
+            const Icon = meta.icon;
+
+            // Check if current user has acknowledged
+            const userAcknowledgement = file.allowedUsers?.find(
+              (u) => u.user?._id?.toString() === user?._id?.toString()
+            );
+            const hasAcknowledged = userAcknowledgement?.acknowledgementStatus === 'ACKNOWLEDGED';
+
+            return (
+              <div
+                key={file._id}
+                onClick={() => {
+                  if (activeFilter === 'Pending Policies') {
+                    setSelectedPolicy(file);
+                    setApprovalModalOpen(true);
+                  }
+                }}
+                className={`grid ${
+                  activeFilter === 'Pending Policies' 
+                    ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]' 
+                    : isEmployeeOnly 
+                      ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]'
+                      : 'grid-cols-12'
+                } px-6 py-4 items-center border-b ${
+                  activeFilter === 'Pending Policies'
+                    ? 'cursor-pointer hover:bg-gray-50'
+                    : ''
+                }`}
               >
-                ✕
-              </button>
+                <div className={`flex items-center gap-4 ${activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-5'}`}>
+                  <div className={`min-w-10 h-10 rounded-lg flex items-center justify-center ${meta.bg}`}>
+                    <Icon className={`w-5 h-5 ${meta.text}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{file.fileName}</p>
+                    {file.description && (
+                      <p className="text-xs text-gray-500">
+                        {file.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-              <h3 className='text-lg font-semibold mb-4'>
-                Add organization file
-              </h3>
+                <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-3'}>
+                  <span className={`px-3 py-1 rounded-full text-xs ${meta.pill}`}>
+                    {file.folder}
+                  </span>
+                </div>
 
-              <div className='overflow-y-auto flex-1 pr-2'>
-                {/* Upload */}
-                <div className='border-2 border-dashed rounded-lg p-6 text-center mb-4'>
-                  <input
-                    type='file'
-                    onChange={(e) => setFile(e.target.files[0])}
-                    className='hidden'
-                    id='fileUpload'
-                  />
-                  <label
-                    htmlFor='fileUpload'
-                    className='cursor-pointer text-blue-600 text-sm font-medium'
+                <div className={`text-sm text-gray-500 ${activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-2'}`}>
+                  {new Date(file.createdAt).toLocaleDateString('en-IN')}
+                </div>
+
+                {activeFilter === 'Pending Policies' && (
+                  <div className="text-center">
+                    {file.status === 'REJECTED' ? (
+                      <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700">
+                        Rejected
+                      </span>
+                    ) : file.status === 'CHANGES_REQUESTED' ? (
+                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                        Changes Requested
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
+                        Pending
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* ACKNOWLEDGEMENT COLUMN FOR EMPLOYEES */}
+                {isEmployeeOnly && activeFilter !== 'Pending Policies' && (
+                  <div className="flex justify-center">
+                    {file.status === 'PUBLISHED' && userAcknowledgement ? (
+                      hasAcknowledged ? (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100">
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            className="w-5 h-5 text-green-600" 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor"
+                          >
+                            <path 
+                              fillRule="evenodd" 
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
+                              clipRule="evenodd" 
+                            />
+                          </svg>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAcknowledge(file._id);
+                          }}
+                          className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 hover:bg-orange-200 transition-colors"
+                          title="Click to acknowledge"
+                        >
+                          <ThumbsUp className="w-4 h-4 text-orange-600" />
+                        </button>
+                      )
+                    ) : (
+                      <span className="text-xs text-gray-400">N/A</span>
+                    )}
+                  </div>
+                )}
+
+                <div className={`flex justify-end gap-3 ${activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-1'}`}>
+                  <a
+                    href={file.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-orange-500 hover:text-orange-600"
+                    title="View file"
                   >
-                    Choose file from Desktop / Others
-                  </label>
+                    <Eye size={16} />
+                  </a>
 
-                  {file && (
-                    <p className='mt-2 text-sm text-gray-600'>{file.name}</p>
+                  {canManagePolicies && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAckPolicy(file);
+                        setAckModalOpen(true);
+                      }}
+                      className="text-gray-600 hover:text-gray-800"
+                      title="View acknowledgements"
+                    >
+                      <User size={16} />
+                    </button>
+                  )}
+
+                  {canManagePolicies && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(file);
+                      }}
+                      className="text-blue-500 hover:text-blue-600"
+                      title="Edit file"
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      >
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                        <path d="m15 5 4 4"/>
+                      </svg>
+                    </button>
+                  )}
+
+                  {canManagePolicies && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDeleteModal(file);
+                      }}
+                      className="text-red-500 hover:text-red-600"
+                      title="Delete file"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   )}
                 </div>
-
-                {/* Form */}
-                <div className='space-y-4'>
-                  <div>
-                    <label className='text-sm font-medium'>
-                      File name <span className='text-red-500'>*</span>
-                    </label>
-                    <input
-                      type='text'
-                      value={form.fileName}
-                      onChange={(e) => update('fileName', e.target.value)}
-                      className='mt-1 w-full border rounded-md px-3 py-2 text-sm'
-                    />
-                  </div>
-
-                  <div>
-                    <label className='text-sm font-medium'>Description</label>
-                    <textarea
-                      rows={3}
-                      value={form.description}
-                      onChange={(e) => update('description', e.target.value)}
-                      className='mt-1 w-full border rounded-md px-3 py-2 text-sm'
-                    />
-                  </div>
-
-                  <div>
-                    <label className='text-sm font-medium'>
-                      Folder <span className='text-red-500'>*</span>
-                    </label>
-                    <select
-                      value={form.folder}
-                      onChange={(e) => update('folder', e.target.value)}
-                      className='mt-1 w-full border rounded-md px-3 py-2 text-sm'
-                    >
-                      <option value=''>Select</option>
-                      <option value='HR Policies'>HR Policies</option>
-                      <option value='Company Docs'>Company Docs</option>
-                    </select>
-                  </div>
-
-                  {/* <div>
-                  <label className="text-sm font-medium">
-                    File Entry date
-                  </label>
-                  <input
-                    type="date"
-                    value={form.entryDate}
-                    onChange={(e) => update("entryDate", e.target.value)}
-                    className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
-                  />
-                </div> */}
-                </div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Footer */}
-              <div className='mt-6 flex justify-end gap-3 border-t pt-4'>
-                <button
-                  onClick={() => setOpenModal(false)}
-                  className='px-4 py-2 text-sm border rounded-md'
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleFileUpload}
-                  disabled={uploading}
-                  className='px-4 py-2 text-sm rounded-md bg-blue-600 text-white disabled:opacity-50'
-                >
-                  {uploading ? 'Uploading...' : 'Upload'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* MODALS */}
+        <AddOrganizationFileModal
+          open={openModal}
+          onClose={() => {
+            setOpenModal(false);
+            setEditMode(false);
+            setFileBeingEdited(null);
+          }}
+          form={form}
+          update={update}
+          file={file}
+          setFile={setFile}
+          users={users}
+          selectedUsers={selectedUsers}
+          setSelectedUsers={setSelectedUsers}
+          uploading={uploading}
+          onSubmit={handleFileUpload}
+          editMode={editMode}
+          existingFile={fileBeingEdited}
+        />
+
+        <ApproveCompanyPolicyModal
+          open={approvalModalOpen}
+          onClose={() => setApprovalModalOpen(false)}
+          policy={selectedPolicy}
+          isSuperAdmin={isSuperAdmin}
+          onApprove={handleApprovePolicy}
+          onReject={handleRejectPolicy}
+          onSuggestChanges={handleSuggestChanges}
+        />
+
+        <AcknowledgementStatusModal
+          open={ackModalOpen}
+          onClose={() => setAckModalOpen(false)}
+          policy={ackPolicy}
+        />
+
+        <ConfirmDeleteModal
+          open={deleteModalOpen}
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
+          fileName={fileToDelete?.fileName}
+          isDeleting={isDeleting}
+        />
       </div>
     </SubModuleProtectedRoute>
   );

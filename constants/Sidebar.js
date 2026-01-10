@@ -150,7 +150,8 @@ export function MenuProvider({ children }) {
       "/hrms/dashboard/operations/leave-tracker/employment-group":"HRMS:LEAVE:VIEW",
       "/hrms/dashboard/operations/leave-tracker/leave-calender":"HRMS:LEAVE:VIEW",
       "/hrms/dashboard/operations/employeeInfo":"HRMS:EMPLOYEE:VIEW",
-      "/hrms/dashboard/operations/hr-helpdesk":"HRMS:HR HELPDESK:VIEW"
+      "/hrms/dashboard/operations/hr-helpdesk":"HRMS:HR HELPDESK:VIEW",
+      "/hrms/dashboard/attendance/list":"HRMS:ATTENDANCE:VIEW",
     }
 
 

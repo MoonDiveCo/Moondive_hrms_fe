@@ -8,19 +8,32 @@ import ApplyLeaveModal from "./ApplyLeaveModal";
 import EventDetailsModal from "./EventDetailsModal";
 import LeaveRequestsModal from "./LeaveRequestModal";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import useSWR, { mutate } from "swr";
+
+const fetcherWithAuth = async (url) => {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  // Tolerate APIs that return either { data: { ... } } or { ... }
+  const data = res?.data?.data ?? res?.data;
+  return data;
+};
 
 export default function LeaveTrackerDashboard({showCalender = true }) {
   const [viewModal, setViewModal] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [applyLeaveContext, setApplyLeaveContext] = useState(null);
-  const [leaveDashboard, setLeaveDashboard] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [pendingLeaves, setPendingLeaves] = useState([]);
-  const [userPendingLeaves, setUserPendingLeaves] = useState([]);
-  const [holidays, setHolidays] = useState([]);
-  const [allLeaves, setAllLeaves] = useState([]);
+  // const [loading, setLoading] = useState(true);
+  // const [leaveDashboard, setLeaveDashboard] = useState([]);
+  // const [pendingLeaves, setPendingLeaves] = useState([]);
+  // const [userPendingLeaves, setUserPendingLeaves] = useState([]);
+  // const [holidays, setHolidays] = useState([]);
+  // const [allLeaves, setAllLeaves] = useState([]);
   const calendarRefreshRef = useRef(null);
+
 
   const { user } = useContext(AuthContext);
     const userRole = user?.userRole[0];
@@ -85,6 +98,117 @@ export default function LeaveTrackerDashboard({showCalender = true }) {
 ]
 
 
+useEffect(() => {
+  if (!user?._id) return;
+
+  // Attach token as query param so SSE works even when auth is via Bearer tokens
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const sseUrl = `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+
+  const eventSource = new EventSource(sseUrl, { withCredentials: true });
+
+  eventSource.onmessage = (event) => {
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (err) {
+      console.error("Invalid SSE payload:", err, event.data);
+      return;
+    }
+
+    console.log("Received SSE event:", data);
+
+    // Optimistically update and then revalidate so UI updates immediately
+    if (data.type === "LEAVE_APPLIED") {
+      const payload = data.payload || data.leave || data.leaveRequest || data.data;
+
+      if (payload) {
+        mutate("/hrms/leave/get-leave", (cached) => {
+          if (!cached) return cached;
+
+          const leaves = cached.leaves || [];
+          const leaveRequests = cached.leaveRequests || [];
+
+          const newLeaves = payload.leave ? [payload.leave, ...leaves] : leaves;
+          const newLeaveRequests = payload.leaveRequest ? [payload.leaveRequest, ...leaveRequests] : leaveRequests;
+
+          return {
+            ...cached,
+            leaves: newLeaves,
+            leaveRequests: newLeaveRequests,
+          };
+        }, false);
+      }
+
+      // Revalidate to ensure cache is in sync with server
+      mutate("/hrms/leave/get-leave");
+    }
+
+    if (data.type === "LEAVE_UPDATED") {
+      // Try a lightweight optimistic update for dashboard if possible
+      const payload = data.payload || data.data;
+
+      if (payload) {
+        mutate("/hrms/leave/get-leave-dashboard", (cached) => {
+          if (!cached) return cached;
+          return cached; // placeholder: modify here if payload contains dashboard delta
+        }, false);
+      }
+
+      // Revalidate both dashboard and leaves
+      mutate("/hrms/leave/get-leave-dashboard");
+      mutate("/hrms/leave/get-leave");
+
+      // Refresh calendar if component provided a refresh fn
+      calendarRefreshRef.current?.();
+    }
+  };
+
+  eventSource.onerror = (err) => {
+    console.error("SSE error:", err);
+    eventSource.close();
+  };
+
+  return () => eventSource.close();
+}, [user?._id]);
+
+const isSuperAdmin = userRole === "SuperAdmin";
+
+/* 1️⃣ Dashboard cards + pendingLeaves */
+const { data: dashboardRes, isLoading: dashboardLoading } = useSWR(
+  !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+/* 2️⃣ Holidays */
+const { data: holidayRes } = useSWR(
+  organizationId
+    ? `/hrms/holiday?organizationId=${organizationId}&year=${new Date().getFullYear()}`
+    : null,
+  fetcherWithAuth
+);
+
+/* 3️⃣ All my leaves (calendar + MY_LEAVES tab) */
+const { data: leaveRes } = useSWR(
+  user?._id ? "/hrms/leave/get-leave" : null,
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+
+console.log("dashboardRes", dashboardRes);
+
+// tolerate both response shapes: either the fetcher returns the inner data or the full payload
+const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];
+const userPendingLeaves = dashboardRes?.pendingLeaves || dashboardRes?.data?.pendingLeaves || [];
+
+const holidays = holidayRes?.result?.data || [];
+
+const allLeaves = leaveRes?.leaves || [];
+const pendingLeaves = leaveRes?.leaveRequests || [];
+
+const loading = dashboardLoading && !isSuperAdmin;
 
   const leaveBalanceMap = useMemo(() => {
   return leaveDashboard.reduce((acc, l) => {
@@ -93,68 +217,38 @@ export default function LeaveTrackerDashboard({showCalender = true }) {
   }, {});
 }, [leaveDashboard]);
 
-useEffect(() => {
-  if (!user?._id) return;
 
-  const eventSource = new EventSource(
-    `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream`,
-    {withCredentials: true}
-  );
+// useEffect(() => {
+//   if (userRole !== "SuperAdmin") {
+//     fetchLeaveDashboard();
+//     // fetchLeaveRequests();
+//   } else {
+//     setLoading(false);
+//   }
+// }, [userRole]);
 
-  eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log("Received SSE event:", data);
-    if (data.type === "LEAVE_APPLIED") {
-      fetchLeaveRequests();
-    }
-
-    if (data.type === "LEAVE_UPDATED") {
-      fetchLeaveDashboard();
-      calendarRefreshRef.current?.();
-    }
-  };
-
-  eventSource.onerror = () => {
-    eventSource.close();
-  };
-
-  return () => eventSource.close();
-}, [user?._id]);
-
-
-
-
-useEffect(() => {
-  if (userRole !== "SuperAdmin") {
-    fetchLeaveDashboard();
-    // fetchLeaveRequests();
-  } else {
-    setLoading(false);
-  }
-}, [userRole]);
-
-    const fetchLeaveDashboard = async () => {
-    try {
-      const { data } = await axios.get("/hrms/leave/get-leave-dashboard");
-      const holidays = await axios.get("/hrms/holiday", {
-        params: { organizationId, year: new Date().getFullYear() },
-      });
-    const leaves = await axios.get("/hrms/leave/get-leave", {
-      params: { year: new Date().getFullYear() },
-    });
+  //   const fetchLeaveDashboard = async () => {
+  //   try {
+  //     const { data } = await axios.get("/hrms/leave/get-leave-dashboard");
+  //     const holidays = await axios.get("/hrms/holiday", {
+  //       params: { organizationId, year: new Date().getFullYear() },
+  //     });
+  //   const leaves = await axios.get("/hrms/leave/get-leave", {
+  //     params: { year: new Date().getFullYear() },
+  //   });
       
-      setLeaveDashboard(data.dashboard || []);
-      setUserPendingLeaves(data.pendingLeaves || []);
-      setHolidays(holidays.data?.result?.data || []);
-      setAllLeaves(leaves.data?.leaves || []);
-      setPendingLeaves(leaves?.data?.leaveRequests || []);
+  //     setLeaveDashboard(data.dashboard || []);
+  //     setUserPendingLeaves(data.pendingLeaves || []);
+  //     setHolidays(holidays.data?.result?.data || []);
+  //     setAllLeaves(leaves.data?.leaves || []);
+  //     setPendingLeaves(leaves?.data?.leaveRequests || []);
 
-    } catch (err) {
-      console.error("Failed to load leave dashboard", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   } catch (err) {
+  //     console.error("Failed to load leave dashboard", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   //   const fetchLeaveRequests = async () => {
   //   try {
@@ -262,20 +356,24 @@ useEffect(() => {
           requests={pendingLeaves}
           myLeaves={allLeaves}
           onClose={() => setViewModal(false)}
-          onResolved={(leaveId) =>
-            setPendingLeaves((prev) =>
-              prev.filter((l) => l.leaveId !== leaveId)
-            )
-          }
+        onResolved={async (leaveId) => {
+        // Ensure the latest leaves & dashboard data are fetched, then refresh calendar
+        await mutate("/hrms/leave/get-leave");
+        await mutate("/hrms/leave/get-leave-dashboard");
+        calendarRefreshRef.current?.();
+      }}
         />
       )}
 
      {applyLeaveContext && (
       <ApplyLeaveModal
-         context={{
+       context={{
           ...applyLeaveContext,
           refreshCalendar: () => calendarRefreshRef.current?.(),
-          refreshDashboard: fetchLeaveDashboard,
+          refreshDashboard: () => {
+            mutate("/hrms/leave/get-leave-dashboard");
+            mutate("/hrms/leave/get-leave");
+          },
         }}
         pendingLeaves={userPendingLeaves}
         leaveBalances={leaveBalanceMap}
