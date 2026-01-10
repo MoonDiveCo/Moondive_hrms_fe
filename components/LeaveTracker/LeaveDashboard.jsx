@@ -101,7 +101,6 @@ export default function LeaveTrackerDashboard({showCalender = true }) {
 useEffect(() => {
   if (!user?._id) return;
 
-  // Attach token as query param so SSE works even when auth is via Bearer tokens
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const sseUrl = `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`;
 
@@ -116,9 +115,6 @@ useEffect(() => {
       return;
     }
 
-    console.log("Received SSE event:", data);
-
-    // Optimistically update and then revalidate so UI updates immediately
     if (data.type === "LEAVE_APPLIED") {
       const payload = data.payload || data.leave || data.leaveRequest || data.data;
 
@@ -140,26 +136,22 @@ useEffect(() => {
         }, false);
       }
 
-      // Revalidate to ensure cache is in sync with server
       mutate("/hrms/leave/get-leave");
     }
 
     if (data.type === "LEAVE_UPDATED") {
-      // Try a lightweight optimistic update for dashboard if possible
       const payload = data.payload || data.data;
 
       if (payload) {
         mutate("/hrms/leave/get-leave-dashboard", (cached) => {
           if (!cached) return cached;
-          return cached; // placeholder: modify here if payload contains dashboard delta
+          return cached; 
         }, false);
       }
 
-      // Revalidate both dashboard and leaves
       mutate("/hrms/leave/get-leave-dashboard");
       mutate("/hrms/leave/get-leave");
 
-      // Refresh calendar if component provided a refresh fn
       calendarRefreshRef.current?.();
     }
   };
@@ -174,14 +166,12 @@ useEffect(() => {
 
 const isSuperAdmin = userRole === "SuperAdmin";
 
-/* 1️⃣ Dashboard cards + pendingLeaves */
 const { data: dashboardRes, isLoading: dashboardLoading } = useSWR(
   !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
   fetcherWithAuth,
   { refreshInterval: 10000 }
 );
 
-/* 2️⃣ Holidays */
 const { data: holidayRes } = useSWR(
   organizationId
     ? `/hrms/holiday?organizationId=${organizationId}&year=${new Date().getFullYear()}`
@@ -189,7 +179,6 @@ const { data: holidayRes } = useSWR(
   fetcherWithAuth
 );
 
-/* 3️⃣ All my leaves (calendar + MY_LEAVES tab) */
 const { data: leaveRes } = useSWR(
   user?._id ? "/hrms/leave/get-leave" : null,
   fetcherWithAuth,
@@ -199,7 +188,6 @@ const { data: leaveRes } = useSWR(
 
 console.log("dashboardRes", dashboardRes);
 
-// tolerate both response shapes: either the fetcher returns the inner data or the full payload
 const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];
 const userPendingLeaves = dashboardRes?.pendingLeaves || dashboardRes?.data?.pendingLeaves || [];
 
@@ -422,87 +410,6 @@ const loading = dashboardLoading && !isSuperAdmin;
     </div>
   );
 }
-
-
-// function LeaveCard({
-//   title,
-//   availableThisMonth,
-//   availableThisYear,
-//   taken,
-//   carryForwarded,
-//   unlimited,
-//   isLWP,
-//   canCarryForward,
-//   isWindowed,
-//   windowInfo,
-// }) {
-//   return (
-//     <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
-
-//       <p className="text-sm font-medium text-gray-500">{title}</p>
-
-//       {isLWP ? (
-//         <p className="">
-//           <span className="font-semibold text-3xl text-primaryText">{taken}</span> <span className="text-sm text-gray-500">Taken</span>
-//         </p>
-//       ) : (
-//         <>
-//           {isWindowed ? (<div>
-//            <span className="text-3xl font-semibold text-primaryText">
-//             {windowInfo.available}
-//           </span>
-//           <span className="text-sm text-gray-500"> available /{windowInfo.months} months</span>
-
-//               <p className="text-sm  text-gray-500">
-//                 <span className="font-semibold text-gray-500">
-//                   {availableThisYear}
-//                 </span>{" "}
-//                 Available/ year
-//               </p>
-//               </div>
-//           ) : (
-//             <>
-//               <span >
-//                 <span className="font-semibold text-4xl text-primaryText">
-//                   {availableThisMonth + carryForwarded}
-//                 </span>{" "}
-//                 <span className="text-sm text-gray-500">
-//                 Available/ month</span>
-//               </span>
-
-//               <p className="text-sm text-gray-500">
-//                 <span className="font-semibold ">
-//                   {availableThisYear}
-//                 </span>{" "}
-//                 Available/ year
-//               </p>
-//             </>
-//           )}
-
-//           <div className="border-t border-dashed border-gray-200 my-2" />
-
-//           {!unlimited && (
-//             <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-//               <p>
-//                 <span className="font-medium text-gray-800">{taken}</span>{" "}
-//                 Taken
-//               </p>
-
-//               {canCarryForward && (
-//                 <p>
-//                   <span className="font-medium text-gray-800">
-//                     {carryForwarded}
-//                   </span>{" "}
-//                   CF
-//                 </p>
-//               )}
-//             </div>
-//           )}
-//         </>
-//       )}
-//     </div>
-//   );
-// }
 
 function LeaveCard({
   code,

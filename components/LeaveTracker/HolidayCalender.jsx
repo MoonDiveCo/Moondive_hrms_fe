@@ -30,6 +30,28 @@ export default function HolidayCalender({
   const [events, setEvents] = useState([]);
   const calendarRef = useRef(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const prevLeavesRef = useRef(null);
+  useEffect(() => {
+    const prev = prevLeavesRef.current;
+    const next = leaves || [];
+
+    if (!prev) {
+      prevLeavesRef.current = next;
+      return;
+    }
+
+    const prevMap = new Map(prev.map((l) => [l.id, l.status]));
+    const changed =
+      prev.length !== next.length || next.some((l) => prevMap.get(l.id) !== l.status);
+
+    if (changed) {
+      setReloadKey((k) => k + 1);
+    }
+
+    prevLeavesRef.current = next;
+  }, [leaves]);
+
   // const currentYear = new Date().getFullYear();
   async function fetchCalendarData(info) {
       const viewStart = info?.view?.currentStart || info.start;
