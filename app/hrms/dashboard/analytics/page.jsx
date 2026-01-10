@@ -41,34 +41,34 @@ const LEAVE_SUB_TABS = [
 
 
 const TAB_META = {
-leave: {
-  title: 'Employees on Leave',
-  columns: [
-    { key: 'name', label: 'Employee' },
-    { key: 'employeeId', label: 'Emp ID' },
-    { key: 'department', label: 'Department' },
-    {
-      key: 'status',
-      label: 'Status',
-      render: row => (
-        <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-600">
-          {row.status}
-        </span>
-      ),
-    },
-    {
+  leave: {
+    title: 'Employees on Leave',
+    columns: [
+      { key: 'name', label: 'Employee' },
+      { key: 'employeeId', label: 'Emp ID' },
+      { key: 'department', label: 'Department' },
+      {
+        key: 'status',
+        label: 'Status',
+        render: row => (
+          <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-600">
+            {row.status}
+          </span>
+        ),
+      },
+      {
         key: 'dayType',
         label: 'Day',
         render: row => (
-            <span className="text-xs text-gray-600">
+          <span className="text-xs text-gray-600">
             {row.isHalfDay
-                ? `Half Day (${row.session})`
-                : 'Full Day'}
-            </span>
+              ? `Half Day (${row.session})`
+              : 'Full Day'}
+          </span>
         ),
-        },
-  ],
-},
+      },
+    ],
+  },
 
 
   online: {
@@ -91,15 +91,15 @@ leave: {
         label: 'Check-in Time',
         render: row => formatTime(row.checkInTime),
       },
-        {
-      key: 'workType',
-      label: 'Work Type',
-      render: row => (
-        <span className="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-600">
-          {row.workType || '—'}
-        </span>
-      ),
-    },
+      {
+        key: 'workType',
+        label: 'Work Type',
+        render: row => (
+          <span className="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-600">
+            {row.workType || '—'}
+          </span>
+        ),
+      },
     ],
   },
 
@@ -197,11 +197,10 @@ export default function Analytics() {
               setActiveTab(tab.key);
               router.push(`/hrms/dashboard/analytics?tab=${tab.key}`);
             }}
-            className={`px-3 py-1 rounded-full cursor-pointer text-xs font-medium ${
-              activeTab === tab.key
+            className={`px-3 py-1 rounded-full cursor-pointer text-xs font-medium ${activeTab === tab.key
                 ? 'bg-primary text-white'
                 : 'bg-white border text-gray-600'
-            }`}
+              }`}
           >
             {tab.label}
           </button>
@@ -237,8 +236,26 @@ function AnalyticsTab({ type, data, stats, loading }) {
   const [approvedLeaves, setApprovedLeaves] = useState(data);
 
   useEffect(() => {
-    setApprovedLeaves(data);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const filtered = data.filter(l => {
+      const start = new Date(l.startDate);
+      const end = new Date(l.endDate);
+
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+
+      return (
+        l.status === "Approved" &&
+        today >= start &&
+        today <= end
+      );
+    });
+
+    setApprovedLeaves(filtered);
   }, [data]);
+
 
   if (type === 'leave') {
     return (
@@ -248,11 +265,10 @@ function AnalyticsTab({ type, data, stats, loading }) {
             <button
               key={t.key}
               onClick={() => setLeaveTab(t.key)}
-              className={`px-3 py-1 rounded-full text-xs cursor-pointer ${
-                leaveTab === t.key
+              className={`px-3 py-1 rounded-full text-xs cursor-pointer ${leaveTab === t.key
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-600'
-              }`}
+                }`}
             >
               {t.label}
             </button>
@@ -346,41 +362,53 @@ function PendingLeaveTable({ onApprovedToday }) {
       .get('/hrms/leave/get-leave', {
         params: { year: new Date().getFullYear() },
       })
-      .then(res => setRows(res.data?.leaveRequests || []))
+      .then(res => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const filtered = (res.data?.leaveRequests || []).filter(l => {
+          if (l.decision) return false;
+
+          return true;
+        });
+
+        setRows(filtered);
+      })
+
       .catch(console.error);
   }, []);
 
-async function handleAction(row, action) {
-  setProcessingId(row.leaveId);
+  async function handleAction(row, action) {
+    setProcessingId(row.leaveId);
 
-  try {
-    await axios.put('/hrms/leave/update-leave-decision', {
-      leaveEntryId: row.leaveId,
-      action,
-    });
+    try {
+      await axios.put('/hrms/leave/update-leave-decision', {
+        leaveEntryId: row.leaveId,
+        action,
+      });
 
-    setRows(prev => prev.filter(r => r.leaveId !== row.leaveId));
+      setRows(prev => prev.filter(r => r.leaveId !== row.leaveId));
 
-    if (
-      action === 'Approved' &&
-      new Date(row.startDate) <= new Date() &&
-      new Date(row.endDate) >= new Date()
-    ) {
-     onApprovedToday({
-        _id: row.employee._id,
-        name: `${row.employee.firstName} ${row.employee.lastName}`,
-        employeeId: row.employee.employeeId,
-        department: row.employee.department,
-        status: 'Approved',
-        isHalfDay: row.isHalfDay,
-        session: row.session,
+      if (
+        action === 'Approved' &&
+        new Date(row.startDate) <= new Date() &&
+        new Date(row.endDate) >= new Date()
+      ) {
+        onApprovedToday({
+          _id: row.employee._id,
+          name: `${row.employee.firstName} ${row.employee.lastName}`,
+          employeeId: row.employee.employeeId,
+          department: row.employee.department,
+          status: 'Approved',
+          isHalfDay: row.isHalfDay,
+          session: row.session,
         });
+      }
+    } finally {
+      setProcessingId(null);
+      setConfirmAction(null);
     }
-  } finally {
-    setProcessingId(null);
-    setConfirmAction(null);
   }
-}
 
   if (!rows.length) {
     return (
@@ -393,20 +421,20 @@ async function handleAction(row, action) {
   const columns = [
     { key: 'name', label: 'Employee' },
     { key: 'leaveType', label: 'Type' },
-   {
-        key: 'duration',
-        label: 'Date',
-        render: r => (
-            <div className="flex flex-col">
-            <span>{formatDate(r.startDate)}</span>
-            <span className="text-xs text-gray-400">
-                {r.isHalfDay
-                ? `Half Day (${r.session || '—'})`
-                : 'Full Day'}
-            </span>
-            </div>
-        ),
-        },
+    {
+      key: 'duration',
+      label: 'Date',
+      render: r => (
+        <div className="flex flex-col">
+          <span>{formatDate(r.startDate)}</span>
+          <span className="text-xs text-gray-400">
+            {r.isHalfDay
+              ? `Half Day (${r.session || '—'})`
+              : 'Full Day'}
+          </span>
+        </div>
+      ),
+    },
 
     {
       key: 'actions',
@@ -415,9 +443,9 @@ async function handleAction(row, action) {
         <div className="flex gap-2">
           <button
             disabled={processingId === r.leaveId}
-           onClick={() =>
-                setConfirmAction({ row: r, action: 'Rejected' })
-                }
+            onClick={() =>
+              setConfirmAction({ row: r, action: 'Rejected' })
+            }
 
             className="h-8 w-8 border cursor-pointer border-primary text-primary rounded-full flex items-center justify-center"
           >
@@ -425,7 +453,7 @@ async function handleAction(row, action) {
           </button>
           <button
             disabled={processingId === r.leaveId}
-            onClick={() =>  setConfirmAction({ row: r, action: 'Approved' })}
+            onClick={() => setConfirmAction({ row: r, action: 'Approved' })}
             className="h-8 w-8 bg-primary cursor-pointer text-white rounded-full flex items-center justify-center"
           >
             <Check size={14} />
@@ -446,17 +474,17 @@ async function handleAction(row, action) {
       stats={{ count: rows.length }}
     />
     {confirmAction && (
-  <ConfirmLeaveActionModal
-    action={confirmAction.action}
-    loading={processingId === confirmAction.row.leaveId}
-    onCancel={() => setConfirmAction(null)}
-    onConfirm={() =>
-      handleAction(confirmAction.row, confirmAction.action)
-    }
-  />
-)}
-</>
-    
+      <ConfirmLeaveActionModal
+        action={confirmAction.action}
+        loading={processingId === confirmAction.row.leaveId}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() =>
+          handleAction(confirmAction.row, confirmAction.action)
+        }
+      />
+    )}
+  </>
+
   );
 }
 
@@ -490,9 +518,8 @@ function ConfirmLeaveActionModal({ action, onCancel, onConfirm, loading }) {
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`px-4 py-2 text-sm rounded-lg text-white ${
-              isApprove ? 'bg-primary' : 'bg-red-600'
-            }`}
+            className={`px-4 py-2 text-sm rounded-lg text-white ${isApprove ? 'bg-primary' : 'bg-red-600'
+              }`}
           >
             {loading ? 'Processing…' : 'Confirm'}
           </button>

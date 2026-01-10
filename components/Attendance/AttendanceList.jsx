@@ -139,7 +139,7 @@ export default function AttendanceList({ currentDate, rangeMode = 'week' }) {
           );
 
           // ----- Today row -----
-          if (status === 'present' && isToday) {
+          if ( isToday) {
             return (
               <TodayRow
                 key={key}

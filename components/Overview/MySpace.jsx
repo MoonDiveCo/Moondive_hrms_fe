@@ -253,7 +253,7 @@ const myTotalLeavesCount = Array.isArray(leaveData?.leaves)
 
       mutate(`/hrms/leave/pending-approvals`);
       mutate(`/hrms/leave/my-pending-leaves`);
-          mutate(`/hrms/leave/get-leave`);
+      mutate(`/hrms/leave/get-leave`);
 
       toast.success(action === "Approved" ? "Leave approved!" : "Leave rejected.");
       setConfirmAction(null);

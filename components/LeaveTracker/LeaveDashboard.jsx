@@ -127,7 +127,7 @@ useEffect(() => {
 useEffect(() => {
   if (userRole !== "SuperAdmin") {
     fetchLeaveDashboard();
-    fetchLeaveRequests();
+    // fetchLeaveRequests();
   } else {
     setLoading(false);
   }
@@ -147,6 +147,8 @@ useEffect(() => {
       setUserPendingLeaves(data.pendingLeaves || []);
       setHolidays(holidays.data?.result?.data || []);
       setAllLeaves(leaves.data?.leaves || []);
+      setPendingLeaves(leaves?.data?.leaveRequests || []);
+
     } catch (err) {
       console.error("Failed to load leave dashboard", err);
     } finally {
@@ -154,17 +156,17 @@ useEffect(() => {
     }
   };
 
-    const fetchLeaveRequests = async () => {
-    try {
-      const leaveRes = await axios.get("/hrms/leave/get-leave");
-      console.log(leaveRes?.data?.leaveRequests )
-      setPendingLeaves(leaveRes?.data?.leaveRequests || []);
-    } catch (err) {
-      console.error("Failed to load leaves", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   const fetchLeaveRequests = async () => {
+  //   try {
+  //     const leaveRes = await axios.get("/hrms/leave/get-leave");
+  //     console.log(leaveRes?.data?.leaveRequests )
+  //     setPendingLeaves(leaveRes?.data?.leaveRequests || []);
+  //   } catch (err) {
+  //     console.error("Failed to load leaves", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
    if(loading){
     return(
@@ -207,7 +209,7 @@ useEffect(() => {
               key={leave.code}
               code={leave.code} 
               title={leave.name}
-              available={leave.availableThisYear}
+              available={leave.available}
               taken={leave.taken}
               unlimited={leave.unlimited}
               carryForwarded={leave.carryForwarded}
@@ -247,6 +249,7 @@ useEffect(() => {
 
      {showCalender && <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
         <HolidayCalendar organizationId={user.organizationId}  
+        leaves={allLeaves}
         onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
         onViewLeave={(data) => setSelectedLeave(data)}
          onRefresh={(fn) => (calendarRefreshRef.current = fn)}
@@ -271,7 +274,8 @@ useEffect(() => {
       <ApplyLeaveModal
          context={{
           ...applyLeaveContext,
-          refreshCalendar: calendarRefreshRef.current,
+          refreshCalendar: () => calendarRefreshRef.current?.(),
+          refreshDashboard: fetchLeaveDashboard,
         }}
         pendingLeaves={userPendingLeaves}
         leaveBalances={leaveBalanceMap}
@@ -414,6 +418,7 @@ function LeaveCard({
   canCarryForward,
   isWindowed,
   windowInfo,
+  available,
 }) {
   let primaryValue = 0;
   let subLabel = "";
@@ -425,7 +430,7 @@ function LeaveCard({
     primaryValue = windowInfo.available;
     subLabel = `Available / ${windowInfo.months} months`;
   } else {
-    primaryValue = availableThisMonth + (carryForwarded || 0);
+    primaryValue = available || 0;
     subLabel = "Available / Month";
   }
 

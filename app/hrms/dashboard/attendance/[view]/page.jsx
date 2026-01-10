@@ -81,7 +81,7 @@ export default function AttendanceViewPage() {
                 className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition shadow-sm"
               >
                 <FileText size={16} />
-                Regularize
+                Manage Late Check-In
               </button>
             </div>
           </div>
