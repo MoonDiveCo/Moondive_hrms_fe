@@ -10,6 +10,7 @@ import AddOrganizationFileModal from '@/components/OrganizationFileComponent/Add
 import ApproveCompanyPolicyModal from '@/components/OrganizationFileComponent/ApproveCompanyPolicyModal';
 import AcknowledgementStatusModal from '@/components/OrganizationFileComponent/AcknowledgementStatusModal';
 import ConfirmDeleteModal from '@/components/OrganizationFileComponent/ConfirmDeleteModal';
+import ViewFileDetailsModal from '@/components/OrganizationFileComponent/viewFileDetailsMOdal'
 
 import {
   FileText,
@@ -124,6 +125,8 @@ export default function OrganizationPolicy() {
   }, [activeFilter, search]);
 
   /* ---------------- ACTIONS ---------------- */
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+const [viewFile, setViewFile] = useState(null);
 
   const handleApprovePolicy = async (id) => {
     try {
@@ -593,16 +596,17 @@ export default function OrganizationPolicy() {
                 )}
 
                 <div className={`flex justify-end gap-3 ${activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-1'}`}>
-                  <a
-                    href={file.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewFile(file);
+                      setViewModalOpen(true);
+                    }}
                     className="text-orange-500 hover:text-orange-600"
-                    title="View file"
+                    title="View file details"
                   >
                     <Eye size={16} />
-                  </a>
+                  </button>
 
                   {canManagePolicies && (
                     <button
@@ -706,6 +710,14 @@ export default function OrganizationPolicy() {
           fileName={fileToDelete?.fileName}
           isDeleting={isDeleting}
         />
+        <ViewFileDetailsModal
+  open={viewModalOpen}
+  onClose={() => {
+    setViewModalOpen(false);
+    setViewFile(null);
+  }}
+  file={viewFile}
+/>
       </div>
     </SubModuleProtectedRoute>
   );
