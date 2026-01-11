@@ -47,8 +47,8 @@ const TAB_META = {
       {
         key: 'status',
         label: 'Status',
-        render: (row) => (
-          <span className='px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-600'>
+        render: row => (
+          <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-600">
             {row.status}
           </span>
         ),
@@ -56,9 +56,11 @@ const TAB_META = {
       {
         key: 'dayType',
         label: 'Day',
-        render: (row) => (
-          <span className='text-xs text-gray-600'>
-            {row.isHalfDay ? `Half Day (${row.session})` : 'Full Day'}
+        render: row => (
+          <span className="text-xs text-gray-600">
+            {row.isHalfDay
+              ? `Half Day (${row.session})`
+              : 'Full Day'}
           </span>
         ),
       },
@@ -94,6 +96,15 @@ const TAB_META = {
           </span>
         ),
       },
+      // {
+      //   key: 'workType',
+      //   label: 'Work Type',
+      //   render: row => (
+      //     <span className="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-600">
+      //       {row.workType || '—'}
+      //     </span>
+      //   ),
+      // },
     ],
   },
 
@@ -197,11 +208,10 @@ export default function Analytics() {
               setActiveTab(tab.key);
               router.push(`/hrms/dashboard/analytics?tab=${tab.key}`);
             }}
-            className={`px-3 py-1 rounded-full cursor-pointer text-xs font-medium ${
-              activeTab === tab.key
+            className={`px-3 py-1 rounded-full cursor-pointer text-xs font-medium ${activeTab === tab.key
                 ? 'bg-primary text-white'
                 : 'bg-white border text-gray-600'
-            }`}
+              }`}
           >
             {tab.label}
           </button>
@@ -236,8 +246,26 @@ function AnalyticsTab({ type, data, stats, loading }) {
   const [approvedLeaves, setApprovedLeaves] = useState(data);
 
   useEffect(() => {
-    setApprovedLeaves(data);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const filtered = data.filter(l => {
+      const start = new Date(l.startDate);
+      const end = new Date(l.endDate);
+
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+
+      return (
+        l.status === "Approved" &&
+        today >= start &&
+        today <= end
+      );
+    });
+
+    setApprovedLeaves(filtered);
   }, [data]);
+
 
   if (type === 'leave') {
     return (
@@ -247,11 +275,10 @@ function AnalyticsTab({ type, data, stats, loading }) {
             <button
               key={t.key}
               onClick={() => setLeaveTab(t.key)}
-              className={`px-3 py-1 rounded-full text-xs cursor-pointer ${
-                leaveTab === t.key
+              className={`px-3 py-1 rounded-full text-xs cursor-pointer ${leaveTab === t.key
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-600'
-              }`}
+                }`}
             >
               {t.label}
             </button>
@@ -414,7 +441,19 @@ function PendingLeaveTable({ onApprovedToday }) {
       .get('/hrms/leave/get-leave', {
         params: { year: new Date().getFullYear() },
       })
-      .then((res) => setRows(res.data?.leaveRequests || []))
+      .then(res => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const filtered = (res.data?.leaveRequests || []).filter(l => {
+          if (l.decision) return false;
+
+          return true;
+        });
+
+        setRows(filtered);
+      })
+
       .catch(console.error);
   }, []);
 
@@ -427,7 +466,7 @@ function PendingLeaveTable({ onApprovedToday }) {
         action,
       });
 
-      setRows((prev) => prev.filter((r) => r.leaveId !== row.leaveId));
+      setRows(prev => prev.filter(r => r.leaveId !== row.leaveId));
 
       if (
         action === 'Approved' &&
@@ -464,11 +503,13 @@ function PendingLeaveTable({ onApprovedToday }) {
     {
       key: 'duration',
       label: 'Date',
-      render: (r) => (
-        <div className='flex flex-col'>
+      render: r => (
+        <div className="flex flex-col">
           <span>{formatDate(r.startDate)}</span>
-          <span className='text-xs text-gray-400'>
-            {r.isHalfDay ? `Half Day (${r.session || '—'})` : 'Full Day'}
+          <span className="text-xs text-gray-400">
+            {r.isHalfDay
+              ? `Half Day (${r.session || '—'})`
+              : 'Full Day'}
           </span>
         </div>
       ),
@@ -481,15 +522,18 @@ function PendingLeaveTable({ onApprovedToday }) {
         <div className='flex gap-2'>
           <button
             disabled={processingId === r.leaveId}
-            onClick={() => setConfirmAction({ row: r, action: 'Rejected' })}
-            className='h-8 w-8 border cursor-pointer border-primary text-primary rounded-full flex items-center justify-center'
+            onClick={() =>
+              setConfirmAction({ row: r, action: 'Rejected' })
+            }
+
+            className="h-8 w-8 border cursor-pointer border-primary text-primary rounded-full flex items-center justify-center"
           >
             <X size={14} />
           </button>
           <button
             disabled={processingId === r.leaveId}
             onClick={() => setConfirmAction({ row: r, action: 'Approved' })}
-            className='h-8 w-8 bg-primary cursor-pointer text-white rounded-full flex items-center justify-center'
+            className="h-8 w-8 bg-primary cursor-pointer text-white rounded-full flex items-center justify-center"
           >
             <Check size={14} />
           </button>
@@ -498,28 +542,28 @@ function PendingLeaveTable({ onApprovedToday }) {
     },
   ];
 
-  return (
-    <>
-      <AnalyticsEmployeeTable
-        title='Pending Leave Requests'
-        columns={columns}
-        data={rows.map((r) => ({
-          ...r,
-          name: `${r.employee.firstName} ${r.employee.lastName}`,
-        }))}
-        stats={{ count: rows.length }}
+  return (<>
+    <AnalyticsEmployeeTable
+      title="Pending Leave Requests"
+      columns={columns}
+      data={rows.map(r => ({
+        ...r,
+        name: `${r.employee.firstName} ${r.employee.lastName}`,
+      }))}
+      stats={{ count: rows.length }}
+    />
+    {confirmAction && (
+      <ConfirmLeaveActionModal
+        action={confirmAction.action}
+        loading={processingId === confirmAction.row.leaveId}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() =>
+          handleAction(confirmAction.row, confirmAction.action)
+        }
       />
-      {confirmAction && (
-        <ConfirmLeaveActionModal
-          action={confirmAction.action}
-          loading={processingId === confirmAction.row.leaveId}
-          onCancel={() => setConfirmAction(null)}
-          onConfirm={() =>
-            handleAction(confirmAction.row, confirmAction.action)
-          }
-        />
-      )}
-    </>
+    )}
+  </>
+
   );
 }
 
@@ -553,9 +597,8 @@ function ConfirmLeaveActionModal({ action, onCancel, onConfirm, loading }) {
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`px-4 py-2 text-sm rounded-lg text-white ${
-              isApprove ? 'bg-primary' : 'bg-red-600'
-            }`}
+            className={`px-4 py-2 text-sm rounded-lg text-white ${isApprove ? 'bg-primary' : 'bg-red-600'
+              }`}
           >
             {loading ? 'Processing…' : 'Confirm'}
           </button>
