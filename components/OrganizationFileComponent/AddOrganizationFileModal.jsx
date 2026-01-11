@@ -232,7 +232,7 @@ export default function AddOrganizationFileModal({
                         )}
                       </span>
 
-                      <div className="flex flex-col">
+                      <div className="flex flex-col flex-1">
                         <span className="font-medium">
                           {u.firstName} {u.lastName}
                         </span>

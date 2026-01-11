@@ -7,43 +7,13 @@ import { toast } from 'sonner';
 import { AuthContext } from '@/context/authContext';
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
 import AddOrganizationFileModal from '@/components/OrganizationFileComponent/AddOrganizationFileModal';
-import ApproveCompanyPolicyModal from '@/components/OrganizationFileComponent/ApproveCompanyPolicyModal';
-import AcknowledgementStatusModal from '@/components/OrganizationFileComponent/AcknowledgementStatusModal';
 import ConfirmDeleteModal from '@/components/OrganizationFileComponent/ConfirmDeleteModal';
+import ViewFileModal from '@/components/OrganizationFileComponent/ViewFileModal';
+import OrganizationFilesTable from '@/components/OrganizationFileComponent/OrganizationFilesTable';
 
-import {
-  FileText,
-  ShieldCheck,
-  ScrollText,
-  Search,
-  Trash2,
-  User,
-  Eye,
-  ThumbsUp,
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 
-const CATEGORY_META = {
-  'Company Docs': {
-    icon: FileText,
-    bg: 'bg-blue-50',
-    text: 'text-blue-600',
-    pill: 'bg-blue-100 text-blue-700',
-  },
-  'HR Policies': {
-    icon: ShieldCheck,
-    bg: 'bg-orange-50',
-    text: 'text-orange-600',
-    pill: 'bg-orange-100 text-orange-700',
-  },
-  Internal: {
-    icon: ScrollText,
-    bg: 'bg-slate-50',
-    text: 'text-slate-600',
-    pill: 'bg-slate-200 text-slate-700',
-  },
-};
-
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
 export default function OrganizationPolicy() {
   const { allUserPermissions = [], user } = useContext(AuthContext);
@@ -70,11 +40,8 @@ export default function OrganizationPolicy() {
   const [editMode, setEditMode] = useState(false);
   const [fileBeingEdited, setFileBeingEdited] = useState(null);
   
-  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
-  const [selectedPolicy, setSelectedPolicy] = useState(null);
-
-  const [ackModalOpen, setAckModalOpen] = useState(false);
-  const [ackPolicy, setAckPolicy] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewFile, setViewFile] = useState(null);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
@@ -124,15 +91,15 @@ export default function OrganizationPolicy() {
   }, [activeFilter, search]);
 
   /* ---------------- ACTIONS ---------------- */
-
   const handleApprovePolicy = async (id) => {
     try {
       await axios.patch(
         `/hrms/organization/organization-policy/status/${id}`,
         { status: 'PUBLISHED' }
       );
-      toast.success('Policy approved');
-      setApprovalModalOpen(false);
+      toast.success('Policy approved successfully');
+      setViewModalOpen(false);
+      setViewFile(null);
       fetchFiles();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to approve policy');
@@ -148,8 +115,9 @@ export default function OrganizationPolicy() {
           rejectionReason: reason,
         }
       );
-      toast.success('Policy rejected');
-      setApprovalModalOpen(false);
+      toast.success('Policy rejected successfully');
+      setViewModalOpen(false);
+      setViewFile(null);
       fetchFiles();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to reject policy');
@@ -162,11 +130,12 @@ export default function OrganizationPolicy() {
         `/hrms/organization/organization-policy/status/${id}`,
         {
           status: 'CHANGES_REQUESTED',
-          suggestedChanges: suggestions, // ✅ Matches backend expectation
+          suggestedChanges: suggestions,
         }
       );
       toast.success('Changes requested successfully');
-      setApprovalModalOpen(false);
+      setViewModalOpen(false);
+      setViewFile(null);
       fetchFiles();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to suggest changes');
@@ -178,7 +147,7 @@ export default function OrganizationPolicy() {
       await axios.patch(
         `/hrms/organization/organization-policy/${id}/acknowledge`
       );
-      toast.success('Policy acknowledged');
+      toast.success('Policy acknowledged successfully');
       fetchFiles();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to acknowledge');
@@ -201,7 +170,6 @@ export default function OrganizationPolicy() {
     try {
       setIsDeleting(true);
       
-      // Optimistically remove from UI
       const deletedFileId = fileToDelete._id;
       setFiles(prevFiles => prevFiles.filter(f => f._id !== deletedFileId));
       
@@ -212,124 +180,113 @@ export default function OrganizationPolicy() {
       toast.success('File deleted');
       closeDeleteModal();
       
-      // Refresh to ensure consistency
       fetchFiles();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete file');
-      // Revert optimistic update on error
       fetchFiles();
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleFileUpload = async () => {
-    try {
-      // Validation
-      if (!editMode && !file) {
-        toast.error('Please select a file');
-        return;
-      }
-
-      if (!form.fileName.trim()) {
-        toast.error('Please enter a file name');
-        return;
-      }
-
-      if (!form.folder) {
-        toast.error('Please select a folder');
-        return;
-      }
-
-      if (selectedUsers.length === 0) {
-        toast.error('Please select at least one user');
-        return;
-      }
-
-      setUploading(true);
-
-      // Create FormData
-      const formData = new FormData();
-      
-      // IMPORTANT: Append file with name "file" to match multer.any("file")
-      if (file) {
-        formData.append('file', file);
-      }
-      
-      formData.append('fileName', form.fileName);
-      formData.append('description', form.description);
-      formData.append('folder', form.folder);
-      formData.append('allowedUsers', JSON.stringify(selectedUsers));
-
-      let response;
-      
-      if (editMode && fileBeingEdited) {
-        // Update existing file
-        response = await axios.patch(
-          `/hrms/organization/organization-files/${fileBeingEdited._id}`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
-        
-        // Show appropriate message based on whether approval is required
-        if (response.data.requiresApproval) {
-          toast.success('File updated and sent for approval');
-        } else if (isSuperAdmin) {
-          toast.success('File updated successfully');
-        } else {
-          toast.success('New users added successfully');
-        }
-        
-        // Optimistically update the UI
-        setFiles(prevFiles => 
-          prevFiles.map(f => 
-            f._id === fileBeingEdited._id 
-              ? { ...f, ...response.data.data }
-              : f
-          )
-        );
-      } else {
-        // Upload new file
-        response = await axios.post(
-          '/hrms/organization/organization-files', 
-          formData, 
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
-
-        toast.success(
-          isSuperAdmin
-            ? 'File published successfully'
-            : 'File sent for approval'
-        );
-        
-        // Optimistically add the new file to the UI
-        setFiles(prevFiles => [response.data.data, ...prevFiles]);
-      }
-
-      // Reset form
-      setForm({ fileName: '', description: '', folder: '' });
-      setFile(null);
-      setSelectedUsers([]);
-      setEditMode(false);
-      setFileBeingEdited(null);
-      setOpenModal(false);
-
-      // Refresh files to ensure consistency
-      fetchFiles();
-    } catch (error) {
-      toast.error(error.response?.data?.message || `Failed to ${editMode ? 'update' : 'upload'} file`);
-    } finally {
-      setUploading(false);
+ const handleFileUpload = async () => {
+  try {
+    if (!editMode && !file) {
+      toast.error('Please select a file');
+      return;
     }
-  };
+
+    if (!form.fileName.trim()) {
+      toast.error('Please enter a file name');
+      return;
+    }
+
+    if (!form.folder) {
+      toast.error('Please select a folder');
+      return;
+    }
+
+    if (selectedUsers.length === 0) {
+      toast.error('Please select at least one user');
+      return;
+    }
+
+    setUploading(true);
+
+    const formData = new FormData();
+    
+    if (file) {
+      formData.append('file', file);
+    }
+    
+    formData.append('fileName', form.fileName);
+    formData.append('description', form.description);
+    formData.append('folder', form.folder);
+    formData.append('allowedUsers', JSON.stringify(selectedUsers));
+
+    let response;
+    
+    if (editMode && fileBeingEdited) {
+      response = await axios.patch(
+        `/hrms/organization/organization-files/${fileBeingEdited._id}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      // Show appropriate message based on backend response
+      if (response.data.requiresApproval) {
+        toast.success('File updated and sent for re-approval');
+      } else if (isSuperAdmin) {
+        toast.success('File updated successfully');
+      } else {
+        toast.success(response.data.message || 'File updated successfully');
+      }
+      
+      setFiles(prevFiles => 
+        prevFiles.map(f => 
+          f._id === fileBeingEdited._id 
+            ? { ...f, ...response.data.data }
+            : f
+        )
+      );
+    } else {
+      response = await axios.post(
+        '/hrms/organization/organization-files', 
+        formData, 
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      toast.success(
+        isSuperAdmin
+          ? 'File published successfully'
+          : 'File sent for approval'
+      );
+      
+      setFiles(prevFiles => [response.data.data, ...prevFiles]);
+    }
+
+    setForm({ fileName: '', description: '', folder: '' });
+    setFile(null);
+    setSelectedUsers([]);
+    setEditMode(false);
+    setFileBeingEdited(null);
+    setOpenModal(false);
+
+    fetchFiles();
+  } catch (error) {
+    toast.error(error.response?.data?.message || `Failed to ${editMode ? 'update' : 'upload'} file`);
+  } finally {
+    setUploading(false);
+  }
+};
 
   const openAddModal = () => {
     setEditMode(false);
@@ -346,7 +303,6 @@ export default function OrganizationPolicy() {
     setOpenModal(true);
   };
 
-  /* ---------------- FILTER + PAGINATION ---------------- */
 
   const filteredFiles = files.filter((f) => {
     const matchSearch = f.fileName
@@ -354,6 +310,7 @@ export default function OrganizationPolicy() {
       .includes(search.toLowerCase());
 
     if (activeFilter === 'Pending Policies') {
+      // Show only pending/rejected/changes_requested in Pending Policies tab
       return (
         canManagePolicies &&
         (f.status === 'PENDING_APPROVAL' || f.status === 'REJECTED' || f.status === 'CHANGES_REQUESTED') &&
@@ -361,6 +318,17 @@ export default function OrganizationPolicy() {
       );
     }
 
+
+    const isPendingOrRejected = 
+      f.status === 'PENDING_APPROVAL' || 
+      f.status === 'REJECTED' || 
+      f.status === 'CHANGES_REQUESTED';
+    
+    // Skip pending/rejected files in non-pending tabs
+    if (isPendingOrRejected) {
+      return false;
+    }
+    
     const matchFilter =
       activeFilter === 'All Files' || f.folder === activeFilter;
 
@@ -373,6 +341,62 @@ export default function OrganizationPolicy() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const totalFiles = filteredFiles.length;
+
+  /* ---------------- COUNTERS ---------------- */
+  // For Super Admin: Count pending approvals (HR submitted files)
+  const pendingApprovalsCount = isSuperAdmin
+    ? files.filter((f) => f.status === 'PENDING_APPROVAL').length
+    : 0;
+
+  // For HR: Count rejected or changes requested files
+  const hrActionRequiredCount = canManagePolicies && !isSuperAdmin
+    ? files.filter(
+        (f) => f.status === 'REJECTED' || f.status === 'CHANGES_REQUESTED'
+      ).length
+    : 0;
+
+  // For Employees: Count unacknowledged published files
+  const getUnacknowledgedCount = (filterType) => {
+    if (!isEmployeeOnly) return 0;
+
+    return files.filter((f) => {
+      // Only count published files
+      if (f.status !== 'PUBLISHED' && f.status) return false;
+
+      // Check if file matches the filter
+      let matchesFilter = false;
+      if (filterType === 'All Files') {
+        matchesFilter = true;
+      } else {
+        matchesFilter = f.folder === filterType;
+      }
+
+      if (!matchesFilter) return false;
+
+      // Check if user is in allowed users and hasn't acknowledged
+      const userAcknowledgement = f.allowedUsers?.find(
+        (u) => u.user?._id?.toString() === user?._id?.toString()
+      );
+
+      // Make sure the current user is not a Super Admin or HR
+      const isSuperAdminOrHR = 
+        user?.userRole?.includes('SUPER_ADMIN') || 
+        user?.userRole?.includes('HR') ||
+        user?.userRole?.includes('SuperAdmin');
+
+      return (
+        userAcknowledgement &&
+        userAcknowledgement.acknowledgementStatus !== 'ACKNOWLEDGED' &&
+        !isSuperAdminOrHR
+      );
+    }).length;
+  };
+
+  const allFilesUnacknowledgedCount = getUnacknowledgedCount('All Files');
+  const companyDocsUnacknowledgedCount = getUnacknowledgedCount('Company Docs');
+  const hrPoliciesUnacknowledgedCount = getUnacknowledgedCount('HR Policies');
 
   return (
     <SubModuleProtectedRoute>
@@ -387,326 +411,265 @@ export default function OrganizationPolicy() {
         </div>
       )}
 
-      <div className="p-6 bg-[#F7F8FA] min-h-screen space-y-6">
+      <div className="p-3 bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Organization Files</h3>
-            <p className="text-sm text-gray-500">
-              Manage and access organizational documents
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search files..."
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border bg-white"
-              />
+          {/* HEADER */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-2xl font-bold text-gray-900">Organization Files</h4>
+              <p className="text-sm text-gray-500 mt-1">
+                Manage and access organizational documents
+              </p>
             </div>
 
-            {canManagePolicies && (
-              <button
-                onClick={openAddModal}
-                className="px-4 py-2 rounded-lg bg-[#FF7B30] text-white text-sm font-medium"
-              >
-                Add File
-              </button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search files..."
+                  className="w-80 pl-10 pr-4 py-2.5 text-sm rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+
+              {canManagePolicies && (
+                <button
+                  onClick={openAddModal}
+                  className="px-5 py-2.5 rounded-lg bg-[#FF7B30] text-white text-sm font-medium hover:bg-[#ff6a1a] transition-colors flex items-center gap-2"
+                >
+                  <span className="text-lg">+</span>
+                  Add File
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* FILTERS */}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              {FILTERS.map((f) => {
+                // Determine counter for this filter
+                let counter = 0;
+
+                if (f === 'Pending Policies') {
+                  // Super Admin sees pending approvals
+                  if (isSuperAdmin) {
+                    counter = pendingApprovalsCount;
+                  }
+                  // HR sees rejected or changes requested
+                  else if (canManagePolicies) {
+                    counter = hrActionRequiredCount;
+                  }
+                } else if (isEmployeeOnly) {
+                  // Employees see unacknowledged counts
+                  if (f === 'All Files') {
+                    counter = allFilesUnacknowledgedCount;
+                  } else if (f === 'Company Docs') {
+                    counter = companyDocsUnacknowledgedCount;
+                  } else if (f === 'HR Policies') {
+                    counter = hrPoliciesUnacknowledgedCount;
+                  }
+                }
+
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setActiveFilter(f)}
+                    className={`px-6 py-2 rounded-lg text-sm font-medium transition-all relative ${
+                      activeFilter === f
+                        ? 'bg-[#FF7B30] text-white shadow-sm'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      {f}
+                      {counter > 0 && (
+                        <span
+                          className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold ${
+                            activeFilter === f
+                              ? 'bg-white text-[#FF7B30]'
+                              : 'bg-red-500 text-white'
+                          }`}
+                        >
+                          {counter}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-3">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <span className="text-sm text-gray-600 font-medium min-w-[60px] text-center">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="p-2 rounded-lg bg-[#FF7B30] text-white hover:bg-[#ff6a1a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             )}
           </div>
-        </div>
 
-        {/* FILTERS */}
-        <div className="flex justify-between items-center">
-          <div className="flex gap-3">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setActiveFilter(f)}
-                className={`px-5 py-2 rounded-full text-sm ${
-                  activeFilter === f
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-white border text-gray-600'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
+          {/* TABLE */}
+          <OrganizationFilesTable
+            files={paginatedFiles}
+            user={user}
+            activeFilter={activeFilter}
+            isEmployeeOnly={isEmployeeOnly}
+            canManagePolicies={canManagePolicies}
+            onViewFile={(file) => {
+              setViewFile(file);
+              setViewModalOpen(true);
+            }}
+            onViewAcknowledgements={(file) => {
+              setViewFile(file);
+              setViewModalOpen(true);
+            }}
+            onEditFile={openEditModal}
+            onDeleteFile={openDeleteModal}
+            onAcknowledge={handleAcknowledge}
+            onPolicyClick={(file) => {
+              setViewFile(file);
+              setViewModalOpen(true);
+            }}
+          />
 
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-2 py-1 rounded bg-orange-500 text-white disabled:bg-gray-300"
-              >
-                ←
-              </button>
-              <span className="text-sm text-gray-500">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-2 py-1 rounded bg-orange-500 text-white disabled:bg-gray-300"
-              >
-                →
-              </button>
+          {/* Pagination Footer */}
+          {totalFiles > 0 && (
+            <div className="flex items-center justify-between px-6 py-4 bg-white rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600">
+                Showing <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{' '}
+                <span className="font-medium">
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalFiles)}
+                </span>{' '}
+                of <span className="font-medium">{totalFiles}</span> documents
+              </p>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev=>prev-1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex gap-1">
+                    {[...Array(totalPages)].map((_, idx) => {
+                      const pageNum = idx + 1;
+                      if (
+                        pageNum === 1 ||
+                        pageNum === totalPages ||
+                        (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                              currentPage === pageNum
+                                ? 'bg-[#FF7B30] text-white'
+                                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      } else if (
+                        pageNum === currentPage - 2 ||
+                        pageNum === currentPage + 2
+                      ) {
+                        return (
+                          <span key={pageNum} className="w-9 h-9 flex items-center justify-center text-gray-400">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage((prev)=>prev+1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 text-sm rounded-lg bg-[#FF7B30] text-white hover:bg-[#ff6a1a] disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           )}
+
         </div>
-
-        {/* TABLE */}
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className={`grid ${
-            activeFilter === 'Pending Policies' 
-              ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]' 
-              : isEmployeeOnly 
-                ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]'  // Employee: Document, Category, Date, Acknowledgement, Action
-                : 'grid-cols-12'  // Admin: Standard 12-column
-          } px-6 py-3 text-xs font-semibold text-gray-500 border-b`}>
-            <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-5'}>DOCUMENT</div>
-            <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-3'}>CATEGORY</div>
-            <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-2'}>DATE</div>
-            {activeFilter === 'Pending Policies' && (
-              <div className="text-center">STATUS</div>
-            )}
-            {isEmployeeOnly && activeFilter !== 'Pending Policies' && (
-              <div className="text-center">ACKNOWLEDGEMENT</div>
-            )}
-            <div className="text-right">ACTION</div>
-          </div>
-
-          {paginatedFiles.map((file) => {
-            const meta = CATEGORY_META[file.folder] || CATEGORY_META.Internal;
-            const Icon = meta.icon;
-
-            // Check if current user has acknowledged
-            const userAcknowledgement = file.allowedUsers?.find(
-              (u) => u.user?._id?.toString() === user?._id?.toString()
-            );
-            const hasAcknowledged = userAcknowledgement?.acknowledgementStatus === 'ACKNOWLEDGED';
-
-            return (
-              <div
-                key={file._id}
-                onClick={() => {
-                  if (activeFilter === 'Pending Policies') {
-                    setSelectedPolicy(file);
-                    setApprovalModalOpen(true);
-                  }
-                }}
-                className={`grid ${
-                  activeFilter === 'Pending Policies' 
-                    ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]' 
-                    : isEmployeeOnly 
-                      ? 'grid-cols-[2fr_1fr_1fr_0.8fr_0.8fr]'
-                      : 'grid-cols-12'
-                } px-6 py-4 items-center border-b ${
-                  activeFilter === 'Pending Policies'
-                    ? 'cursor-pointer hover:bg-gray-50'
-                    : ''
-                }`}
-              >
-                <div className={`flex items-center gap-4 ${activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-5'}`}>
-                  <div className={`min-w-10 h-10 rounded-lg flex items-center justify-center ${meta.bg}`}>
-                    <Icon className={`w-5 h-5 ${meta.text}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{file.fileName}</p>
-                    {file.description && (
-                      <p className="text-xs text-gray-500">
-                        {file.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className={activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-3'}>
-                  <span className={`px-3 py-1 rounded-full text-xs ${meta.pill}`}>
-                    {file.folder}
-                  </span>
-                </div>
-
-                <div className={`text-sm text-gray-500 ${activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-2'}`}>
-                  {new Date(file.createdAt).toLocaleDateString('en-IN')}
-                </div>
-
-                {activeFilter === 'Pending Policies' && (
-                  <div className="text-center">
-                    {file.status === 'REJECTED' ? (
-                      <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700">
-                        Rejected
-                      </span>
-                    ) : file.status === 'CHANGES_REQUESTED' ? (
-                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
-                        Changes Requested
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
-                        Pending
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* ACKNOWLEDGEMENT COLUMN FOR EMPLOYEES */}
-                {isEmployeeOnly && activeFilter !== 'Pending Policies' && (
-                  <div className="flex justify-center">
-                    {file.status === 'PUBLISHED' && userAcknowledgement ? (
-                      hasAcknowledged ? (
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100">
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            className="w-5 h-5 text-green-600" 
-                            viewBox="0 0 20 20" 
-                            fill="currentColor"
-                          >
-                            <path 
-                              fillRule="evenodd" 
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
-                              clipRule="evenodd" 
-                            />
-                          </svg>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAcknowledge(file._id);
-                          }}
-                          className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 hover:bg-orange-200 transition-colors"
-                          title="Click to acknowledge"
-                        >
-                          <ThumbsUp className="w-4 h-4 text-orange-600" />
-                        </button>
-                      )
-                    ) : (
-                      <span className="text-xs text-gray-400">N/A</span>
-                    )}
-                  </div>
-                )}
-
-                <div className={`flex justify-end gap-3 ${activeFilter === 'Pending Policies' || isEmployeeOnly ? '' : 'col-span-1'}`}>
-                  <a
-                    href={file.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-orange-500 hover:text-orange-600"
-                    title="View file"
-                  >
-                    <Eye size={16} />
-                  </a>
-
-                  {canManagePolicies && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAckPolicy(file);
-                        setAckModalOpen(true);
-                      }}
-                      className="text-gray-600 hover:text-gray-800"
-                      title="View acknowledgements"
-                    >
-                      <User size={16} />
-                    </button>
-                  )}
-
-                  {canManagePolicies && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(file);
-                      }}
-                      className="text-blue-500 hover:text-blue-600"
-                      title="Edit file"
-                    >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="16" 
-                        height="16" 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                      >
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                        <path d="m15 5 4 4"/>
-                      </svg>
-                    </button>
-                  )}
-
-                  {canManagePolicies && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDeleteModal(file);
-                      }}
-                      className="text-red-500 hover:text-red-600"
-                      title="Delete file"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* MODALS */}
-        <AddOrganizationFileModal
-          open={openModal}
-          onClose={() => {
-            setOpenModal(false);
-            setEditMode(false);
-            setFileBeingEdited(null);
-          }}
-          form={form}
-          update={update}
-          file={file}
-          setFile={setFile}
-          users={users}
-          selectedUsers={selectedUsers}
-          setSelectedUsers={setSelectedUsers}
-          uploading={uploading}
-          onSubmit={handleFileUpload}
-          editMode={editMode}
-          existingFile={fileBeingEdited}
-        />
-
-        <ApproveCompanyPolicyModal
-          open={approvalModalOpen}
-          onClose={() => setApprovalModalOpen(false)}
-          policy={selectedPolicy}
-          isSuperAdmin={isSuperAdmin}
-          onApprove={handleApprovePolicy}
-          onReject={handleRejectPolicy}
-          onSuggestChanges={handleSuggestChanges}
-        />
-
-        <AcknowledgementStatusModal
-          open={ackModalOpen}
-          onClose={() => setAckModalOpen(false)}
-          policy={ackPolicy}
-        />
-
-        <ConfirmDeleteModal
-          open={deleteModalOpen}
-          onClose={closeDeleteModal}
-          onConfirm={confirmDelete}
-          fileName={fileToDelete?.fileName}
-          isDeleting={isDeleting}
-        />
       </div>
+
+      {/* MODALS */}
+      <AddOrganizationFileModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setEditMode(false);
+          setFileBeingEdited(null);
+        }}
+        form={form}
+        update={update}
+        file={file}
+        setFile={setFile}
+        users={users}
+        selectedUsers={selectedUsers}
+        setSelectedUsers={setSelectedUsers}
+        uploading={uploading}
+        onSubmit={handleFileUpload}
+        editMode={editMode}
+        existingFile={fileBeingEdited}
+      />
+
+      <ViewFileModal
+        open={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setViewFile(null);
+        }}
+        file={viewFile}
+        user={user}
+        isSuperAdmin={isSuperAdmin}
+        canManagePolicies={canManagePolicies}
+        onApprove={handleApprovePolicy}
+        onReject={handleRejectPolicy}
+        onSuggestChanges={handleSuggestChanges}
+        onEdit={openEditModal}
+        onDelete={openDeleteModal}
+        onAcknowledge={handleAcknowledge}
+      />
+
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+        fileName={fileToDelete?.fileName}
+        isDeleting={isDeleting}
+      />
     </SubModuleProtectedRoute>
   );
 }
