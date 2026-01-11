@@ -5,6 +5,9 @@ import { Eye, Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import EntityTable from '@/components/Common/EntityTable';
 import HRHelpdeskSlideOver from '@/components/Operations/HrHelpdesk/HrHelpdeskSlideOver';
+import HRHelpdeskViewModal from '@/components/Operations/HrHelpdesk/HRHelpdeskViewModal';
+import DeleteButton from '@/components/OrganizationFileComponent/ConfirmDeleteModal';
+
 import axios from 'axios';
 
 export default function HRHelpdeskPage() {
@@ -14,6 +17,9 @@ export default function HRHelpdeskPage() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const lastFocusedRef = useRef(null);
+  const [viewOpen, setViewOpen] = useState(false);
+ const [deleteRow, setDeleteRow] = useState(null);
+
 
   useEffect(() => {
     fetchData();
@@ -99,48 +105,52 @@ export default function HRHelpdeskPage() {
       key: 'actions',
       header: 'Actions',
       render: (r) => (
-        <div className="flex items-center gap-2">
-          {/* VIEW */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              openView(r, e);
-            }}
-            className="p-2 rounded-md hover:bg-gray-100"
-            title="View"
-          >
-            <Eye size={16} />
-          </button>
+  <div className="flex items-center gap-2">
+    
+    {/* VIEW */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelected(r);
+        setViewOpen(true);
+      }}
+      className="p-2 rounded-md hover:bg-gray-100"
+      title="View"
+    >
+      <Eye size={16} />
+    </button>
 
-          {/* EDIT (SENT TAB ONLY) */}
-          {tab === 'sent' && canEdit(r) && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openView(r, e); // form decides editability
-              }}
-              className="p-2 rounded-md hover:bg-gray-100"
-              title="Edit"
-            >
-              <Pencil size={16} />
-            </button>
-          )}
+    {/* EDIT */}
+    {tab === 'sent' && canEdit(r) && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelected(r);
+          setOpen(true); // edit slide-over
+        }}
+        className="p-2 rounded-md hover:bg-gray-100"
+        title="Edit"
+      >
+        <Pencil size={16} />
+      </button>
+    )}
 
-          {/* DELETE (SENT TAB ONLY) */}
-          {tab === 'sent' && canDelete(r) && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteRequest(r);
-              }}
-              className="p-2 rounded-md hover:bg-red-100 text-red-600"
-              title="Delete"
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
-        </div>
-      ),
+    {/* DELETE */}
+    {tab === 'sent' && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setDeleteRow(r);
+        }}
+        className="p-2 rounded-md hover:bg-red-100 text-red-600"
+        title="Delete"
+      >
+        <Trash2 size={16} />
+      </button>
+    )}
+  </div>
+)
+,
     },
   ];
 
@@ -180,7 +190,7 @@ export default function HRHelpdeskPage() {
         columns={columns}
         loading={loading}
         emptyText="No requests found"
-        onRowClick={(r, e) => openView(r, e)}
+        // onRowClick={(r, e) => openView(r, e)}
       />
 
       {/* SLIDE OVER */}
@@ -193,6 +203,32 @@ export default function HRHelpdeskPage() {
           close();
         }}
       />
+      {/* VIEW MODAL */}
+<HRHelpdeskViewModal
+  isOpen={viewOpen}
+  request={selected}
+  onClose={() => {
+    setViewOpen(false);
+    setSelected(null);
+  }}
+/>
+
+{/* DELETE MODAL */}
+{deleteRow && (
+  <DeleteButton
+    open
+    title="Delete Request"
+    description="Are you sure you want to delete this request?"
+    onClose={() => setDeleteRow(null)}
+    onConfirm={async () => {
+      await axios.delete(`/hrms/hrhelpdesk/${deleteRow._id}`);
+      toast.success('Request deleted');
+      setDeleteRow(null);
+      fetchData();
+    }}
+  />
+)}
+
     </div>
   );
 }
