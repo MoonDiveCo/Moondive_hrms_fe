@@ -16,7 +16,6 @@ const fetcherWithAuth = async (url) => {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  // Tolerate APIs that return either { data: { ... } } or { ... }
   const data = res?.data?.data ?? res?.data;
   return data;
 };
@@ -133,10 +132,10 @@ useEffect(() => {
             leaves: newLeaves,
             leaveRequests: newLeaveRequests,
           };
-        }, false);
+        }, { revalidate: false });
       }
 
-      mutate("/hrms/leave/get-leave");
+      // mutate("/hrms/leave/get-leave");
     }
 
     if (data.type === "LEAVE_UPDATED") {
@@ -146,11 +145,11 @@ useEffect(() => {
         mutate("/hrms/leave/get-leave-dashboard", (cached) => {
           if (!cached) return cached;
           return cached; 
-        }, false);
+        }, { revalidate: false });
       }
 
-      mutate("/hrms/leave/get-leave-dashboard");
-      mutate("/hrms/leave/get-leave");
+      // mutate("/hrms/leave/get-leave-dashboard");
+      // mutate("/hrms/leave/get-leave");
 
       calendarRefreshRef.current?.();
     }
@@ -166,27 +165,25 @@ useEffect(() => {
 
 const isSuperAdmin = userRole === "SuperAdmin";
 
-const { data: dashboardRes, isLoading: dashboardLoading } = useSWR(
+const { data: dashboardRes, isLoading: dashboardLoading} = useSWR(
   !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
   fetcherWithAuth,
-  { refreshInterval: 10000 }
+  // { refreshInterval: 30000 }
 );
 
 const { data: holidayRes } = useSWR(
   organizationId
     ? `/hrms/holiday?organizationId=${organizationId}&year=${new Date().getFullYear()}`
     : null,
-  fetcherWithAuth
+  fetcherWithAuth,
+  // { refreshInterval: 30000 }
 );
 
 const { data: leaveRes } = useSWR(
   user?._id ? "/hrms/leave/get-leave" : null,
   fetcherWithAuth,
-  { refreshInterval: 10000 }
+  // { refreshInterval: 30000 }
 );
-
-
-console.log("dashboardRes", dashboardRes);
 
 const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];
 const userPendingLeaves = dashboardRes?.pendingLeaves || dashboardRes?.data?.pendingLeaves || [];
@@ -196,7 +193,7 @@ const holidays = holidayRes?.result?.data || [];
 const allLeaves = leaveRes?.leaves || [];
 const pendingLeaves = leaveRes?.leaveRequests || [];
 
-const loading = dashboardLoading && !isSuperAdmin;
+const loading =dashboardLoading && !isSuperAdmin;
 
   const leaveBalanceMap = useMemo(() => {
   return leaveDashboard.reduce((acc, l) => {
