@@ -117,7 +117,7 @@ export default function ProjectPage() {
       setLoading(true);
 
       const res = await axios.get(
-        'http://localhost:2000/api/v1/hrms/projects/get-all-project'
+        '/hrms/projects/get-all-project'
       );
 
       if (res.data?.responseCode === 200) {
@@ -146,7 +146,7 @@ export default function ProjectPage() {
 
     try {
       const res = await axios.delete(
-        `http://localhost:2000/api/v1/hrms/projects/delete-project/${projectId}`
+        `/hrms/projects/delete-project/${projectId}`
       );
 
       if (res.data?.responseCode === 200) {
