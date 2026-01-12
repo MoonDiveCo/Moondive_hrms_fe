@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Configure your API Base URL here or in a separate config file
-const API_BASE_URL = 'http://localhost:2000/api/v1/hrms/';
-
 export default function CreateProjectDrawer({
   isOpen = true,
   onClose = () => {},
@@ -86,7 +83,7 @@ export default function CreateProjectDrawer({
     try {
       setIsFetchingEmployees(true);
       const response = await axios.get(
-        `http://localhost:2000/api/v1/hrms/employee/list`
+        `/hrms/employee/list`
       );
       console.log('response', response);
       const employeeList = response.data?.result || [];
@@ -167,12 +164,12 @@ export default function CreateProjectDrawer({
       // 🔥 CREATE vs EDIT (dynamic)
       if (editingProject?._id) {
         response = await axios.patch(
-          `http://localhost:2000/api/v1/hrms/projects/update-project/${editingProject._id}`,
+          `/hrms/projects/update-project/${editingProject._id}`,
           payload
         );
       } else {
         response = await axios.post(
-          `http://localhost:2000/api/v1/hrms/projects/create-project`,
+          `/api/v1/hrms/projects/create-project`,
           payload
         );
       }

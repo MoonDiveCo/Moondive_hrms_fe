@@ -1,7 +1,9 @@
+// ApplyLeaveModal.jsx
 "use client";
 
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import { useNotifications } from "../../context/notificationcontext"; // Import notification context
 
 function getDatesBetween(start, end) {
   const dates = [];
@@ -28,8 +30,6 @@ function getDatesBetween(start, end) {
   return dates;
 }
 
-
-
 export default function ApplyLeaveModal({
   context,
   leaveBalances,
@@ -37,6 +37,8 @@ export default function ApplyLeaveModal({
   onClose,
   holidays,
   allLeaves,
+  currentUser, // Add current user prop (contains user info)
+  reportingManager, // Add reporting manager prop
 }) {
   const [leaveType, setLeaveType] = useState("");
   const [fromDate, setFromDate] = useState(context.startDate || "");
@@ -45,36 +47,38 @@ export default function ApplyLeaveModal({
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Get notification context
+  const { storeNotification } = useNotifications();
+
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
   // today.setHours(0, 0, 0, 0);
-const todayStr = today.toLocaleDateString("en-CA");
+  // const todayStr = today.toLocaleDateString("en-CA");
 
+  const todayStr = today.toISOString().split("T")[0];
   const isOptionalLeave = leaveType === "OL";
 
   const isPastOptionalHoliday = useMemo(() => {
-  if (!isOptionalLeave || !fromDate) return false;
-  return fromDate < todayStr;
-}, [isOptionalLeave, fromDate, todayStr]);
-const optionalHolidays = useMemo(() => {
-  return holidays
-    .filter((h) => {
-      if (!h.isActive || h.type !== "OPTIONAL") return false;
+    if (!isOptionalLeave || !fromDate) return false;
+    return fromDate < todayStr;
+  }, [isOptionalLeave, fromDate, todayStr]);
+  const optionalHolidays = useMemo(() => {
+    return holidays
+      .filter((h) => {
+        if (!h.isActive || h.type !== "OPTIONAL") return false;
 
-      const holidayDate = h.date.split("T")[0]; 
+        const holidayDate = h.date.split("T")[0];
 
-      return holidayDate >= todayStr;
-    })
-    .map((h) => ({
-      date: h.date.split("T")[0],
-      name: h.name || "Optional Holiday",
-    }));
-}, [holidays, todayStr]);
-
-
+        return holidayDate >= todayStr;
+      })
+      .map((h) => ({
+        date: h.date.split("T")[0],
+        name: h.name || "Optional Holiday",
+      }));
+  }, [holidays, todayStr]);
 
   const handleOptionalHolidaySelect = (date) => {
     if (!date) return;
@@ -104,7 +108,7 @@ const optionalHolidays = useMemo(() => {
     const set = new Set();
 
     allLeaves.forEach((leave) => {
-      if (leave.leaveStatus  === "Rejected") return;
+      if (leave.leaveStatus === "Rejected") return;
 
       const start = new Date(leave.startDate);
       const end = new Date(leave.endDate);
@@ -113,9 +117,7 @@ const optionalHolidays = useMemo(() => {
       // end.setHours(0, 0, 0, 0);
 
       while (start <= end) {
-       set.add(
-        start.toLocaleDateString("en-CA") 
-      );
+        set.add(start.toLocaleDateString("en-CA"));
         start.setDate(start.getDate() + 1);
       }
     });
@@ -132,8 +134,7 @@ const optionalHolidays = useMemo(() => {
 
       const day = dateObj.getDay();
 
-      if (dateObj < today)
-        return { ...d, enabled: false, reason: "PAST" };
+      if (dateObj < today) return { ...d, enabled: false, reason: "PAST" };
 
       if (day === 0 || day === 6)
         return { ...d, enabled: false, reason: "WEEKEND" };
@@ -155,7 +156,10 @@ const optionalHolidays = useMemo(() => {
 
       let start = i;
       let end = i;
-      while (end + 1 < res.length && [0, 6].includes(new Date(res[end + 1].date).getDay())) {
+      while (
+        end + 1 < res.length &&
+        [0, 6].includes(new Date(res[end + 1].date).getDay())
+      ) {
         end++;
       }
 
@@ -180,7 +184,7 @@ const optionalHolidays = useMemo(() => {
         }
       }
 
-      i = end; 
+      i = end;
     }
 
     setDays(res);
@@ -192,7 +196,6 @@ const optionalHolidays = useMemo(() => {
     isOptionalLeave,
     today,
   ]);
-
 
   const totalRequested = useMemo(() => {
     return days.reduce((sum, d) => {
@@ -212,14 +215,15 @@ const optionalHolidays = useMemo(() => {
       ? balance.availableThisMonth
       : 0;
 
-  const carryForwarded =
-    balance?.canCarryForward ? balance?.carryForwarded ?? 0 : 0;
+  const carryForwarded = balance?.canCarryForward
+    ? balance?.carryForwarded ?? 0
+    : 0;
 
   const rawAvailable = isUnlimited
     ? Infinity
     : isWindowed
-      ? monthlyAvailable
-      : monthlyAvailable + carryForwarded;
+    ? monthlyAvailable
+    : monthlyAvailable + carryForwarded;
 
   const effectiveAvailable =
     rawAvailable === Infinity
@@ -228,18 +232,15 @@ const optionalHolidays = useMemo(() => {
 
   const name = balance?.name ?? "";
 
-const canSubmit =
-  totalRequested > 0 &&
-  !isPastOptionalHoliday &&
-  (effectiveAvailable === Infinity ||
-    totalRequested <= effectiveAvailable);
-
+  const canSubmit =
+    totalRequested > 0 &&
+    !isPastOptionalHoliday &&
+    (effectiveAvailable === Infinity || totalRequested <= effectiveAvailable);
 
   const availabilityMessage = useMemo(() => {
-
-      if (isPastOptionalHoliday) {
-    return "Past optional holiday cannot be applied.";
-  }
+    if (isPastOptionalHoliday) {
+      return "Past optional holiday cannot be applied.";
+    }
 
     if (!leaveType || !balance) return null;
 
@@ -249,7 +250,7 @@ const canSubmit =
       if (pendingForType > 0) {
         return `You already have ${pendingForType} pending ${name} leave(s).`;
       }
-      return `You don’t have any ${name} leaves available.`;
+      return `You don't have any ${name} leaves available.`;
     }
 
     if (totalRequested > effectiveAvailable) {
@@ -265,6 +266,72 @@ const canSubmit =
     totalRequested,
     name,
   ]);
+
+  // 🔔 Send notification to reporting manager
+  //  const sendLeaveNotification = async (reportingManagerId) => {
+  //   try {
+  //     if (!reportingManagerId) {
+  //       console.log("No reporting manager to notify");
+  //       return;
+  //     }
+  //     const leaveTypeName = balance?.name || leaveType;
+  //     const daysText = totalRequested === 1 ? "day" : "days";
+  //     const payload = {
+  //       receiverId: reportingManagerId,
+  //       notificationTitle: "New Leave Request",
+  //       notificationMessage: `${currentUser?.name || "An employee"} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
+  //       relatedDomainType: "Leave Management",
+  //       priority: totalRequested >= 5 ? "High" : "Medium",
+  //       senderId: currentUser?._id,
+  //     };
+
+  //     await storeNotification(payload);
+  //   } catch (error) {
+  //     console.error(" Failed to store notification:", error);
+  //   }
+  // };
+  const getSenderName = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+
+      if (!user) return "An employee";
+
+      return (
+        `${user.firstName || ""} ${user.lastName || ""}`.trim() || "An employee"
+      );
+    } catch (error) {
+      return "An employee";
+    }
+  };
+
+  console.log("Sender Name--------------------:", getSenderName());
+
+  const sendLeaveNotification = async (reportingManagerId) => {
+    try {
+      if (!reportingManagerId) {
+        console.log("No reporting manager to notify");
+        return;
+      }
+
+      const senderName = getSenderName(); // ✅ FETCHED FROM STORAGE
+      const leaveTypeName = balance?.name || leaveType;
+      const daysText = totalRequested === 1 ? "day" : "days";
+
+      const payload = {
+        receiverId: reportingManagerId,
+        senderId: currentUser?._id || currentUser?.id,
+        senderName,
+        notificationTitle: "New Leave Request",
+        notificationMessage: `${senderName} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
+        relatedDomainType: "Leave Management",
+        priority: totalRequested >= 5 ? "High" : "Medium",
+      };
+
+      await storeNotification(payload);
+    } catch (error) {
+      console.error("Failed to store notification:", error);
+    }
+  };
 
   async function handleSubmit() {
     if (!canSubmit || !leaveType) return;
@@ -285,17 +352,22 @@ const canSubmit =
           })),
       };
 
-      await axios.post("/hrms/leave/add-leave", payload);
+      const response = await axios.post("/hrms/leave/add-leave", payload);
+      if (response.data?.data?.length) {
+        const reportingManagerId = response.data.data[0].reportingIds;
+        await sendLeaveNotification(reportingManagerId);
+      }
       try {
         await context?.refreshDashboard?.();
       } catch (err) {
-        console.error("Dashboard refresh failed", err);
+        console.error("Failed to refresh dashboard", err);
       }
-
+    
       context?.refreshCalendar?.();
       onClose();
     } catch (err) {
       console.error("Failed to apply leave", err);
+      alert("Failed to submit leave application. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -353,64 +425,73 @@ const canSubmit =
           )}
 
           {/* DAYS */}
-        {days.length>0 &&  <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
-            {days.map((d) => {
-              const isDisabled =d.reason=== "SANDWICH"? d.enabled :!d.enabled ;
-              const reasonLabel = {
-                PAST: "Past date",
-                WEEKEND: "Weekend",
-                HOLIDAY: "Holiday",
-                APPLIED: "Already applied",
-                SANDWICH: "Sandwich",
-              }[d.reason];
+          {days.length > 0 && (
+            <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
+              {days.map((d) => {
+                const isDisabled =
+                  d.reason === "SANDWICH" ? d.enabled : !d.enabled;
+                const reasonLabel = {
+                  PAST: "Past date",
+                  WEEKEND: "Weekend",
+                  HOLIDAY: "Holiday",
+                  APPLIED: "Already applied",
+                  SANDWICH: "Sandwich",
+                }[d.reason];
 
-              const reasonColor = {
-                PAST: "bg-gray-200 text-gray-600",
-                WEEKEND: "bg-blue-100 text-blue-600",
-                HOLIDAY: "bg-purple-100 text-purple-600",
-                APPLIED: "bg-red-100 text-red-600",
-                SANDWICH: "bg-yellow-100 text-yellow-700",
-              }[d.reason];
+                const reasonColor = {
+                  PAST: "bg-gray-200 text-gray-600",
+                  WEEKEND: "bg-blue-100 text-blue-600",
+                  HOLIDAY: "bg-purple-100 text-purple-600",
+                  APPLIED: "bg-red-100 text-red-600",
+                  SANDWICH: "bg-yellow-100 text-yellow-700",
+                }[d.reason];
 
-              return (
-
-                <div
-                  key={d.date}
-                  className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${d.enabled
-                    ? "bg-white hover:bg-gray-100"
-                    : "bg-gray-100 text-gray-400"
+                return (
+                  <div
+                    key={d.date}
+                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
+                      d.enabled
+                        ? "bg-white hover:bg-gray-100"
+                        : "bg-gray-100 text-gray-400"
                     }`}
-                >
-                  <span>{d.date}</span>
-                  {isDisabled && ( <span className={`text-xs px-2 py-0.5 rounded-full ${reasonColor}`} > {reasonLabel} </span> )}
+                  >
+                    <span>{d.date}</span>
+                    {isDisabled && (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${reasonColor}`}
+                      >
+                        {reasonLabel}
+                      </span>
+                    )}
 
-                  {d.enabled && d.reason!=="SANDWICH" && (
-                    <select
-                      value={d.session}
-                      onChange={(e) =>
-                        setDays((prev) =>
-                          prev.map((x) =>
-                            x.date === d.date
-                              ? {
-                                ...x,
-                                isHalfDay: e.target.value !== "FULL",
-                                session: e.target.value,
-                              }
-                              : x
+                    {d.enabled && d.reason !== "SANDWICH" && (
+                      <select
+                        value={d.session}
+                        onChange={(e) =>
+                          setDays((prev) =>
+                            prev.map((x) =>
+                              x.date === d.date
+                                ? {
+                                    ...x,
+                                    isHalfDay: e.target.value !== "FULL",
+                                    session: e.target.value,
+                                  }
+                                : x
+                            )
                           )
-                        )
-                      }
-                      className="border px-2 py-1 rounded text-xs"
-                    >
-                      <option value="FULL">Full Day</option>
-                      <option value="First Half">1st Half</option>
-                      <option value="Second Half">2nd Half</option>
-                    </select>
-                  )}
-                </div>
-              )
-            })}
-          </div>}
+                        }
+                        className="border px-2 py-1 rounded text-xs"
+                      >
+                        <option value="FULL">Full Day</option>
+                        <option value="First Half">1st Half</option>
+                        <option value="Second Half">2nd Half</option>
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <textarea
             placeholder="Reason"
@@ -424,10 +505,11 @@ const canSubmit =
             <button
               disabled={!canSubmit || submitting}
               onClick={handleSubmit}
-              className={`px-3 py-1 rounded-full text-xs ${canSubmit && !submitting
-                ? "bg-primary text-white"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+              className={`px-3 py-1 rounded-full text-xs ${
+                canSubmit && !submitting
+                  ? "bg-primary text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
               {submitting ? "Submitting..." : "Submit"}
             </button>
