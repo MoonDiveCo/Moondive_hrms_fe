@@ -124,7 +124,7 @@ async function deleteLeaveType(code) {
       </section>
 
       {leaveModal.open && (
-        <LeaveTypeModal {...leaveModal} onClose={closeModal} organizationId={user.organizationId} existingLeaveTypes={policy.leaveTypes} />
+        <LeaveTypeModal {...leaveModal} onClose={closeModal} organizationId={user.organizationId} existingLeaveTypes={policy?.leaveTypes} />
       )}
     </div>
   );

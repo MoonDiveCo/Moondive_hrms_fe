@@ -11,21 +11,27 @@ export default function EmploymentGroupModal({ mode, data, policy, onClose, orga
   const [allocations, setAllocations] = useState([]);
   const [groupError, setGroupError] = useState("");
 
+  const leaveTypes = Array.isArray(policy?.leaveTypes)
+  ? policy.leaveTypes
+  : [];
+
   // Load data or initialize default allocations
-  useEffect(() => {
-    if (data) {
-      setGroupName(data.groupName);
-      setAllocations(data.leaveAllocations);
-    } else {
-      const defaultAllocations = policy.leaveTypes.map(lt => ({
-        leaveTypeCode: lt.code,
-        monthlyQuota: 0,
-        yearlyQuota: 0,
-        unlimited: lt.code === "LWP"
-      }));
-      setAllocations(defaultAllocations);
-    }
-  }, [data, policy]);
+useEffect(() => {
+  if (data) {
+    setGroupName(data.groupName);
+    setAllocations(data.leaveAllocations || []);
+  } else {
+    const defaultAllocations = leaveTypes.map((lt) => ({
+      leaveTypeCode: lt.code,
+      monthlyQuota: 0,
+      yearlyQuota: 0,
+      unlimited: lt.code === "LWP",
+    }));
+
+    setAllocations(defaultAllocations);
+  }
+}, [data, leaveTypes]);
+
 
   // Save
   const save = async () => {
@@ -118,7 +124,7 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
         <h4 className="font-medium mb-2">Leave Allocations</h4>
 
         <div className="grid grid-cols-2 gap-4">
-          {policy.leaveTypes.map((lt) => {
+          {leaveTypes.map((lt) => {
             const alloc = allocations.find(a => a.leaveTypeCode === lt.code);
             
             const isOptionalLeave =

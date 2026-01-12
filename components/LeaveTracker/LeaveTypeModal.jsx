@@ -26,7 +26,7 @@ export default function LeaveTypeModal({
   data,
   onClose,
   organizationId,
-  existingLeaveTypes,
+  existingLeaveTypes =[],
 }) {
   const isView = mode === "view";
   const isEdit = mode === "edit";
