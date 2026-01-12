@@ -7,13 +7,14 @@ import MainNavbar from "./MainNavbar";
 import { useMenus } from "@/constants/Sidebar";
 import { RBACContext } from "@/context/rbacContext";
 import { AuthContext } from "@/context/authContext";
+import {useNotifications} from "@/context/notificationcontext";
 import FaceModal from "./FaceModal";
 import { useAttendance } from "@/context/attendanceContext";
 import { toast } from "sonner";
 
 export default function AppLayout({ module, children, showMainNavbar = true }) {
 
-
+  console.log("applayput-------------------------------")
   const menus = useMenus();
   const { checkIn, checkOut, isOnBreak } = useAttendance();
   const {user} = useContext(AuthContext)
@@ -26,6 +27,7 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
     rbacLoading,
     submodules,
   } = useContext(RBACContext);
+  const { notificationLoading } = useNotifications();
   const [topItems, setTopItems] = useState([]);
   const [bottomItems, setBottomItems] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
@@ -122,7 +124,7 @@ const mergeUnique = (existing, additions) => {
 
 
   useEffect(() => {
-    if (authLoading || rbacLoading) return;
+    if (authLoading || rbacLoading || notificationLoading) return;
 
     if (!isSignedIn) {
       router.replace("/login");
@@ -130,7 +132,8 @@ const mergeUnique = (existing, additions) => {
     }
 
     if (!isRouteAllowed) {
-      router.replace("/unauthorized");
+      console.log("Unauthorized access to:", pathname);
+      // router.replace("/unauthorized");
     }
   }, [
     authLoading,

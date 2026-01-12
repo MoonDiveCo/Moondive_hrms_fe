@@ -1,20 +1,22 @@
 'use client';
-
-import React, { useContext, useRef, useState } from 'react';
+ 
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import ProfileSlideOver from './ProfileSlideOver';
 import { useRouter } from 'next/navigation';
 import { Bell, Clock, LogIn, LogOut, Coffee } from 'lucide-react';
 import { AuthContext } from '@/context/authContext';
 import { useAttendance } from '@/context/attendanceContext';
 import { toast } from 'sonner';
-
+import { useNotifications } from '@/context/notificationcontext';
+import NotificationSlideOver from '../Notification/NotificationList';
+ 
 export default function MainNavbar({
   collapsed,
   setCollapsed,
   onCheckInClick,
 }) {
   const router = useRouter();
-
+ 
   const {
     isCheckedIn,
     isOnBreak,
@@ -24,13 +26,26 @@ export default function MainNavbar({
     breakOut,
     isCheckedOut,
   } = useAttendance();
-
+ 
   const avatarRef = useRef(null);
   const [openProfile, setOpenProfile] = useState(false);
-  const { user } = useContext(AuthContext);
-  const canCheckInNow = !isCheckedIn || isCheckedOut; // either never checked in or already checked out
-  const showAsCheckedIn = isCheckedIn && !isCheckedOut; // only this state should show "Check Out"
+  const { user, authLoading, isSignedIn  } = useContext(AuthContext);
+  const [openNotifications, setOpenNotifications] = useState(false);
+  const canCheckInNow = !isCheckedIn || isCheckedOut;
+  const showAsCheckedIn = isCheckedIn && !isCheckedOut;
   const isActiveCheckIn = isCheckedIn && !isCheckedOut;
+  
+  // ✅ Get unreadCount and loading state
+  const { unreadCount, loading, fetchNotifications } = useNotifications();
+  
+
+useEffect(() => {
+  if (isSignedIn && !authLoading) {
+    console.log("✅ Auth ready, fetching notifications");
+    fetchNotifications();
+  }
+}, [isSignedIn, authLoading]);
+
 
   const formatTime = (secs) => {
     if (secs === undefined || secs === null || secs < 0) return '00:00:00';
@@ -39,32 +54,29 @@ export default function MainNavbar({
     const s = String(secs % 60).padStart(2, '0');
     return `${h}:${m}:${s}`;
   };
-
+ 
   const handleBreakIn = () =>
     toast.promise(breakIn(), {
       loading: 'Starting break...',
       success: 'Enjoy your break! ☕',
       error: (err) => err.message || 'Could not start break',
     });
-
+ 
   const handleBreakOut = () =>
     toast.promise(breakOut(), {
       loading: 'Ending break...',
       success: 'Back to work!',
       error: (err) => err.message || 'Could not end break',
     });
-
-  // Always open face modal – the modal will decide check-in or check-out
+ 
   const handleMainButtonClick = () => {
     if (isOnBreak) {
       toast.error('Please end your break first.');
       return;
     }
-
-    // This tells the modal what action to perform after verification
-    onFaceModalOpen(isCheckedIn ? 'checkOut' : 'checkIn');
+    onCheckInClick(isCheckedIn ? 'checkOut' : 'checkIn');
   };
-
+ 
   return (
     <div className='w-full px-6 md:px-8 z-20 bg-white shadow-sm'>
       <div className='flex items-center justify-between h-16'>
@@ -91,7 +103,7 @@ export default function MainNavbar({
             ← Back
           </button>
         </div>
-
+ 
         {/* RIGHT */}
         <div className='flex items-center gap-4'>
          {!user.userRole.includes("SuperAdmin") &&  <>
@@ -141,13 +153,24 @@ export default function MainNavbar({
           </button>
         )}
       </>}
-          <button className='relative p-2 rounded-full hover:bg-gray-100'>
-            <Bell size={18} />
-            <span className='absolute -top-1 -right-1 w-4 h-4 text-[10px] flex items-center justify-center rounded-full bg-orange-500 text-white'>
-              3
-            </span>
+          <button
+            onClick={() => setOpenNotifications(true)}
+            className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            {loading ? (
+              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500" />
+            ) : (
+              <>
+                <Bell size={20} className="text-gray-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </>
+            )}
           </button>
-
+ 
           <button
             ref={avatarRef}
             onClick={() => setOpenProfile(true)}
@@ -161,10 +184,14 @@ export default function MainNavbar({
           </button>
         </div>
       </div>
-
+ 
       <ProfileSlideOver
         isOpen={openProfile}
         onClose={() => setOpenProfile(false)}
+      />
+      <NotificationSlideOver
+        isOpen={openNotifications}
+        onClose={() => setOpenNotifications(false)}
       />
     </div>
   );
