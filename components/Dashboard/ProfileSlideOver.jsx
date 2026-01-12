@@ -20,7 +20,7 @@ export default function ProfileSlideOver({
   const [portalEl] = useState(() => {
     if (typeof document === 'undefined') return null;
     const el = document.createElement('div');
-    el.setAttribute('id', 'profile-slideover-root'); 
+    el.setAttribute('id', 'profile-slideover-root');
     return el;
   });
 
@@ -196,25 +196,23 @@ export default function ProfileSlideOver({
   }
 
   async function confirmLogout() {
-    // call context logout (clears client cookies/localstorage) and try backend logout, then reload
     try {
-      if (typeof logout === 'function') logout();
-      if (typeof onSignOut === 'function') {
-        onSignOut();
-      } else {
-        // try backend endpoint as extra
-        try {
-          await axios.post('/user/logout', {}, { withCredentials: true });
-        } catch (e) {
-          // ignore if it fails
-        }
+      // Backend logout (destroy session + clear cookie)
+      await axios.post('/user/logout', {}, { withCredentials: true });
+
+      // Client logout (clear React state + localStorage)
+      if (typeof logout === 'function') {
+        logout();
       }
-    } finally {
-      // close modal and slide-over and reload to clear app state
+
+      // Close UI
       setShowLogoutModal(false);
       setPanelHidden(true);
-      // reload page to ensure auth state cleared
-      window.location.reload();
+
+      // Close slide-over
+      onClose();
+    } catch (err) {
+      console.error('Logout failed', err);
     }
   }
 
