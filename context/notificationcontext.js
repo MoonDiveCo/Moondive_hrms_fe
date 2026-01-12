@@ -739,7 +739,6 @@ export const NotificationProvider = ({ children }) => {
  
     if (policyId) payload.policyId = policyId;
     if (senderId) payload.senderId = senderId;
- console.log("Payload for storing notification-------------------------:", payload);
     try {
       const response = await api.post("/send", payload);
       console.log("✅ Notification API response:", response.data);
@@ -784,17 +783,17 @@ export const NotificationProvider = ({ children }) => {
       const userId = getUserId();
  
       const payload = { fcmToken: token };
-      console.log("Preparing to save FCM token:", payload);
+     
  
       if (userId) {
         payload.userId = userId;
-        console.log("Saving FCM token for user:", userId);
+        
       } else {
         console.warn("No userId found in localStorage");
       }
  
       const response = await api.post("/token", payload);
-      console.log("FCM token saved successfully:", response.data);
+      
       return response.data;
     } catch (error) {
       console.error("Error saving FCM token:", error.response?.data || error);
@@ -812,7 +811,6 @@ export const NotificationProvider = ({ children }) => {
  
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        console.log("Notification permission denied");
         return null;
       }
  
@@ -850,7 +848,6 @@ export const NotificationProvider = ({ children }) => {
         const token = await getFCMToken();
         return !!token;
       } else {
-        console.log("Notification permission denied");
         return false;
       }
     } catch (error) {
@@ -901,7 +898,6 @@ export const NotificationProvider = ({ children }) => {
    
     // Check if already processed
     if (processedNotificationIds.current.has(notifId)) {
-      console.log("⚠️ Duplicate notification ignored (already processed):", notifId);
       return;
     }
  
@@ -1033,8 +1029,7 @@ export const NotificationProvider = ({ children }) => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/firebase-messaging-sw.js")
-        .then((registration) => {
-          console.log("✅ Service Worker registered:", registration);
+        .then((registration) => {;
         })
         .catch((err) => {
           console.error(" Service Worker registration failed:", err);

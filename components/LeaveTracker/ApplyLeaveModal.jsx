@@ -355,15 +355,14 @@ export default function ApplyLeaveModal({
       const response = await axios.post("/hrms/leave/add-leave", payload);
       if (response.data?.data?.length) {
         const reportingManagerId = response.data.data[0].reportingIds;
-
         await sendLeaveNotification(reportingManagerId);
       }
       try {
         await context?.refreshDashboard?.();
       } catch (err) {
-        console.error("Dashboard refresh failed", err);
+        console.error("Failed to refresh dashboard", err);
       }
-
+    
       context?.refreshCalendar?.();
       onClose();
     } catch (err) {
