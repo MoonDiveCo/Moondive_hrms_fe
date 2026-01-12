@@ -11,9 +11,21 @@ import ConfirmDeleteModal from '@/components/OrganizationFileComponent/ConfirmDe
 import ViewFileModal from '@/components/OrganizationFileComponent/ViewFileModal';
 import OrganizationFilesTable from '@/components/OrganizationFileComponent/OrganizationFilesTable';
 
-import { Search } from 'lucide-react';
+import {
+  FileText,
+  ShieldCheck,
+  ScrollText,
+  Search,
+  Trash2,
+  User,
+  Eye,
+  ThumbsUp,
+} from 'lucide-react';
+import { useNotifications } from '@/context/notificationcontext';
+
 
 const ITEMS_PER_PAGE = 5;
+
 
 export default function OrganizationPolicy() {
   const { allUserPermissions = [], user } = useContext(AuthContext);
@@ -52,6 +64,7 @@ export default function OrganizationPolicy() {
 
   const [activeFilter, setActiveFilter] = useState('All Files');
   const [search, setSearch] = useState('');
+  const {storeNotification}= useNotifications()
   const [currentPage, setCurrentPage] = useState(1);
 
   const [form, setForm] = useState({
@@ -411,7 +424,7 @@ export default function OrganizationPolicy() {
         </div>
       )}
 
-      <div className="p-3 bg-gray-50 min-h-screen">
+      <div className="p-3 bg-gray-50 min-h-screen hide-scrollbar">
         <div className="max-w-7xl mx-auto space-y-6">
 
           {/* HEADER */}

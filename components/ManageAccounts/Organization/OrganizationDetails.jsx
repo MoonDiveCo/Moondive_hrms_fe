@@ -20,7 +20,7 @@ export default function OrganizationDetails() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get('http://localhost:2000/api/v1/hrms/organization/view-organization', {withCredentials: true})
+        const res = await axios.get('/hrms/organization/view-organization', {withCredentials: true})
         const orgData = res.data.result
         if(allUserPermissions.includes("HRMS:MANAGE_ACCOUNT:VIEW")){
           setHasEditPermissions(true)

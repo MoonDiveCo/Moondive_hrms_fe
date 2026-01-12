@@ -42,6 +42,10 @@ export default function OrganizationFilesTable({
   onAcknowledge,
   onPolicyClick,
 }) {
+  const limitText = (text, limit = 40) => {
+  if (!text) return "";
+  return text.length > limit ? `${text.slice(0, limit)}...` : text;
+};
   const isPendingTab = activeFilter === 'Pending Policies';
 
   return (
@@ -120,7 +124,7 @@ export default function OrganizationFilesTable({
               >
                 {/* Document Column */}
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${meta.bg} relative`}>
+                  <div className={`w-11 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${meta.bg} relative`}>
                     <Icon className={`w-5 h-5 ${meta.text}`} />
                     {/* Unacknowledged Badge for Employees */}
                     {isEmployeeOnly && !hasAcknowledged && (
@@ -148,12 +152,13 @@ export default function OrganizationFilesTable({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {file.fileName}
+                    <p className="text-md font-medium text-gray-900">
+                      {limitText(file.fileName, 30)}
                     </p>
+
                     {file.description && (
-                      <p className="text-xs text-gray-500 truncate mt-0.5">
-                        {file.description}
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {limitText(file.description, 30)}
                       </p>
                     )}
                   </div>
