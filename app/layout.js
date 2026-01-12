@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/context/authContext";
-import { RBACProvider } from "@/context/rbacContext";
-import { NotificationProvider } from "../context/notificationcontext"; // ✅ Import NotificationProvider
-import { WebVitals } from "@/components/WebVitals";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
-import { Toaster } from 'sonner';
-import "vis-timeline/styles/vis-timeline-graph2d.min.css";
-import { AttendanceProvider } from "@/context/attendanceContext";
-import ReactQueryProvider from "@/providers/ReactQueryProvider";
-
-=======
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/authContext';
@@ -22,7 +8,7 @@ import { Toaster } from 'sonner';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 import { AttendanceProvider } from '@/context/attendanceContext';
 import ReactQueryProvider from '@/providers/ReactQueryProvider';
->>>>>>> 6c6ff4696f1c30cc1a7247c63ebe84ffb53420f5
+import { NotificationProvider } from '@/context/notificationcontext';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -63,12 +49,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-<<<<<<< HEAD
-        <Toaster richColors position="top-right" />
-        
-=======
         <Toaster richColors position='top-right' />
->>>>>>> 6c6ff4696f1c30cc1a7247c63ebe84ffb53420f5
         {/* Skip to main content link for accessibility */}
         <a href='#main-content' className='skip-to-main'>
           Skip to main content
@@ -77,19 +58,11 @@ export default function RootLayout({ children }) {
         <WebVitals />
         <ReactQueryProvider>
           <AuthProvider>
-<<<<<<< HEAD
-            <NotificationProvider> {/* ✅ Add NotificationProvider here */}
-              <RBACProvider>
-                <AttendanceProvider>
-                  {children}
-                </AttendanceProvider>
-              </RBACProvider>
-            </NotificationProvider>
-=======
+            <NotificationProvider>
             <RBACProvider>
               <AttendanceProvider>{children}</AttendanceProvider>
             </RBACProvider>
->>>>>>> 6c6ff4696f1c30cc1a7247c63ebe84ffb53420f5
+            </NotificationProvider>
           </AuthProvider>
         </ReactQueryProvider>
       </body>
