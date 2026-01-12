@@ -7,6 +7,8 @@ import { fetchIPData } from "@/helper/tracking";
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
 import { ACTION_PERMISSIONS } from "@/constants/NestedDashboard";
 import { set } from "date-fns";
+axios.defaults.withCredentials = true;
+// import {ACTION_PERMISSIONS} from '@/constants/NestedDashboard'
 
 export const AuthContext = createContext();
 
