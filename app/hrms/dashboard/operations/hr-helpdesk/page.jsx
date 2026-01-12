@@ -19,8 +19,8 @@ export default function HRHelpdeskPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteRow, setDeleteRow] = useState(null);
   
-  // // New state to track viewed requests
-  // const [viewedRequests, setViewedRequests] = useState(new Set());
+  // New state to track viewed requests
+  const [viewedRequests, setViewedRequests] = useState(new Set());
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,6 +80,7 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
   if (tab === 'received' && !row.viewed) {
     try {
       await axios.post(`/hrms/hrhelpdesk/${row._id}/view`);
+
 
       // Update UI instantly (no refetch needed)
       setRows(prev =>
