@@ -50,11 +50,18 @@ export default function HRHelpdeskPage() {
     setOpen(true);
   }
 
-  function openView(row, e) {
-    lastFocusedRef.current = e?.currentTarget;
-    setSelected(row);
-    setOpen(true);
+ function openView(row, e) {
+  lastFocusedRef.current = e?.currentTarget;
+  setSelected(row);
+
+  // 🔥 RULE APPLIED HERE
+  if (tab === 'received' && row.status === 'Approved') {
+    setViewOpen(true);      // read-only modal
+  } else {
+    setOpen(true);          // slide-over
   }
+}
+
 
   function close() {
     setOpen(false);
@@ -109,16 +116,16 @@ export default function HRHelpdeskPage() {
     
     {/* VIEW */}
     <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setSelected(r);
-        setViewOpen(true);
-      }}
-      className="p-2 rounded-md hover:bg-gray-100"
-      title="View"
-    >
-      <Eye size={16} />
-    </button>
+  onClick={(e) => {
+    e.stopPropagation();
+    openView(r, e);
+  }}
+  className="p-2 rounded-md hover:bg-gray-100"
+  title="View"
+>
+  <Eye size={16} />
+</button>
+
 
     {/* EDIT */}
     {tab === 'sent' && canEdit(r) && (
