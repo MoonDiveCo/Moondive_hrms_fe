@@ -198,18 +198,17 @@ export default function ProfileSlideOver({
   async function confirmLogout() {
     // call context logout (clears client cookies/localstorage) and try backend logout, then reload
     try {
-      // if (typeof logout === 'function') 
-        logout();
-      // if (typeof onSignOut === 'function') {
-      //   onSignOut();
-      // } else {
-      //   // try backend endpoint as extra
-      //   try {
-      //     await axios.post('/user/logout', {}, { withCredentials: true });
-      //   } catch (e) {
-      //     // ignore if it fails
-      //   }
-      // }
+      if (typeof logout === 'function') logout();
+      if (typeof onSignOut === 'function') {
+        onSignOut();
+      } else {
+        // try backend endpoint as extra
+        try {
+          await axios.post('/user/logout', {}, { withCredentials: true });
+        } catch (e) {
+          // ignore if it fails
+        }
+      }
     } finally {
       // close modal and slide-over and reload to clear app state
       setShowLogoutModal(false);
