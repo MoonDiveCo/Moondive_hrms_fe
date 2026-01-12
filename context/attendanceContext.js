@@ -278,7 +278,7 @@ export function AttendanceProvider({ children }) {
     try{
       const res=await axios.get("/hrms/roles/get-employee")
       setUserData(res.data.result)
-    console.log("-------------------",res.data.result)}catch(err){
+    console.log("user data-------------------",res)}catch(err){
       console.log("-------------------------Failed to fetch user data for attendance context:",err)
     }}
     useEffect(()=>{ fetchUserssData()},[ isSignedIn])
@@ -434,7 +434,8 @@ const sendLateNotifications = async (lateData) => {
 
     // 3️⃣ HR / Admin / SuperAdmin
     for (const u of userData) {
-      if (u.userRole?.includes("HR")) {
+      if (u?.userRole.includes("HR")) {
+        
         await notify({
           receiverId: u._id,
           notificationTitle: "⏰ Late Check-In (HR)",
@@ -445,7 +446,8 @@ const sendLateNotifications = async (lateData) => {
         });
       }
 
-      if (u.userRole?.includes("Admin")) {
+      if (u?.userRole.includes("Admin")) {
+
         await notify({
           receiverId: u._id,
           notificationTitle: "🚨 Late Check-In (Admin)",
@@ -456,7 +458,7 @@ const sendLateNotifications = async (lateData) => {
         });
       }
 
-      if (u.userRole?.includes("SuperAdmin")) {
+      if (u?.userRole.includes("SuperAdmin")) {
         await notify({
           receiverId: u._id, // ← avoid hardcoded ID unless required
           notificationTitle: "🚨 Late Check-In (CEO)",

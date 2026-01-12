@@ -22,7 +22,7 @@ import {
   ThumbsUp,
 } from 'lucide-react';
 import { useNotifications } from '@/context/notificationcontext';
-import { Search } from 'lucide-react';
+
 
 const ITEMS_PER_PAGE = 5;
 

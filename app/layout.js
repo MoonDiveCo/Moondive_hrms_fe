@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 import { AttendanceProvider } from '@/context/attendanceContext';
 import ReactQueryProvider from '@/providers/ReactQueryProvider';
+import { NotificationProvider } from '@/context/notificationcontext';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -58,7 +59,9 @@ export default function RootLayout({ children }) {
         <ReactQueryProvider>
           <AuthProvider>
             <RBACProvider>
-              <AttendanceProvider>{children}</AttendanceProvider>
+              <NotificationProvider>
+                <AttendanceProvider>{children}</AttendanceProvider>
+              </NotificationProvider>
             </RBACProvider>
           </AuthProvider>
         </ReactQueryProvider>
