@@ -278,7 +278,7 @@ export function AttendanceProvider({ children }) {
     try{
       const res=await axios.get("/hrms/roles/get-employee")
       setUserData(res.data.result)
-    console.log("userData-------------------",res.data.result)}catch(err){
+    console.log("user data-------------------",res)}catch(err){
       console.log("-------------------------Failed to fetch user data for attendance context:",err)
     }}
     useEffect(()=>{if(isSignedIn) fetchUserssData()},[ isSignedIn])
@@ -392,84 +392,91 @@ export function AttendanceProvider({ children }) {
 
   /* ---------------- LATE CHECK-IN NOTIFICATION ---------------- */
 
-  const sendLateNotifications = async (lateData) => {
-    const { minutesLate, checkInTime, shiftStartTime, reportingManagerId } =
-      lateData;
+const sendLateNotifications = async (lateData) => {
+  const {
+    minutesLate,
+    checkInTime,
+    shiftStartTime,
+    reportingManagerId,
+  } = lateData;
 
-    try {
-      // 🛡️ Prevent duplicate notifications
-      const notified = new Set();
+  try {
+    // 🛡️ Prevent duplicate notifications
+    const notified = new Set();
 
-      const notify = async ({ receiverId, ...payload }) => {
-        if (!receiverId || notified.has(receiverId)) return;
-        notified.add(receiverId);
+    const notify = async ({ receiverId, ...payload }) => {
+      if (!receiverId || notified.has(receiverId)) return;
+      notified.add(receiverId);
 
-        await storeNotification({
-          receiverId,
-          ...payload,
+      await storeNotification({
+        receiverId,
+        ...payload,
+      });
+    };
+
+    // 1️⃣ Employee
+    await notify({
+      receiverId: user._id,
+      notificationTitle: "⏰ Late Check-In Alert",
+      notificationMessage: `You checked in ${minutesLate} minutes late. Shift started at ${shiftStartTime}.`,
+      relatedDomainType: "Attendance",
+      priority: "Medium",
+    });
+
+    // 2️⃣ Reporting Manager
+    await notify({
+      receiverId: reportingManagerId,
+      notificationTitle: "⏰ Team Member Late Check-In",
+      notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+      relatedDomainType: "Attendance",
+      priority: "Medium",
+      senderId: user._id,
+    });
+
+    // 3️⃣ HR / Admin / SuperAdmin
+    for (const u of userData) {
+      if (u?.userRole.includes("HR")) {
+        
+        await notify({
+          receiverId: u._id,
+          notificationTitle: "⏰ Late Check-In (HR)",
+          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          relatedDomainType: "Attendance",
+          priority: "Low",
+          senderId: user._id,
         });
-      };
-
-      // 1️⃣ Employee
-      await notify({
-        receiverId: user._id,
-        notificationTitle: "⏰ Late Check-In Alert",
-        notificationMessage: `You checked in ${minutesLate} minutes late. Shift started at ${shiftStartTime}.`,
-        relatedDomainType: "Attendance",
-        priority: "Medium",
-      });
-
-      // 2️⃣ Reporting Manager
-      await notify({
-        receiverId: reportingManagerId,
-        notificationTitle: "⏰ Team Member Late Check-In",
-        notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
-        relatedDomainType: "Attendance",
-        priority: "Medium",
-        senderId: user._id,
-      });
-
-      // 3️⃣ HR / Admin / SuperAdmin
-      for (const u of userData) {
-        if (u.userRole?.includes("HR")) {
-          await notify({
-            receiverId: u._id,
-            notificationTitle: "⏰ Late Check-In (HR)",
-            notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
-            relatedDomainType: "Attendance",
-            priority: "Low",
-            senderId: user._id,
-          });
-        }
-
-        if (u.userRole?.includes("Admin")) {
-          await notify({
-            receiverId: u._id,
-            notificationTitle: "🚨 Late Check-In (Admin)",
-            notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
-            relatedDomainType: "Attendance",
-            priority: "High",
-            senderId: user._id,
-          });
-        }
-
-        if (u.userRole?.includes("SuperAdmin")) {
-          await notify({
-            receiverId: u._id, // ← avoid hardcoded ID unless required
-            notificationTitle: "🚨 Late Check-In (CEO)",
-            notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
-            relatedDomainType: "Attendance",
-            priority: "High",
-            senderId: user._id,
-          });
-        }
       }
 
-      console.log("✅ All late check-in notifications stored successfully");
-    } catch (error) {
-      console.error("❌ Failed to store late check-in notifications:", error);
+      if (u?.userRole.includes("Admin")) {
+
+        await notify({
+          receiverId: u._id,
+          notificationTitle: "🚨 Late Check-In (Admin)",
+          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          relatedDomainType: "Attendance",
+          priority: "High",
+          senderId: user._id,
+        });
+      }
+
+      if (u?.userRole.includes("SuperAdmin")) {
+        await notify({
+          receiverId: u._id, // ← avoid hardcoded ID unless required
+          notificationTitle: "🚨 Late Check-In (CEO)",
+          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          relatedDomainType: "Attendance",
+          priority: "High",
+          senderId: user._id,
+        });
+      }
     }
-  };
+
+    console.log("✅ All late check-in notifications stored successfully");
+  } catch (error) {
+    console.error("❌ Failed to store late check-in notifications:", error);
+  }
+};
+
 
   /* ---------------- ACTIONS ---------------- */
 

@@ -1,10 +1,10 @@
 'use client';
-
+ 
 import { Sun, AlertCircle, CalendarDays, Umbrella } from 'lucide-react';
 import CheckInBadge from './CheckInBadge';
 import CheckOutBadge from './CheckOutBadge';
 import WorkingTimeline from './WorkingTimeline';
-
+ 
 export default function TimelineRow({
   day,
   date,
@@ -25,47 +25,47 @@ export default function TimelineRow({
   const isLeave = status === 'leave';
   const isFirstHalfLeave = status === 'leave-first-half';
   const isSecondHalfLeave = status === 'leave-second-half';
-
+ 
   const isAnyLeave = isLeave || isFirstHalfLeave || isSecondHalfLeave;
   const isNonWorking =
     !isFuture && (isAbsent || isWeekend || isHoliday || isAnyLeave);
-
+ 
   /* ---------- STATUS BADGE INFO ---------- */
   const getStatusInfo = () => {
     if (isAbsent)
       return { icon: <AlertCircle className="w-5 h-5" />, label: 'Absent', color: 'red' };
-
+ 
     if (isHoliday)
       return {
         icon: <CalendarDays className="w-5 h-5" />,
         label: holidayName,
         color: 'blue',
       };
-
+ 
     if (isAnyLeave)
       return {
         icon: <Umbrella className="w-5 h-5" />,
         label: leaveLabel || 'Leave',
         color: 'purple',
       };
-
+ 
     return null;
   };
-
+ 
   const statusInfo = getStatusInfo();
-
+ 
   return (
     <div className="flex items-center gap-4">
       <DateCol day={day} date={date} />
-
+ 
       {/* ================= ROW CARD ================= */}
       <div
         className={`
           flex-1 h-20 rounded-xl relative overflow-hidden
           flex items-center px-6 transition-all
-
+ 
           ${isFuture ? 'border border-dashed border-gray-300 bg-gray-50' : 'bg-white'}
-
+ 
           ${isWeekend ? 'border border-yellow-200' : ''}
           ${isHoliday && !isFuture ? 'ring-1 ring-blue-300 border-l-4 border-blue-300' : ''}
           ${isPresent ? 'ring-1 ring-gray-200 border-l-4 border-green-300' : ''}
@@ -85,7 +85,7 @@ export default function TimelineRow({
             </div>
           </>
         )}
-
+ 
         {/* ================= PRESENT DAY ================= */}
         {isPresent && (
           <>
@@ -97,16 +97,11 @@ export default function TimelineRow({
                     minute: '2-digit',
                   })}
                 </div>
-<<<<<<< HEAD
-                { <CheckInBadge time={checkIn} status="onTime" /> }
-              </div>
-=======
               // <div className="absolute left-8 top-3 z-10 text-left">
               //   <CheckInBadge time={checkIn} status={status} />
               // </div>
->>>>>>> 6c6ff4696f1c30cc1a7247c63ebe84ffb53420f5
             )}
-
+ 
             {/* Timeline */}
             <div className="absolute inset-x-40 top-1/2 -translate-y-1/2 z-0">
               <WorkingTimeline
@@ -115,7 +110,7 @@ export default function TimelineRow({
                 breaks={breaks}
               />
             </div>
-
+ 
             {/* Check-out */}
             {checkOut && (
               <div className="absolute right-40 top-3 z-10 text-right">
@@ -130,7 +125,7 @@ export default function TimelineRow({
             )}
           </>
         )}
-
+ 
         {/* ================= NON-WORKING BADGE (NOT WEEKEND) ================= */}
         {isNonWorking && statusInfo && !isWeekend && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
@@ -147,14 +142,14 @@ export default function TimelineRow({
             </div>
           </div>
         )}
-
+ 
         {/* ================= UPCOMING ================= */}
         {isFuture && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 tracking-wide">
             Upcoming
           </div>
         )}
-
+ 
         {/* ================= HOURS ================= */}
         <div className="absolute right-6 top-1/2 -translate-y-1/2 text-right z-20">
           <div className="font-semibold text-lg">{hours || '00:00'}</div>
@@ -164,7 +159,7 @@ export default function TimelineRow({
     </div>
   );
 }
-
+ 
 /* ---------- DATE COLUMN ---------- */
 function DateCol({ day, date }) {
   return (
@@ -174,3 +169,5 @@ function DateCol({ day, date }) {
     </div>
   );
 }
+ 
+ 
