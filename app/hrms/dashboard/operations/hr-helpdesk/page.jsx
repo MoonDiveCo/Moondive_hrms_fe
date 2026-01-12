@@ -19,8 +19,8 @@ export default function HRHelpdeskPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteRow, setDeleteRow] = useState(null);
   
-  // New state to track viewed requests
-  const [viewedRequests, setViewedRequests] = useState(new Set());
+  // // New state to track viewed requests
+  // const [viewedRequests, setViewedRequests] = useState(new Set());
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,10 +52,7 @@ export default function HRHelpdeskPage() {
   }
 
   /* ---------- UNVIEWED RECEIVED COUNT ---------- */
-const unviewedReceivedCount =
-  tab === 'received'
-    ? rows.filter(r => !viewedRequests.has(r._id)).length
-    : rows.filter(r => !viewedRequests.has(r._id)).length;
+const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
 
 
   /* ---------- PAGINATION ---------- */
@@ -75,21 +72,33 @@ const unviewedReceivedCount =
     setOpen(true);
   }
 
-  function openView(row, e) {
-    lastFocusedRef.current = e?.currentTarget;
-    setSelected(row);
+  async function openView(row, e) {
+  lastFocusedRef.current = e?.currentTarget;
+  setSelected(row);
 
-    // Mark as viewed when opening
-    if (tab === 'received' && !viewedRequests.has(row._id)) {
-      setViewedRequests(prev => new Set([...prev, row._id]));
-    }
+  // 🔥 Mark as viewed in backend
+  if (tab === 'received' && !row.viewed) {
+    try {
+      await axios.post(`/hrms/hrhelpdesk/${row._id}/view`);
 
-    if (tab === 'received' && row.status === 'Approved') {
-      setViewOpen(true);
-    } else {
-      setOpen(true);
+      // Update UI instantly (no refetch needed)
+      setRows(prev =>
+        prev.map(r =>
+          r._id === row._id ? { ...r, viewed: true } : r
+        )
+      );
+    } catch {
+      // silent fail (UX > error spam)
     }
   }
+
+  if (tab === 'received' && row.status === 'Approved') {
+    setViewOpen(true);
+  } else {
+    setOpen(true);
+  }
+}
+
 
   function close() {
     setOpen(false);
@@ -270,7 +279,7 @@ const unviewedReceivedCount =
                 }`}
               >
                 {t === 'sent' ? 'Sent Requests' : 'Received Requests'}
-                {t === 'received' && unviewedReceivedCount > 0 && (
+                {tab === 'received' && t === 'received' && unviewedReceivedCount > 0 && (
   <span
     className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
       tab === t
