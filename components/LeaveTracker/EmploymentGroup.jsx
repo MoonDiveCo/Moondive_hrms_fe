@@ -39,6 +39,10 @@ function EmploymentGroup() {
     fetchPolicy();
   };
 
+  const leaveTypes = Array.isArray(policy?.leaveTypes)
+  ? policy.leaveTypes
+  : [];
+
 async function deleteGroup(groupName) {
   if (!window.confirm("Delete this employment group?")) return;
 
@@ -73,7 +77,7 @@ async function deleteGroup(groupName) {
                 </th>
 
                 {/* Dynamic Leave Type Headers */}
-                {policy.leaveTypes.map((lt) => (
+                {leaveTypes.map((lt) => (
                 <React.Fragment key={lt.code}>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     {lt.code} (Monthly)
@@ -102,7 +106,7 @@ async function deleteGroup(groupName) {
                     </td>
 
                     {/* Dynamic Leave Allocations */}
-                    {policy.leaveTypes.map((lt) => {
+                    {leaveTypes.map((lt) => {
                     const allocation = grp.leaveAllocations.find(
                         (a) => a.leaveTypeCode === lt.code
                     );
@@ -165,7 +169,7 @@ async function deleteGroup(groupName) {
             ) : (
                 <tr>
             <td    
-            colSpan={policy.leaveTypes.length * 2 + 2}
+            colSpan={leaveTypes.length * 2 + 2}
             className="px-6 py-4 text-center text-sm text-gray-500"
         >
             No groups found.
@@ -177,7 +181,7 @@ async function deleteGroup(groupName) {
         </table>
         </div>
          {groupModal.open && (
-        <EmploymentGroupModal {...groupModal} policy={policy} onClose={closeModal} organizationId={user.organizationId} />
+        <EmploymentGroupModal {...groupModal} policy={policy} onClose={closeModal} organizationId={user?.organizationId} />
       )}
       </section>
   )
