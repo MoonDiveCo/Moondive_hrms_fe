@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { createContext, useEffect, useState } from "react";
 import {fetchIPData} from '@/helper/tracking'
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
-axios.defaults.withCredentials = true;
+// axios.defaults.withCredentials = true;
 import {ACTION_PERMISSIONS} from '@/constants/NestedDashboard'
 
 export const AuthContext = createContext();
