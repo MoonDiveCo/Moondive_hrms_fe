@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await axios.post("/auth/logout"); // optional
+      await axios.post("/user/logout"); // optional
     } catch (e) {}
 
     setIsSignedIn(false);
