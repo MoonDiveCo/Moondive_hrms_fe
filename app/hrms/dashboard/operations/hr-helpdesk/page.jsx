@@ -96,7 +96,19 @@ export default function HRHelpdeskPage() {
   /* ---------- TABLE COLUMNS ---------- */
 
   const columns = [
-    { key: 'subject', header: 'Subject' },
+    {
+  key: 'subject',
+  header: 'Subject',
+  render: (r) => {
+    const text = r.subject || '';
+    return (
+      <span title={text}>
+        {text.length > 20 ? `${text.slice(0, 20)}...` : text}
+      </span>
+    );
+  },
+},
+
     { key: 'category', header: 'Category' },
     {
       key: 'priority',
@@ -128,19 +140,30 @@ export default function HRHelpdeskPage() {
 
 
     {/* EDIT */}
-    {tab === 'sent' && canEdit(r) && (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setSelected(r);
-          setOpen(true); // edit slide-over
-        }}
-        className="p-2 rounded-md hover:bg-gray-100"
-        title="Edit"
-      >
-        <Pencil size={16} />
-      </button>
-    )}
+    {tab === 'sent' && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      if (!canEdit(r)) return; // block click
+      setSelected(r);
+      setOpen(true);
+    }}
+    disabled={!canEdit(r)}
+    className={`p-2 rounded-md ${
+      canEdit(r)
+        ? 'hover:bg-gray-100'
+        : 'cursor-not-allowed opacity-40'
+    }`}
+    title={
+      canEdit(r)
+        ? 'Edit'
+        : 'Approved requests cannot be edited'
+    }
+  >
+    <Pencil size={16} />
+  </button>
+)}
+
 
     {/* DELETE */}
     {tab === 'sent' && (
