@@ -16,10 +16,6 @@ export function AuthProvider({ children }) {
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [allUserPermissions, setAllUserPermissions] = useState([]);
-  const [hrUsers, setHrUsers] = useState([]); // ✅ Add HR users state
-  const [adminUsers, setAdminUsers] = useState([]);
-  const [ceoUsers, setCeoUsers] = useState([]);
-
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
@@ -31,42 +27,28 @@ export function AuthProvider({ children }) {
     fetchUser(token);
   }, []);
 
-  const fetchUser = async (token) => {
+ const fetchUser = async (token) => {
   try {
+    // 1️⃣ Fetch logged-in user profile
     const res = await axios.get("/user/get-profile", {
       headers: { token },
     });
 
     const data = res?.data?.result;
-    console.log("Fetched user data-------------------:", data);
-   console.log("HR Users:-------------------------------------------------", data.hrUsers);
+
     setUser(data.user);
     setPermissions(data.userPermissions);
-   
 
-    // 🔥 FETCH ADMIN + CEO USERS
-  
-    const admins = allRoleUsers.filter(u =>
-      u.userRole.includes("Admin")
-    );
-
-    const ceos = allRoleUsers.filter(u =>
-      u.userRole.includes("SuperAdmin")
-    );
-
-    console.log("Admins:", admins);
-    console.log("CEOs:", ceos);
-
-    setAdminUsers(admins);
-    setCeoUsers(ceos);
+    
 
     setIsSignedIn(true);
   } catch (err) {
-    console.log(err);
+    console.error("fetchUser error:", err);
   } finally {
     setLoading(false);
   }
 };
+
 
 
   //   const fetchUser = async (token) => {
@@ -134,7 +116,6 @@ export function AuthProvider({ children }) {
 
     setUser(payload.user);
     setPermissions(payload?.permissions);
-    setHrUsers(payload?.hrUsers || []); // ✅ Store HR users on login
     setIsSignedIn(true);
 
     if (payload?.permissions.includes("*")) {
@@ -150,21 +131,17 @@ export function AuthProvider({ children }) {
     }
 
     localStorage.setItem("user", JSON.stringify(payload.user));
-    localStorage.setItem("hrUsers", JSON.stringify(payload?.hrUsers || [])); // ✅ Cache HR users
   };
 
   const logout = () => {
     Cookies.remove("token");
     localStorage.removeItem("user");
-    localStorage.removeItem("hrUsers"); // ✅ Clear HR users on logout
-    localStorage.removeItem("adminUsers");
-    localStorage.removeItem("ceoUsers");
 
     setIsSignedIn(false);
     setUser(null);
     setPermissions([]);
     setAllUserPermissions([]);
-    setHrUsers([]); // ✅ Clear HR users state
+   
   };
 
   const getSessionTrackingInfo = async () => {
@@ -185,9 +162,6 @@ export function AuthProvider({ children }) {
         isSignedIn,
         user,
         permissions,
-        hrUsers, // ✅ Expose HR users
-        adminUsers,
-        ceoUsers,
         login,
         logout,
         loading,

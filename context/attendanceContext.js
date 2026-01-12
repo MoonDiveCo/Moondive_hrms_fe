@@ -257,7 +257,7 @@ import moment from "moment";
 const AttendanceContext = createContext(null);
 
 export function AttendanceProvider({ children }) {
-  const { user, isSignedIn, loading, hrUsers, adminUsers, ceoUsers } =
+  const { user, isSignedIn, loading,  } =
     useContext(AuthContext);
   const { storeNotification } = useNotifications();
   const queryClient = useQueryClient();
@@ -272,15 +272,19 @@ export function AttendanceProvider({ children }) {
   const [currentBreakElapsed, setCurrentBreakElapsed] = useState(0);
   const [isCheckedOut, setIsCheckedOut] = useState(false);
   const [userData,setUserData]=useState(null)
-
+ 
   /* ---------------- TIMER CONTROL ---------------- */
     const fetchUserssData=async()=>{
     try{
-      const res=await axios.get("/hrms/employee/list")
-    console.log("-------------------",res.data.result)}catch(err){
+      const res=await axios.get("/hrms/roles/get-employee")
+      setUserData(res.data.result)
+    console.log("userData-------------------",res.data.result)}catch(err){
       console.log("-------------------------Failed to fetch user data for attendance context:",err)
     }}
-    useEffect(()=>{ fetchUserssData()},[ isSignedIn])
+    useEffect(()=>{if(isSignedIn) fetchUserssData()},[ isSignedIn])
+
+
+  /* ---------------- TIMER CONTROL ---------------- */
 
   const stopWorkTimer = () => {
     if (workTimerRef.current) clearInterval(workTimerRef.current);
@@ -386,13 +390,12 @@ export function AttendanceProvider({ children }) {
     }
   }, [isCheckedIn, isOnBreak]);
 
-
-
   /* ---------------- LATE CHECK-IN NOTIFICATION ---------------- */
 
   const sendLateNotifications = async (lateData) => {
     const { minutesLate, checkInTime, shiftStartTime, reportingManagerId } =
       lateData;
+
     try {
       // 🛡️ Prevent duplicate notifications
       const notified = new Set();
@@ -425,41 +428,42 @@ export function AttendanceProvider({ children }) {
         priority: "Medium",
         senderId: user._id,
       });
-//array[i].usrRole.includes("SuperAdmin")
-      // 3️⃣ HR Users
-      for (const hr of hrUsers || []) {
-        await notify({
-          receiverId: hr._id,
-          notificationTitle: "⏰ Late Check-In (HR)",
-          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
-          relatedDomainType: "Attendance",
-          priority: "Low",
-          senderId: user._id,
-        });
+
+      // 3️⃣ HR / Admin / SuperAdmin
+      for (const u of userData) {
+        if (u.userRole?.includes("HR")) {
+          await notify({
+            receiverId: u._id,
+            notificationTitle: "⏰ Late Check-In (HR)",
+            notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+            relatedDomainType: "Attendance",
+            priority: "Low",
+            senderId: user._id,
+          });
+        }
+
+        if (u.userRole?.includes("Admin")) {
+          await notify({
+            receiverId: u._id,
+            notificationTitle: "🚨 Late Check-In (Admin)",
+            notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+            relatedDomainType: "Attendance",
+            priority: "High",
+            senderId: user._id,
+          });
+        }
+
+        if (u.userRole?.includes("SuperAdmin")) {
+          await notify({
+            receiverId: u._id, // ← avoid hardcoded ID unless required
+            notificationTitle: "🚨 Late Check-In (CEO)",
+            notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+            relatedDomainType: "Attendance",
+            priority: "High",
+            senderId: user._id,
+          });
+        }
       }
-
-      // 4️⃣ Admin Users
-      for (const admin of adminUsers || []) {
-        await notify({
-          receiverId: admin._id,
-          notificationTitle: "🚨 Late Check-In (Admin)",
-          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
-          relatedDomainType: "Attendance",
-          priority: "High",
-          senderId: user._id,
-        });
-      }
-
-
-        await notify({
-          receiverId: "6948e367580596d9f92e6326",
-          notificationTitle: "🚨 Late Check-In (CEO)",
-          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
-          relatedDomainType: "Attendance",
-          priority: "High",
-          senderId: user._id,
-        });
-      
 
       console.log("✅ All late check-in notifications stored successfully");
     } catch (error) {

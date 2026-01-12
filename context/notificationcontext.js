@@ -541,7 +541,7 @@ const NotificationContext = createContext();
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [notificationLoading, setLoading] = useState(false);
   const [fcmToken, setFcmToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   // Track processed notification IDs to prevent duplicates
@@ -1069,7 +1069,7 @@ export const NotificationProvider = ({ children }) => {
   const value = {
     notifications,
     unreadCount,
-    loading,
+    notificationLoading,
     permission,
     fcmToken,
     fetchNotifications,
