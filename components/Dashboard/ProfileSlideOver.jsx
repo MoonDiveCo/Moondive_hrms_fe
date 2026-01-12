@@ -204,7 +204,7 @@ export default function ProfileSlideOver({
       } else {
         // try backend endpoint as extra
         try {
-          await axios.post('/auth/logout', {}, { withCredentials: true });
+          await axios.post('/user/logout', {}, { withCredentials: true });
         } catch (e) {
           // ignore if it fails
         }
