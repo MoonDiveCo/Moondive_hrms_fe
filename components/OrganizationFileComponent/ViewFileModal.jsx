@@ -275,8 +275,8 @@ export default function ViewFileModal({
 
   // SUPER ADMIN & HR VIEW - Full Featured
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4 ">
+      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col hide-scrollbar">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
           <div>
@@ -289,7 +289,7 @@ export default function ViewFileModal({
         </div>
 
         {/* Body - Single Column */}
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1 hide-scrollbar">
           
           {/* File Preview */}
           <a
@@ -419,7 +419,7 @@ export default function ViewFileModal({
               </div>
 
               {/* Table Body */}
-              <div className="max-h-60 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto hide-scrollbar">
                 {allowedUsers.map((entry) => {
                   const empUser = entry.user;
                   const acknowledged = entry.acknowledgementStatus === 'ACKNOWLEDGED';
@@ -427,7 +427,7 @@ export default function ViewFileModal({
                   return (
                     <div
                       key={empUser?._id}
-                      className="grid grid-cols-12 px-4 py-2.5 items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                      className="grid grid-cols-12 px-4 py-2.5 items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors "
                     >
                       {/* Employee Name */}
                       <div className="col-span-6">
