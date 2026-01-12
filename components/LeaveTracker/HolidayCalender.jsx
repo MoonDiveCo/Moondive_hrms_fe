@@ -6,6 +6,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import axios from "axios";
+import LeadList from "../CrmDashboard/LeadList";
 
 const HOLIDAY_COLORS = {
   PUBLIC: "#FF7B30",
@@ -23,9 +24,34 @@ export default function HolidayCalender({
   onApplyLeave,
   onViewLeave,
   onRefresh,
+  leaves = [],
 }) {
+  console.log("leaves",leaves)
   const [events, setEvents] = useState([]);
   const calendarRef = useRef(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const prevLeavesRef = useRef(null);
+  useEffect(() => {
+    const prev = prevLeavesRef.current;
+    const next = leaves || [];
+
+    if (!prev) {
+      prevLeavesRef.current = next;
+      return;
+    }
+
+    const prevMap = new Map(prev.map((l) => [l.id, l.status]));
+    const changed =
+      prev.length !== next.length || next.some((l) => prevMap.get(l.id) !== l.status);
+
+    if (changed) {
+      setReloadKey((k) => k + 1);
+    }
+
+    prevLeavesRef.current = next;
+  }, [leaves]);
+
   // const currentYear = new Date().getFullYear();
   async function fetchCalendarData(info) {
       const viewStart = info?.view?.currentStart || info.start;
@@ -48,22 +74,30 @@ export default function HolidayCalender({
           backgroundColor: HOLIDAY_COLORS[d.type],
         })) || [];
 
-    const leaveRes = await axios.get("/hrms/leave/get-leave", {
-      params: { year, month },
-    });
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
 
     const leaveEvents =
-      leaveRes.data?.leaves?.map((l) => ({
-        id: l.id,
-        title: l.leaveType,
-        start: l.startDate,
-        end: l.endDate,
-        allDay: l.isHalfDay,
-        session: l.isHalfDay ? l.session : "Full Day",
-        source: "LEAVE",
-        status: l.status,
-        backgroundColor: LEAVE_COLORS[l.status],
-      })) || [];
+      leaves
+        .filter((l) => l.status !== "Pending")
+        .filter((l) => {
+          console.log(l)
+          const start = new Date(l.startDate);
+          const end = new Date(l.endDate);
+          return !(end < firstDay || start > lastDay);
+        })
+        .map((l) => ({
+          id: l.id,
+          title: l.leaveType,
+          start: l.startDate,
+          end: l.endDate,
+          allDay: l.isHalfDay,
+          session: l.isHalfDay ? l.session : "Full Day",
+          source: "LEAVE",
+          status: l.status,
+          backgroundColor: LEAVE_COLORS[l.status],
+        })) || [];
+
     setEvents([...holidayEvents, ...leaveEvents]);
   }
 
@@ -80,8 +114,8 @@ today.setHours(0, 0, 0, 0);
 
   if (clickedDate < today) return;
 
-  onApplyLeave(info.dateStr, refreshCalendar);
-}
+  onApplyLeave(info.dateStr);
+} 
 
 
   function handleEventClick(info) {
@@ -92,16 +126,8 @@ today.setHours(0, 0, 0, 0);
   }
 
     function refreshCalendar() {
-    const api = calendarRef.current?.getApi();
-    if (!api) return;
-
-    api.removeAllEvents();
-
-    fetchCalendarData({
-      view: api.view,
-      start: api.view.currentStart,
-    });
-  }
+  setReloadKey((prev) => prev + 1);
+}
 
     useEffect(() => {
     onRefresh?.(refreshCalendar);
@@ -110,6 +136,7 @@ today.setHours(0, 0, 0, 0);
   return (
     <div className="bg-white border border-gray-300 rounded-2xl flex-1 h-full p-4">
       <FullCalendar
+        key={reloadKey}
         ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
         initialView="dayGridMonth"

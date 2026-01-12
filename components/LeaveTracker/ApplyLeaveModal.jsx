@@ -5,8 +5,6 @@ import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { useNotifications } from "../../context/notificationcontext"; // Import notification context
 
-
-
 function getDatesBetween(start, end) {
   const dates = [];
   let current = new Date(start);
@@ -31,8 +29,6 @@ function getDatesBetween(start, end) {
 
   return dates;
 }
-
-
 
 export default function ApplyLeaveModal({
   context,
@@ -60,24 +56,29 @@ export default function ApplyLeaveModal({
     return d;
   }, []);
   // today.setHours(0, 0, 0, 0);
-// const todayStr = today.toLocaleDateString("en-CA");
+  // const todayStr = today.toLocaleDateString("en-CA");
 
   const todayStr = today.toISOString().split("T")[0];
   const isOptionalLeave = leaveType === "OL";
 
+  const isPastOptionalHoliday = useMemo(() => {
+    if (!isOptionalLeave || !fromDate) return false;
+    return fromDate < todayStr;
+  }, [isOptionalLeave, fromDate, todayStr]);
   const optionalHolidays = useMemo(() => {
     return holidays
-      .filter(
-        (h) =>
-          h.isActive &&
-          h.type === "OPTIONAL" &&
-          new Date(h.date) >= today
-      )
+      .filter((h) => {
+        if (!h.isActive || h.type !== "OPTIONAL") return false;
+
+        const holidayDate = h.date.split("T")[0];
+
+        return holidayDate >= todayStr;
+      })
       .map((h) => ({
-        date: new Date(h.date).toISOString().split("T")[0],
+        date: h.date.split("T")[0],
         name: h.name || "Optional Holiday",
       }));
-  }, [holidays, today]);
+  }, [holidays, todayStr]);
 
   const handleOptionalHolidaySelect = (date) => {
     if (!date) return;
@@ -107,7 +108,7 @@ export default function ApplyLeaveModal({
     const set = new Set();
 
     allLeaves.forEach((leave) => {
-      if (leave.leaveStatus  === "Rejected") return;
+      if (leave.leaveStatus === "Rejected") return;
 
       const start = new Date(leave.startDate);
       const end = new Date(leave.endDate);
@@ -116,9 +117,7 @@ export default function ApplyLeaveModal({
       // end.setHours(0, 0, 0, 0);
 
       while (start <= end) {
-       set.add(
-        start.toLocaleDateString("en-CA") 
-      );
+        set.add(start.toLocaleDateString("en-CA"));
         start.setDate(start.getDate() + 1);
       }
     });
@@ -135,8 +134,7 @@ export default function ApplyLeaveModal({
 
       const day = dateObj.getDay();
 
-      if (dateObj < today)
-        return { ...d, enabled: false, reason: "PAST" };
+      if (dateObj < today) return { ...d, enabled: false, reason: "PAST" };
 
       if (day === 0 || day === 6)
         return { ...d, enabled: false, reason: "WEEKEND" };
@@ -158,7 +156,10 @@ export default function ApplyLeaveModal({
 
       let start = i;
       let end = i;
-      while (end + 1 < res.length && [0, 6].includes(new Date(res[end + 1].date).getDay())) {
+      while (
+        end + 1 < res.length &&
+        [0, 6].includes(new Date(res[end + 1].date).getDay())
+      ) {
         end++;
       }
 
@@ -214,14 +215,15 @@ export default function ApplyLeaveModal({
       ? balance.availableThisMonth
       : 0;
 
-  const carryForwarded =
-    balance?.canCarryForward ? balance?.carryForwarded ?? 0 : 0;
+  const carryForwarded = balance?.canCarryForward
+    ? balance?.carryForwarded ?? 0
+    : 0;
 
   const rawAvailable = isUnlimited
     ? Infinity
     : isWindowed
-      ? monthlyAvailable
-      : monthlyAvailable + carryForwarded;
+    ? monthlyAvailable
+    : monthlyAvailable + carryForwarded;
 
   const effectiveAvailable =
     rawAvailable === Infinity
@@ -232,10 +234,14 @@ export default function ApplyLeaveModal({
 
   const canSubmit =
     totalRequested > 0 &&
-    (effectiveAvailable === Infinity ||
-      totalRequested <= effectiveAvailable);
+    !isPastOptionalHoliday &&
+    (effectiveAvailable === Infinity || totalRequested <= effectiveAvailable);
 
   const availabilityMessage = useMemo(() => {
+    if (isPastOptionalHoliday) {
+      return "Past optional holiday cannot be applied.";
+    }
+
     if (!leaveType || !balance) return null;
 
     if (effectiveAvailable === Infinity) return null;
@@ -262,72 +268,70 @@ export default function ApplyLeaveModal({
   ]);
 
   // 🔔 Send notification to reporting manager
-//  const sendLeaveNotification = async (reportingManagerId) => {
-//   try {
-//     if (!reportingManagerId) {
-//       console.log("No reporting manager to notify");
-//       return;
-//     }
-//     const leaveTypeName = balance?.name || leaveType;
-//     const daysText = totalRequested === 1 ? "day" : "days";
-//     const payload = {
-//       receiverId: reportingManagerId,
-//       notificationTitle: "New Leave Request",
-//       notificationMessage: `${currentUser?.name || "An employee"} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
-//       relatedDomainType: "Leave Management",
-//       priority: totalRequested >= 5 ? "High" : "Medium",
-//       senderId: currentUser?._id,
-//     };
+  //  const sendLeaveNotification = async (reportingManagerId) => {
+  //   try {
+  //     if (!reportingManagerId) {
+  //       console.log("No reporting manager to notify");
+  //       return;
+  //     }
+  //     const leaveTypeName = balance?.name || leaveType;
+  //     const daysText = totalRequested === 1 ? "day" : "days";
+  //     const payload = {
+  //       receiverId: reportingManagerId,
+  //       notificationTitle: "New Leave Request",
+  //       notificationMessage: `${currentUser?.name || "An employee"} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
+  //       relatedDomainType: "Leave Management",
+  //       priority: totalRequested >= 5 ? "High" : "Medium",
+  //       senderId: currentUser?._id,
+  //     };
 
-//     await storeNotification(payload);
-//   } catch (error) {
-//     console.error(" Failed to store notification:", error);
-//   }
-// };
-const getSenderName = () => {
-  try {
-    const user = JSON.parse(localStorage.getItem("user"));
+  //     await storeNotification(payload);
+  //   } catch (error) {
+  //     console.error(" Failed to store notification:", error);
+  //   }
+  // };
+  const getSenderName = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
 
-    if (!user) return "An employee";
+      if (!user) return "An employee";
 
-    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "An employee";
-  } catch (error) {
-    return "An employee";
-  }
-};
-
-console.log("Sender Name--------------------:", getSenderName());
-
-
-const sendLeaveNotification = async (reportingManagerId) => {
-  try {
-    if (!reportingManagerId) {
-      console.log("No reporting manager to notify");
-      return;
+      return (
+        `${user.firstName || ""} ${user.lastName || ""}`.trim() || "An employee"
+      );
+    } catch (error) {
+      return "An employee";
     }
+  };
 
-    const senderName = getSenderName(); // ✅ FETCHED FROM STORAGE
-    const leaveTypeName = balance?.name || leaveType;
-    const daysText = totalRequested === 1 ? "day" : "days";
+  console.log("Sender Name--------------------:", getSenderName());
 
-    const payload = {
-      receiverId: reportingManagerId,
-      senderId: currentUser?._id || currentUser?.id,
-      senderName, 
-      notificationTitle: "New Leave Request",
-      notificationMessage: `${senderName} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
-      relatedDomainType: "Leave Management",
-      priority: totalRequested >= 5 ? "High" : "Medium",
-    };
+  const sendLeaveNotification = async (reportingManagerId) => {
+    try {
+      if (!reportingManagerId) {
+        console.log("No reporting manager to notify");
+        return;
+      }
 
-    await storeNotification(payload);
-  } catch (error) {
-    console.error("Failed to store notification:", error);
-  }
-};
+      const senderName = getSenderName(); // ✅ FETCHED FROM STORAGE
+      const leaveTypeName = balance?.name || leaveType;
+      const daysText = totalRequested === 1 ? "day" : "days";
 
+      const payload = {
+        receiverId: reportingManagerId,
+        senderId: currentUser?._id || currentUser?.id,
+        senderName,
+        notificationTitle: "New Leave Request",
+        notificationMessage: `${senderName} has applied for ${totalRequested} ${daysText} of ${leaveTypeName} leave from ${fromDate} to ${toDate}.`,
+        relatedDomainType: "Leave Management",
+        priority: totalRequested >= 5 ? "High" : "Medium",
+      };
 
-
+      await storeNotification(payload);
+    } catch (error) {
+      console.error("Failed to store notification:", error);
+    }
+  };
 
   async function handleSubmit() {
     if (!canSubmit || !leaveType) return;
@@ -347,13 +351,19 @@ const sendLeaveNotification = async (reportingManagerId) => {
             reasonType: d.reason,
           })),
       };
-      // Submit leave application
+
       const response = await axios.post("/hrms/leave/add-leave", payload);
       if (response.data?.data?.length) {
-      const reportingManagerId = response.data.data[0].reportingIds;
-      
-      await sendLeaveNotification(reportingManagerId);
-}
+        const reportingManagerId = response.data.data[0].reportingIds;
+
+        await sendLeaveNotification(reportingManagerId);
+      }
+      try {
+        await context?.refreshDashboard?.();
+      } catch (err) {
+        console.error("Dashboard refresh failed", err);
+      }
+
       context?.refreshCalendar?.();
       onClose();
     } catch (err) {
@@ -419,7 +429,8 @@ const sendLeaveNotification = async (reportingManagerId) => {
           {days.length > 0 && (
             <div className="space-y-2 max-h-48 overflow-auto border rounded-lg p-3 bg-gray-50">
               {days.map((d) => {
-                const isDisabled = d.reason === "SANDWICH" ? d.enabled : !d.enabled;
+                const isDisabled =
+                  d.reason === "SANDWICH" ? d.enabled : !d.enabled;
                 const reasonLabel = {
                   PAST: "Past date",
                   WEEKEND: "Weekend",
@@ -447,7 +458,9 @@ const sendLeaveNotification = async (reportingManagerId) => {
                   >
                     <span>{d.date}</span>
                     {isDisabled && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${reasonColor}`}>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${reasonColor}`}
+                      >
                         {reasonLabel}
                       </span>
                     )}

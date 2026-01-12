@@ -26,7 +26,7 @@ export default function AttendanceViewPage() {
   return (
     <div>
       {/* STICKY HEADER */}
-      <div className="  sticky top-0 z-30  bg-white  p-4 mb-2 ">
+      <div className="  sticky top-0 z-30  p-4 mb-2 ">
         {/* Top Orange Bar - Optional Decor */}
 
         <div className="px-10 py-4 ">
@@ -81,7 +81,7 @@ export default function AttendanceViewPage() {
                 className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition shadow-sm"
               >
                 <FileText size={16} />
-                Regularize
+                Manage Late Check-In
               </button>
             </div>
           </div>
@@ -110,6 +110,7 @@ export default function AttendanceViewPage() {
           )}
         </div>
       </div>
+        {/* <TimeScaleFooter/> */}
     
         {showRegModal && <RequestRegularization onClose={()=>setShowRegModal(false)} />}
      
@@ -121,7 +122,7 @@ function ViewButton({ active, children, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`p-3 rounded-md transition-all ${
+      className={`p-3 rounded-md transition-all cursor-pointer ${
         active
           ? "bg-orange-500 text-white shadow-sm"
           : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"

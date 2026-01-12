@@ -91,15 +91,20 @@ export default function TimelineRow({
           <>
             {/* Check-in */}
             {checkIn && (
-              <div className="absolute left-8 top-3 z-10 text-left">
                 <div className="font-semibold text-sm">
                   {new Date(checkIn).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
                 </div>
+<<<<<<< HEAD
                 { <CheckInBadge time={checkIn} status="onTime" /> }
               </div>
+=======
+              // <div className="absolute left-8 top-3 z-10 text-left">
+              //   <CheckInBadge time={checkIn} status={status} />
+              // </div>
+>>>>>>> 6c6ff4696f1c30cc1a7247c63ebe84ffb53420f5
             )}
 
             {/* Timeline */}
