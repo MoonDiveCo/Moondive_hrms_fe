@@ -24,18 +24,47 @@ function ServiceItem({ title, icon, onClick }) {
   return (
     <button
       onClick={onClick}
-      className='group flex flex-col items-center justify-center p-6 cursor-pointer transition-all duration-200 text-gray-600 hover:text-primary'
-      type='button'
+      className="
+        group flex flex-col items-center justify-center
+        p-6 rounded-2xl cursor-pointer
+        transition-all duration-300
+        text-gray-600 hover:text-orange-600
+        hover:-translate-y-1
+      "
+      type="button"
     >
-      <div className='w-12 h-12 flex items-center justify-center rounded-2xl mb-3 text-primary bg-orange-50/50 group-hover:bg-orange-100/50 transition-colors'>
-        <span className='material-symbols-outlined text-3xl'>
+      {/* ICON WRAPPER */}
+      <div
+        className="
+          w-14 h-14 flex items-center justify-center
+          rounded-2xl mb-3
+          bg-orange-50
+          group-hover:bg-orange-00
+          transition-all duration-300
+          shadow-sm group-hover:shadow-md
+        "
+      >
+        <span
+          className="
+            material-symbols-outlined
+            text-3xl
+            text-primary
+            group-hover:scale-110
+            transition-transform duration-300
+          "
+        >
           {iconMap[icon] || 'apps'}
         </span>
       </div>
-      <span className='text-sm font-medium'>{title}</span>
+
+      {/* TITLE */}
+      <span className="text-sm font-medium text-center">
+        {title}
+      </span>
     </button>
   );
 }
+
 
 /* ================= MAIN PAGE ================= */
 export default function Operations() {
