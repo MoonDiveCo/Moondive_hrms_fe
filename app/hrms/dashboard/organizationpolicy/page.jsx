@@ -411,7 +411,7 @@ export default function OrganizationPolicy() {
         </div>
       )}
 
-      <div className="p-3 bg-gray-50 min-h-screen hide">
+      <div className="p-3 bg-gray-50 min-h-screen hide-scrollbar">
         <div className="max-w-7xl mx-auto space-y-6">
 
           {/* HEADER */}
