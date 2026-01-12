@@ -52,7 +52,7 @@ export default function DateNavigator({
       {/* LEFT ARROW */}
       <button
         onClick={goPrev}
-        className="p-2 bg-primary rounded-md  hover:bg-orange-300 "
+        className="p-2 bg-primary rounded-md  hover:bg-orange-300 cursor-pointer"
       >
         <ChevronLeft size={16} className="text-white" />
       </button>
@@ -66,7 +66,7 @@ export default function DateNavigator({
       {/* RIGHT ARROW */}
       <button
         onClick={goNext}
-        className="p-2 bg-primary rounded-md  hover:bg-orange-300"
+        className="p-2 bg-primary rounded-md  hover:bg-orange-300 cursor-pointer"
       >
         <ChevronRight size={16} className="text-white"/>
       </button>

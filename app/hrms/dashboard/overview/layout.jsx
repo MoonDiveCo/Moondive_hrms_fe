@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useContext } from "react";
 
 const OVERVIEW_TABS = [
-  { label: "MySpace", path: "/hrms/dashboard/overview/myspace" },
+  { label: "My Space", path: "/hrms/dashboard/overview/myspace" },
   { label: "Department", path: "/hrms/dashboard/overview/department" },
 ];
 
@@ -17,7 +17,7 @@ export default function OverviewLayout({ children }) {
   return (
     <div>
       {/* OVERVIEW SUB TABS */}
-     {!user.userRole.includes("SuperAdmin") && <div className="bg-white px-6">
+     {!user.userRole.includes("SuperAdmin") && <div className=" px-6">
         <div className="flex gap-10">
           {OVERVIEW_TABS.map((tab) => {
             const isActive = pathname.startsWith(tab.path);

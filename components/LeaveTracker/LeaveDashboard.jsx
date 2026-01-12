@@ -8,19 +8,32 @@ import ApplyLeaveModal from "./ApplyLeaveModal";
 import EventDetailsModal from "./EventDetailsModal";
 import LeaveRequestsModal from "./LeaveRequestModal";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import useSWR, { mutate } from "swr";
+
+const fetcherWithAuth = async (url) => {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  // Tolerate APIs that return either { data: { ... } } or { ... }
+  const data = res?.data?.data ?? res?.data;
+  return data;
+};
 
 export default function LeaveTrackerDashboard({showCalender = true }) {
   const [viewModal, setViewModal] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [applyLeaveContext, setApplyLeaveContext] = useState(null);
-  const [leaveDashboard, setLeaveDashboard] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [pendingLeaves, setPendingLeaves] = useState([]);
-  const [userPendingLeaves, setUserPendingLeaves] = useState([]);
-  const [holidays, setHolidays] = useState([]);
-  const [allLeaves, setAllLeaves] = useState([]);
+  // const [loading, setLoading] = useState(true);
+  // const [leaveDashboard, setLeaveDashboard] = useState([]);
+  // const [pendingLeaves, setPendingLeaves] = useState([]);
+  // const [userPendingLeaves, setUserPendingLeaves] = useState([]);
+  // const [holidays, setHolidays] = useState([]);
+  // const [allLeaves, setAllLeaves] = useState([]);
   const calendarRefreshRef = useRef(null);
+
 
   const { user } = useContext(AuthContext);
     const userRole = user?.userRole[0];
@@ -85,6 +98,105 @@ export default function LeaveTrackerDashboard({showCalender = true }) {
 ]
 
 
+useEffect(() => {
+  if (!user?._id) return;
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const sseUrl = `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+
+  const eventSource = new EventSource(sseUrl, { withCredentials: true });
+
+  eventSource.onmessage = (event) => {
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (err) {
+      console.error("Invalid SSE payload:", err, event.data);
+      return;
+    }
+
+    if (data.type === "LEAVE_APPLIED") {
+      const payload = data.payload || data.leave || data.leaveRequest || data.data;
+
+      if (payload) {
+        mutate("/hrms/leave/get-leave", (cached) => {
+          if (!cached) return cached;
+
+          const leaves = cached.leaves || [];
+          const leaveRequests = cached.leaveRequests || [];
+
+          const newLeaves = payload.leave ? [payload.leave, ...leaves] : leaves;
+          const newLeaveRequests = payload.leaveRequest ? [payload.leaveRequest, ...leaveRequests] : leaveRequests;
+
+          return {
+            ...cached,
+            leaves: newLeaves,
+            leaveRequests: newLeaveRequests,
+          };
+        }, false);
+      }
+
+      mutate("/hrms/leave/get-leave");
+    }
+
+    if (data.type === "LEAVE_UPDATED") {
+      const payload = data.payload || data.data;
+
+      if (payload) {
+        mutate("/hrms/leave/get-leave-dashboard", (cached) => {
+          if (!cached) return cached;
+          return cached; 
+        }, false);
+      }
+
+      mutate("/hrms/leave/get-leave-dashboard");
+      mutate("/hrms/leave/get-leave");
+
+      calendarRefreshRef.current?.();
+    }
+  };
+
+  eventSource.onerror = (err) => {
+    console.error("SSE error:", err);
+    eventSource.close();
+  };
+
+  return () => eventSource.close();
+}, [user?._id]);
+
+const isSuperAdmin = userRole === "SuperAdmin";
+
+const { data: dashboardRes, isLoading: dashboardLoading } = useSWR(
+  !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+const { data: holidayRes } = useSWR(
+  organizationId
+    ? `/hrms/holiday?organizationId=${organizationId}&year=${new Date().getFullYear()}`
+    : null,
+  fetcherWithAuth
+);
+
+const { data: leaveRes } = useSWR(
+  user?._id ? "/hrms/leave/get-leave" : null,
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+
+console.log("dashboardRes", dashboardRes);
+
+const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];
+const userPendingLeaves = dashboardRes?.pendingLeaves || dashboardRes?.data?.pendingLeaves || [];
+
+const holidays = holidayRes?.result?.data || [];
+
+const allLeaves = leaveRes?.leaves || [];
+const pendingLeaves = leaveRes?.leaveRequests || [];
+
+const loading = dashboardLoading && !isSuperAdmin;
 
   const leaveBalanceMap = useMemo(() => {
   return leaveDashboard.reduce((acc, l) => {
@@ -93,78 +205,50 @@ export default function LeaveTrackerDashboard({showCalender = true }) {
   }, {});
 }, [leaveDashboard]);
 
-useEffect(() => {
-  if (!user?._id) return;
 
-  const eventSource = new EventSource(
-    `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream`,
-    {withCredentials: true}
-  );
+// useEffect(() => {
+//   if (userRole !== "SuperAdmin") {
+//     fetchLeaveDashboard();
+//     // fetchLeaveRequests();
+//   } else {
+//     setLoading(false);
+//   }
+// }, [userRole]);
 
-  eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    // console.log("Received SSE event:", data);
-    if (data.type === "LEAVE_APPLIED") {
-      fetchLeaveRequests();
-    }
-
-    if (data.type === "LEAVE_UPDATED") {
-      fetchLeaveDashboard();
-      calendarRefreshRef.current?.();
-    }
-  };
-
-  eventSource.onerror = () => {
-    eventSource.close();
-  };
-
-  return () => eventSource.close();
-}, [user?._id]);
-
-
-
-
-useEffect(() => {
-  if (userRole !== "SuperAdmin") {
-    fetchLeaveDashboard();
-    fetchLeaveRequests();
-  } else {
-    setLoading(false);
-  }
-}, [userRole]);
-
-    const fetchLeaveDashboard = async () => {
-    try {
-      const { data } = await axios.get("/hrms/leave/get-leave-dashboard");
-      const holidays = await axios.get("/hrms/holiday", {
-        params: { organizationId, year: new Date().getFullYear() },
-      });
-    const leaves = await axios.get("/hrms/leave/get-leave", {
-      params: { year: new Date().getFullYear() },
-    });
+  //   const fetchLeaveDashboard = async () => {
+  //   try {
+  //     const { data } = await axios.get("/hrms/leave/get-leave-dashboard");
+  //     const holidays = await axios.get("/hrms/holiday", {
+  //       params: { organizationId, year: new Date().getFullYear() },
+  //     });
+  //   const leaves = await axios.get("/hrms/leave/get-leave", {
+  //     params: { year: new Date().getFullYear() },
+  //   });
       
-      setLeaveDashboard(data.dashboard || []);
-      setUserPendingLeaves(data.pendingLeaves || []);
-      setHolidays(holidays.data?.result?.data || []);
-      setAllLeaves(leaves.data?.leaves || []);
-    } catch (err) {
-      console.error("Failed to load leave dashboard", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setLeaveDashboard(data.dashboard || []);
+  //     setUserPendingLeaves(data.pendingLeaves || []);
+  //     setHolidays(holidays.data?.result?.data || []);
+  //     setAllLeaves(leaves.data?.leaves || []);
+  //     setPendingLeaves(leaves?.data?.leaveRequests || []);
 
-    const fetchLeaveRequests = async () => {
-    try {
-      const leaveRes = await axios.get("/hrms/leave/get-leave");
-      // console.log(leaveRes?.data?.leaveRequests )
-      setPendingLeaves(leaveRes?.data?.leaveRequests || []);
-    } catch (err) {
-      console.error("Failed to load leaves", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   } catch (err) {
+  //     console.error("Failed to load leave dashboard", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  //   const fetchLeaveRequests = async () => {
+  //   try {
+  //     const leaveRes = await axios.get("/hrms/leave/get-leave");
+  //     console.log(leaveRes?.data?.leaveRequests )
+  //     setPendingLeaves(leaveRes?.data?.leaveRequests || []);
+  //   } catch (err) {
+  //     console.error("Failed to load leaves", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
    if(loading){
     return(
@@ -207,7 +291,7 @@ useEffect(() => {
               key={leave.code}
               code={leave.code} 
               title={leave.name}
-              available={leave.availableThisYear}
+              available={leave.available}
               taken={leave.taken}
               unlimited={leave.unlimited}
               carryForwarded={leave.carryForwarded}
@@ -247,6 +331,7 @@ useEffect(() => {
 
      {showCalender && <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
         <HolidayCalendar organizationId={user.organizationId}  
+        leaves={allLeaves}
         onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
         onViewLeave={(data) => setSelectedLeave(data)}
          onRefresh={(fn) => (calendarRefreshRef.current = fn)}
@@ -259,19 +344,24 @@ useEffect(() => {
           requests={pendingLeaves}
           myLeaves={allLeaves}
           onClose={() => setViewModal(false)}
-          onResolved={(leaveId) =>
-            setPendingLeaves((prev) =>
-              prev.filter((l) => l.leaveId !== leaveId)
-            )
-          }
+        onResolved={async (leaveId) => {
+        // Ensure the latest leaves & dashboard data are fetched, then refresh calendar
+        await mutate("/hrms/leave/get-leave");
+        await mutate("/hrms/leave/get-leave-dashboard");
+        calendarRefreshRef.current?.();
+      }}
         />
       )}
 
      {applyLeaveContext && (
       <ApplyLeaveModal
-         context={{
+       context={{
           ...applyLeaveContext,
-          refreshCalendar: calendarRefreshRef.current,
+          refreshCalendar: () => calendarRefreshRef.current?.(),
+          refreshDashboard: () => {
+            mutate("/hrms/leave/get-leave-dashboard");
+            mutate("/hrms/leave/get-leave");
+          },
         }}
         pendingLeaves={userPendingLeaves}
         leaveBalances={leaveBalanceMap}
@@ -321,87 +411,6 @@ useEffect(() => {
   );
 }
 
-
-// function LeaveCard({
-//   title,
-//   availableThisMonth,
-//   availableThisYear,
-//   taken,
-//   carryForwarded,
-//   unlimited,
-//   isLWP,
-//   canCarryForward,
-//   isWindowed,
-//   windowInfo,
-// }) {
-//   return (
-//     <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
-
-//       <p className="text-sm font-medium text-gray-500">{title}</p>
-
-//       {isLWP ? (
-//         <p className="">
-//           <span className="font-semibold text-3xl text-primaryText">{taken}</span> <span className="text-sm text-gray-500">Taken</span>
-//         </p>
-//       ) : (
-//         <>
-//           {isWindowed ? (<div>
-//            <span className="text-3xl font-semibold text-primaryText">
-//             {windowInfo.available}
-//           </span>
-//           <span className="text-sm text-gray-500"> available /{windowInfo.months} months</span>
-
-//               <p className="text-sm  text-gray-500">
-//                 <span className="font-semibold text-gray-500">
-//                   {availableThisYear}
-//                 </span>{" "}
-//                 Available/ year
-//               </p>
-//               </div>
-//           ) : (
-//             <>
-//               <span >
-//                 <span className="font-semibold text-4xl text-primaryText">
-//                   {availableThisMonth + carryForwarded}
-//                 </span>{" "}
-//                 <span className="text-sm text-gray-500">
-//                 Available/ month</span>
-//               </span>
-
-//               <p className="text-sm text-gray-500">
-//                 <span className="font-semibold ">
-//                   {availableThisYear}
-//                 </span>{" "}
-//                 Available/ year
-//               </p>
-//             </>
-//           )}
-
-//           <div className="border-t border-dashed border-gray-200 my-2" />
-
-//           {!unlimited && (
-//             <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-//               <p>
-//                 <span className="font-medium text-gray-800">{taken}</span>{" "}
-//                 Taken
-//               </p>
-
-//               {canCarryForward && (
-//                 <p>
-//                   <span className="font-medium text-gray-800">
-//                     {carryForwarded}
-//                   </span>{" "}
-//                   CF
-//                 </p>
-//               )}
-//             </div>
-//           )}
-//         </>
-//       )}
-//     </div>
-//   );
-// }
-
 function LeaveCard({
   code,
   title,
@@ -414,6 +423,7 @@ function LeaveCard({
   canCarryForward,
   isWindowed,
   windowInfo,
+  available,
 }) {
   let primaryValue = 0;
   let subLabel = "";
@@ -425,7 +435,7 @@ function LeaveCard({
     primaryValue = windowInfo.available;
     subLabel = `Available / ${windowInfo.months} months`;
   } else {
-    primaryValue = availableThisMonth + (carryForwarded || 0);
+    primaryValue = available || 0;
     subLabel = "Available / Month";
   }
 

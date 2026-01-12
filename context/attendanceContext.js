@@ -517,7 +517,7 @@ export function AttendanceProvider({ children }) {
       return { message: res.data.message || "Checked in successfully" };
     } catch (err) {
       throw err.response?.data || { message: "Check-in failed" };
-    }
+    } 
   };
 
   const checkOut = async () => {
@@ -591,6 +591,7 @@ export function AttendanceProvider({ children }) {
         checkOut,
         breakIn,
         breakOut,
+        isCheckedOut
       }}
     >
       {children}

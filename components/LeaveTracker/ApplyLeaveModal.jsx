@@ -65,19 +65,26 @@ export default function ApplyLeaveModal({
   const todayStr = today.toISOString().split("T")[0];
   const isOptionalLeave = leaveType === "OL";
 
-  const optionalHolidays = useMemo(() => {
-    return holidays
-      .filter(
-        (h) =>
-          h.isActive &&
-          h.type === "OPTIONAL" &&
-          new Date(h.date) >= today
-      )
-      .map((h) => ({
-        date: new Date(h.date).toISOString().split("T")[0],
-        name: h.name || "Optional Holiday",
-      }));
-  }, [holidays, today]);
+  const isPastOptionalHoliday = useMemo(() => {
+  if (!isOptionalLeave || !fromDate) return false;
+  return fromDate < todayStr;
+}, [isOptionalLeave, fromDate, todayStr]);
+const optionalHolidays = useMemo(() => {
+  return holidays
+    .filter((h) => {
+      if (!h.isActive || h.type !== "OPTIONAL") return false;
+
+      const holidayDate = h.date.split("T")[0]; 
+
+      return holidayDate >= todayStr;
+    })
+    .map((h) => ({
+      date: h.date.split("T")[0],
+      name: h.name || "Optional Holiday",
+    }));
+}, [holidays, todayStr]);
+
+
 
   const handleOptionalHolidaySelect = (date) => {
     if (!date) return;
@@ -230,12 +237,19 @@ export default function ApplyLeaveModal({
 
   const name = balance?.name ?? "";
 
-  const canSubmit =
-    totalRequested > 0 &&
-    (effectiveAvailable === Infinity ||
-      totalRequested <= effectiveAvailable);
+const canSubmit =
+  totalRequested > 0 &&
+  !isPastOptionalHoliday &&
+  (effectiveAvailable === Infinity ||
+    totalRequested <= effectiveAvailable);
+
 
   const availabilityMessage = useMemo(() => {
+
+      if (isPastOptionalHoliday) {
+    return "Past optional holiday cannot be applied.";
+  }
+
     if (!leaveType || !balance) return null;
 
     if (effectiveAvailable === Infinity) return null;
@@ -347,13 +361,14 @@ const sendLeaveNotification = async (reportingManagerId) => {
             reasonType: d.reason,
           })),
       };
-      // Submit leave application
-      const response = await axios.post("/hrms/leave/add-leave", payload);
-      if (response.data?.data?.length) {
-      const reportingManagerId = response.data.data[0].reportingIds;
-      
-      await sendLeaveNotification(reportingManagerId);
-}
+
+      await axios.post("/hrms/leave/add-leave", payload);
+      try {
+        await context?.refreshDashboard?.();
+      } catch (err) {
+        console.error("Dashboard refresh failed", err);
+      }
+
       context?.refreshCalendar?.();
       onClose();
     } catch (err) {
