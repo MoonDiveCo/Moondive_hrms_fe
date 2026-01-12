@@ -122,7 +122,7 @@ export default function ViewFileModal({
         <div className="bg-white w-full max-w-[40%] rounded-xl shadow-2xl">
           {/* Header */}
           <div className="px-5 py-4 border-b">
-            <h2 className="text-lg font-bold text-gray-900">Policy Document</h2>
+            <h3 className="text-lg font-bold text-gray-900">Policy Document</h3>
           </div>
 
           {/* Body */}
@@ -275,12 +275,12 @@ export default function ViewFileModal({
 
   // SUPER ADMIN & HR VIEW - Full Featured
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center p-4 ">
+      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col hide-scrollbar">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">File Details</h2>
+            <h3 className="text-lg font-bold text-gray-900">File Details</h3>
             <p className="text-sm text-gray-500 mt-1">Review and manage document</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -289,7 +289,7 @@ export default function ViewFileModal({
         </div>
 
         {/* Body - Single Column */}
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1 hide-scrollbar">
           
           {/* File Preview */}
           <a
@@ -405,10 +405,8 @@ export default function ViewFileModal({
               {/* Header */}
               <div className="bg-white px-4 py-3 border-b">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-sm font-bold text-gray-900">TRACKING & COMPLIANCE</h3>
-                  <div className="text-xs font-bold text-[#FF7B30]">
-                    {acknowledgedCount} / {totalCount} RECIPIENTS
-                  </div>
+                  <h4 className="text-sm font-bold text-gray-900">TRACKING & COMPLIANCE</h4>
+
                 </div>
                 <p className="text-xs text-gray-500">Monitor employee acknowledgements</p>
               </div>
@@ -421,7 +419,7 @@ export default function ViewFileModal({
               </div>
 
               {/* Table Body */}
-              <div className="max-h-60 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto hide-scrollbar">
                 {allowedUsers.map((entry) => {
                   const empUser = entry.user;
                   const acknowledged = entry.acknowledgementStatus === 'ACKNOWLEDGED';
@@ -429,7 +427,7 @@ export default function ViewFileModal({
                   return (
                     <div
                       key={empUser?._id}
-                      className="grid grid-cols-12 px-4 py-2.5 items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                      className="grid grid-cols-12 px-4 py-2.5 items-center border-b last:border-b-0 hover:bg-gray-50 transition-colors "
                     >
                       {/* Employee Name */}
                       <div className="col-span-6">
