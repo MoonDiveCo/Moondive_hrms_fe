@@ -18,13 +18,27 @@ export default function HRHelpdeskPage() {
   const lastFocusedRef = useRef(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteRow, setDeleteRow] = useState(null);
-  
-  // New state to track viewed requests
-  const [viewedRequests, setViewedRequests] = useState(new Set());
-  
+  const [profile, setProfile] = useState(null);
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+
+  useEffect(() => {
+  async function fetchProfile() {
+    try {
+      const res = await axios.get('/user/get-profile');
+      setProfile(res.data?.result || null);
+    } catch (err) {
+      console.error('Failed to fetch profile');
+      setProfile(null);
+    }
+  }
+
+  fetchProfile();
+}, []);
+
 
   useEffect(() => {
     fetchData();
@@ -51,10 +65,6 @@ export default function HRHelpdeskPage() {
     }
   }
 
-  /* ---------- UNVIEWED RECEIVED COUNT ---------- */
-const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
-
-
   /* ---------- PAGINATION ---------- */
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -72,34 +82,37 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
     setOpen(true);
   }
 
+  // Helper to check if request is approved
+  const isApproved = (row) => {
+    return row.status === 'Approved';
+  };
+
+
+  
+  // Updated openView function with conditional logic
   async function openView(row, e) {
   lastFocusedRef.current = e?.currentTarget;
   setSelected(row);
 
-  // 🔥 Mark as viewed in backend
-  if (tab === 'received' && !row.viewed) {
+  // 🔥 MARK AS VIEWED (received tab only)
+  if (tab === 'received') {
     try {
-      await axios.post(`/hrms/hrhelpdesk/${row._id}/view`);
-
-
-      // Update UI instantly (no refetch needed)
-      setRows(prev =>
-        prev.map(r =>
-          r._id === row._id ? { ...r, viewed: true } : r
-        )
-      );
-    } catch {
-      // silent fail (UX > error spam)
+      await axios.post(`/hrms/hrhelpdesk/hrhelpdesk/${row._id}/view`);
+    } catch (e) {
+      console.error("Failed to mark viewed");
     }
   }
 
-  if (tab === 'received' && row.status === 'Approved') {
-    setViewOpen(true);
+  if (tab === 'received') {
+    if (isApproved(row)) {
+      setViewOpen(true);
+    } else {
+      setOpen(true);
+    }
   } else {
-    setOpen(true);
+    setViewOpen(true);
   }
 }
-
 
   function close() {
     setOpen(false);
@@ -111,6 +124,28 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
   function canEdit(row) {
     return row.status === 'Open' || row.status === 'Rejected';
   }
+
+  // Check if request can be acted upon (for received tab)
+  function canActOnRequest(row) {
+    return tab === 'received' && !isApproved(row);
+  }
+
+// Count unviewed received requests
+const unviewedCount = (() => {
+  if (tab !== 'received') return 0; // Only show badge on received tab
+
+  // if (!me) return 0; // wait for user info
+
+  
+  if (Array.isArray(profile.user.userRole) && profile.user.userRole.includes('HR')){
+    // HR sees only assignedTo
+    return rows.filter(r => r.assignedTo?.isViewed === false).length;
+  } else {
+    // Regular users see recipients
+    return rows.filter(r => r.recipients?.some(rec => rec.isViewed === false)).length;
+  }
+})();
+
 
   /* ---------- BADGE STYLES ---------- */
   const getPriorityStyle = (priority) => {
@@ -187,19 +222,29 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
       render: (r) => (
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
-            {/* VIEW */}
+            {/* VIEW BUTTON - Updated with tooltip */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 openView(r, e);
               }}
-              className="p-2 rounded-md hover:bg-orange-50 text-grey-600 transition-colors"
-              title="View"
+              className="p-2 rounded-md hover:bg-orange-50 text-grey-600 transition-colors group relative"
+              title={
+                tab === 'received' 
+                  ? (isApproved(r) ? 'View (Approved)' : 'Review & Respond')
+                  : 'View'
+              }
             >
               <Eye size={16} />
+              {/* Tooltip for received tab */}
+              {tab === 'received' && !isApproved(r) && (
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                  Review & Respond
+                </div>
+              )}
             </button>
 
-            {/* EDIT */}
+            {/* EDIT - Only for sent tab */}
             {tab === 'sent' && (
               <button
                 onClick={(e) => {
@@ -224,7 +269,7 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
               </button>
             )}
 
-            {/* DELETE */}
+            {/* DELETE - Only for sent tab */}
             {tab === 'sent' && (
               <button
                 onClick={(e) => {
@@ -238,8 +283,6 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
               </button>
             )}
           </div>
-          {/* VIEWED BADGE - Only for received tab */}
-          {tab === 'received' && viewedRequests.has(r._id) }
         </div>
       ),
     },
@@ -266,36 +309,40 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
           </div>
         </div>
 
-        {/* TABS WITH BADGES */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="flex gap-1 p-2">
-            {['sent', 'received'].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-md font-medium transition-all ${
-                  tab === t 
-                    ? 'bg-orange-500 text-white shadow-sm' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                {t === 'sent' ? 'Sent Requests' : 'Received Requests'}
-                {tab === 'received' && t === 'received' && unviewedReceivedCount > 0 && (
-  <span
-    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-      tab === t
-        ? 'bg-white text-orange-600'
-        : 'bg-yellow-100 text-yellow-800'
-    }`}
-  >
-    {unviewedReceivedCount}
-  </span>
-)}
+        {/* TABS */}
+<div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+  <div className="flex gap-1 p-2">
+    {['sent', 'received'].map((t) => (
+      <button
+        key={t}
+        onClick={() => setTab(t)}
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-md font-medium transition-all ${
+          tab === t 
+            ? 'bg-orange-500 text-white shadow-sm' 
+            : 'bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        <span>
+          {t === 'sent' ? 'Sent Requests' : 'Received Requests'}
+        </span>
 
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 🔴 UNVIEWED COUNT BADGE */}
+        {t === 'received' && unviewedCount > 0 && (
+          <span
+            className={`ml-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
+              tab === 'received'
+                ? 'bg-white text-orange-600'
+                : 'bg-orange-100 text-orange-700'
+            }`}
+          >
+            {unviewedCount}
+          </span>
+        )}
+      </button>
+    ))}
+  </div>
+</div>
+
 
         {/* TABLE */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -374,7 +421,7 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
         </div>
       </div>
 
-      {/* SLIDE OVER */}
+      {/* SLIDE OVER - For editing sent requests and reviewing received non-approved requests */}
       <HRHelpdeskSlideOver
         isOpen={open}
         onClose={close}
@@ -383,9 +430,10 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
           fetchData();
           close();
         }}
+        isReceivedTab={tab === 'received'}
       />
 
-      {/* VIEW MODAL */}
+      {/* VIEW MODAL - For viewing sent requests and approved received requests */}
       <HRHelpdeskViewModal
         isOpen={viewOpen}
         request={selected}
@@ -393,6 +441,7 @@ const unviewedReceivedCount = rows.filter(r => !r.viewed).length;
           setViewOpen(false);
           setSelected(null);
         }}
+        isApprovedRequest={selected && isApproved(selected)}
       />
 
       {/* DELETE MODAL */}

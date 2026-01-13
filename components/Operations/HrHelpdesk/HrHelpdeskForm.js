@@ -64,21 +64,30 @@ export default function HRHelpdeskForm({ request, onSaved }) {
 
   /* ---------------- INIT FORM ---------------- */
 
-  useEffect(() => {
-    if (!request) {
-      setForm(emptyForm);
-      return;
-    }
+useEffect(() => {
+  if (!request) {
+    setForm(emptyForm);
+    return;
+  }
 
-    setForm({
-      category: request.category ?? '',
-      subject: request.subject ?? '',
-      description: request.description ?? '',
-      priority: request.priority ?? 'Medium',
-      recipients: Array.isArray(request.recipients) ? request.recipients : [],
-      rejectReason: '',
-    });
-  }, [request]);
+  setForm({
+    category: request.category ?? '',
+    subject: request.subject ?? '',
+    description: request.description ?? '',
+    priority: request.priority ?? 'Medium',
+
+    recipients: Array.isArray(request.recipients)
+      ? request.recipients.map(r =>
+          typeof r === 'string'
+            ? r
+            : r.userId?._id || r.userId
+        )
+      : [],
+
+    rejectReason: '',
+  });
+}, [request]);
+
 
   /* ---------------- PERMISSIONS ---------------- */
 
@@ -147,6 +156,8 @@ export default function HRHelpdeskForm({ request, onSaved }) {
     return toast.error('All fields are required');
   }
 
+  console.log(form)
+
   await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
     category: form.category,
     subject: form.subject,
@@ -161,6 +172,7 @@ export default function HRHelpdeskForm({ request, onSaved }) {
 
 
   async function approve() {
+    console.log(form)
     await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
       status: 'Approved',
       priority: form.priority,
