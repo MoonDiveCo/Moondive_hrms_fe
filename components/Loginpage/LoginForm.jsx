@@ -1,8 +1,9 @@
 "use client";
 import React, { useContext, useState } from "react";
 import Image from "next/image";
-import logo from "../../public/signup/logo.png";
+import logo from '../../public/Dashboard/MoondiveLogo.svg';
 import { useNotifications } from "@/context/notificationcontext";
+
 
 import {
   LOGIN_HEADING_LINE1,
@@ -137,12 +138,13 @@ export default function LoginForm({
     }
   };
 
-  return (
-    <div className="min-h-screen flex bg-white">
-      <div className="w-full md:w-[60%] flex">
+   return (
+    <div className="flex justify-between bg-white">
+      {/* Form and Logo Section (Fixed Width) */}
+      <div className="flex ml-0 w-full vw-40">
         <div className="flex flex-col justify-between min-h-screen px-6 md:px-12 lg:px-16 xl:px-24 2xl:px-32 max-w-xl lg:max-w-2xl w-full mx-auto">
           <div className="pt-8">
-            <Image src={logo} alt="Brand Logo" width={150} height={150} />
+            <Image src={logo} alt="Brand Logo" width={160} height={36} />
           </div>
           <main className="flex-1 flex items-center">
             <div className="w-full max-w-md">
@@ -154,7 +156,7 @@ export default function LoginForm({
               <p className="mt-3 text-sm text-gray-500">{LOGIN_DESCRIPTION}</p>
               {errorMsg && <div className="mt-3 text-sm text-red-600">{errorMsg}</div>}
               {successMsg && <div className="mt-3 text-sm text-green-600">{successMsg}</div>}
-              
+
               <form onSubmit={handleSubmit} className="mt-8 space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium mb-1">
@@ -219,7 +221,9 @@ export default function LoginForm({
           </main>
         </div>
       </div>
-      <div className="hidden md:block md:w-[40%] relative">
+
+      {/* Animation Section (Responsive) */}
+      <div className="hidden md:block relative h-screen overflow-hidden w-full vw-40 ">
         <DotLottieReact
           src="https://lottie.host/0d523132-0551-482f-8138-2aa24a4fa2fa/vOeYpnfxVe.lottie"
           loop
