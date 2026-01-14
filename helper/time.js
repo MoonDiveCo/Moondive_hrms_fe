@@ -56,10 +56,6 @@ export function timeToPercent(time) {
     Math.max(WORK_START_MIN, minutes)
   );
 
-  console.log("minutes",clamped)
-
-console.log((clamped - WORK_START_MIN) / TOTAL_MIN * 100)
-
   return ((clamped - WORK_START_MIN) / TOTAL_MIN) * 100;
 }
 

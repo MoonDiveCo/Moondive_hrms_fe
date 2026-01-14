@@ -33,7 +33,7 @@ export function MenuProvider({ children }) {
 
     const sidebarObject = {
       "HRMS:HRMS_OVERVIEW:VIEW": { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview", position: "top" },
-      "HRMS:EMPLOYES:VIEW": { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", position: "top" },
+      "HRMSEMPLOYEESVIEW": { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", position: "top" },
       "HRMS:LEAVE_TRACKER:VIEW": { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker", position: "top" },
       "HRMS:PROJECTS:VIEW":{label:"Projects",icon:OverviewIcon,href:"/hrms/dashboard/projects",position:"top"},
       "HRMS:ATTENDANCE:VIEW": { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance/list", position: "top" },

@@ -21,7 +21,6 @@ export default function LeaveRequestsModal({
   
   // Send notification to employee
   const sendLeaveDecisionNotification = async (leave, action, reason = "") => {
-    console.log("leave  ",leave)
     try {
       const employeeName = `${leave.employee.firstName} ${leave.employee.lastName}`;
       const leaveTypeName = leave.leaveType;
@@ -53,8 +52,6 @@ export default function LeaveRequestsModal({
         senderId: currentUser?._id || currentUser?.id,
         reportingManagerId: currentUser?._id || currentUser?.id,
       });
-
-      console.log(`✓ Notification sent to -------------------- ${employeeName}`);
     } catch (error) {
       console.error("Failed to send leave decision notification:", error);
       // Don't block the leave approval/rejection if notification fails
@@ -210,7 +207,6 @@ export default function LeaveRequestsModal({
 
           {activeTab !== "MY_LEAVES" &&
             visibleRequests.map((l) => {
-              console.log("leave  ",l)
               return <div
                 key={l.leaveId}
                 className="border rounded-lg p-4 relative transition-all hover:shadow-md"
@@ -268,7 +264,7 @@ export default function LeaveRequestsModal({
                       onClick={() => handleAction(l.leaveId, "Approved")}
                       className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      ✓ Approve
+                      Approve
                     </button>
 
                     <button
@@ -276,7 +272,7 @@ export default function LeaveRequestsModal({
                       onClick={() => setRejectingId(l.leaveId)}
                       className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      ✗ Reject
+                      Reject
                     </button>
                   </div>
                 )}
