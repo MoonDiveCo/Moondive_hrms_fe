@@ -19,6 +19,8 @@ export default function HRHelpdeskPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteRow, setDeleteRow] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [receivedRows, setReceivedRows] = useState([]);
+
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,21 +51,37 @@ export default function HRHelpdeskPage() {
   }, [tab]);
 
   async function fetchData() {
-    setLoading(true);
-    try {
-      const res = await axios.get(
-        tab === 'sent'
-          ? '/hrms/hrhelpdesk/sent'
-          : '/hrms/hrhelpdesk/received'
-      );
+  setLoading(true);
+  try {
+    if (tab === 'sent') {
+      // 🔹 Fetch sent requests for table
+      const sentRes = await axios.get('/hrms/hrhelpdesk/sent');
+      setRows(Array.isArray(sentRes.data?.result) ? sentRes.data.result : []);
 
-      setRows(Array.isArray(res.data?.result) ? res.data.result : []);
-    } catch {
-      toast.error('Failed to load requests');
-    } finally {
-      setLoading(false);
+      // 🔹 ALSO fetch received requests for badge count
+      const receivedRes = await axios.get('/hrms/hrhelpdesk/received');
+      setReceivedRows(
+        Array.isArray(receivedRes.data?.result)
+          ? receivedRes.data.result
+          : []
+      );
+    } else {
+      // 🔹 Received tab → same API serves both table & badge
+      const receivedRes = await axios.get('/hrms/hrhelpdesk/received');
+      const data = Array.isArray(receivedRes.data?.result)
+        ? receivedRes.data.result
+        : [];
+
+      setRows(data);
+      setReceivedRows(data);
     }
+  } catch {
+    toast.error('Failed to load requests');
+  } finally {
+    setLoading(false);
   }
+}
+
 
   /* ---------- PAGINATION ---------- */
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -98,6 +116,7 @@ export default function HRHelpdeskPage() {
   if (tab === 'received') {
     try {
       await axios.post(`/hrms/hrhelpdesk/hrhelpdesk/${row._id}/view`);
+      await fetchData();
     } catch (e) {
       console.error("Failed to mark viewed");
     }
@@ -132,19 +151,37 @@ export default function HRHelpdeskPage() {
 
 // Count unviewed received requests
 const unviewedCount = (() => {
-  if (tab !== 'received') return 0; // Only show badge on received tab
+  // if (tab !== 'received') return 0;
+  if (!profile?.user) return 0;
 
-  // if (!me) return 0; // wait for user info
+  const isHR = profile.user.userRole?.includes('HR');
 
-  
-  if (Array.isArray(profile.user.userRole) && profile.user.userRole.includes('HR')){
-    // HR sees only assignedTo
-    return rows.filter(r => r.assignedTo?.isViewed === false).length;
-  } else {
-    // Regular users see recipients
-    return rows.filter(r => r.recipients?.some(rec => rec.isViewed === false)).length;
-  }
+  return receivedRows.filter(r => {
+    if (isHR) {
+      // HR: check BOTH assignedTo and recipients
+      const assignedUnviewed =
+        r.assignedTo?.userId?._id === profile.user._id &&
+        r.assignedTo?.isViewed === false;
+
+      const recipientUnviewed =
+        r.recipients?.some(
+          rec =>
+            rec.userId?._id === profile.user._id &&
+            rec.isViewed === false
+        );
+
+      return assignedUnviewed || recipientUnviewed;
+    }
+
+    // Non-HR: recipients only
+    return r.recipients?.some(
+      rec =>
+        rec.userId?._id === profile.user._id &&
+        rec.isViewed === false
+    );
+  }).length;
 })();
+
 
 
   /* ---------- BADGE STYLES ---------- */

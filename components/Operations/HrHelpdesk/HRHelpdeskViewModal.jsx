@@ -86,8 +86,13 @@ export default function HRHelpdeskViewModal({ isOpen, onClose, request }) {
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Recipients</p>
               <p className="text-sm font-medium text-gray-900">
                 {request.recipients
-                  .map((u) => `${u.firstName} ${u.lastName}`)
-                  .join(', ')}
+  .map((r) => {
+    const u = r.userId;
+    return u ? `${u.firstName} ${u.lastName}` : '';
+  })
+  .filter(Boolean)
+  .join(', ')}
+
               </p>
             </div>
           )}

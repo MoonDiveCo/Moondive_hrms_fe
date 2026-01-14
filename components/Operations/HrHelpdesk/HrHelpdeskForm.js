@@ -232,10 +232,15 @@ useEffect(() => {
               </span>
               <p className='font-medium text-gray-900 mt-1'>
                 {request.recipients?.length
-                  ? request.recipients
-                      .map((u) => `${u.firstName} ${u.lastName}`)
-                      .join(', ')
-                  : '—'}
+  ? request.recipients
+      .map((r) => {
+        const u = r.userId;
+        return u ? `${u.firstName} ${u.lastName}` : '';
+      })
+      .filter(Boolean)
+      .join(', ')
+  : '—'}
+
               </p>
             </div>
           </div>
