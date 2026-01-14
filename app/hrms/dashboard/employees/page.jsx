@@ -394,7 +394,7 @@ export default function Employees({ initialEmployees = [] }) {
               )}
             </div>
 
-            {allUserPermissions.includes("HRMSEMPLOYEESWRITE") && (
+            {allUserPermissions.includes("HRMS:EMPLOYEES:WRITE") && (
               <button
                 className='px-5 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition flex items-center gap-2'
                 onClick={openAdd}
@@ -554,7 +554,7 @@ export default function Employees({ initialEmployees = [] }) {
                 ? 'Try adjusting your filters or search query'
                 : 'Get started by adding your first employee'}
             </p>
-            {allUserPermissions.includes("HRMSEMPLOYEESWRITE") && !searchQuery && (!selectedDepartment || selectedDepartment === 'all') && (
+            {allUserPermissions.includes("HRMS:EMPLOYEES:WRITE") && !searchQuery && (!selectedDepartment || selectedDepartment === 'all') && (
               <button
                 onClick={openAdd}
                 className='px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition inline-flex items-center gap-2'
@@ -575,8 +575,8 @@ export default function Employees({ initialEmployees = [] }) {
             onClose={closeView}
             onEdit={handleEditFromView}
             onDelete={deleteFromView}
-            deletePermission={allUserPermissions.includes("HRMSEMPLOYEESDELETE")}
-            editPermission={allUserPermissions.includes("HRMSEMPLOYEESEDIT")}
+            deletePermission={allUserPermissions.includes("HRMS:EMPLOYEES:DELETE")}
+            editPermission={allUserPermissions.includes("HRMS:EMPLOYEES:EDIT")}
           />
         )}
 
