@@ -132,7 +132,8 @@ useEffect(() => {
             leaves: newLeaves,
             leaveRequests: newLeaveRequests,
           };
-        }, { revalidate: false });
+        }, { revalidate: false,
+         });
       }
 
       // mutate("/hrms/leave/get-leave");
@@ -145,7 +146,8 @@ useEffect(() => {
         mutate("/hrms/leave/get-leave-dashboard", (cached) => {
           if (!cached) return cached;
           return cached; 
-        }, { revalidate: false });
+        }, { revalidate: false,
+         });
       }
 
       // mutate("/hrms/leave/get-leave-dashboard");
@@ -168,7 +170,9 @@ const isSuperAdmin = userRole === "SuperAdmin";
 const { data: dashboardRes, isLoading: dashboardLoading} = useSWR(
   !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
   fetcherWithAuth,
-  // { refreshInterval: 30000 }
+   {
+    revalidateOnFocus: true,
+  }
 );
 
 const { data: holidayRes } = useSWR(
@@ -182,7 +186,9 @@ const { data: holidayRes } = useSWR(
 const { data: leaveRes } = useSWR(
   user?._id ? "/hrms/leave/get-leave" : null,
   fetcherWithAuth,
-  // { refreshInterval: 30000 }
+   {
+    revalidateOnFocus: true,
+  }
 );
 
 const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];

@@ -53,8 +53,8 @@ function CalendarCell({ day }) {
 )}
 
 {/* 🎉 Holiday Name */}
-{status === "Holiday" && name && (
-  <div className="absolute top-6 bottom-0 left-0 text-[10px] text-blue-700 font-semibold truncate">
+{ name && (
+  <div className="absolute top-6 bottom-0 left-2 text-[10px] text-gray-700 font-semibold truncate">
     {name}
   </div>
 )}
@@ -98,18 +98,23 @@ export default function AttendanceCalendar({ currentDate }) {
   if (weekend) {
     status = "Weekend";
   }
-  else if (holidayMap[key]) {
+  else if (holidayMap[key] && holidayMap[key].type=== 'OPTIONAL' && !attendanceMap[key]?.status) {
     status = "Holiday";
     name = holidayMap[key].name; // ✅ ADD
   }
-  else if (leaveMap[key]) {
-    status = "On Leave";
+    else if (holidayMap[key] && holidayMap[key].type=== 'PUBLIC') {
+    status = "Holiday";
+    name = holidayMap[key].name; // ✅ ADD
   }
+    else if (leaveMap[key] && leaveMap[key].leaveStatus === "Approved") {
+      status = leaveMap[key].isHalfDay ? 'Half Day' : 'On Leave';
+    }
   else if (future) {
     status = "future";
   }
   else if (attendanceMap[key]?.status) {
     status = attendanceMap[key].status;
+    name= holidayMap[key]?.name
   }
   else {
     status = "Absent";

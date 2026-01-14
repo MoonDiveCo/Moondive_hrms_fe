@@ -6,6 +6,7 @@ import { Eye, Edit2, Trash2 } from 'lucide-react';
 import AddDesignationModal from './AddDesignationModal';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { AuthContext } from '@/context/authContext';
+import { toast } from 'sonner';
 
 export default function Designations() {
   const [designations, setDesignations] = useState([]);
@@ -66,7 +67,7 @@ export default function Designations() {
       setDesignations((prev) => prev.filter((d) => d._id !== id));
     } catch (err) {
       console.error('Delete failed', err);
-      alert('Failed to delete');
+      toast.error('Failed to delete');
     }
   }
 
