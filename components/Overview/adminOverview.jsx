@@ -101,8 +101,6 @@ export default function OverviewPage() {
     fetchDashboard();
   }, []);
 
-  console.log(pendingLeaves)
-
  if(loading){
           return(
             <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/5 backdrop-blur-sm rounded-2xl'>

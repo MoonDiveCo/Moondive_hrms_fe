@@ -1094,7 +1094,6 @@ const fetchCaseStudies = async () => {
       ...study,    
       status: newStatus, 
     };
-    console.log(editingCaseStudy)
         const response = await axios.put(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/edit-case-study/${Id}`, {
           editingCaseStudy,
         })

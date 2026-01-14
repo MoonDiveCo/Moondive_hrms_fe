@@ -8,7 +8,6 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function ReporteesSection() {
   const { user } = useContext(AuthContext);
-console.log(user)
   const [activeView, setActiveView] = useState("team");
   const [reportingManager, setReportingManager] = useState(null);
   const [departmentMembers, setDepartmentMembers] = useState([]);

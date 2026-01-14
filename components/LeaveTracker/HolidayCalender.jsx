@@ -26,7 +26,6 @@ export default function HolidayCalender({
   onRefresh,
   leaves = [],
 }) {
-  console.log("leaves",leaves)
   const [events, setEvents] = useState([]);
   const calendarRef = useRef(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -81,7 +80,6 @@ export default function HolidayCalender({
       leaves
         .filter((l) => l.status !== "Pending")
         .filter((l) => {
-          console.log(l)
           const start = new Date(l.startDate);
           const end = new Date(l.endDate);
           return !(end < firstDay || start > lastDay);
