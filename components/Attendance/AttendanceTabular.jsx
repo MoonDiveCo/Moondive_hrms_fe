@@ -131,8 +131,8 @@ export default function AttendanceTabular({ currentDate, rangeMode = 'week' }) {
     else if (leaveMap[key] && leaveMap[key].leaveStatus === "Approved") {
       status = leaveMap[key].isHalfDay ? 'Half Day' : 'On Leave';
     }
-    else if (holidayMap[key]?.type==="PUBLIC" ) status = 'Holiday';
-    else if(holidayMap[key]?.type==="OPTIONAL" && holidayMap[key].isActive ) status ='Optional Holiday'
+    else if (holidayMap[key]?.type==="PUBLIC" && !record?.status ) status = 'Holiday';
+    else if(holidayMap[key]?.type==="OPTIONAL" && holidayMap[key].isActive && !record?.status ) status ='Optional Holiday'
     else if (record?.status)   status = record.status;
     else if (future) status = null;
  

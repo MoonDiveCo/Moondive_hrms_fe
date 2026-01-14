@@ -4,6 +4,7 @@
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { useNotifications } from "../../context/notificationcontext"; // Import notification context
+import { toast } from "sonner";
 
 function getDatesBetween(start, end) {
   const dates = [];
@@ -365,7 +366,7 @@ export default function ApplyLeaveModal({
       onClose();
     } catch (err) {
       console.error("Failed to apply leave", err);
-      alert("Failed to submit leave application. Please try again.");
+      toast.error("Failed to submit leave application. Please try again.");
     } finally {
       setSubmitting(false);
     }

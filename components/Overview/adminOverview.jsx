@@ -121,6 +121,7 @@ export default function OverviewPage() {
       await axios.put("/hrms/leave/update-leave-decision", {
         leaveEntryId: leaveId,
         action,
+        reason: `CEO ${action}`,
       });
 
       setPendingLeaves((prev) =>
@@ -270,7 +271,7 @@ export default function OverviewPage() {
           onConfirm={() =>
             handleLeaveDecision(
               confirmAction.leaveId,
-              confirmAction.action
+              confirmAction.action,
             )
           }
         />

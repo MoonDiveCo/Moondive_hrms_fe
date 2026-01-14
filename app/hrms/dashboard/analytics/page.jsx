@@ -15,6 +15,13 @@ function formatTime(value) {
   });
 }
 
+function msToHrs(ms = 0) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return `${h}h ${m}m`;
+}
+
+
 function formatDate(value) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-IN', {
@@ -26,10 +33,11 @@ function formatDate(value) {
 
 const TABS = [
   { key: 'leave', label: 'Leave' },
-  { key: 'online', label: 'Online Now' },
+  { key: 'online', label: 'Present Today' },
   { key: 'late', label: 'Late Check-in' },
   { key: 'new', label: 'New Joiners' },
   { key: 'absent', label: 'Absent Today' },
+  { key: 'attendance', label: 'Attendance Summary' },
 ];
 
 const LEAVE_SUB_TABS = [
@@ -96,6 +104,27 @@ const TAB_META = {
           </span>
         ),
       },
+      {
+        key: "isOnBreak",
+        label: "Break",
+        render: r => (
+          <span className={`text-xs px-2 py-1 rounded-full ${r.isOnBreak ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
+            }`}>
+            {r.isOnBreak ? "On Break" : "Working"}
+          </span>
+        )
+      },
+      {
+        key: "totalWorkMs",
+        label: "Work Today",
+        render: r => msToHrs(r.totalWorkMs),
+      },
+      {
+        key: "totalBreakMs",
+        label: "Break Today",
+        render: r => msToHrs(r.totalBreakMs),
+      },
+
       // {
       //   key: 'workType',
       //   label: 'Work Type',
@@ -153,6 +182,31 @@ const TAB_META = {
       { key: 'department', label: 'Department' },
     ],
   },
+
+attendance: {
+  title: "Attendance Summary",
+  columns: [
+    { key: "name", label: "Employee" },
+
+    { key: "department", label: "Department" },
+    { key: "designation", label: "Designation" },
+
+    { key: "presentDays", label: "Present" },
+
+    {
+      key: "totalWorkMs",
+      label: "Work",
+      render: r => msToHrs(r.totalWorkMs),
+    },
+    {
+      key: "totalBreakMs",
+      label: "Break",
+      render: r => msToHrs(r.totalBreakMs),
+    },
+  ],
+}
+
+
 };
 
 export default function Analytics() {
@@ -168,6 +222,17 @@ export default function Analytics() {
   const [data, setData] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+  period: "month",
+  date: new Date().toISOString().slice(0, 10),
+  department: "",
+  designation: "",
+});
+const [allAttendanceData, setAllAttendanceData] = useState([]);
+const [departments, setDepartments] = useState([]);
+const [designations, setDesignations] = useState([]);
+
+
 
   useEffect(() => {
     if (tabFromUrl && tabFromUrl !== activeTab) {
@@ -175,22 +240,76 @@ export default function Analytics() {
     }
   }, [tabFromUrl]);
 
+  // useEffect(() => {
+  //   let alive = true;
+  //   setLoading(true);
+
+  //   axios
+  //     .get(`/hrms/organization/analytics?type=${activeTab}`)
+  //     .then((res) => {
+  //       if (!alive) return;
+  //       setData(res.data.employees || []);
+  //       setStats(res.data.stats || null);
+  //     })
+  //     .catch(console.error)
+  //     .finally(() => alive && setLoading(false));
+
+  //   return () => (alive = false);
+  // }, [activeTab]);
+
+
   useEffect(() => {
-    let alive = true;
-    setLoading(true);
+  let alive = true;
+  setLoading(true);
 
-    axios
-      .get(`/hrms/organization/analytics?type=${activeTab}`)
-      .then((res) => {
-        if (!alive) return;
-        setData(res.data.employees || []);
-        setStats(res.data.stats || null);
-      })
-      .catch(console.error)
-      .finally(() => alive && setLoading(false));
+  axios.get("/hrms/organization/analytics", {
+    params: {
+      type: activeTab,
+      ...(activeTab === "attendance" ? filters : {}),
+    },
+  })
+    .then((res) => {
+      if (!alive) return;
+      setData(res.data.employees || []);
+      setStats(res.data.stats || null);
+    })
+    .catch(console.error)
+    .finally(() => alive && setLoading(false));
 
-    return () => (alive = false);
-  }, [activeTab]);
+  return () => (alive = false);
+}, [activeTab, filters]);
+
+useEffect(() => {
+  if (activeTab !== "attendance") return;
+
+  axios.get("/hrms/organization/analytics", {
+    params: { type: "attendance" }, 
+  })
+    .then((res) => {
+      setAllAttendanceData(res.data.employees || []);
+    })
+    .catch(console.error);
+}, [activeTab]);
+
+useEffect(() => {
+  if (!allAttendanceData.length) return;
+
+  const deptSet = new Set();
+  const desigSet = new Set();
+
+  allAttendanceData.forEach(emp => {
+    if (emp.department && emp.department !== "—") {
+      deptSet.add(emp.department);
+    }
+    if (emp.designation && emp.designation !== "—") {
+      desigSet.add(emp.designation);
+    }
+  });
+
+  setDepartments([...deptSet]);
+  setDesignations([...desigSet]);
+}, [allAttendanceData]);
+
 
   return (
     <div className='p-6  space-y-6'>
@@ -209,8 +328,8 @@ export default function Analytics() {
               router.push(`/hrms/dashboard/analytics?tab=${tab.key}`);
             }}
             className={`px-3 py-1 rounded-full cursor-pointer text-xs font-medium ${activeTab === tab.key
-                ? 'bg-primary text-white'
-                : 'bg-white border text-gray-600'
+              ? 'bg-primary text-white'
+              : 'bg-white border text-gray-600'
               }`}
           >
             {tab.label}
@@ -229,6 +348,74 @@ export default function Analytics() {
             />
           </div>
         )}
+
+      {activeTab === "attendance" && (
+        <div className="flex flex-wrap gap-3 mb-4">
+          {/* Period */}
+          <select
+            value={filters.period}
+            onChange={(e) =>
+              setFilters({ ...filters, period: e.target.value })
+            }
+            className="border rounded-md px-3 py-1 text-sm"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+
+          {/* Date */}
+          <input
+            type="date"
+            value={filters.date}
+            onChange={(e) =>
+              setFilters({ ...filters, date: e.target.value })
+            }
+            className="border rounded-md px-3 py-1 text-sm"
+          />
+
+          {/* Department Dropdown */}
+          <select
+            value={filters.department}
+            onChange={(e) =>
+              setFilters({ ...filters, department: e.target.value })
+            }
+            className="border rounded-md px-3 py-1 text-sm"
+          >
+            <option value="">All Departments</option>
+            {departments.map(dep => (
+              <option key={dep} value={dep}>
+                {dep}
+              </option>
+            ))}
+          </select>
+
+          {/* Designation Dropdown */}
+          <select
+            value={filters.designation}
+            onChange={(e) =>
+              setFilters({ ...filters, designation: e.target.value })
+            }
+            className="border rounded-md px-3 py-1 text-sm"
+          >
+            <option value="">All Designations</option>
+            {designations.map(des => (
+              <option key={des} value={des}>
+                {des}
+              </option>
+            ))}
+          </select>
+
+          <input
+        placeholder="Search employee"
+        value={filters.search || ""}
+        onChange={(e) =>
+          setFilters({ ...filters, search: e.target.value })
+        }
+        className="border rounded-md px-3 py-1 text-sm"
+      />
+        </div>
+      )}
 
         <AnalyticsTab
           type={activeTab}
@@ -276,8 +463,8 @@ function AnalyticsTab({ type, data, stats, loading }) {
               key={t.key}
               onClick={() => setLeaveTab(t.key)}
               className={`px-3 py-1 rounded-full text-xs cursor-pointer ${leaveTab === t.key
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600'
+                ? 'bg-primary text-white'
+                : 'bg-gray-100 text-gray-600'
                 }`}
             >
               {t.label}
@@ -464,6 +651,7 @@ function PendingLeaveTable({ onApprovedToday }) {
       await axios.put('/hrms/leave/update-leave-decision', {
         leaveEntryId: row.leaveId,
         action,
+        reason: `CEO ${action}`
       });
 
       setRows(prev => prev.filter(r => r.leaveId !== row.leaveId));

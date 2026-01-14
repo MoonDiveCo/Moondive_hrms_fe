@@ -5,6 +5,7 @@ import AddLocationModal from "./addLocation";
 import { Eye, Edit2, Trash2 } from "lucide-react";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { AuthContext } from "@/context/authContext";
+import { toast } from "sonner";
 
 export default function Locations() {
   const [locations, setLocations] = useState([]);
@@ -66,7 +67,7 @@ export default function Locations() {
       setLocations((prev) => prev.filter((l) => l._id !== locId));
     } catch (err) {
       console.error('Delete failed', err);
-      alert('Failed to delete location');
+      toast.error('Failed to delete location');
     }
   }
 
