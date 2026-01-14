@@ -278,8 +278,8 @@ export function AttendanceProvider({ children }) {
     try{
       const res=await axios.get("/hrms/roles/get-employee")
       setUserData(res.data.result)
-    console.log("user data-------------------",res)}catch(err){
-      console.log("-------------------------Failed to fetch user data for attendance context:",err)
+  }catch(err){
+      console.log("Failed to fetch user data for attendance context:",err)
     }}
     useEffect(()=>{if(isSignedIn) fetchUserssData()},[ isSignedIn])
 

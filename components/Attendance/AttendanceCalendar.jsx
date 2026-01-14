@@ -76,7 +76,6 @@ export default function AttendanceCalendar({ currentDate }) {
   const { data: holidayMap = {} } = useHolidays(
     currentDate.getFullYear()
   );
-console.log("holiday map",holidayMap)
   const { data: leaveMap = {} } = useLeaves({
     rangeMode: "month",
     currentDate,

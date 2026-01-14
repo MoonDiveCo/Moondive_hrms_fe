@@ -126,7 +126,6 @@ export default function AttendanceTabular({ currentDate, rangeMode = 'week' }) {
     /* ---------- STATUS ---------- */
  
     let status = null;
- console.log("leave",leaveMap)
     if (weekend) status = 'Weekend';
  
     else if (leaveMap[key] && leaveMap[key].leaveStatus === "Approved") {

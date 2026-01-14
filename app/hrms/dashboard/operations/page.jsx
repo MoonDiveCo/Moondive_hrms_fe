@@ -74,7 +74,6 @@ export default function Operations() {
   const [loading, setLoading] = useState(false);
 
   const userPermissions = [...allUserPermissions];
-  console.log('userRole', user);
 
   const userRole = user?.userRole; 
 
@@ -153,7 +152,6 @@ export default function Operations() {
 
   /* ================= HANDLE CARD CLICK WITH ROLE-BASED ROUTING ================= */
   function handleCardClick(serviceId) {
-    console.log("serviceId", serviceId)
     setLoading(true);
 
     let route;

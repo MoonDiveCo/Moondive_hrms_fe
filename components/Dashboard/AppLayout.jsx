@@ -13,8 +13,6 @@ import { useAttendance } from "@/context/attendanceContext";
 import { toast } from "sonner";
 
 export default function AppLayout({ module, children, showMainNavbar = true }) {
-
-  console.log("applayput-------------------------------")
   const menus = useMenus();
   const { checkIn, checkOut, isOnBreak } = useAttendance();
   const {user} = useContext(AuthContext)

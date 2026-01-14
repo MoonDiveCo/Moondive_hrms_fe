@@ -34,7 +34,6 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete, del
     try {
 
       const res = await axios.put(`/hrms/employee/delete-employee/${employee._id}`);
-      console.log("API response:", res.data);
       if (res.data.responseCode === 200) {
         console.log("Delete successful");
         return true;

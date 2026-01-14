@@ -304,8 +304,6 @@ export default function ApplyLeaveModal({
     }
   };
 
-  console.log("Sender Name--------------------:", getSenderName());
-
   const sendLeaveNotification = async (reportingManagerId) => {
     try {
       if (!reportingManagerId) {

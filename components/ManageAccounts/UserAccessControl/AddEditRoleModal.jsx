@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import axios from 'axios';
 import { ACTION_PERMISSIONS } from '@/constants/NestedDashboard';
+import { MODULE_INFO } from '@/constants/ModuleInfor';
 
 
 const ACTION_COLUMNS = ['WRITE', 'EDIT', 'VIEW', 'DELETE'];
@@ -159,9 +160,13 @@ export default function AddEditRoleModal({
                       key={module}
                       className="hover:bg-gray-50 border border-[#D0D5DD]"
                     >
-                      <td className="px-4 py-4 font-medium">
-                        {module}
-                      </td>
+                      <td className="px-4 py-4 font-medium flex items-center">
+                      {module}
+
+                      {MODULE_INFO[module] && (
+                        <InfoTooltip info={MODULE_INFO[module]} />
+                      )}
+                    </td>
 
                       {ACTION_COLUMNS.map((action) => {
                         const permission = Object.values(
@@ -259,3 +264,32 @@ export default function AddEditRoleModal({
     </div>
   );
 }
+
+function InfoTooltip({ info }) {
+  return (
+    <div className="relative group ml-2 inline-block">
+      <span className="cursor-pointer text-gray-400 hover:text-gray-600">
+        ⓘ
+      </span>
+
+      <div
+        className="
+          absolute left-0 top-6 z-50 hidden w-72 rounded-lg border bg-white p-4 text-sm shadow-lg
+          group-hover:block
+        "
+      >
+        <p className="font-semibold mb-1">{info.title}</p>
+        <p className="text-gray-600 mb-2">{info.description}</p>
+
+        {info.features?.length > 0 && (
+          <ul className="list-disc pl-4 space-y-1 text-gray-700">
+            {info.features.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+

@@ -321,7 +321,6 @@ const ManageIndustries = () => {
           `${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/edit-industry-page/${editingPage._id}`,
           editingPage
         )
-        console.log('editingPage', editingPage)
         toast.success('Industry page updated successfully')
         setIndustryPages((prev) =>
           prev.map((page) =>

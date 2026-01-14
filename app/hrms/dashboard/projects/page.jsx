@@ -103,7 +103,6 @@ export default function ProjectPage() {
   const [projects, setProjects] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const { user } = useContext(AuthContext);
-  console.log('projects', projects);
   const toggleProject = (id) => {
     setOpenProject((prev) => (prev === id ? null : id));
   };
@@ -121,7 +120,7 @@ export default function ProjectPage() {
       );
 
       if (res.data?.responseCode === 200) {
-        setProjects(res.data.result || []);
+        setProjects(res?.data?.result || []);
       }
     } catch (err) {
       console.error('Failed to fetch projects', err);

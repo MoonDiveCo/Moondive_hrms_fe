@@ -1634,10 +1634,11 @@ export default function AddEditEmployeeModal({
                   disabled={isView}
                 >
                   <option value="">Select role</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Employee">Employee</option>
-                  <option value="Manager">Manager</option>
-                  <option value="HR">HR</option>
+                  {organizationData?.roles?.map((d) => (
+                    <option key={d._id} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -34,16 +34,18 @@ export default function Employees({ initialEmployees = [] }) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [departmentRes, designationRes, shiftRes] = await Promise.all([
+      const [departmentRes, designationRes, shiftRes, rolesRes] = await Promise.all([
         axios.get("/hrms/organization/get-allDepartment"),
         axios.get("/hrms/organization/get-alldesignation"),
-        axios.get("/hrms/organization/get-shifts")
+        axios.get("/hrms/organization/get-shifts"),
+        axios.get("/hrms/organization/get-roles")
       ]);
 
       setOrganizationData({
         departments: departmentRes?.data?.result || [],
         designations: designationRes?.data?.result || [],
-        shifts: shiftRes?.data?.result || []
+        shifts: shiftRes?.data?.result || [],
+        roles: rolesRes?.data?.result || []
       });
     } catch (err) {
       console.error("Failed to load dropdown data:", err);
@@ -83,7 +85,6 @@ export default function Employees({ initialEmployees = [] }) {
     setError(null);
     try {
       const res = await axios.get('/hrms/employee/list');
-      console.log('res', res.data.result);
       setEmployees(res.data.result || res.data || []);
 
     } catch (err) {
@@ -393,7 +394,7 @@ export default function Employees({ initialEmployees = [] }) {
               )}
             </div>
 
-            {allUserPermissions.includes("HRMS:EMPLOYES:WRITE") && (
+            {allUserPermissions.includes("HRMS:EMPLOYEES:WRITE") && (
               <button
                 className='px-5 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition flex items-center gap-2'
                 onClick={openAdd}
@@ -553,7 +554,7 @@ export default function Employees({ initialEmployees = [] }) {
                 ? 'Try adjusting your filters or search query'
                 : 'Get started by adding your first employee'}
             </p>
-            {allUserPermissions.includes("HRMS:EMPLOYES:WRITE") && !searchQuery && (!selectedDepartment || selectedDepartment === 'all') && (
+            {allUserPermissions.includes("HRMS:EMPLOYEES:WRITE") && !searchQuery && (!selectedDepartment || selectedDepartment === 'all') && (
               <button
                 onClick={openAdd}
                 className='px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition inline-flex items-center gap-2'
@@ -574,8 +575,8 @@ export default function Employees({ initialEmployees = [] }) {
             onClose={closeView}
             onEdit={handleEditFromView}
             onDelete={deleteFromView}
-            deletePermission={allUserPermissions.includes("HRMS:EMPLOYES:DELETE")}
-            editPermission={allUserPermissions.includes("HRMS:EMPLOYES:EDIT")}
+            deletePermission={allUserPermissions.includes("HRMS:EMPLOYEES:DELETE")}
+            editPermission={allUserPermissions.includes("HRMS:EMPLOYEES:EDIT")}
           />
         )}
 
