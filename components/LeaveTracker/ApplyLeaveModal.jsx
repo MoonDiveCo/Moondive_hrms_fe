@@ -332,6 +332,7 @@ export default function ApplyLeaveModal({
        const reportingManagerId = response.data.data[0].reportingIds[0];
         await sendLeaveNotification(reportingManagerId);
       }
+      toast.success("Leave Added Successfully")
       try {
         await context?.refreshDashboard?.();
       } catch (err) {
@@ -342,7 +343,7 @@ export default function ApplyLeaveModal({
       onClose();
     } catch (err) {
       console.error("Failed to apply leave", err);
-      toast.error("Failed to submit leave application. Please try again.");
+      toast.error("Failed To Submit Leave Application.");
     } finally {
       setSubmitting(false);
     }

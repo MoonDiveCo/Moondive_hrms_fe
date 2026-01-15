@@ -6,6 +6,7 @@ import axios from 'axios';
 import { X, LogOut, Edit, Save } from 'lucide-react';
 import { AuthContext } from '@/context/authContext';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { toast } from 'sonner';
 
 export default function ProfileSlideOver({
   isOpen,
@@ -176,6 +177,7 @@ export default function ProfileSlideOver({
       setInitialProfile(merged);
       setIsEditing(false);
       onProfileUpdated && onProfileUpdated(merged);
+      toast.success("Profile Updated Succesfully")
     } catch (err) {
       console.error('Failed to save profile', err);
       const msg =
@@ -183,6 +185,9 @@ export default function ProfileSlideOver({
         err?.response?.data ||
         'Failed to update profile';
       setError(msg);
+      toast.error(
+    typeof msg === 'string' ? msg : 'Failed to update profile'
+  );
     } finally {
       setSaving(false);
     }
@@ -207,6 +212,7 @@ export default function ProfileSlideOver({
           await axios.post('/user/logout', {}, { withCredentials: true });
         } catch (e) {
           // ignore if it fails
+          
         }
       }
     } finally {

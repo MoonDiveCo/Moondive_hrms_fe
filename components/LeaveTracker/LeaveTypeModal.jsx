@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 
 const LEAVE_NAMES = [
   "Casual Leave",
@@ -117,8 +118,10 @@ export default function LeaveTypeModal({
 
     if (isEdit) {
       await axios.put(`/hrms/leave/update-leave-policy/`, payload);
+      toast.success("Leave Policy Updated Successsfully")
     } else {
       await axios.post(`/hrms/leave/create-leave-policy/`, payload);
+      toast.success("Leave Policy Created Successsfully")
     }
     onClose();
   };

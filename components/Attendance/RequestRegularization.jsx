@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 
 const ANOMALY_REASON_MAP = {
   LATE_ENTRY: "Late Coming",
@@ -99,10 +100,11 @@ Adarsh`);
         message,
         imageUrl,
       });
+      toast.success("Regularization Request Submitted" )
 
       onClose();
     } catch (err) {
-      console.error("Failed to send regularization:", err);
+      toast.error("Failed To Submit Regularization");
     }
   };
 

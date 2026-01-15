@@ -29,7 +29,7 @@ export const SIGNUP_SUCCESS_REGISTERED = "Registered successfully";
 
 export const LOGIN_BRAND_LETTER = "M";
 export const LOGIN_BRAND_NAME = "MoonDive";
-export const LOGIN_HEADING_LINE1 = "Welcome to MoonDive’s CRM.";
+export const LOGIN_HEADING_LINE1 = "Welcome to MoonDesk";
 export const LOGIN_HEADING_EMAIL_SUB = "Sign in to continue.";
 export const LOGIN_HEADING_PASSWORD_SUB = "Enter your password.";
 export const LOGIN_DESCRIPTION = "Enter your details to proceed further:";

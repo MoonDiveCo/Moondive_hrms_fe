@@ -110,12 +110,12 @@ export default function OrganizationPolicy() {
         `/hrms/organization/organization-policy/status/${id}`,
         { status: 'PUBLISHED' }
       );
-      toast.success('Policy approved successfully');
+      toast.success('Policy Approved Successfully');
       setViewModalOpen(false);
       setViewFile(null);
       fetchFiles();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to approve policy');
+      toast.error(error.response?.data?.message || 'Failed To Approve Policy');
     }
   };
 
@@ -128,12 +128,12 @@ export default function OrganizationPolicy() {
           rejectionReason: reason,
         }
       );
-      toast.success('Policy rejected successfully');
+      toast.success('Policy Rejected Successfully');
       setViewModalOpen(false);
       setViewFile(null);
       fetchFiles();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to reject policy');
+      toast.error(error.response?.data?.message || 'Failed To Reject Policy');
     }
   };
 
@@ -146,12 +146,12 @@ export default function OrganizationPolicy() {
           suggestedChanges: suggestions,
         }
       );
-      toast.success('Changes requested successfully');
+      toast.success('Changes Requested Successfully');
       setViewModalOpen(false);
       setViewFile(null);
       fetchFiles();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to suggest changes');
+      toast.error(error.response?.data?.message || 'Failed To Suggest Changes');
     }
   };
 
@@ -160,10 +160,10 @@ export default function OrganizationPolicy() {
       await axios.patch(
         `/hrms/organization/organization-policy/${id}/acknowledge`
       );
-      toast.success('Policy acknowledged successfully');
+      toast.success('Policy Acknowledged Successfully');
       fetchFiles();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to acknowledge');
+      toast.error(error.response?.data?.message || 'Failed To Acknowledge');
     }
   };
 
@@ -190,12 +190,12 @@ export default function OrganizationPolicy() {
         `/hrms/organization/deleteOrganizationFile/${deletedFileId}`
       );
       
-      toast.success('File deleted');
+      toast.success('File Deleted');
       closeDeleteModal();
       
       fetchFiles();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete file');
+      toast.error(error.response?.data?.message || 'Failed To Delete File');
       fetchFiles();
     } finally {
       setIsDeleting(false);
@@ -252,11 +252,11 @@ export default function OrganizationPolicy() {
       
       // Show appropriate message based on backend response
       if (response.data.requiresApproval) {
-        toast.success('File updated and sent for re-approval');
+        toast.success('File Updated And Sent For Re-Approval');
       } else if (isSuperAdmin) {
-        toast.success('File updated successfully');
+        toast.success('File Updated Successfully');
       } else {
-        toast.success(response.data.message || 'File updated successfully');
+        toast.success(response.data.message || 'File Updated Successfully');
       }
       
       setFiles(prevFiles => 
@@ -279,8 +279,8 @@ export default function OrganizationPolicy() {
 
       toast.success(
         isSuperAdmin
-          ? 'File published successfully'
-          : 'File sent for approval'
+          ? 'File Published Successfully'
+          : 'File Sent For Approval'
       );
       
       setFiles(prevFiles => [response.data.data, ...prevFiles]);

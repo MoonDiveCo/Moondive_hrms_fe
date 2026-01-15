@@ -34,30 +34,70 @@ useEffect(() => {
 
 
   // Save
+  // const save = async () => {
+  //     if (!groupName) {
+  //   setGroupError("Please select an employment group");
+  //   return;
+  // }
+  //   const body = {
+  //     groupName,
+  //     leaveAllocations: allocations,
+  //   };
+
+  //   if (isEdit) {
+  //     await axios.put(`/hrms/leave/update-group-policy/`, {
+  //       organizationId,
+  //       employmentType: [body],
+  //     });
+
+  //   } else {
+  //     await axios.post(`/hrms/leave/create-group-policy/`, {
+  //       organizationId,
+  //       employmentType: [body],
+  //     });
+  //   }
+
+  //   onClose();
+  // };
   const save = async () => {
-      if (!groupName) {
-    setGroupError("Please select an employment group");
+  if (!groupName) {
+    setGroupError("please select an employment group");
     return;
   }
-    const body = {
-      groupName,
-      leaveAllocations: allocations,
-    };
 
+  const body = {
+    groupName,
+    leaveAllocations: allocations,
+  };
+
+  try {
     if (isEdit) {
       await axios.put(`/hrms/leave/update-group-policy/`, {
         organizationId,
         employmentType: [body],
       });
+
+      toast.success("Group Policy Updated Successfully");
     } else {
       await axios.post(`/hrms/leave/create-group-policy/`, {
         organizationId,
         employmentType: [body],
       });
+
+      toast.success("Group Policy Created Successfully");
     }
 
     onClose();
-  };
+  } catch (error) {
+    console.error("save group policy failed:", error);
+
+    toast.error(
+      error?.response?.data?.message ||
+        "Failed To Save Group Policy."
+    );
+  }
+};
+
 
   // Update monthly/yearly quota
   const updateQuota = (code, field, value) => {
