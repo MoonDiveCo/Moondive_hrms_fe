@@ -1675,9 +1675,9 @@ export default function AddEditEmployeeModal({
                 >
                   <option value="">Select</option>
                   <option value="Permanent">Permanent</option>
-                  <option value="Contract">Contract</option>
+                  <option value="Probation">Probation</option>
                   <option value="Internship">Internship</option>
-                  <option value="Trainee">Trainee</option>
+                  {/* <option value="Trainee">Trainee</option> */}
                 </select>
               </div>
 
@@ -1695,8 +1695,8 @@ export default function AddEditEmployeeModal({
                 >
                   <option value="">Select</option>
                   <option value="Active">Active</option>
-                  <option value="On Probation">On Probation</option>
-                  <option value="Resigned">Resigned</option>
+                  {/* <option value="On Probation">On Probation</option> */}
+                  {/* <option value="Resigned">Resigned</option> */}
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>

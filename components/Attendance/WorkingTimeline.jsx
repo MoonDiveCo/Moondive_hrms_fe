@@ -3,6 +3,7 @@ import { useState,useEffect } from "react";
 import { motion } from "framer-motion";
 import { nowToPercent } from "@/helper/time";
 export default function WorkingTimeline({ checkIn, checkOut }) {
+  console.log("WorkingTimeline render:", { checkIn, checkOut });
   const start = timeToPercent(checkIn);
 
   const [liveEnd, setLiveEnd] = useState(
