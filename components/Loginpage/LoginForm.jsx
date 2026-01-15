@@ -4,7 +4,6 @@ import Image from "next/image";
 import logo from '../../public/Dashboard/MoondiveLogo.svg';
 import { useNotifications } from "@/context/notificationcontext";
 
-
 import {
   LOGIN_HEADING_LINE1,
   LOGIN_HEADING_EMAIL_SUB,
@@ -21,6 +20,7 @@ import { AuthContext } from "@/context/authContext";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { toast } from "sonner";
 
 export default function LoginForm({
   email,
@@ -30,14 +30,11 @@ export default function LoginForm({
   isInvited,
 }) {
   const { login } = useContext(AuthContext);
-  const { requestNotificationPermission  } = useNotifications(); // Use the hook
+  const { requestNotificationPermission } = useNotifications();
   const router = useRouter();
 
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const isValidEmail = (value) => {
@@ -46,23 +43,21 @@ export default function LoginForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
-    setSuccessMsg("");
 
     if (!email?.trim()) {
-      setErrorMsg("Please enter your email.");
+      toast.error("Please enter your email.");
       return;
     }
     if (!isValidEmail(email.trim())) {
-      setErrorMsg("Please enter a valid email address.");
+      toast.error("Please enter a valid email address.");
       return;
     }
     if (!password) {
-      setErrorMsg("Please enter your password.");
+      toast.error("Please enter your password.");
       return;
     }
     if (password.length < 8) {
-      setErrorMsg("Password must be at least 8 characters long.");
+      toast.error("Password must be at least 8 characters long.");
       return;
     }
 
@@ -74,7 +69,7 @@ export default function LoginForm({
       });
 
       if (res?.data?.responseCode !== 200) {
-        setErrorMsg(res?.data?.responseMessage || "Login failed.");
+        toast.error(res?.data?.responseMessage || "Login failed.");
         return;
       }
 
@@ -99,10 +94,11 @@ export default function LoginForm({
         // Don't block the login flow if FCM fails
       }
 
+      toast.success("Login successful! Redirecting...");
       router.push(`/${redirectTo}/dashboard`);
       setPassword("");
     } catch (err) {
-      setErrorMsg(
+      toast.error(
         err?.response?.data?.message ||
           err?.message ||
           "Login failed. Please check your credentials and try again."
@@ -112,33 +108,7 @@ export default function LoginForm({
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      setErrorMsg("Please enter email first.");
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setErrorMsg("Please enter a valid email.");
-      return;
-    }
-
-    setErrorMsg("");
-    setSuccessMsg("");
-    setForgotLoading(true);
-
-    try {
-      const res = await axios.put("/user/forgot-password", { email });
-      const data = res.data;
-      setSuccessMsg(data?.message || "Password reset link sent.");
-    } catch (err) {
-      setErrorMsg("Something went wrong");
-    } finally {
-      setForgotLoading(false);
-    }
-  };
-
-   return (
+  return (
     <div className="flex justify-between bg-white">
       {/* Form and Logo Section (Fixed Width) */}
       <div className="flex ml-0 w-full vw-40">
@@ -154,8 +124,6 @@ export default function LoginForm({
                 <span>{LOGIN_HEADING_EMAIL_SUB}</span>
               </h3>
               <p className="mt-3 text-sm text-gray-500">{LOGIN_DESCRIPTION}</p>
-              {errorMsg && <div className="mt-3 text-sm text-red-600">{errorMsg}</div>}
-              {successMsg && <div className="mt-3 text-sm text-green-600">{successMsg}</div>}
 
               <form onSubmit={handleSubmit} className="mt-8 space-y-4">
                 <div>

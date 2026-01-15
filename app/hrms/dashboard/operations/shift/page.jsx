@@ -82,7 +82,7 @@ export default function Shifts() {
     try {
       await axios.delete(`/hrms/organization/delete-shift/${id}`);
       setShifts((prev) => prev.filter((s) => s._id !== id));
-      toast.success('Shift deleted', { id: tId });
+      toast.success('Shift Deleted', { id: tId });
     } catch (err) {
       console.error('Delete failed', err);
       const msg = err?.response?.data?.message || 'Failed to delete';
