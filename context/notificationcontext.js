@@ -192,7 +192,9 @@ export const NotificationProvider = ({ children }) => {
     if (policyId) payload.policyId = policyId;
     if (senderId) payload.senderId = senderId;
     try {
+      console.log("xxxxxxx",payload)
       const response = await axios.post("hrms/notification/send", payload);
+      console.log("XXXXXXXXXXXX",response.data)
       return response.data;
     } catch (error) {
       console.error(
@@ -347,6 +349,8 @@ export const NotificationProvider = ({ children }) => {
         viewed: false,
         createdAt: payload.data.createdAt ?? new Date().toISOString(),
       };
+
+      console.log("foreground message",)
  
       // Add to notifications list
       addNotification(notificationData);
