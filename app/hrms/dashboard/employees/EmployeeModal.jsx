@@ -41,8 +41,8 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete, del
       }
       return false;
     } catch (err) {
-      toast.error("Failed Epmloyee Deletion");
-      alert("Failed to delete employee. Please try again.");
+      console.error("Error while deleting employee:", err);
+      toast.error("Failed To Delete Employee");
       return false;
     } finally {
       setIsDeleting(false);

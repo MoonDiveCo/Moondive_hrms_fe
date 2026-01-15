@@ -6,6 +6,7 @@ import AddDepartmentModal from './addDepartmentModal'; // updated reusable modal
 import { Eye, Edit2, Trash2 } from 'lucide-react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { AuthContext } from '@/context/authContext';
+import { toast } from 'sonner';
 
 export default function Departments() {
   const [departments, setDepartments] = useState([]);
@@ -68,7 +69,7 @@ export default function Departments() {
       setDepartments((prev) => prev.filter((d) => d._id !== deptId));
     } catch (err) {
       console.error('Delete failed', err);
-      alert('Failed to delete department');
+      toast.error('Failed to delete department');
     }
   }
 

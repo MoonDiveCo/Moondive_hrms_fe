@@ -138,11 +138,11 @@ export default function CreateProjectDrawer({
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      alert('Project Name is required');
+      toast.error('Project Name is required');
       return;
     }
     if (!projectLead) {
-      alert('Project Manager is required');
+      toast.error('Project Manager is required');
       return;
     }
 
@@ -194,10 +194,10 @@ export default function CreateProjectDrawer({
         setProjectLead(null);
         setTeamMembers([]);
       } else {
-        alert(response.data?.responseMessage || 'Operation failed');
+        toast.error(response.data?.responseMessage || 'Operation failed');
       }
     } catch (error) {
-      alert(error.response?.data?.responseMessage || 'Server Error');
+      toast.error(error.response?.data?.responseMessage || 'Server Error');
     } finally {
       setIsLoading(false);
     }

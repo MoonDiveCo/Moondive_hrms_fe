@@ -153,11 +153,11 @@ export default function ProjectPage() {
         toast.success('Project Deleted Successfully');
         fetchProjects(); // Refresh list
       } else {
-        toast.error('Failed To Delete Project');
+        toast.error(res.data?.responseMessage ||'Failed To Delete Project');
       }
     } catch (err) {
       console.error('Error deleting project:', err);
-      toast.error('Failed To Delete Project');
+      toast.error(res.data?.responseMessage ||'Failed To Delete Project');
     }
     setOpenMenuId(null);
   };

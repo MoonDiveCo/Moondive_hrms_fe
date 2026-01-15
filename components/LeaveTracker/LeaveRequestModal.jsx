@@ -61,7 +61,7 @@ export default function LeaveRequestsModal({
 
   async function handleAction(leaveId, action) {
     if (action === "Rejected" && !reasonMap[leaveId]?.trim()) {
-      alert("Rejection reason is required");
+      toast.error("Rejection reason is required");
       return;
     }
 
