@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import HeroCursorRight from "../../public/Homepage/HeroCursorRight.png";
 import HeroCursorLeft from "../../public/Homepage/HeroCursorLeft.png";
 import Image from "next/image";
-import HeroImage from "../../public/Homepage/HeroSectionImg.png";
+import HeroImage from "../../public/Homepage/heroImage.svg";
 import { useRouter } from "next/navigation";
 import CmsImage from "../../public/Homepage/Document.svg";
 import CrmImage from "../../public/Homepage/Chart.svg";

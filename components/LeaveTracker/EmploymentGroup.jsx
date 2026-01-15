@@ -43,12 +43,33 @@ function EmploymentGroup() {
   ? policy.leaveTypes
   : [];
 
+// async function deleteGroup(groupName) {
+//   if (!window.confirm("Delete this employment group?")) return;
+
+//   await axios.delete(`/hrms/leave/delete-group-policy/${user.organizationId}/${groupName}`);
+
+
+//   fetchPolicy();
+// }
+
 async function deleteGroup(groupName) {
   if (!window.confirm("Delete this employment group?")) return;
 
-  await axios.delete(`/hrms/leave/delete-group-policy/${user.organizationId}/${groupName}`);
+  try {
+    await axios.delete(
+      `/hrms/leave/delete-group-policy/${user.organizationId}/${groupName}`
+    );
 
-  fetchPolicy();
+    toast.success("Employment Group Deleted Successfully");
+    fetchPolicy();
+  } catch (error) {
+    console.error("Delete Employment Group Failed:", error);
+
+    toast.error(
+      error?.response?.data?.message ||
+        "Failed To Delete Employment Group"
+    );
+  }
 }
 
 

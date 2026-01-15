@@ -150,14 +150,14 @@ export default function ProjectPage() {
       );
 
       if (res.data?.responseCode === 200) {
-        toast.success('Project deleted successfully');
+        toast.success('Project Deleted Successfully');
         fetchProjects(); // Refresh list
       } else {
-        toast.error(res.data?.responseMessage || 'Failed to delete project');
+        toast.error(res.data?.responseMessage ||'Failed To Delete Project');
       }
     } catch (err) {
       console.error('Error deleting project:', err);
-      toast.error(err.response?.data?.responseMessage || 'Failed to delete project');
+      toast.error(res.data?.responseMessage ||'Failed To Delete Project');
     }
     setOpenMenuId(null);
   };

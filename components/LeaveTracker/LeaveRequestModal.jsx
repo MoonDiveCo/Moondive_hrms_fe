@@ -88,13 +88,13 @@ export default function LeaveRequestsModal({
       }
 
       // Show success message
-      const actionText = action === "Approved" ? "approved" : "rejected";
-      toast.success(`Leave request ${actionText} successfully!`);
+      const actionText = action === "Approved" ? "Approved" : "Rejected";
+      toast.success(`Leave Request ${actionText} Successfully!`);
 
       onResolved(leaveId);
     } catch (err) {
       console.error("Error updating leave:", err);
-      toast.error("Failed to update leave request. Please try again.");
+      toast.error("Failed To Update Leave Request.");
     } finally {
       setProcessingId(null);
       setRejectingId(null);

@@ -36,13 +36,13 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete, del
 
       const res = await axios.put(`/hrms/employee/delete-employee/${employee._id}`);
       if (res.data.responseCode === 200) {
-        console.log("Delete successful");
+        toast.success("Delete Successful");
         return true;
       }
       return false;
     } catch (err) {
       console.error("Error while deleting employee:", err);
-      toast.error("Failed to delete employee. Please try again.");
+      toast.error("Failed To Delete Employee");
       return false;
     } finally {
       setIsDeleting(false);

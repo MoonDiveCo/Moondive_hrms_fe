@@ -168,11 +168,13 @@ export default function CreateProjectDrawer({
           `/hrms/projects/update-project/${editingProject._id}`,
           payload
         );
+        toast.success("Project Updated Successfullly")
       } else {
         response = await axios.post(
-          `/api/v1/hrms/projects/create-project`,
+          `/hrms/projects/create-project`,
           payload
         );
+        toast.success("Project Created Successfully")
       }
 
       if (response.data?.success || response.data?.responseCode === 200) {
