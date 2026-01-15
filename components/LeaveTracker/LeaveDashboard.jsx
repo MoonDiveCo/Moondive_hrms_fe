@@ -140,19 +140,8 @@ useEffect(() => {
     }
 
     if (data.type === "LEAVE_UPDATED") {
-      const payload = data.payload || data.data;
-
-      if (payload) {
-        mutate("/hrms/leave/get-leave-dashboard", (cached) => {
-          if (!cached) return cached;
-          return cached; 
-        }, { revalidate: false,
-         });
-      }
-
-      // mutate("/hrms/leave/get-leave-dashboard");
-      // mutate("/hrms/leave/get-leave");
-
+      mutate("/hrms/leave/get-leave-dashboard");
+      mutate("/hrms/leave/get-leave");
       calendarRefreshRef.current?.();
     }
   };
@@ -172,6 +161,7 @@ const { data: dashboardRes, isLoading: dashboardLoading} = useSWR(
   fetcherWithAuth,
    {
     revalidateOnFocus: true,
+    refreshInterval: 10000,
   }
 );
 
@@ -188,6 +178,7 @@ const { data: leaveRes } = useSWR(
   fetcherWithAuth,
    {
     revalidateOnFocus: true,
+    refreshInterval: 10000,
   }
 );
 
