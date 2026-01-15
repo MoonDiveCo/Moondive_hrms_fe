@@ -31,11 +31,6 @@ export const NotificationProvider = ({ children }) => {
       ? Notification.permission
       : "default"
   );
- 
- 
-  // API base URL
-  const API_BASE_URL = "/hrms/notification";
- 
   // Get auth token from cookies
   const getAuthToken = () => {
     if (typeof window !== "undefined") {
@@ -43,7 +38,7 @@ export const NotificationProvider = ({ children }) => {
     }
     return null;
   };
- 
+
   // Get user from localStorage
   const getUser = () => {
     if (typeof window !== "undefined") {
@@ -74,39 +69,18 @@ export const NotificationProvider = ({ children }) => {
   }, [isSignedIn, authLoading]);
  
   // Create a stable API instance using useRef
-  const apiRef = useRef(null);
- 
-  if (!apiRef.current) {
-    apiRef.current = axios.create({
-      baseURL: API_BASE_URL,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
- 
-    // Add auth token to requests
-    apiRef.current.interceptors.request.use((config) => {
-      const token = getAuthToken();
-      if (token) {
-        config.headers.token = token;
-      }
-      return config;
-    });
-  }
- 
-  const api = apiRef.current;
+
  
   // Fetch notifications from server - now stable with useRef
   const fetchNotifications = useCallback(
     async (page = 1, limit = 20) => {
       if (!isAuthenticated) {
-        console.log("User not authenticated");
         return;
       }
  
       setLoading(true);
       try {
-        const response = await api.get("/list-notification", {
+        const response = await axios.get("hrms/notification/list-notification", {
           params: {
             page,
             limit,
@@ -144,13 +118,13 @@ export const NotificationProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [isAuthenticated, api]
+    [isAuthenticated]
   );
  
   // Mark notification as read
   const markAsRead = async (notificationId) => {
   try {
-    const { data } = await api.put(`/mark-as-read/${notificationId}`);
+    const { data } = await axios.put(`hrms/notification/mark-as-read/${notificationId}`);
 
     if (data.success) {
       setNotifications((prev) =>
@@ -170,7 +144,7 @@ export const NotificationProvider = ({ children }) => {
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
-      const response = await api.put("/mark-all-read");
+      const response = await axios.put("hrms/notification/mark-all-read");
  
       if (response.data.success) {
         setNotifications((prev) =>
@@ -218,8 +192,7 @@ export const NotificationProvider = ({ children }) => {
     if (policyId) payload.policyId = policyId;
     if (senderId) payload.senderId = senderId;
     try {
-      const response = await api.post("/send", payload);
-      console.log("✅ Notification API response:", response.data);
+      const response = await axios.post("hrms/notification/send", payload);
       return response.data;
     } catch (error) {
       console.error(
@@ -233,7 +206,7 @@ export const NotificationProvider = ({ children }) => {
   // Delete notification
   const deleteNotification = async (notificationId) => {
     try {
-      const response = await api.delete(`/delete/${notificationId}`);
+      const response = await axios.delete(`hrms/notification/delete/${notificationId}`);
  
       if (response.data.success) {
         setNotifications((prev) =>
@@ -270,7 +243,7 @@ export const NotificationProvider = ({ children }) => {
         console.warn("No userId found in localStorage");
       }
  
-      const response = await api.post("/token", payload);
+      const response = await axios.post("hrms/notification/token", payload);
       
       return response.data;
     } catch (error) {
@@ -283,7 +256,6 @@ export const NotificationProvider = ({ children }) => {
   const getFCMToken = async () => {
     try {
       if (!messaging) {
-        console.log("Messaging not initialized");
         return null;
       }
  
@@ -297,11 +269,8 @@ export const NotificationProvider = ({ children }) => {
       });
  
       if (!token) {
-        console.log("Token not generated");
         return null;
       }
- 
-      console.log("FCM token:", token);
       setFcmToken(token);
       await saveFCMTokenToServer(token);
       return token;
@@ -315,7 +284,6 @@ export const NotificationProvider = ({ children }) => {
   const requestNotificationPermission = useCallback(async () => {
     try {
       if (typeof window === "undefined" || !("Notification" in window)) {
-        console.log("This browser does not support notifications");
         return false;
       }
  
@@ -334,43 +302,6 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
  
-  // Add new notification to local state with proper duplicate checking
-  // const addNotification = useCallback((notification) => {
-  //   const notifId = notification._id || notification.id;
-   
-  //   // Check if already processed
-  //   if (processedNotificationIds.current.has(notifId)) {
-  //     console.log("⚠️ Duplicate notification ignored (already processed):", notifId);
-  //     return;
-  //   }
- 
-  //   setNotifications((prev) => {
-  //     // Double check for duplicates in current state
-  //     const exists = prev.some((n) => n._id === notifId);
- 
-  //     if (!exists) {
-  //       console.log("✅ Adding new notification:", notifId);
-       
-  //       // Mark as processed
-  //       processedNotificationIds.current.add(notifId);
-       
-  //       // Only increment unread count if notification is unread
-  //       if (!notification.viewed) {
-  //         setUnreadCount((prevCount) => {
-  //           const newCount = prevCount + 1;
-  //           console.log("📈 Incrementing unread count:", prevCount, "->", newCount);
-  //           return newCount;
-  //         });
-  //       }
-       
-  //       return [notification, ...prev];
-  //     }
-     
-  //     console.log("⚠️ Duplicate notification ignored:", notifId);
-  //     return prev;
-  //   });
-  // }, []);
- 
     const addNotification = useCallback((notification) => {
     const notifId = notification._id || notification.id;
    
@@ -384,24 +315,11 @@ export const NotificationProvider = ({ children }) => {
       const exists = prev.some((n) => n._id === notifId);
  
       if (!exists) {
-        console.log("✅ Adding new notification:", notifId);
-       
         // Mark as processed
         processedNotificationIds.current.add(notifId);
        
-        // Only increment unread count if notification is unread
-        // if (!notification.viewed) {
-        //   setUnreadCount((prevCount) => {
-        //     const newCount = prevCount + 1;
-        //     console.log("📈 Incrementing unread count:", prevCount, "->", newCount);
-        //     return newCount;
-        //   });
-        // }
-       
         return [notification, ...prev];
       }
-     
-      console.log("⚠️ Duplicate notification ignored:", notifId);
       return prev;
     });
     setUnreadCount ((prev)=>{
@@ -414,10 +332,8 @@ export const NotificationProvider = ({ children }) => {
   // Combined foreground and background notification handler
   useEffect(() => {
     if (typeof window === "undefined" || !messaging) return;
-   
     // 1. Foreground message listener (onMessage)
     const unsubscribe = onMessage(messaging, (payload) => {
-      console.log("📱 FOREGROUND notification received:", payload);
       if(payload.data.receiverId!==user._id) return
  
       if (!payload?.data) return;
@@ -447,8 +363,6 @@ export const NotificationProvider = ({ children }) => {
           if (event.data.notificationClick) {
             fetchNotifications();
           } else if (event.data.isBackground) {
-            console.log("🌙 BACKGROUND notification received");
- 
             const newNotification = {
               _id: event.data.payload.data._id || Date.now().toString(),
               notificationTitle: event.data.payload.data.notificationTitle,
