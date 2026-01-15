@@ -699,7 +699,6 @@ export default function AddEditEmployeeModal({
     }
 
     try {
-      console.log("Submitting data:", submitData);
 
       let res;
       if (mode === "add") {

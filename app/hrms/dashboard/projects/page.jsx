@@ -6,6 +6,7 @@ import CreateProjectDrawer from './CreateProjectDrawer';
 import { AuthContext } from '@/context/authContext';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Users, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 
 function useMembersPerRow(ref) {
   const [count, setCount] = useState(4);
@@ -149,14 +150,14 @@ export default function ProjectPage() {
       );
 
       if (res.data?.responseCode === 200) {
-        alert('Project deleted successfully');
+        toast.success('Project Deleted Successfully');
         fetchProjects(); // Refresh list
       } else {
-        alert(res.data?.responseMessage || 'Failed to delete project');
+        toast.error('Failed To Delete Project');
       }
     } catch (err) {
       console.error('Error deleting project:', err);
-      alert(err.response?.data?.responseMessage || 'Failed to delete project');
+      toast.error('Failed To Delete Project');
     }
     setOpenMenuId(null);
   };

@@ -7,16 +7,37 @@ export default function EditHolidayModal({ day, onClose, onSuccess }) {
   const [type, setType] = useState(day.type);
   const [name, setName] = useState(day.name || "");
 
-  async function handleSave() {
+  // async function handleSave() {
+  //   await axios.post("/api/hrms/holidays/update", {
+  //     organizationId: day.organizationId,
+  //     date: day.date,
+  //     type,
+  //     name,
+  //   });
+  //   onSuccess();
+  //   onClose();
+  // }
+async function handleSave() {
+  try {
     await axios.post("/api/hrms/holidays/update", {
       organizationId: day.organizationId,
       date: day.date,
       type,
       name,
     });
+
+    toast.success("holiday updated successfully");
     onSuccess();
     onClose();
+  } catch (error) {
+    console.error("update holiday failed:", error);
+
+    toast.error(
+      error?.response?.data?.message ||
+        "failed to update holiday please try again"
+    );
   }
+}
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">

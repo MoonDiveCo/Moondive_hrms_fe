@@ -3,6 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNotifications } from "../../context/notificationcontext"; // Import notification context
+import { toast } from "sonner";
 
 export default function LeaveRequestsModal({
   requests,
@@ -87,13 +88,13 @@ export default function LeaveRequestsModal({
       }
 
       // Show success message
-      const actionText = action === "Approved" ? "approved" : "rejected";
-      alert(`Leave request ${actionText} successfully!`);
+      const actionText = action === "Approved" ? "Approved" : "Rejected";
+      toast.success(`Leave Request ${actionText} Successfully!`);
 
       onResolved(leaveId);
     } catch (err) {
       console.error("Error updating leave:", err);
-      alert("Failed to update leave request. Please try again.");
+      toast.error("Failed To Update Leave Request.");
     } finally {
       setProcessingId(null);
       setRejectingId(null);

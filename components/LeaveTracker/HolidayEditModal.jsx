@@ -10,34 +10,82 @@ export default function HolidayEditModal({ day, onClose, organizationId }) {
     typeof day?.isActive === "boolean" ? day.isActive : true
   );
 
-  async function handleSave() {
+//   async function handleSave() {
+//     await axios.put("/hrms/holiday/update-type", {
+//       organizationId: organizationId,
+//       date: day.date,
+//       name: name || null,
+//       type,
+//       isActive,
+//     });
+
+//     onClose();
+//   }
+
+//   async function handleDelete() {
+//   const confirmDelete = confirm(
+//     "Are you sure you want to permanently delete this holiday?"
+//   );
+
+//   if (!confirmDelete) return;
+
+//   await axios.delete("/hrms/holiday/delete", {
+//     data: {
+//       organizationId,
+//       date: day.date,
+//     },
+//   });
+
+//   onClose();
+// }
+async function handleSave() {
+  try {
     await axios.put("/hrms/holiday/update-type", {
-      organizationId: organizationId,
+      organizationId,
       date: day.date,
       name: name || null,
       type,
       isActive,
     });
 
+    toast.success("Holiday Updated Successfully");
     onClose();
-  }
+  } catch (error) {
+    console.error("update holiday failed:", error);
 
-  async function handleDelete() {
+    toast.error(
+      error?.response?.data?.message ||
+        "Failed to Update Holiday Please Try Again"
+    );
+  }
+}
+async function handleDelete() {
   const confirmDelete = confirm(
     "Are you sure you want to permanently delete this holiday?"
   );
 
   if (!confirmDelete) return;
 
-  await axios.delete("/hrms/holiday/delete", {
-    data: {
-      organizationId,
-      date: day.date,
-    },
-  });
+  try {
+    await axios.delete("/hrms/holiday/delete", {
+      data: {
+        organizationId,
+        date: day.date,
+      },
+    });
 
-  onClose();
+    toast.success("Holiday Deleted Successfully");
+    onClose();
+  } catch (error) {
+    console.error("delete holiday failed:", error);
+
+    toast.error(
+      error?.response?.data?.message ||
+        "failed to delete holiday please try again"
+    );
+  }
 }
+
 
 
   return (
