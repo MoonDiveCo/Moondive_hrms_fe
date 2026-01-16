@@ -1,10 +1,20 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState ,useMemo} from 'react';
 import axios from 'axios';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { X, Check, Users, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import useSWR, { mutate } from "swr";
+
+const fetcherWithAuth = async (url) => {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return res.data;
+};
 
 function formatTime(value) {
   if (!value) return '—';
@@ -228,19 +238,34 @@ export default function Analytics() {
     tabFromUrl && TABS.some((t) => t.key === tabFromUrl) ? tabFromUrl : 'leave'
   );
 
-  const [data, setData] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // const [data, setData] = useState([]);
+  // const [stats, setStats] = useState(null);
+  // const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
   period: "month",
   date: new Date().toISOString().slice(0, 10),
   department: "",
   designation: "",
 });
-const [allAttendanceData, setAllAttendanceData] = useState([]);
+// const [allAttendanceData, setAllAttendanceData] = useState([]);
 const [departments, setDepartments] = useState([]);
 const [designations, setDesignations] = useState([]);
 
+const analyticsKey = useMemo(() => {
+  if (!activeTab) return null;
+
+  const params = new URLSearchParams({
+    type: activeTab,
+  });
+
+  if (activeTab === "attendance") {
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v) params.append(k, v);
+    });
+  }
+
+  return `/hrms/organization/analytics?${params.toString()}`;
+}, [activeTab, filters]);
 
 
   useEffect(() => {
@@ -267,38 +292,60 @@ const [designations, setDesignations] = useState([]);
   // }, [activeTab]);
 
 
-  useEffect(() => {
-  let alive = true;
-  setLoading(true);
+//   useEffect(() => {
+//   let alive = true;
+//   setLoading(true);
 
-  axios.get("/hrms/organization/analytics", {
-    params: {
-      type: activeTab,
-      ...(activeTab === "attendance" ? filters : {}),
-    },
-  })
-    .then((res) => {
-      if (!alive) return;
-      setData(res.data.employees || []);
-      setStats(res.data.stats || null);
-    })
-    .catch(console.error)
-    .finally(() => alive && setLoading(false));
+//   axios.get("/hrms/organization/analytics", {
+//     params: {
+//       type: activeTab,
+//       ...(activeTab === "attendance" ? filters : {}),
+//     },
+//   })
+//     .then((res) => {
+//       if (!alive) return;
+//       setData(res.data.employees || []);
+//       setStats(res.data.stats || null);
+//     })
+//     .catch(console.error)
+//     .finally(() => alive && setLoading(false));
 
-  return () => (alive = false);
-}, [activeTab, filters]);
+//   return () => (alive = false);
+// }, [activeTab, filters]);
 
-useEffect(() => {
-  if (activeTab !== "attendance") return;
+const {
+  data: analyticsRes,
+  isLoading,
+} = useSWR(analyticsKey, fetcherWithAuth, {
+  revalidateOnFocus: true,
+  refreshInterval: 10000, // same pattern as dashboard
+});
 
-  axios.get("/hrms/organization/analytics", {
-    params: { type: "attendance" }, 
-  })
-    .then((res) => {
-      setAllAttendanceData(res.data.employees || []);
-    })
-    .catch(console.error);
-}, [activeTab]);
+const data = analyticsRes?.employees || [];
+const stats = analyticsRes?.stats || null;
+const loading = isLoading;
+
+
+// useEffect(() => {
+//   if (activeTab !== "attendance") return;
+
+//   axios.get("/hrms/organization/analytics", {
+//     params: { type: "attendance" }, 
+//   })
+//     .then((res) => {
+//       setAllAttendanceData(res.data.employees || []);
+//     })
+//     .catch(console.error);
+// }, [activeTab]);
+const { data: allAttendanceRes } = useSWR(
+  activeTab === "attendance"
+    ? "/hrms/organization/analytics?type=attendance"
+    : null,
+  fetcherWithAuth
+);
+
+const allAttendanceData = allAttendanceRes?.employees || [];
+
 
 useEffect(() => {
   if (!allAttendanceData.length) return;
@@ -632,26 +679,38 @@ function PendingLeaveTable({ onApprovedToday }) {
   const [processingId, setProcessingId] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  useEffect(() => {
-    axios
-      .get('/hrms/leave/get-leave', {
-        params: { year: new Date().getFullYear() },
-      })
-      .then(res => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+  // useEffect(() => {
+  //   axios
+  //     .get('/hrms/leave/get-leave', {
+  //       params: { year: new Date().getFullYear() },
+  //     })
+  //     .then(res => {
+  //       const today = new Date();
+  //       today.setHours(0, 0, 0, 0);
 
-        const filtered = (res.data?.leaveRequests || []).filter(l => {
-          if (l.decision) return false;
+  //       const filtered = (res.data?.leaveRequests || []).filter(l => {
+  //         if (l.decision) return false;
 
-          return true;
-        });
+  //         return true;
+  //       });
 
-        setRows(filtered);
-      })
+  //       setRows(filtered);
+  //     })
 
-      .catch(console.error);
-  }, []);
+  //     .catch(console.error);
+  // }, []);
+
+  const { data: leaveRes } = useSWR(
+  "/hrms/leave/get-leave",
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+useEffect(() => {
+  const filtered = (leaveRes?.leaveRequests || []).filter(l => !l.decision);
+  setRows(filtered);
+}, [leaveRes]);
+
 
   async function handleAction(row, action) {
     setProcessingId(row.leaveId);
@@ -684,6 +743,9 @@ function PendingLeaveTable({ onApprovedToday }) {
       setProcessingId(null);
       setConfirmAction(null);
     }
+    await mutate("/hrms/leave/get-leave");
+await mutate((key) => key?.startsWith("/hrms/organization/analytics"));
+
   }
 
   if (!rows.length) {
