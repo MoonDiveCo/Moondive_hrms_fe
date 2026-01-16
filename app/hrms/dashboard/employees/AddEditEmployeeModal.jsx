@@ -1812,20 +1812,30 @@ export default function AddEditEmployeeModal({
                   Reporting Manager
                 </label>
                 <select
-                  value={form.reportingManagerId || ""}
-                  onChange={(e) => update("reportingManagerId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.reportingManagerId ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select Reporting Manager</option>
-                  {employeeList.map((e) => (
-                    <option key={e._id} value={e._id}>
-                      {e.firstName} {e.lastName}
-                    </option>
-                  ))}
-                </select>
+  value={form.reportingManagerId || ""}
+  onChange={(e) => update("reportingManagerId", e.target.value)}
+  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
+    errors.reportingManagerId ? "border-red-500" : ""
+  }`}
+  disabled={isView}
+>
+  <option value="">Select Reporting Manager</option>
+
+  {employeeList
+    .filter((mgr) => {
+      // In edit mode, remove self from reporting manager list
+      if (mode === "edit" && employee?._id) {
+        return mgr._id !== employee._id;
+      }
+      return true;
+    })
+    .map((mgr) => (
+      <option key={mgr._id} value={mgr._id}>
+        {mgr.firstName} {mgr.lastName}
+      </option>
+    ))}
+</select>
+
               </div>
 
               <div>
