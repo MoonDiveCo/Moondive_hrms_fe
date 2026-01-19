@@ -23,7 +23,7 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
     markAsRead,
     markAllAsRead,
   } = useNotifications();
-
+ console.log("-----------------",unreadCount)
   useEffect(() => {
     if (!portalEl) return;
     document.body.appendChild(portalEl);
@@ -31,7 +31,7 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
   }, [portalEl]);
 
   useEffect(() => {
-    if (isOpen) fetchNotifications(1);
+    if (isOpen) fetchNotifications();
   }, [isOpen, fetchNotifications]);
 
   // 🔥 THIS FIXES THE BLUR ISSUE

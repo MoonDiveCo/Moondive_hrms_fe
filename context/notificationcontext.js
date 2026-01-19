@@ -70,7 +70,6 @@ export const NotificationProvider = ({ children }) => {
  
   // Create a stable API instance using useRef
 
- 
   // Fetch notifications from server - now stable with useRef
   const fetchNotifications = useCallback(
     async (page = 1, limit = 20) => {
@@ -192,16 +191,14 @@ export const NotificationProvider = ({ children }) => {
     if (policyId) payload.policyId = policyId;
     if (senderId) payload.senderId = senderId;
     try {
-      console.log("xxxxxxx",payload)
       const response = await axios.post("hrms/notification/send", payload);
-      console.log("XXXXXXXXXXXX",response.data)
+      console.log("--------------8888888888888888",response)
       return response.data;
     } catch (error) {
       console.error(
-        "❌ Error sending notification:",
+        " Error sending notification:",
         error.response?.data || error
       );
-      throw error;
     }
   };
  
