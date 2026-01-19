@@ -154,7 +154,7 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
           <option value="">Select Group</option>
           <option value="Permanent">Permanent</option>
           <option value="Internship">Internship</option>
-          <option value="Contract">Contract</option>
+          <option value="Probation">Probation</option>
         </select>
         {groupError && (
           <span className="text-xs text-red-500 mb-4 mt-1">{groupError}</span>

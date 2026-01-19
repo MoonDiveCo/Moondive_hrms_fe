@@ -7,6 +7,7 @@ import EmployeeModal from './EmployeeModal';
 import AddEditEmployeeModal from './AddEditEmployeeModal';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { AuthContext } from '@/context/authContext';
+import { useRouter } from 'next/navigation';
 
 export default function Employees({ initialEmployees = [] }) {
   const [employees, setEmployees] = useState(initialEmployees);
@@ -30,6 +31,7 @@ export default function Employees({ initialEmployees = [] }) {
   const departmentDropdownRef = useRef(null);
   const sortDropdownRef = useRef(null);
   const { allUserPermissions } = useContext(AuthContext);
+  const router = useRouter()
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -279,6 +281,16 @@ export default function Employees({ initialEmployees = [] }) {
     setShowAddEdit(true);
   }
 
+  function handleEmployeeClick(emp) {
+  const slug = emp.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  router.push(`/hrms/dashboard/employees/${slug}-${emp.id}`);
+}
+
+
   async function handleSave(newEmp) {
     try {
       await fetchEmployees();
@@ -521,7 +533,7 @@ export default function Employees({ initialEmployees = [] }) {
                     {dept.employees.map((emp) => (
                       <div
                         key={emp.id}
-                        onClick={(e) => openView(emp, e)}
+                        onClick={() => handleEmployeeClick(emp)}
                         className='flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-300 hover:shadow-sm transition cursor-pointer'
                       >
                         <img
