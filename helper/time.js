@@ -15,7 +15,7 @@
 // const WORK_START_MIN = WORK_START.h * 60 + WORK_START.m;
 // const WORK_END_MIN   = WORK_END.h * 60 + WORK_END.m;
 // const TOTAL_MIN     = WORK_END_MIN - WORK_START_MIN;
-const WORK_START_MIN = 6 * 60; // 10:00 AM
+const WORK_START_MIN = 10 * 60; // 10:00 AM
 const WORK_END_MIN   = 19 * 60; // 7:00 PM
 const TOTAL_MIN = WORK_END_MIN - WORK_START_MIN;
 // 
@@ -32,25 +32,23 @@ function parseDisplayTime(str) {
   return h * 60 + m;
 }
 export function timeToPercent(time) {
-  let minutes = null;
+  if (!time) return null;
+
+  let minutes;
 
   if (time instanceof Date) {
     minutes = time.getHours() * 60 + time.getMinutes();
-  } 
-  else if (typeof time === "string") {
-
+  } else if (typeof time === "string") {
     if (!isNaN(Date.parse(time))) {
-
       const d = new Date(time);
       minutes = d.getHours() * 60 + d.getMinutes();
     } else {
-
       minutes = parseDisplayTime(time);
-
     }
   }
 
   if (minutes == null) return null;
+
   const clamped = Math.min(
     WORK_END_MIN,
     Math.max(WORK_START_MIN, minutes)
@@ -61,12 +59,18 @@ export function timeToPercent(time) {
 
 
 
+export function nowToPercent(baseDate) {
+  const d = baseDate ? new Date(baseDate) : new Date();
+  const minutes = d.getHours() * 60 + d.getMinutes();
 
+  const clamped = Math.min(
+    WORK_END_MIN,
+    Math.max(WORK_START_MIN, minutes)
+  );
 
-
-export function nowToPercent()  {
-  return timeToPercent(new Date()) ;
+  return ((clamped - WORK_START_MIN) / TOTAL_MIN) * 100;
 }
+
 
 export function diffTime(start) {
   if (!start) return null; // 👈 critical fix

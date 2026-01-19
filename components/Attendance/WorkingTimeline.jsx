@@ -7,13 +7,15 @@ export default function WorkingTimeline({ checkIn, checkOut }) {
   const start = timeToPercent(checkIn);
 
   const [liveEnd, setLiveEnd] = useState(
-    checkOut ? timeToPercent(checkOut) : nowToPercent()
+    checkOut ? timeToPercent(checkOut) : nowToPercent(checkIn)
   );
+
+  console.log("WorkingTimeline state:", { start, liveEnd });
   useEffect(() => {
     if (checkOut) return;
 
     const id = setInterval(() => {
-      setLiveEnd(nowToPercent());
+      setLiveEnd(nowToPercent(checkIn));
     }, 1000);
 
     return () => clearInterval(id);
