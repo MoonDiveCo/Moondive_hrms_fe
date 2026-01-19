@@ -14,6 +14,16 @@ import { format, isSameDay, subDays } from 'date-fns';
 import ConfirmationModal from '../ConfirmationModal/ConfirmationModal';
 import { useRouter } from 'next/navigation';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import useSWR, { mutate } from "swr";
+
+const fetcherWithAuth = async (url) => {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
+
 
 const PULSE_CARDS = [
   {
@@ -68,38 +78,64 @@ const PULSE_CARDS = [
 
 
 export default function OverviewPage() {
-  const [pulse, setPulse] = useState(null);
-  const [attendance, setAttendance] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [pendingLeaves, setPendingLeaves] = useState([]);
+  // const [pulse, setPulse] = useState(null);
+  // const [attendance, setAttendance] = useState(null);
+  // const [loading, setLoading] = useState(true);
+  // const [pendingLeaves, setPendingLeaves] = useState([]);
   const [confirmAction, setConfirmAction] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const router = useRouter()
+  
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        const [pulseRes, attendanceRes, leaveRes] = await Promise.all([
-          axios.get('/hrms/organization/organization-pulse'),
-          axios.get('/hrms/organization/attendance-insights'),
-          axios.get("/hrms/leave/get-leave", {
-            params: { year: new Date().getFullYear() },
-          }),
-        ]);
+  // useEffect(() => {
+  //   async function fetchDashboard() {
+  //     try {
+  //       const [pulseRes, attendanceRes, leaveRes] = await Promise.all([
+  //         axios.get('/hrms/organization/organization-pulse'),
+  //         axios.get('/hrms/organization/attendance-insights'),
+  //         axios.get("/hrms/leave/get-leave", {
+  //           params: { year: new Date().getFullYear() },
+  //         }),
+  //       ]);
 
-        setPulse(pulseRes.data);
-        setAttendance(attendanceRes.data);
-        setPendingLeaves(leaveRes.data?.leaveRequests)
+  //       setPulse(pulseRes.data);
+  //       setAttendance(attendanceRes.data);
+  //       setPendingLeaves(leaveRes.data?.leaveRequests)
 
-      } catch (err) {
-        console.error('Dashboard fetch failed', err);
-      } finally {
-        setLoading(false);
-      }
-    }
+  //     } catch (err) {
+  //       console.error('Dashboard fetch failed', err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
 
-    fetchDashboard();
-  }, []);
+  //   fetchDashboard();
+  // }, []);
+
+  const { data: pulseRes, isLoading: pulseLoading } = useSWR(
+  "/hrms/organization/organization-pulse",
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+const { data: attendanceRes, isLoading: attendanceLoading } = useSWR(
+  "/hrms/organization/attendance-insights",
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+const { data: leaveRes } = useSWR(
+  `/hrms/leave/get-leave?year=${new Date().getFullYear()}`,
+  fetcherWithAuth,
+  { refreshInterval: 10000 }
+);
+
+const pulse = pulseRes || {};
+const attendance = attendanceRes || {};
+const pendingLeaves = (leaveRes?.leaveRequests || []).filter(l => !l.decision);
+
+const loading = pulseLoading || attendanceLoading;
+
 
  if(loading){
           return(
@@ -114,26 +150,51 @@ export default function OverviewPage() {
           )
         }
 
+  // async function handleLeaveDecision(leaveId, action) {
+  //   try {
+  //     setProcessingId(leaveId);
+
+  //     await axios.put("/hrms/leave/update-leave-decision", {
+  //       leaveEntryId: leaveId,
+  //       action,
+  //       reason: `CEO ${action}`,
+  //     });
+
+  //     setPendingLeaves((prev) =>
+  //       prev.filter((l) => l.leaveId !== leaveId)
+  //     );
+  //   } catch (err) {
+  //     console.error(err);
+  //   } finally {
+  //     setProcessingId(null);
+  //     setConfirmAction(null);
+  //   }
+  // }
+
   async function handleLeaveDecision(leaveId, action) {
-    try {
-      setProcessingId(leaveId);
+  try {
+    setProcessingId(leaveId);
 
-      await axios.put("/hrms/leave/update-leave-decision", {
-        leaveEntryId: leaveId,
-        action,
-        reason: `CEO ${action}`,
-      });
+    await axios.put("/hrms/leave/update-leave-decision", {
+      leaveEntryId: leaveId,
+      action,
+      reason: `CEO ${action}`,
+    });
 
-      setPendingLeaves((prev) =>
-        prev.filter((l) => l.leaveId !== leaveId)
-      );
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setProcessingId(null);
-      setConfirmAction(null);
-    }
+    // 🔥 Revalidate everywhere
+    await mutate("/hrms/leave/get-leave");
+    await mutate("/hrms/organization/organization-pulse");
+    await mutate("/hrms/organization/attendance-insights");
+    await mutate((key) => key?.startsWith("/hrms/organization/analytics"));
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setProcessingId(null);
+    setConfirmAction(null);
   }
+}
+
 
   return (
     <div className='min-h-screen text-slate-900'>
