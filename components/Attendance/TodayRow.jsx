@@ -78,11 +78,11 @@ export default function TodayRow({
         {checkOut && (
           <div className='w-28 text-right'>
             <div className='font-semibold'>{formatTime(checkOut)}</div>
-            {early && (
+            {/* {early && (
               <div className='text-xs text-orange-600 mt-1'>
                 Early by {early}
               </div>
-            )}
+            )} */}
           </div>
         )}
 
