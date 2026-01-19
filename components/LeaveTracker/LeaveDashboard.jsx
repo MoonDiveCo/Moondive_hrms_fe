@@ -132,16 +132,25 @@ useEffect(() => {
             leaves: newLeaves,
             leaveRequests: newLeaveRequests,
           };
-        }, { revalidate: false,
-         });
+        }, { revalidate: false });
       }
 
       // mutate("/hrms/leave/get-leave");
     }
 
     if (data.type === "LEAVE_UPDATED") {
-      mutate("/hrms/leave/get-leave-dashboard");
-      mutate("/hrms/leave/get-leave");
+      const payload = data.payload || data.data;
+
+      if (payload) {
+        mutate("/hrms/leave/get-leave-dashboard", (cached) => {
+          if (!cached) return cached;
+          return cached; 
+        }, { revalidate: false });
+      }
+
+      // mutate("/hrms/leave/get-leave-dashboard");
+      // mutate("/hrms/leave/get-leave");
+
       calendarRefreshRef.current?.();
     }
   };
@@ -159,10 +168,7 @@ const isSuperAdmin = userRole === "SuperAdmin";
 const { data: dashboardRes, isLoading: dashboardLoading} = useSWR(
   !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
   fetcherWithAuth,
-   {
-    revalidateOnFocus: true,
-    refreshInterval: 10000,
-  }
+  // { refreshInterval: 30000 }
 );
 
 const { data: holidayRes } = useSWR(
@@ -176,10 +182,7 @@ const { data: holidayRes } = useSWR(
 const { data: leaveRes } = useSWR(
   user?._id ? "/hrms/leave/get-leave" : null,
   fetcherWithAuth,
-   {
-    revalidateOnFocus: true,
-    refreshInterval: 10000,
-  }
+  // { refreshInterval: 30000 }
 );
 
 const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];
