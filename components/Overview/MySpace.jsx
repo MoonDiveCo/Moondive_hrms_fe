@@ -54,7 +54,7 @@ const fetcherWithAuth = async (url) => {
 };
 
 export default function HRMSOverviewPage() {
-  const { workedSeconds = 0 } = useAttendance();
+  const { workedSeconds } = useAttendance();
   const { user } = useContext(AuthContext);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('leave');
@@ -226,41 +226,65 @@ export default function HRMSOverviewPage() {
 
     return days;
   }
-  const attendanceItems = getPast7Days().map((d) => {
-    const key = dayjs(d).format('YYYY-MM-DD');
-    const record = weekAttendance[key]?.data?.[0];
+const attendanceItems = getPast7Days().map((d) => {
+  const key = dayjs(d).format("YYYY-MM-DD");
+  const record = weekAttendance[key]?.data?.[0];
 
-    if (!record || !record.sessions || record.sessions.length === 0) {
-      return {
-        day: dayjs(d).format('dddd, MMM DD'),
-        hours: '0h',
-        status: 'Absent',
-        color: 'orange',
-      };
-    }
-
-    const sessions = record.sessions;
-    const firstIn = sessions[0].checkIn ? dayjs(sessions[0].checkIn) : null;
-    const lastSession = sessions[sessions.length - 1];
-    const isStillCheckedIn = lastSession.checkIn && !lastSession.checkOut;
-
-    const totalHours =
-      workedSeconds > 0
-        ? (Math.round((workedSeconds / 3600) * 10) / 10).toFixed(1) + 'h'
-        : '0h';
-
-    const time = firstIn
-      ? `${firstIn.format('hh:mm A')} ${isStillCheckedIn ? '—' : ''}`
-      : '—';
-
+  if (!record || !record.sessions?.length) {
     return {
-      day: dayjs(d).format('dddd, MMM DD'),
-      time,
-      hours: totalHours,
-      status: 'Present',
-      color: 'green',
+      day: dayjs(d).format("dddd, MMM DD"),
+      time: "—",
+      hours: "0h",
+      status: "Absent",
+      color: "orange",
     };
-  });
+  }
+
+  const sessions = record.sessions;
+
+  const firstIn = sessions[0]?.checkIn
+    ? dayjs(sessions[0].checkIn)
+    : null;
+
+  const lastSession = sessions[sessions.length - 1];
+  const lastOut = lastSession?.checkOut
+    ? dayjs(lastSession.checkOut)
+    : null;
+
+  const isToday = dayjs(d).isSame(dayjs(), "day");
+  const isStillCheckedIn = isToday && lastSession.checkIn && !lastSession.checkOut;
+
+  /* ✅ Calculate total worked ms from sessions */
+  let totalMs = sessions.reduce((sum, s) => {
+    if (!s.checkIn) return sum;
+
+    const start = dayjs(s.checkIn);
+    const end = s.checkOut
+      ? dayjs(s.checkOut)
+      : isToday
+      ? dayjs()
+      : null;
+
+    if (!end) return sum;
+    return sum + end.diff(start);
+  }, 0);
+
+  const totalHours = (totalMs / 3600000).toFixed(1) + "h";
+
+  const time = firstIn
+    ? `${firstIn.format("hh:mm A")} ${
+        lastOut ? `— ${lastOut.format("hh:mm A")}` : "—"
+      }`
+    : "—";
+
+  return {
+    day: dayjs(d).format("dddd, MMM DD"),
+    time,
+    hours: totalHours,
+    status: "Present",
+    color: "green",
+  };
+});
 
   const tabs = [
     { id: 'leave', label: 'Leave', badge: myTotalLeavesCount },

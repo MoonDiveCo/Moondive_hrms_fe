@@ -171,7 +171,8 @@ const sendLateNotifications = async (lateData) => {
     await notify({
       receiverId: user._id,
       notificationTitle: "⏰ Late Check-In Alert",
-      notificationMessage: `You checked in ${minutesLate} minutes late. Shift started at ${shiftStartTime}.`,
+      // notificationMessage: `You checked in ${minutesLate} minutes late. Shift started at ${shiftStartTime}.`,
+      notificationMessage: `You checked in late. Shift started at ${shiftStartTime}.`,
       relatedDomainType: "Attendance",
       priority: "Medium",
     });
@@ -185,7 +186,8 @@ const sendLateNotifications = async (lateData) => {
       await notify({
         receiverId: reportingManagerId,
         notificationTitle: " Late Check-In",
-        notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+        // notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+        notificationMessage: `${user.name} checked in late at ${checkInTime}.`,
         relatedDomainType: "Attendance",
         priority: "Medium",
         senderId: user._id,
@@ -200,7 +202,8 @@ const sendLateNotifications = async (lateData) => {
         await notify({
           receiverId: u._id,
           notificationTitle: "⏰ Late Check-In (HR)",
-          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          // notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          notificationMessage: `${user.name} checked in late at ${checkInTime}.`,
           relatedDomainType: "Attendance",
           priority: "Low",
           senderId: user._id,
@@ -211,7 +214,8 @@ const sendLateNotifications = async (lateData) => {
         await notify({
           receiverId: u._id,
           notificationTitle: "🚨 Late Check-In (Admin)",
-          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          // notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          notificationMessage: `${user.name} checked in late at ${checkInTime}.`,
           relatedDomainType: "Attendance",
           priority: "High",
           senderId: user._id,
@@ -222,7 +226,8 @@ const sendLateNotifications = async (lateData) => {
         await notify({
           receiverId: u._id,
           notificationTitle: "🚨 Late Check-In (CEO)",
-          notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          // notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
+          notificationMessage: `${user.name} checked in late at ${checkInTime}.`,
           relatedDomainType: "Attendance",
           priority: "High",
           senderId: user._id,
