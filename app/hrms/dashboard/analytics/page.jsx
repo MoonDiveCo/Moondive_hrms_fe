@@ -102,7 +102,7 @@ const TAB_META = {
         label: 'Employee',
         render: (row) => (
           <div className='flex items-center gap-2'>
-            <span className='h-2.5 w-2.5 rounded-full bg-red-500' />
+            <span className={`h-2.5 w-2.5 rounded-full ${row.checkOutTime  && row.checkInTime<row.checkOutTime?"bg-red-500":"bg-green-500"}`} />
             <span className='font-medium text-gray-800'>{row.name}</span>
           </div>
         ),
@@ -113,6 +113,11 @@ const TAB_META = {
         key: 'checkInTime',
         label: 'Check-in Time',
         render: (row) => formatTime(row.checkInTime),
+      },
+        {
+        key: 'checkOutTime',
+        label: 'Check-out Time',
+        render: (row) => formatTime(row.checkOutTime),
       },
       {
         key: 'workType',
@@ -125,11 +130,20 @@ const TAB_META = {
       },
       {
         key: "isOnBreak",
-        label: "Break",
+        label: "Status",
         render: r => (
-          <span className={`text-xs px-2 py-1 rounded-full ${r.isOnBreak ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
-            }`}>
-            {r.isOnBreak ? "On Break" : "Working"}
+          <span  className={`text-xs px-2 py-1 rounded-full ${
+    r.checkOutTime && r.checkInTime<r.checkOutTime
+      ? "bg-red-100 text-red-700"
+      : r.isOnBreak
+      ? "bg-yellow-100 text-yellow-700"
+      : "bg-green-100 text-green-700"
+  }`}>
+       {r.checkOutTime  && r.checkInTime<r.checkOutTime
+          ? "Checked Out"
+          : r.isOnBreak
+            ? "On Break"
+            : "Working"}
           </span>
         )
       },
