@@ -23,7 +23,7 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
     markAsRead,
     markAllAsRead,
   } = useNotifications();
- console.log("-----------------",unreadCount)
+  
   useEffect(() => {
     if (!portalEl) return;
     document.body.appendChild(portalEl);
