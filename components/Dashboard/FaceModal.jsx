@@ -44,7 +44,7 @@ export default function FaceModal({
       // Only call onSuccess after successful verification
       onSuccess();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Face verification failed');
+      toast.error(err.response?.data?.message || 'Face Verification Failed');
     } finally {
       setLoading(false);
     }

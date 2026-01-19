@@ -62,12 +62,21 @@ const TAB_META = {
         ),
       },
       {
+        key: 'leaveType',
+        label: 'Type',
+        render: row => (
+          <span className="text-xs text-gray-600">
+            {row.leaveType}
+          </span>
+        ),
+      },
+      {
         key: 'dayType',
         label: 'Day',
         render: row => (
           <span className="text-xs text-gray-600">
-            {row.isHalfDay
-              ? `Half Day (${row.session})`
+            {row.ishalfDay
+              ? `${row.session}`
               : 'Full Day'}
           </span>
         ),
@@ -558,9 +567,9 @@ function AnalyticsEmployeeTable({ title, columns, data }) {
           </thead>
 
           <tbody className='divide-y divide-gray-100'>
-            {paginatedData.map((row) => (
+            {paginatedData.map((row, index) => (
               <tr
-                key={row._id || row.leaveId}
+                key={index}
                 className='hover:bg-gray-50 transition-colors'
               >
                 {columns.map((col) => (
@@ -693,10 +702,10 @@ function PendingLeaveTable({ onApprovedToday }) {
       label: 'Date',
       render: r => (
         <div className="flex flex-col">
-          <span>{formatDate(r.startDate)}</span>
+          <span>{formatDate(r.startDate)}</span>  
           <span className="text-xs text-gray-400">
             {r.isHalfDay
-              ? `Half Day (${r.session || '—'})`
+              ? `${r.session || '—'}`
               : 'Full Day'}
           </span>
         </div>

@@ -5,6 +5,7 @@ import axios from "axios";
 import { Eye, Edit2, Trash2, Plus } from "lucide-react";
 import { AuthContext } from "@/context/authContext";
 import LeaveTypeModal from "./LeaveTypeModal";
+import { toast } from "sonner";
 
 export default function LeavePoliciesPage() {
   const [policy, setPolicy] = useState(null);
@@ -37,13 +38,35 @@ export default function LeavePoliciesPage() {
     fetchPolicy();
   };
 
+// async function deleteLeaveType(code) {
+//   if (!window.confirm("Delete this leave type?")) return;
+
+//   await axios.delete(`/hrms/leave/delete-leave-policy/${user.organizationId}/${code}`);
+//   toast.success("Deleted Succesfully")
+
+//   fetchPolicy();
+// }
+
 async function deleteLeaveType(code) {
   if (!window.confirm("Delete this leave type?")) return;
 
-  await axios.delete(`/hrms/leave/delete-leave-policy/${user.organizationId}/${code}`);
+  try {
+    await axios.delete(
+      `/hrms/leave/delete-leave-policy/${user.organizationId}/${code}`
+    );
 
-  fetchPolicy();
+    toast.success("Deleted Successfully");
+    fetchPolicy();
+  } catch (error) {
+    console.error("Delete Leave Type Failed:", error);
+
+    toast.error(
+      error?.response?.data?.message ||
+        "Failed To Delete Leave Type"
+    );
+  }
 }
+
 
   if (loading) return <div className="p-6">Loading...</div>;
 

@@ -23,7 +23,7 @@ const Page = () => {
 
   return (
     <NotificationProvider>
-      <div className='relative'>
+      <div className='relative  w-full flex justify-center'>
         <LoginForm
           email={email}
           setEmail={setEmail}

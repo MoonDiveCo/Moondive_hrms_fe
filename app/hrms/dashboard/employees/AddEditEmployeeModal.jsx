@@ -4,6 +4,7 @@ import axios from "axios";
 import React, { useEffect, useCallback, useRef, useState, use } from "react";
 import Image from "next/image";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { toast } from "sonner";
 
 export default function AddEditEmployeeModal({
   mode = "add",
@@ -359,14 +360,14 @@ export default function AddEditEmployeeModal({
     formData.append("imageFile", imageFile);
     try {
       const { data } = await axios.post("/user/aws-image", formData);
-      console.log("Image upload response:", data.result.imageUrls[0]);
+      toast.success("Image Uploaded successfully")
       if (data?.result?.imageUrls) {
         const newImageUrl = data.result.imageUrls[0];
         update("imageUrl", newImageUrl);
         setImagePreview(newImageUrl);
       }
     } catch (err) {
-      console.error("error while changing employee photo", err);
+      toast.error("Error While Adding Employee Photo");
       setErrors((prev) => ({ ...prev, imageUrl: "Failed to upload image" }));
     }
   };
@@ -698,25 +699,24 @@ export default function AddEditEmployeeModal({
     }
 
     try {
-      console.log("Submitting data:", submitData);
 
       let res;
       if (mode === "add") {
         res = await axios.post("/hrms/employee/add-employee", submitData);
-        console.log("Add response:", res.data);
+        toast.success("Employee Added Successfully")
       } else if (mode === "edit") {
         const empId = employee._id || employee.id;
         res = await axios.put(
           `/hrms/employee/update-employee/${empId}`,
           submitData
         );
-        console.log("Update response:", res.data);
+        toast.success("Employee Updated")
       }
 
       onSave && onSave(res.data.data || res.data.result);
       onClose && onClose();
     } catch (error) {
-      console.error("Failed to save employee:", error);
+      toast.error("Failed To Save Employee");
 
       if (type === "auto") {
         const errorMessage =
@@ -1675,9 +1675,9 @@ export default function AddEditEmployeeModal({
                 >
                   <option value="">Select</option>
                   <option value="Permanent">Permanent</option>
-                  <option value="Contract">Contract</option>
+                  <option value="Probation">Probation</option>
                   <option value="Internship">Internship</option>
-                  <option value="Trainee">Trainee</option>
+                  {/* <option value="Trainee">Trainee</option> */}
                 </select>
               </div>
 
@@ -1695,8 +1695,8 @@ export default function AddEditEmployeeModal({
                 >
                   <option value="">Select</option>
                   <option value="Active">Active</option>
-                  <option value="On Probation">On Probation</option>
-                  <option value="Resigned">Resigned</option>
+                  {/* <option value="On Probation">On Probation</option> */}
+                  {/* <option value="Resigned">Resigned</option> */}
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>
