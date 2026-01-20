@@ -170,7 +170,7 @@ const sendLateNotifications = async (lateData) => {
     /* 1️⃣ EMPLOYEE */
     await notify({
       receiverId: user._id,
-      notificationTitle: "⏰ Late Check-In Alert",
+      notificationTitle: "Late Check-In Alert",
       // notificationMessage: `You checked in ${minutesLate} minutes late. Shift started at ${shiftStartTime}.`,
       notificationMessage: `You checked in late. Shift started at ${shiftStartTime}.`,
       relatedDomainType: "Attendance",
