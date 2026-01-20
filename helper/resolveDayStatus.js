@@ -22,10 +22,14 @@ export function resolveDayStatus({ dateObj, attendance, holiday, leave }) {
 
   // ✅ 3. LEAVE
   if (leave) {
-    if (leave.status === 'First Half') {
+
+    if (leave.session === null) {
+      return { status: 'full-day-leave', label: 'LH' };
+    }
+    if (leave.session === 'First Half') {
       return { status: 'leave-first-half', label: 'LH' };
     }
-    if (leave.status === 'Second Half') {
+    if (leave.session === 'Second Half') {
       return { status: 'leave-second-half', label: 'SH' };
     }
     return { status: 'leave', label: 'Leave' };

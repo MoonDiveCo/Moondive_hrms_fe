@@ -279,10 +279,10 @@ export default function LeaveRequestsModal({
       </div>
 
       {/* REASON */}
-      {l.reason && (
+      { l?.decision?.reason && (
         <div className="text-sm text-gray-600 bg-gray-50 rounded-md p-2">
           <span className="font-medium text-gray-700">Reason:</span>{" "}
-          {l.reason}
+          {l.reason || l?.decision?.reason}
         </div>
       )}
 

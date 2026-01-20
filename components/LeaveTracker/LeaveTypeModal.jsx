@@ -10,6 +10,7 @@ const LEAVE_NAMES = [
   "Earned Leave",
   "Optional Leave",
   "Leave Without Pay",
+  "Work From Home",
 ];
 
 const LEAVE_CODE_MAP = {
@@ -17,6 +18,7 @@ const LEAVE_CODE_MAP = {
   "Earned Leave": "EL",
   "Optional Leave": "OL",
   "Leave Without Pay": "LWP",
+  "Work From Home": "WFH",
 };
 
 const getDisabledClasses = (disabled) =>

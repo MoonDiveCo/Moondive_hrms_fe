@@ -104,6 +104,8 @@ export default function AttendanceList({ currentDate, rangeMode = 'week' }) {
             leave,
           });
 
+          console.log(status)
+
           const day = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
           const dateNum = dateObj.getDate();
           const isToday = key === todayStr;
@@ -146,6 +148,7 @@ export default function AttendanceList({ currentDate, rangeMode = 'week' }) {
                 date={dateNum}
                 checkIn={checkInTime}
                 checkOut={checkOutTime}
+                status={status}
                 late={
                   attendance?.anomalies?.includes('LATE_ENTRY') ? 'Late' : null
                 }
@@ -160,10 +163,13 @@ export default function AttendanceList({ currentDate, rangeMode = 'week' }) {
 
           // leave + no checkin → pure leave row
           const hasCheckIn = Boolean(firstCheckIn);
+          console.log(status)
           const isLeaveStatus =
-            status === 'leave' ||
+            status === 'full-day-leave' ||
             status === 'leave-first-half' ||
             status === 'leave-second-half';
+
+            console.log(isLeaveStatus)
           const effectiveStatus =
             !hasCheckIn && isLeaveStatus ? 'leave' : status;
 

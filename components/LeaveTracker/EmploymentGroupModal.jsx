@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 
 export default function EmploymentGroupModal({ mode, data, policy, onClose, organizationId }) {
   const isView = mode === "view";
@@ -134,7 +135,7 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
     <div className="fixed inset-0 z-[999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[850px] p-6 relative">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[850px] p-6 relative h-[90vh] overflow-y-auto z-10 hide-scrollbar">
         <h3 className="text-lg font-semibold mb-2">
           {isView ? "View Employment Group" : isEdit ? "Edit Group" : "Add Group"}
         </h3>
