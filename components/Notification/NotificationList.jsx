@@ -52,7 +52,7 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 shadow">
-          <h3 className="text-base font-semibold">Notifications</h3>
+          <h4 className="text-primaryText">Notifications</h4>
           <button onClick={onClose}>
             <X size={18} />
           </button>

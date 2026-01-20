@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import WorkingTimeline from './WorkingTimeline';
 import CheckInBadge from './CheckInBadge';
+import { AlertCircle, CalendarDays, Umbrella } from 'lucide-react';
 
 export default function TodayRow({
   date,
@@ -10,8 +11,47 @@ export default function TodayRow({
   checkOut,
   late,
   early,
+  status,
+  leaveLabel = null,
   hours = '00:00',
 }) {
+
+    const isAbsent = status === 'absent';
+  const isWeekend = status === 'weekend';
+  const isFuture = status === 'future';
+  const isPresent = status === 'present';
+  const isHoliday = status === 'holiday';
+  const isLeave = status === 'full-day-leave';
+  const isFirstHalfLeave = status === 'leave-first-half';
+  const isSecondHalfLeave = status === 'leave-second-half';
+ 
+  const isAnyLeave = isLeave || isFirstHalfLeave || isSecondHalfLeave;
+  const isNonWorking =
+    !isFuture && (isAbsent || isWeekend || isHoliday || isAnyLeave);
+ 
+  /* ---------- STATUS BADGE INFO ---------- */
+  const getStatusInfo = () => {
+    if (isAbsent)
+      return { icon: <AlertCircle className="w-5 h-5" />, label: 'Absent', color: 'red' };
+ 
+    if (isHoliday)
+      return {
+        icon: <CalendarDays className="w-5 h-5" />,
+        label: holidayName,
+        color: 'blue',
+      };
+ 
+    if (isAnyLeave)
+      return {
+        icon: <Umbrella className="w-5 h-5" />,
+        label: leaveLabel || 'Leave',
+        color: 'purple',
+      };
+ 
+    return null;
+  };
+ 
+  const statusInfo = getStatusInfo();
   const [workedHours, setWorkedHours] = useState('00:00');
 
   const effectiveCheckOut =
@@ -64,12 +104,40 @@ export default function TodayRow({
         </div>
       </div>
 
-      <div className='flex-1 h-24 bg-white rounded-xl flex items-center px-6 gap-6 shadow-sm ring-1 ring-green-300'>
+           <div
+        className={`
+          flex-1 h-20 rounded-xl relative overflow-hidden
+          flex items-center px-6 transition-all
+ 
+          ${isFuture ? 'border border-dashed border-gray-300 bg-gray-50' : 'bg-white'}
+ 
+          ${isWeekend ? 'border border-yellow-200' : ''}
+          ${isHoliday && !isFuture ? 'ring-1 ring-blue-300 border-l-4 border-blue-300' : ''}
+          ${isPresent ? 'ring-1 ring-gray-200 border-l-4 border-green-300' : ''}
+          ${(isAbsent || isAnyLeave) && !isFuture ? 'ring-1 ring-red-400 border-l-4 border-red-400' : ''}
+        `}
+      >
         <div className='w-28'>
           <div className='font-semibold'>{formatTime(checkIn)}</div>
           {/* {late && <div className="text-xs text-orange-600 mt-1">Late by {late}</div>} */}
           <CheckInBadge />
         </div>
+
+      {statusInfo && (
+          <><div className="absolute inset-0 bg-red-50 z-0" /><div className="absolute left-10 right-32 top-1/2 -translate-y-1/2 h-[1px] bg-red-200 z-0" /><div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div
+              className={`
+                flex items-center gap-3 px-5 py-2 rounded-full text-xs font-medium
+                ${statusInfo.color === 'red' && -'bg-red-100 text-red700'}
+                ${statusInfo.color === 'blue' && 'bg-blue-100 text-blue-700'}
+                ${statusInfo.color === 'purple' && 'bg-red-100 text-red-500'}
+              `}
+            >
+              {statusInfo.icon}
+              <div>{statusInfo.label}</div>
+            </div>
+          </div></>
+        )}
 
         <div className='flex-1 relative'>
           <WorkingTimeline checkIn={checkIn} checkOut={checkOut || null} />

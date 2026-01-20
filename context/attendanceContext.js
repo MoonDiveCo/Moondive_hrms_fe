@@ -213,7 +213,7 @@ const sendLateNotifications = async (lateData) => {
       if (u.userRole?.includes("Admin")) {
         await notify({
           receiverId: u._id,
-          notificationTitle: "🚨 Late Check-In (Admin)",
+          notificationTitle: "Late Check-In",
           // notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
           notificationMessage: `${user.name} checked in late at ${checkInTime}.`,
           relatedDomainType: "Attendance",
@@ -225,7 +225,7 @@ const sendLateNotifications = async (lateData) => {
       if (u.userRole?.includes("SuperAdmin")) {
         await notify({
           receiverId: u._id,
-          notificationTitle: "🚨 Late Check-In (CEO)",
+          notificationTitle: "Late Check-In",
           // notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
           notificationMessage: `${user.name} checked in late at ${checkInTime}.`,
           relatedDomainType: "Attendance",

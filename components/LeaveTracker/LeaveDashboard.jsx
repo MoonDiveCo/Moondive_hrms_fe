@@ -441,6 +441,7 @@ function LeaveCard({
     EL: "bg-green-100 text-green-600",
     OL: "bg-purple-100 text-purple-600",
     LWP: "bg-gray-200 text-gray-700",
+    WFH: "bg-cyan-200 text-cyan-700",
   };
 
   return (

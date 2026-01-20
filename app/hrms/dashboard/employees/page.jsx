@@ -350,8 +350,7 @@ export default function Employees({ initialEmployees = [] }) {
         {/* Header */}
         <div className='flex items-start justify-between mb-6'>
           <div>
-            <h3 className='text-3xl font-bold text-gray-900'>Employees</h3>
-            <p className='text-gray-500 mt-1'>Directory View</p>
+            <h4 className='text-primaryText'>Employees</h4>
           </div>
           <div className='flex items-center gap-3'>
             {/* Department Filter Dropdown */}
