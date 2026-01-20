@@ -19,6 +19,8 @@ export default function FaceModal({
   const [cameraAllowed, setCameraAllowed] = useState(false);
   const [checkingPermission, setCheckingPermission] = useState(true);
   const [secondsLeft, setSecondsLeft] = useState(5);
+  const [verified, setVerified] = useState(false);
+
 
   // ... all useEffects unchanged ...
 
@@ -40,9 +42,12 @@ export default function FaceModal({
       await axios.post('/hrms/attendance/verify-face', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      setVerified(true);
 
       // Only call onSuccess after successful verification
-      onSuccess();
+      setTimeout(() => {
+        onSuccess();
+      }, 1200);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Face Verification Failed');
     } finally {
@@ -87,16 +92,43 @@ export default function FaceModal({
             </svg>
 
             {/* Webcam / Face */}
-            <div className='relative w-48 h-48 rounded-full overflow-hidden bg-black z-10'>
-              <Webcam
-                ref={webcamRef}
-                audio={false}
-                mirrored
-                screenshotFormat='image/jpeg'
-                videoConstraints={{ facingMode: 'user' }}
-                className='w-full h-full object-cover'
-              />
+            <div className='relative w-48 h-48 rounded-full overflow-hidden bg-black z-10 flex items-center justify-center'>
+              {!verified ? (
+                <Webcam
+                  ref={webcamRef}
+                  audio={false}
+                  mirrored
+                  screenshotFormat='image/jpeg'
+                  videoConstraints={{ facingMode: 'user' }}
+                  className='w-full h-full object-cover'
+                />
+              ) : (
+                <div className='flex items-center justify-center w-full h-full bg-white'>
+                  <svg
+                    className='w-20 h-20 text-primary animate-scale-in'
+                    viewBox='0 0 52 52'
+                  >
+                    <circle
+                      cx='26'
+                      cy='26'
+                      r='25'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      className='animate-circle'
+                    />
+                    <path
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='4'
+                      d='M14 27 L22 35 L38 18'
+                      className='animate-check'
+                    />
+                  </svg>
+                </div>
+              )}
             </div>
+
           </div>
         </div>
 
@@ -107,6 +139,13 @@ export default function FaceModal({
             Processing...
           </div>
         )}
+
+        {verified && (
+          <p className='text-sm text-primary mt-4 font-medium'>
+            Face verified successfully
+          </p>
+        )}
+
 
         {/* CTA BUTTONS */}
         <div className='mt-10 flex gap-4'>
@@ -122,7 +161,7 @@ export default function FaceModal({
           {/* Verify */}
           <button
             onClick={captureAndSend}
-            disabled={loading}
+            disabled={loading || verified}
             className='flex-1 py-3 rounded-xl bg-orange-500 text-white text-sm font-medium
              transition shadow-md disabled:opacity-50'
           >

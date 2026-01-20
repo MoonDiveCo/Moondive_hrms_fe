@@ -10,7 +10,7 @@ import {
   Check,
   Clock,
 } from 'lucide-react';
-import { format, isSameDay, subDays } from 'date-fns';
+import { format, formatDistanceToNow, isSameDay, subDays } from 'date-fns';
 import ConfirmationModal from '../ConfirmationModal/ConfirmationModal';
 import { useRouter } from 'next/navigation';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -23,6 +23,42 @@ const fetcherWithAuth = async (url) => {
   });
   return res.data;
 };
+
+const UPCOMING_ACTIVITY_TYPES = [
+  "UPCOMING_BIRTHDAY",
+  "UPCOMING_HOLIDAY",
+];
+
+const ACTIVITY_CONFIG = {
+  NEW_JOINER: {
+    dot: "bg-primary",
+  },
+  BIRTHDAY: {
+    dot: "bg-pink-500",
+  },
+  UPCOMING_BIRTHDAY: {
+    dot: "bg-pink-300",
+  },
+  NEW_PROJECT: {
+    dot: "bg-indigo-500",
+  },
+  HOLIDAY: {
+    dot: "bg-green-500",
+  },
+  UPCOMING_HOLIDAY: {
+    dot: "bg-green-300",
+  },
+  NEW_POLICY: {
+    dot: "bg-amber-500",
+  },
+  LEAVE_APPROVED: {
+    dot: "bg-blue-500",
+  },
+  DEFAULT: {
+    dot: "bg-slate-300",
+  },
+};
+
 
 
 const PULSE_CARDS = [
@@ -85,7 +121,7 @@ export default function OverviewPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const router = useRouter()
-  
+
 
   // useEffect(() => {
   //   async function fetchDashboard() {
@@ -113,42 +149,42 @@ export default function OverviewPage() {
   // }, []);
 
   const { data: pulseRes, isLoading: pulseLoading } = useSWR(
-  "/hrms/organization/organization-pulse",
-  fetcherWithAuth,
-  { refreshInterval: 10000 }
-);
+    "/hrms/organization/organization-pulse",
+    fetcherWithAuth,
+    { refreshInterval: 10000 }
+  );
 
-const { data: attendanceRes, isLoading: attendanceLoading } = useSWR(
-  "/hrms/organization/attendance-insights",
-  fetcherWithAuth,
-  { refreshInterval: 10000 }
-);
+  const { data: attendanceRes, isLoading: attendanceLoading } = useSWR(
+    "/hrms/organization/attendance-insights",
+    fetcherWithAuth,
+    { refreshInterval: 10000 }
+  );
 
-const { data: leaveRes } = useSWR(
-  `/hrms/leave/get-leave?year=${new Date().getFullYear()}`,
-  fetcherWithAuth,
-  { refreshInterval: 10000 }
-);
+  const { data: leaveRes } = useSWR(
+    `/hrms/leave/get-leave?year=${new Date().getFullYear()}`,
+    fetcherWithAuth,
+    { refreshInterval: 10000 }
+  );
 
-const pulse = pulseRes || {};
-const attendance = attendanceRes || {};
-const pendingLeaves = (leaveRes?.leaveRequests || []).filter(l => !l.decision);
+  const pulse = pulseRes || {};
+  const attendance = attendanceRes || {};
+  const pendingLeaves = (leaveRes?.leaveRequests || []).filter(l => !l.decision);
 
-const loading = pulseLoading || attendanceLoading;
+  const loading = pulseLoading || attendanceLoading;
 
 
- if(loading){
-          return(
-            <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/5 backdrop-blur-sm rounded-2xl'>
-              <DotLottieReact
-                src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
-                loop
-                autoplay
-                style={{ width: 100, height: 100, alignItems: 'center' }} 
-              />
-            </div>
-          )
-        }
+  if (loading) {
+    return (
+      <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/5 backdrop-blur-sm rounded-2xl'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }}
+        />
+      </div>
+    )
+  }
 
   // async function handleLeaveDecision(leaveId, action) {
   //   try {
@@ -172,35 +208,34 @@ const loading = pulseLoading || attendanceLoading;
   // }
 
   async function handleLeaveDecision(leaveId, action) {
-  try {
-    setProcessingId(leaveId);
+    try {
+      setProcessingId(leaveId);
 
-    await axios.put("/hrms/leave/update-leave-decision", {
-      leaveEntryId: leaveId,
-      action,
-      reason: `CEO ${action}`,
-    });
+      await axios.put("/hrms/leave/update-leave-decision", {
+        leaveEntryId: leaveId,
+        action,
+        reason: `CEO ${action}`,
+      });
 
-    // 🔥 Revalidate everywhere
-    await mutate("/hrms/leave/get-leave");
-    await mutate("/hrms/organization/organization-pulse");
-    await mutate("/hrms/organization/attendance-insights");
-    await mutate((key) => key?.startsWith("/hrms/organization/analytics"));
+      await mutate("/hrms/leave/get-leave");
+      await mutate("/hrms/organization/organization-pulse");
+      await mutate("/hrms/organization/attendance-insights");
+      await mutate((key) => key?.startsWith("/hrms/organization/analytics"));
 
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setProcessingId(null);
-    setConfirmAction(null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+      setConfirmAction(null);
+    }
   }
-}
 
 
   return (
     <div className='min-h-screen text-slate-900'>
       <main className='mx-auto px-6 py-8'>
 
-        <div className='border border-orange-400 bg-orange-50 rounded-xl p-4 flex items-center justify-between mb-8'>
+        {/* <div className='border border-orange-400 bg-orange-50 rounded-xl p-4 flex items-center justify-between mb-8'>
           <p className='text-sm'>
             <span className='font-bold text-orange-500'>Policy Update:</span>{' '}
             New Remote Work Guidelines are now available.
@@ -208,7 +243,7 @@ const loading = pulseLoading || attendanceLoading;
           <button className='text-sm font-semibold text-orange-500 hover:underline'>
             View Details
           </button>
-        </div>
+        </div> */}
 
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
           <div className='lg:col-span-8 space-y-10'>
@@ -261,7 +296,7 @@ const loading = pulseLoading || attendanceLoading;
             <section>
               <div className='flex justify-between mb-4'>
                 <h4 className='text-primaryText'>Pending Leave Requests</h4>
-                <button onClick={()=>router.push("/hrms/dashboard/analytics?tab=leave")} className='text-sm cursor-pointer text-orange-500 font-semibold'>
+                <button onClick={() => router.push("/hrms/dashboard/analytics?tab=leave")} className='text-sm cursor-pointer text-orange-500 font-semibold'>
                   View All
                 </button>
               </div>
@@ -272,7 +307,7 @@ const loading = pulseLoading || attendanceLoading;
                     No pending leave requests
                   </div>
                 ) : (
-                  pendingLeaves.slice(0,3).map((leave) => (
+                  pendingLeaves.slice(0, 3).map((leave) => (
                     <LeaveRow
                       key={leave.leaveId}
                       name={`${leave.employee.firstName} ${leave.employee.lastName}`}
@@ -282,7 +317,7 @@ const loading = pulseLoading || attendanceLoading;
                       )} • ${leave.isHalfDay
                         ? `Half Day (${leave.session})`
                         : 'Full Day'
-                      }`}
+                        }`}
                       loading={processingId === leave.leaveId}
                       onApprove={() =>
                         setConfirmAction({ leaveId: leave.leaveId, action: "Approved" })
@@ -300,12 +335,12 @@ const loading = pulseLoading || attendanceLoading;
           </div>
 
           <aside className='lg:col-span-4'>
-            <div className='bg-white border border-gray-300 rounded-2xl p-6 sticky top-40'>
+            <div className='bg-white border border-gray-300 rounded-2xl p-6 sticky top-30 max-h-[50vh] overflow-y-auto hide-scrollbar'>
               <h4 className='text-xs uppercase font-semibold text-slate-400 mb-6'>
-                Recent Activity
+                Activities
               </h4>
 
-              <ul className='border-l pl-6 space-y-6'>
+              {/* <ul className='border-l pl-6 space-y-6'>
                 <Activity
                   text='Sarah Jenkins joined the Marketing team.'
                   time='2h ago'
@@ -319,6 +354,27 @@ const loading = pulseLoading || attendanceLoading;
                   text='Updated Q4 Goals for the Design department.'
                   time='Yesterday at 4:30 PM'
                 />
+              </ul> */}
+
+              <ul className="border-l pl-6 space-y-6">
+                {pulseRes?.activities?.map((a, i) => {
+                  const isUpcoming = UPCOMING_ACTIVITY_TYPES.includes(a.type);
+
+                  const timeLabel = isUpcoming
+                    ? formatDistanceToNow(new Date(a.timestamp), { addSuffix: false })
+                    : formatDistanceToNow(new Date(a.timestamp), { addSuffix: true });
+
+                  return (
+                    <Activity
+                      key={i}
+                      text={a.text}
+                      time={isUpcoming ? `in ${timeLabel}` : timeLabel}
+                      type={a.type}
+                      active={i === 0}
+                    />
+                  );
+                })}
+
               </ul>
             </div>
           </aside>
@@ -481,16 +537,21 @@ const LeaveRow = ({ name, info, onApprove, onReject, loading }) => (
 );
 
 
-const Activity = ({ text, time, active }) => (
-  <li className='relative'>
-    <span
-      className={`absolute -left-[30px] top-1 h-2.5 w-2.5 rounded-full ${active ? 'bg-primary' : 'bg-slate-300'
-        }`}
-    />
-    <p className='text-sm'>{text}</p>
-    <span className='text-xs text-slate-400'>{time}</span>
-  </li>
-);
+const Activity = ({ text, time, type, active }) => {
+  const config = ACTIVITY_CONFIG[type] || ACTIVITY_CONFIG.DEFAULT;
+
+  return (
+    <li className="relative">
+      <span
+        className={`absolute -left-[30px] top-1 h-2.5 w-2.5 rounded-full
+          ${config.dot}`}
+      />
+      <span className="text-sm block">{text}</span>
+      <span className="text-xs text-slate-400">{time}</span>
+    </li>
+  );
+};
+
 
 
 const ConfirmLeaveActionModal = ({ action, onCancel, onConfirm }) => {

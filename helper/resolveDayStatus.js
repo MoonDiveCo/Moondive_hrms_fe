@@ -24,13 +24,13 @@ export function resolveDayStatus({ dateObj, attendance, holiday, leave }) {
   if (leave) {
 
     if (leave.session === null) {
-      return { status: 'full-day-leave', label: 'LH' };
+      return { status: 'full-day-leave', label: 'Full Day Leave' };
     }
     if (leave.session === 'First Half') {
-      return { status: 'leave-first-half', label: 'LH' };
+      return { status: 'leave-first-half', label: 'First Half Leave' };
     }
     if (leave.session === 'Second Half') {
-      return { status: 'leave-second-half', label: 'SH' };
+      return { status: 'leave-second-half', label: 'Second Half Leave' };
     }
     return { status: 'leave', label: 'Leave' };
   }

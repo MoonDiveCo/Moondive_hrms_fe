@@ -1,10 +1,168 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { useNotifications } from "../../context/notificationcontext";
 import { toast } from "sonner";
 
+/* -------------------- LEAVE CARD COMPONENT (OUTSIDE PARENT) -------------------- */
+const LeaveCard = ({ 
+  l, 
+  activeTab, 
+  processingId, 
+  rejectingId, 
+  reasonMap, 
+  setRejectingId, 
+  setReasonMap, 
+  handleAction 
+}) => {
+  const isMyLeave = activeTab === "MY_LEAVES";
+  const leaveStatus = isMyLeave ? l.status : l.decision?.status;
+  const textareaRef = useRef(null);
+  
+  const statusColor =
+    leaveStatus === "Approved"
+      ? "bg-green-100 text-green-700"
+      : leaveStatus === "Rejected"
+      ? "bg-red-100 text-red-700"
+      : leaveStatus === "Pending"
+      ? "bg-yellow-100 text-yellow-700"
+      : "bg-gray-100 text-gray-700";
+
+  const itemId = l.leaveId || l.id;
+
+  // Focus textarea when rejection input appears
+  useEffect(() => {
+    if (rejectingId === itemId && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [rejectingId, itemId]);
+
+  return (
+    <div className="border rounded-xl p-4 bg-white shadow-sm relative space-y-2">
+      {/* TOP ROW */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          {/* Show employee name only if not My Leaves tab */}
+          {!isMyLeave && l.employee && (
+            <p className="font-medium text-gray-800">
+              {l.employee.firstName} {l.employee.lastName}
+            </p>
+          )}
+
+          {/* Leave Type + Half Day + Status */}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+              {l.leaveType}
+            </span>
+
+            {l.isHalfDay && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                Half Day ({l.session})
+              </span>
+            )}
+
+            {leaveStatus && (
+              <span className={`px-2 py-0.5 text-xs rounded-full ${statusColor}`}>
+                {leaveStatus}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ACTION BUTTONS */}
+        {!isMyLeave && (activeTab === "PENDING" || activeTab === "APPROVED") && (
+          <div className="flex gap-2">
+            {activeTab === "PENDING" && (
+              <button
+                disabled={processingId}
+                onClick={() => handleAction(itemId, "Approved")}
+                className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs disabled:opacity-50"
+              >
+                Approve
+              </button>
+            )}
+            <button
+              onClick={() => setRejectingId(itemId)}
+              className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs"
+            >
+              Reject
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* APPLICANT'S REASON (show in all tabs except when showing rejection reason) */}
+      {l.reason && !(isMyLeave && leaveStatus === "Rejected") && (
+        <div className="text-sm text-gray-600 bg-gray-50 rounded-md p-2">
+          <span className="font-medium text-gray-700">Reason:</span> {l.reason}
+        </div>
+      )}
+
+      {/* REJECTION REASON (only for My Leaves tab when status is Rejected) */}
+      {isMyLeave && leaveStatus === "Rejected" && l.decision?.reason && (
+        <div className="text-sm text-red-600 bg-red-50 rounded-md p-2">
+          <span className="font-medium text-red-700">Rejection Reason:</span> {l.decision.reason}
+        </div>
+      )}
+
+      {/* REJECTION INPUT */}
+      {rejectingId === itemId && (
+        <div className="mt-2 bg-red-50 p-3 rounded-md">
+          <textarea
+            ref={textareaRef}
+            placeholder="Rejection reason"
+            rows={3}
+            value={reasonMap[itemId] || ""}
+            className="w-full border rounded p-2 text-sm"
+            onChange={(e) =>
+              setReasonMap((prev) => ({
+                ...prev,
+                [itemId]: e.target.value,
+              }))
+            }
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <button
+              onClick={() => {
+                setRejectingId(null);
+                setReasonMap((prev) => {
+                  const updated = { ...prev };
+                  delete updated[itemId];
+                  return updated;
+                });
+              }}
+              className="text-xs text-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleAction(itemId, "Rejected")}
+              className="text-xs bg-red-600 text-white px-3 py-1 rounded"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* -------------------- SECTION HEADER COMPONENT -------------------- */
+const SectionHeader = ({ title, open, onClick }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center gap-3 text-sm font-semibold text-gray-700"
+  >
+    <span className="text-2xl flex items-center justify-center w-5 transition-transform">
+      {open ? "▾" : "▸"}
+    </span>
+    {title}
+  </button>
+);
+
+/* -------------------- MAIN MODAL COMPONENT -------------------- */
 export default function LeaveRequestsModal({
   requests,
   onClose,
@@ -21,7 +179,6 @@ export default function LeaveRequestsModal({
   const { storeNotification } = useNotifications();
 
   /* -------------------- DATE HELPERS -------------------- */
-
   const startOfDay = (d) => {
     const date = new Date(d);
     date.setHours(0, 0, 0, 0);
@@ -29,16 +186,13 @@ export default function LeaveRequestsModal({
   };
 
   const today = startOfDay(new Date());
-
   const normalizeDate = (date) => startOfDay(date).getTime();
 
   const matchDateFilter = (leave) => {
     if (!filterDate) return true;
-
     const selected = normalizeDate(filterDate);
     const start = normalizeDate(leave.startDate);
     const end = normalizeDate(leave.endDate || leave.startDate);
-
     return selected >= start && selected <= end;
   };
 
@@ -58,7 +212,6 @@ export default function LeaveRequestsModal({
     }, {});
 
   /* -------------------- ACTION HANDLER -------------------- */
-
   async function handleAction(leaveId, action) {
     if (action === "Rejected" && !reasonMap[leaveId]?.trim()) {
       toast.error("Rejection reason is required");
@@ -81,11 +234,15 @@ export default function LeaveRequestsModal({
     } finally {
       setProcessingId(null);
       setRejectingId(null);
+      setReasonMap((prev) => {
+        const updated = { ...prev };
+        delete updated[leaveId];
+        return updated;
+      });
     }
   }
 
   /* -------------------- TAB FILTERING -------------------- */
-
   const pendingRequests = requests
     .filter((l) => l.decision == null)
     .filter(matchDateFilter);
@@ -111,7 +268,6 @@ export default function LeaveRequestsModal({
       : visibleRequests;
 
   /* -------------------- BUCKETING -------------------- */
-
   const bucketed = visibleItems.reduce(
     (acc, l) => {
       acc[getBucket(l)].push(l);
@@ -124,208 +280,18 @@ export default function LeaveRequestsModal({
   const upcomingByDate = groupByDate(bucketed.UPCOMING);
 
   /* -------------------- DROPDOWN STATE -------------------- */
-
   const [open, setOpen] = useState({
     PREVIOUS: false,
     TODAY: true,
     UPCOMING: true,
   });
 
-  const toggle = (key) =>
-    setOpen((p) => ({ ...p, [key]: !p[key] }));
-
-  /* -------------------- UI COMPONENTS -------------------- */
-
-  const SectionHeader = ({ title, open, onClick }) => (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-3 text-sm font-semibold text-gray-700"
-    >
-      <span
-        className={`text-2xl flex items-center justify-center w-5 transition-transform ${
-          open ? "" : ""
-        }`}
-      >
-        {open ? "▾" : "▸"}
-      </span>
-      {title}
-    </button>
-  );
-
-  // const LeaveCard = ({ l }) => (
-  //   <div className="border rounded-lg p-4 bg-gray-100 relative">
-  //     <p className="font-medium">
-  //       {l.employee?.firstName} {l.employee?.lastName}
-  //     </p>
-  //     <p className="text-sm text-gray-500">
-  //       {l.leaveType} • {new Date(l.startDate).toLocaleDateString()}
-  //       {l.endDate && ` → ${new Date(l.endDate).toLocaleDateString()}`}
-  //     </p>
-
-  //     {activeTab !== "MY_LEAVES" &&
-  //       (activeTab === "PENDING" || activeTab === "APPROVED") && (
-  //         <div className="absolute top-4 right-3 flex gap-2">
-  //           {activeTab === "PENDING" && (
-  //             <button
-  //               disabled={processingId}
-  //               onClick={() => handleAction(l.leaveId, "Approved")}
-  //               className="px-3 py-1 bg-green-500 text-white rounded text-xs disabled:opacity-50"
-  //             >
-  //               Approve
-  //             </button>
-  //           )}
-  //           <button
-  //             onClick={() => setRejectingId(l.leaveId)}
-  //             className="px-3 py-1 bg-red-500 text-white rounded text-xs"
-  //           >
-  //             Reject
-  //           </button>
-  //         </div>
-  //       )}
-
-  //     {rejectingId === l.leaveId && (
-  //       <div className="mt-3 bg-red-50 p-3 rounded">
-  //         <textarea
-  //           placeholder="Rejection reason"
-  //           rows={3}
-  //           className="w-full border rounded p-2 text-sm"
-  //           onChange={(e) =>
-  //             setReasonMap((p) => ({
-  //               ...p,
-  //               [l.leaveId]: e.target.value,
-  //             }))
-  //           }
-  //         />
-  //         <div className="flex justify-end gap-2 mt-2">
-  //           <button
-  //             onClick={() => setRejectingId(null)}
-  //             className="text-xs"
-  //           >
-  //             Cancel
-  //           </button>
-  //           <button
-  //             onClick={() => handleAction(l.leaveId, "Rejected")}
-  //             className="text-xs bg-red-600 text-white px-3 py-1 rounded"
-  //           >
-  //             Confirm
-  //           </button>
-  //         </div>
-  //       </div>
-  //     )}
-  //   </div>
-  // );
-
-  const LeaveCard = ({ l }) => {
-  const statusColor =
-    l.decision?.status === "Approved"
-      ? "bg-green-100 text-green-700"
-      : l.decision?.status === "Rejected"
-      ? "bg-red-100 text-red-700"
-      : "bg-yellow-100 text-yellow-700";
-
-  return (
-    <div className="border rounded-xl p-4 bg-white shadow-sm relative space-y-2">
-
-      {/* TOP ROW */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-medium text-gray-800">
-            {l.employee?.firstName} {l.employee?.lastName}
-          </p>
-
-          {/* Leave Type + Half Day */}
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-              {l.leaveType}
-            </span>
-
-            {l.isHalfDay && (
-              <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
-                Half Day ({l.session})
-              </span>
-            )}
-
-            {l.decision?.status && (
-              <span
-                className={`px-2 py-0.5 text-xs rounded-full ${statusColor}`}
-              >
-                {l.decision.status}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* ACTION BUTTONS */}
-        {activeTab !== "MY_LEAVES" &&
-          (activeTab === "PENDING" || activeTab === "APPROVED") && (
-            <div className="flex gap-2">
-              {activeTab === "PENDING" && (
-                <button
-                  disabled={processingId}
-                  onClick={() => handleAction(l.leaveId, "Approved")}
-                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs disabled:opacity-50"
-                >
-                  Approve
-                </button>
-              )}
-              <button
-                onClick={() => setRejectingId(l.leaveId)}
-                className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs"
-              >
-                Reject
-              </button>
-            </div>
-          )}
-      </div>
-
-      {/* REASON */}
-      { l?.decision?.reason && (
-        <div className="text-sm text-gray-600 bg-gray-50 rounded-md p-2">
-          <span className="font-medium text-gray-700">Reason:</span>{" "}
-          {l.reason || l?.decision?.reason}
-        </div>
-      )}
-
-      {/* REJECTION INPUT */}
-      {rejectingId === l.leaveId && (
-        <div className="mt-2 bg-red-50 p-3 rounded-md">
-          <textarea
-            placeholder="Rejection reason"
-            rows={3}
-            className="w-full border rounded p-2 text-sm"
-            onChange={(e) =>
-              setReasonMap((p) => ({
-                ...p,
-                [l.leaveId]: e.target.value,
-              }))
-            }
-          />
-          <div className="flex justify-end gap-2 mt-2">
-            <button
-              onClick={() => setRejectingId(null)}
-              className="text-xs text-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => handleAction(l.leaveId, "Rejected")}
-              className="text-xs bg-red-600 text-white px-3 py-1 rounded"
-            >
-              Confirm
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+  const toggle = (key) => setOpen((p) => ({ ...p, [key]: !p[key] }));
 
   /* -------------------- RENDER -------------------- */
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white w-full max-w-3xl rounded-xl p-6 relative">
-
         {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
           <h4 className="text-lg font-semibold">Leave Requests</h4>
@@ -345,9 +311,7 @@ export default function LeaveRequestsModal({
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-1 rounded-full text-sm ${
-                  activeTab === tab.key
-                    ? "bg-orange-500 text-white"
-                    : "bg-gray-100"
+                  activeTab === tab.key ? "bg-orange-500 text-white" : "bg-gray-100"
                 }`}
               >
                 {tab.label}
@@ -375,7 +339,6 @@ export default function LeaveRequestsModal({
 
         {/* CONTENT */}
         <div className="space-y-6 max-h-[60vh] overflow-auto">
-
           {/* PREVIOUS */}
           <div>
             <SectionHeader
@@ -389,7 +352,17 @@ export default function LeaveRequestsModal({
                   <p className="text-xs text-gray-500 mb-2">{date}</p>
                   <div className="space-y-2">
                     {leaves.map((l) => (
-                      <LeaveCard key={l.leaveId || l.id} l={l} />
+                      <LeaveCard
+                        key={l.leaveId || l.id}
+                        l={l}
+                        activeTab={activeTab}
+                        processingId={processingId}
+                        rejectingId={rejectingId}
+                        reasonMap={reasonMap}
+                        setRejectingId={setRejectingId}
+                        setReasonMap={setReasonMap}
+                        handleAction={handleAction}
+                      />
                     ))}
                   </div>
                 </div>
@@ -398,15 +371,21 @@ export default function LeaveRequestsModal({
 
           {/* TODAY */}
           <div>
-            <SectionHeader
-              title="Today"
-              open={open.TODAY}
-              onClick={() => toggle("TODAY")}
-            />
+            <SectionHeader title="Today" open={open.TODAY} onClick={() => toggle("TODAY")} />
             {open.TODAY && (
               <div className="ml-6 mt-3 space-y-2">
                 {bucketed.TODAY.map((l) => (
-                  <LeaveCard key={l.leaveId || l.id} l={l} />
+                  <LeaveCard
+                    key={l.leaveId || l.id}
+                    l={l}
+                    activeTab={activeTab}
+                    processingId={processingId}
+                    rejectingId={rejectingId}
+                    reasonMap={reasonMap}
+                    setRejectingId={setRejectingId}
+                    setReasonMap={setReasonMap}
+                    handleAction={handleAction}
+                  />
                 ))}
               </div>
             )}
@@ -425,13 +404,22 @@ export default function LeaveRequestsModal({
                   <p className="text-xs text-gray-500 mb-2">{date}</p>
                   <div className="space-y-2">
                     {leaves.map((l) => (
-                      <LeaveCard key={l.leaveId || l.id} l={l} />
+                      <LeaveCard
+                        key={l.leaveId || l.id}
+                        l={l}
+                        activeTab={activeTab}
+                        processingId={processingId}
+                        rejectingId={rejectingId}
+                        reasonMap={reasonMap}
+                        setRejectingId={setRejectingId}
+                        setReasonMap={setReasonMap}
+                        handleAction={handleAction}
+                      />
                     ))}
                   </div>
                 </div>
               ))}
           </div>
-
         </div>
       </div>
     </div>

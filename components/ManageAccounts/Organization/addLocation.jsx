@@ -27,7 +27,9 @@ export default function AddLocationModal({
     timeZone: "",
     description: "",
     contactNumber: "",
-    mailAlias: ""
+    mailAlias: "",
+    latitude: "",
+    longitude: ""
   };
   
 
@@ -55,7 +57,9 @@ export default function AddLocationModal({
         timeZone: activeData.timeZone || "",
         description: activeData.description || "",
         contactNumber: activeData.contactNumber || "",
-        mailAlias: activeData.mailAlias || ""
+        mailAlias: activeData.mailAlias || "",
+        latitude: activeData.latitude || "",
+        longitude: activeData.longitude || ""
       });
     } else {
       setForm(empty);
@@ -85,7 +89,7 @@ export default function AddLocationModal({
     if (isViewMode) return onClose();
 
     setError("");
-    const required = ["addressType","addressLabel","country","state","city","locality","postalCode",];
+    const required = ["addressType","addressLabel","country","state","city","locality","postalCode","latitude","longitude"];
     for (const f of required) {
       if (!form[f] || form[f].toString().trim() === "") {
         setError("Please fill all required fields.");
@@ -211,10 +215,21 @@ export default function AddLocationModal({
               <input name="mailAlias" type="email" value={form.mailAlias} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" placeholder="location@company.com" />
             </div>
 
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Latitude</label>
+              <input name="latitude" type="email" value={form.latitude} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
+            </div>
+
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Longitude</label>
+              <input name="longitude" type="email" value={form.longitude} onChange={handleChange} disabled={isViewMode} className="w-full px-3 py-2 border rounded" />
+            </div>
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
               <textarea name="description" value={form.description} onChange={handleChange} disabled={isViewMode} rows="3" className="w-full px-3 py-2 border rounded resize-none" />
             </div>
+            
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">

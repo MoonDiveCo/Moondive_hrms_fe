@@ -72,7 +72,6 @@ export default function OrganizationPolicy() {
     description: '',
     folder: '',
   });
-
   const [file, setFile] = useState(null);
 
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -104,38 +103,76 @@ export default function OrganizationPolicy() {
   }, [activeFilter, search]);
 
   /* ---------------- ACTIONS ---------------- */
+
   const handleApprovePolicy = async (id) => {
-    try {
-      await axios.patch(
-        `/hrms/organization/organization-policy/status/${id}`,
-        { status: 'PUBLISHED' }
-      );
-      toast.success('Policy Approved Successfully');
-      setViewModalOpen(false);
-      setViewFile(null);
-      fetchFiles();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed To Approve Policy');
-    }
-  };
+  try {
+    const res = await axios.patch(
+      `/hrms/organization/organization-policy/status/${id}`,
+      { status: "PUBLISHED" }
+    );
+    const policy = res.data.data;
+    /* 🔔 Notify HR */
+    storeNotification({
+      receiverId: policy.uploadedBy,
+      senderId: user._id,
+      notificationTitle: "Policy Approved",
+      notificationMessage: "Your policy has been approved by Super Admin",
+      relatedDomainType: "policy",
+      policyId: policy._id,
+    });
+
+    /* 🔔 Notify Employees */
+    policy.allowedUsers.forEach(u => {
+      storeNotification({
+        receiverId: u.user,
+        senderId: user._id,
+        notificationTitle: "New Policy Published",
+        notificationMessage: `Please review policy ${policy.folder}`,
+        relatedDomainType: "policy",
+        policyId: policy._id,
+      });
+    });
+
+    toast.success("Policy Approved Successfully");
+    setViewModalOpen(false);
+    fetchFiles();
+
+  } catch {
+    toast.error("Failed To Approve Policy");
+  }
+};
 
   const handleRejectPolicy = async (id, reason) => {
-    try {
-      await axios.patch(
-        `/hrms/organization/organization-policy/status/${id}`,
-        {
-          status: 'REJECTED',
-          rejectionReason: reason,
-        }
-      );
-      toast.success('Policy Rejected Successfully');
-      setViewModalOpen(false);
-      setViewFile(null);
-      fetchFiles();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed To Reject Policy');
-    }
-  };
+  try {
+    const res = await axios.patch(
+      `/hrms/organization/organization-policy/status/${id}`,
+      {
+        status: "REJECTED",
+        rejectionReason: reason,
+      }
+    );
+
+    const policy = res.data.data;
+
+    storeNotification({
+      receiverId: policy.uploadedBy,
+      senderId: user._id,
+      notificationTitle: "Policy Rejected",
+      notificationMessage: `Reason: ${reason}`,
+      relatedDomainType: "policy",
+      policyId: policy._id,
+      priority: "High",
+    });
+
+    toast.success("Policy Rejected");
+    setViewModalOpen(false);
+    fetchFiles();
+
+  } catch {
+    toast.error("Failed To Reject Policy");
+  }
+};
+
 
   const handleSuggestChanges = async (id, suggestions) => {
     try {
@@ -156,16 +193,44 @@ export default function OrganizationPolicy() {
   };
 
   const handleAcknowledge = async (id) => {
-    try {
-      await axios.patch(
-        `/hrms/organization/organization-policy/${id}/acknowledge`
-      );
-      toast.success('Policy Acknowledged Successfully');
-      fetchFiles();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed To Acknowledge');
+  try {
+    const res = await axios.patch(
+      `/hrms/organization/organization-policy/${id}/acknowledge`
+    );
+    
+    const acknowledgedPolicy = res.data.data || files.find(f => f._id === id);
+   
+    /* 🔔 EMPLOYEE → HR (Acknowledgement Notification) */
+    if (acknowledgedPolicy) {
+      // Find HR users who have the policy management permission
+      const hrUsers = users.filter(u => 
+        u.permissions?.includes('HRMS:COMPANY_POLICY:WRITE') ||
+        u.userRole?.includes('HR')
+      );    
+      // Create a Set to avoid duplicate notifications
+      const notifyUserIds = new Set();
+      hrUsers.forEach(hrUser => {
+        notifyUserIds.add(hrUser._id);
+      });   
+      // Send notifications to all relevant users
+      notifyUserIds.forEach(receiverId => {
+        storeNotification({
+          receiverId: receiverId,
+          senderId: user._id,
+          notificationTitle: "Policy Acknowledged",
+          notificationMessage: `${user.name} has acknowledged the policy`,
+          relatedDomainType: "policy",
+          policyId: acknowledgedPolicy._id,
+        });
+      });
     }
-  };
+    
+    toast.success('Policy Acknowledged Successfully');
+    fetchFiles();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Failed To Acknowledge');
+  }
+};
 
   const openDeleteModal = (file) => {
     setFileToDelete(file);
@@ -201,105 +266,121 @@ export default function OrganizationPolicy() {
       setIsDeleting(false);
     }
   };
-
- const handleFileUpload = async () => {
+``
+const handleFileUpload = async () => {
   try {
     if (!editMode && !file) {
-      toast.error('Please select a file');
+      toast.error("Please select a file");
       return;
     }
 
     if (!form.fileName.trim()) {
-      toast.error('Please enter a file name');
+      toast.error("Please enter a file name");
       return;
     }
 
     if (!form.folder) {
-      toast.error('Please select a folder');
+      toast.error("Please select a folder");
       return;
     }
 
     if (selectedUsers.length === 0) {
-      toast.error('Please select at least one user');
+      toast.error("Please select at least one user");
       return;
     }
 
     setUploading(true);
 
     const formData = new FormData();
-    
-    if (file) {
-      formData.append('file', file);
-    }
-    
-    formData.append('fileName', form.fileName);
-    formData.append('description', form.description);
-    formData.append('folder', form.folder);
-    formData.append('allowedUsers', JSON.stringify(selectedUsers));
+    if (file) formData.append("file", file);
+    formData.append("fileName", form.fileName);
+    formData.append("description", form.description);
+    formData.append("folder", form.folder);
+    formData.append("allowedUsers", JSON.stringify(selectedUsers));
 
     let response;
-    
+
+    /* ================== UPDATE FILE ================== */
     if (editMode && fileBeingEdited) {
       response = await axios.patch(
         `/hrms/organization/organization-files/${fileBeingEdited._id}`,
         formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      
-      // Show appropriate message based on backend response
-      if (response.data.requiresApproval) {
-        toast.success('File Updated And Sent For Re-Approval');
-      } else if (isSuperAdmin) {
-        toast.success('File Updated Successfully');
-      } else {
-        toast.success(response.data.message || 'File Updated Successfully');
-      }
-      
-      setFiles(prevFiles => 
-        prevFiles.map(f => 
-          f._id === fileBeingEdited._id 
-            ? { ...f, ...response.data.data }
-            : f
-        )
-      );
-    } else {
-      response = await axios.post(
-        '/hrms/organization/organization-files', 
-        formData, 
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       toast.success(
-        isSuperAdmin
-          ? 'File Published Successfully'
-          : 'File Sent For Approval'
+        response.data.requiresApproval
+          ? "File Updated And Sent For Approval"
+          : "File Updated Successfully"
       );
-      
-      setFiles(prevFiles => [response.data.data, ...prevFiles]);
     }
 
-    setForm({ fileName: '', description: '', folder: '' });
-    setFile(null);
-    setSelectedUsers([]);
+    /* ================== CREATE FILE ================== */
+    else {
+      response = await axios.post(
+        "/hrms/organization/organization-files",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      const createdPolicy = response.data.data;
+      console.log("xxxxxxxxxxxxxx",createdPolicy)
+
+      /* 🔔 HR → SUPER ADMIN */
+      if (!isSuperAdmin && createdPolicy.status === "PENDING_APPROVAL") {
+        const superAdmins = users.filter(u =>
+          u.userRole?.includes("SuperAdmin")
+        );
+
+        superAdmins.forEach(admin => {
+          storeNotification({
+            receiverId: admin._id,
+            senderId: user._id,
+            notificationTitle: "Policy Approval Required",
+            notificationMessage: `${user.name} submitted a policy for approval`,
+            relatedDomainType: "policy",
+            policyId: createdPolicy._id,
+            priority: "High",
+          });
+        });
+
+        toast.success("File Sent For Approval");
+      }
+
+      /* 🔔 SUPER ADMIN → EMPLOYEES */
+  
+if (isSuperAdmin && createdPolicy.status === "PUBLISHED") {
+  createdPolicy.allowedUsers.forEach(u => {
+    storeNotification({
+      receiverId: u.user,   // ✅ userId directly
+      senderId: user._id,
+      notificationTitle: "New Policy Published",
+      notificationMessage: `New policy available: ${createdPolicy.folder}`,
+      relatedDomainType: "policy",
+      policyId: createdPolicy._id,
+    });
+  });
+
+  toast.success("File Published Successfully");
+}
+
+    }
+
+    setOpenModal(false);
     setEditMode(false);
     setFileBeingEdited(null);
-    setOpenModal(false);
-
+    setForm({ fileName: "", description: "", folder: "" });
+    setFile(null);
+    setSelectedUsers([]);
     fetchFiles();
+
   } catch (error) {
-    toast.error(error.response?.data?.message || `Failed to ${editMode ? 'update' : 'upload'} file`);
+    toast.error(error.response?.data?.message || "Upload failed");
   } finally {
     setUploading(false);
   }
 };
+
 
   const openAddModal = () => {
     setEditMode(false);

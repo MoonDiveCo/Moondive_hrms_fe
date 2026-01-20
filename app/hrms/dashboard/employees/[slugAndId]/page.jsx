@@ -296,7 +296,7 @@ export default function EmployeeProfilePage() {
                 onClick={() => scrollToSection(t.key)}
                 className={`px-4 py-1.5 rounded-full text-sm transition ${activeTab === t.key
                   ? "bg-primary text-white"
-                  : "hover:bg-white/40"
+                  : "cursor-pointer text-primaryText "
                   }`}
               >
                 {t.label}
