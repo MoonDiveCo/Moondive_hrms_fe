@@ -72,7 +72,6 @@ export default function OrganizationPolicy() {
     description: '',
     folder: '',
   });
-
   const [file, setFile] = useState(null);
 
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }));
@@ -128,7 +127,7 @@ export default function OrganizationPolicy() {
         receiverId: u.user,
         senderId: user._id,
         notificationTitle: "New Policy Published",
-        notificationMessage: `Please review policy: ${policy.fileName}`,
+        notificationMessage: `Please review policy ${policy.folder}`,
         relatedDomainType: "policy",
         policyId: policy._id,
       });
@@ -156,7 +155,7 @@ export default function OrganizationPolicy() {
     const policy = res.data.data;
 
     storeNotification({
-      receiverId: policy.createdBy,
+      receiverId: policy.uploadedBy,
       senderId: user._id,
       notificationTitle: "Policy Rejected",
       notificationMessage: `Reason: ${reason}`,
@@ -194,16 +193,44 @@ export default function OrganizationPolicy() {
   };
 
   const handleAcknowledge = async (id) => {
-    try {
-      await axios.patch(
-        `/hrms/organization/organization-policy/${id}/acknowledge`
-      );
-      toast.success('Policy Acknowledged Successfully');
-      fetchFiles();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed To Acknowledge');
+  try {
+    const res = await axios.patch(
+      `/hrms/organization/organization-policy/${id}/acknowledge`
+    );
+    
+    const acknowledgedPolicy = res.data.data || files.find(f => f._id === id);
+   
+    /* 🔔 EMPLOYEE → HR (Acknowledgement Notification) */
+    if (acknowledgedPolicy) {
+      // Find HR users who have the policy management permission
+      const hrUsers = users.filter(u => 
+        u.permissions?.includes('HRMS:COMPANY_POLICY:WRITE') ||
+        u.userRole?.includes('HR')
+      );    
+      // Create a Set to avoid duplicate notifications
+      const notifyUserIds = new Set();
+      hrUsers.forEach(hrUser => {
+        notifyUserIds.add(hrUser._id);
+      });   
+      // Send notifications to all relevant users
+      notifyUserIds.forEach(receiverId => {
+        storeNotification({
+          receiverId: receiverId,
+          senderId: user._id,
+          notificationTitle: "Policy Acknowledged",
+          notificationMessage: `${user.name} has acknowledged the policy`,
+          relatedDomainType: "policy",
+          policyId: acknowledgedPolicy._id,
+        });
+      });
     }
-  };
+    
+    toast.success('Policy Acknowledged Successfully');
+    fetchFiles();
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Failed To Acknowledge');
+  }
+};
 
   const openDeleteModal = (file) => {
     setFileToDelete(file);
@@ -328,7 +355,7 @@ if (isSuperAdmin && createdPolicy.status === "PUBLISHED") {
       receiverId: u.user,   // ✅ userId directly
       senderId: user._id,
       notificationTitle: "New Policy Published",
-      notificationMessage: `New policy available: ${createdPolicy.fileName}`,
+      notificationMessage: `New policy available: ${createdPolicy.folder}`,
       relatedDomainType: "policy",
       policyId: createdPolicy._id,
     });
