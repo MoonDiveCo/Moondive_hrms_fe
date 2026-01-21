@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, useMemo } from 'react';
 
-import OverviewIcon from "../public/Dashboard/Overview.png";
-import CandidateIcon from "../public/Dashboard/Candidate.png";
-import LeaveTrackerIcon from "../public/Dashboard/LeaveTracker.png";
-import AttendanceIcon from "../public/Dashboard/Attendance.png";
+import OverviewIcon from "../public/Dashboard/Overview.svg";
+import CandidateIcon from "../public/Dashboard/Candidate.svg";
+import LeaveTrackerIcon from "../public/Dashboard/LeaveTracker.svg";
+import AttendanceIcon from "../public/Dashboard/Attendance.svg";
 import TimeTrackerIcon from "../public/Dashboard/TimeTracker.png";
-import PerformanceIcon from "../public/Dashboard/Performance.png";
+import PerformanceIcon from "../public/Dashboard/Performance.svg";
 import DocumentsIcon from "../public/Dashboard/Documents.png";
 import OperationsIcon from "../public/Dashboard/Operations.png";
 import AnalyticsIcon from "../public/Dashboard/Analytics.png";
@@ -32,10 +32,10 @@ export function MenuProvider({ children }) {
 
 
     const sidebarObject = {
-      "HRMS:HRMS_OVERVIEW:VIEW": { label: "Overview", icon: CandidateIcon, href: "/hrms/dashboard/overview", position: "top" },
+      "HRMS:HRMS_OVERVIEW:VIEW": { label: "Overview", icon: OverviewIcon, href: "/hrms/dashboard/overview", position: "top" },
       "HRMS:EMPLOYEES:VIEW": { label: "Employees", icon: CandidateIcon, href: "/hrms/dashboard/employees", position: "top" },
       "HRMS:LEAVE_TRACKER:VIEW": { label: "Leave Tracker", icon: LeaveTrackerIcon, href: "/hrms/dashboard/leave-tracker", position: "top" },
-      "HRMS:PROJECTS:VIEW":{label:"Projects",icon:OverviewIcon,href:"/hrms/dashboard/projects",position:"top"},
+      "HRMS:PROJECTS:VIEW":{label:"Projects",icon:CandidateIcon,href:"/hrms/dashboard/projects",position:"top"},
       "HRMS:ATTENDANCE:VIEW": { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance/list", position: "top" },
       // "HRMS:TIME_TRACKER:VIEW": { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker", position: "top" },
       "HRMS:COMPANY_POLICY:VIEW": { label: "Organization Policy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy", position: "top" },
