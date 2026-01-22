@@ -146,7 +146,7 @@ Adarsh`);
   if (loading) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-99 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
       <div className="flex flex-col w-full max-w-5xl bg-white rounded-xl shadow-2xl overflow-hidden max-h-[90vh]">
 
         {/* HEADER */}

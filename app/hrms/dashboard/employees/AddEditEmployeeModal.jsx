@@ -1869,7 +1869,7 @@ export default function AddEditEmployeeModal({
                 </select>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
                   Available Leave (days per month)
                 </label>
@@ -1883,7 +1883,7 @@ export default function AddEditEmployeeModal({
                   readOnly={isView }
                   placeholder="0"
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
