@@ -154,7 +154,7 @@ useEffect(() => {
         )}
       </>}
           <button
-            onClick={() => setOpenNotifications(true)}
+             onClick={() => setOpenNotifications(prev => !prev)}
             className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
           >
             {loading ? (

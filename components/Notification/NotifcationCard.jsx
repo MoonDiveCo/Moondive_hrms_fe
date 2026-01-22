@@ -100,34 +100,34 @@ export default function NotificationCard({
       <div
         ref={cardRef}
         onClick={handleClick}
-        className="flex items-start gap-3 py-4 cursor-pointer hover:bg-orange-50 transition"
+        className="flex items-center justify-center gap-3 py-2 px-4 cursor-pointer hover:bg-primary/10 transition"
       >
         {/* Icon */}
-        <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center">
+
+        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
           <IconComponent className="w-4 h-4 text-primary" />
         </div>
-
         {/* Content */}
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h6 className="text-sm font-semibold text-black">
+            <h6 className="text-sm text-primaryText">
               {notification.title || notification.notificationTitle}
             </h6>
 
-            <span className="text-xs text-gray-400 whitespace-nowrap">
+            <span className="text-[10px] text-gray-400 whitespace-nowrap">
               {format(new Date(notification.createdAt), "h:mm a")}
             </span>
           </div>
-
-          <p className="text-xs text-primary-Text mt-0.5 leading-relaxed">
+    
+          <span className="text-xs block text-primaryText mt-0.5 leading-relaxed">
             {notification.message || notification.notificationMessage}
-          </p>
+          </span>
 
-          <span className="text-xs text-gray-400 mt-1">
+          {/* <span className="text-[10px] text-gray-400">
             {formatDistanceToNow(new Date(notification.createdAt), {
               addSuffix: true,
             })}
-          </span>
+          </span> */}
         </div>
 
         {!notification.isRead && (
