@@ -2,17 +2,23 @@
 
 import axios from "axios";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import AddEditEmployeeModal from "../AddEditEmployeeModal";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { AuthContext } from "@/context/authContext";
+import { RBACContext } from "@/context/rbacContext";
 
 /* ================= MAIN ================= */
 
 export default function EmployeeProfilePage() {
   const { slugAndId } = useParams();
   const employeeId = slugAndId?.split("-").pop();
+
+  // ✅ Add auth context
+  const { user } = useContext(AuthContext);
+  const { canPerform, submodules } = useContext(RBACContext);
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +36,41 @@ export default function EmployeeProfilePage() {
   const documentsRef = useRef(null);
   const isAutoScrollingRef = useRef(false);
 
+  // ✅ Permission checks
+  const isSuperAdmin = user?.userRole?.includes("SuperAdmin");
+  const isHR = user?.userRole?.includes("HR") || user?.userRole?.includes("HumanResources");
+  const hasWildcard = submodules?.includes("*");
+  
+  // ✅ Check if viewing own profile - comparing with employee basic data
+  const isOwnProfile = employee?.basic?.employeeId === user?.employeeId;
+
+  // ✅ Define which sections each role can see
+  // Own profile: can see everything
+  // Admin/HR: can see employment, stats, documents
+  // SuperAdmin: can see compensation too
+  const canViewEmployment = isSuperAdmin || isHR || hasWildcard || isOwnProfile;
+  const canViewStats = isSuperAdmin || isHR || hasWildcard || isOwnProfile;
+  const canViewCompensation = isSuperAdmin || hasWildcard || isOwnProfile;
+  const canViewDocuments = isSuperAdmin || isHR || hasWildcard || isOwnProfile;
+  
+  // ✅ Can edit if: admin/HR/wildcard/explicit permission OR viewing own profile
+  const canEditProfile = 
+    isSuperAdmin || 
+    isHR || 
+    hasWildcard || 
+    canPerform("EDIT", "HRMS", "EMPLOYEE") ||
+    isOwnProfile;
+
+  // ✅ Filter tabs based on permissions
+  const tabs = [
+    { key: "bio", label: "Bio", visible: true },
+    { key: "employment", label: "Employment", visible: canViewEmployment },
+    { key: "stats", label: "Stats", visible: canViewStats },
+    { key: "compensation", label: "Compensation", visible: canViewCompensation },
+    { key: "documents", label: "Documents", visible: canViewDocuments },
+  ].filter(tab => tab.visible);
+
+  // Create section map based on visible tabs
   const sectionMap = {
     bio: bioRef,
     employment: employmentRef,
@@ -37,14 +78,6 @@ export default function EmployeeProfilePage() {
     compensation: compensationRef,
     documents: documentsRef,
   };
-
-  const tabs = [
-    { key: "bio", label: "Bio" },
-    { key: "employment", label: "Employment" },
-    { key: "stats", label: "Stats" },
-    { key: "compensation", label: "Compensation" },
-    { key: "documents", label: "Documents" },
-  ];
 
   /* ================= DATA ================= */
 
@@ -90,28 +123,37 @@ export default function EmployeeProfilePage() {
     loadOrganizationData();
   }, []);
 
-  /* ================= TAB SYNC ================= */
+  /* ================= TAB SYNC - IMPROVED ================= */
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (isAutoScrollingRef.current) return;
 
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort(
-            (a, b) =>
-              Math.abs(a.boundingClientRect.top) -
-              Math.abs(b.boundingClientRect.top)
-          );
+        // Find the section with maximum visibility
+        let maxVisibleSection = null;
+        let maxVisibility = 0;
 
-        if (visible[0]) {
-          setActiveTab(visible[0].target.dataset.section);
+        entries.forEach((entry) => {
+          const visibleRatio = entry.intersectionRatio;
+          if (visibleRatio > maxVisibility) {
+            maxVisibility = visibleRatio;
+            maxVisibleSection = entry.target;
+          }
+        });
+
+        // Update tab if a section is at least 30% visible
+        if (maxVisibleSection && maxVisibility >= 0.3) {
+          setActiveTab(maxVisibleSection.dataset.section);
         }
       },
-      { threshold: 0.35 }
+      { 
+        threshold: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        rootMargin: '-100px 0px -100px 0px'
+      }
     );
 
+    // Observe all visible sections
     Object.entries(sectionMap).forEach(([key, ref]) => {
       if (ref.current) {
         ref.current.dataset.section = key;
@@ -120,11 +162,54 @@ export default function EmployeeProfilePage() {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [employee]); // Add employee dependency to re-observe when data loads
+
+  useEffect(() => {
+    // Add scroll listener as fallback
+    const handleScroll = () => {
+      if (isAutoScrollingRef.current) return;
+      
+      const scrollPosition = window.scrollY + 150; // Offset for sticky header
+      
+      // Find which section is currently in view
+      for (const [key, ref] of Object.entries(sectionMap)) {
+        if (ref.current) {
+          const rect = ref.current.getBoundingClientRect();
+          const elementTop = rect.top + window.scrollY;
+          const elementBottom = elementTop + rect.height;
+          
+          // If scroll position is within this section
+          if (scrollPosition >= elementTop && scrollPosition < elementBottom) {
+            setActiveTab(key);
+            break;
+          }
+        }
+      }
+    };
+    
+    // Throttle scroll events for better performance
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+    
+    return () => window.removeEventListener('scroll', throttledScroll);
+  }, [employee]);
 
   const scrollToSection = (key) => {
     isAutoScrollingRef.current = true;
-    sectionMap[key]?.current?.scrollIntoView({ behavior: "smooth" });
+    sectionMap[key]?.current?.scrollIntoView({ 
+      behavior: "smooth",
+      block: "start" 
+    });
     setActiveTab(key);
     setTimeout(() => (isAutoScrollingRef.current = false), 600);
   };
@@ -166,7 +251,6 @@ export default function EmployeeProfilePage() {
     return acc;
   }, {});
 
-  // -------- LEAVE STATUS COUNT --------
   const leaveStatusCount = leaves.reduce(
     (acc, l) => {
       acc[l.leaveStatus] = (acc[l.leaveStatus] || 0) + 1;
@@ -175,7 +259,6 @@ export default function EmployeeProfilePage() {
     { Approved: 0, Pending: 0, Rejected: 0 }
   );
 
-  // -------- MONTH-WISE ATTENDANCE --------
   const monthlyAttendance = attendanceData
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .reduce((acc, a) => {
@@ -219,7 +302,6 @@ export default function EmployeeProfilePage() {
         allElements.forEach((el) => {
           const style = clonedDoc.defaultView.getComputedStyle(el);
 
-          // sanitize ALL unsupported color functions
           if (style.color.includes("lab(")) {
             el.style.color = "#000000";
           }
@@ -264,14 +346,15 @@ export default function EmployeeProfilePage() {
 
     pdf.save(`${basic.firstName}_${basic.lastName}_Profile.pdf`);
   };
+
   /* ================= RENDER ================= */
 
   return (
     <div className="min-h-screen bg-background-light">
-      <div ref={pdfRef} className="max-w-6xl mx-auto px-4 py-8 space-y-10">
+      <div ref={pdfRef} className="max-w-6xl mx-auto px-4 py-6 space-y-10">
 
-        <div className="bg-white shadow-md rounded-xl p-6 flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        <div className="bg-white shadow-md rounded-xl p-4 flex justify-between items-center">
+          <div className="flex items-center gap-4 ">
             <img src={basic.imageUrl || "https://i.pravatar.cc/100"} alt="Employee" className="h-16 w-16 rounded-full object-cover" />
             <div>
               <div className="flex items-center gap-2">
@@ -280,24 +363,42 @@ export default function EmployeeProfilePage() {
               </div>
               <p className="text-primaryText"> Employee ID: {basic.employeeId} · {basic.designationId?.name} </p>
             </div>
-          </div> {/* { editPermission && */}
-          <div className="flex gap-3">
-            <button onClick={handleExportPDF} className="shadow-md px-4 py-2 rounded-lg text-sm font-semibold"> Export PDF </button>
-            <button onClick={() => setShowAddEdit(true)} className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold"> Edit Profile </button>
-          </div> {/* } */}
+          </div>
+          
+          {/* ✅ Show buttons if can edit */}
+          {canEditProfile && (
+            <div className="flex gap-3">
+              {/* ✅ Export PDF only for own profile or admin/HR */}
+              {(isOwnProfile || isSuperAdmin || isHR || hasWildcard) && (
+                <button 
+                  onClick={handleExportPDF} 
+                  className="shadow-md px-4 py-2 rounded-lg text-sm font-semibold"
+                > 
+                  Export PDF 
+                </button>
+              )}
+              <button 
+                onClick={() => setShowAddEdit(true)} 
+                className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold"
+              > 
+                Edit Profile 
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* ================= TABS ================= */}
-        <div className="sticky top-0 z-10 flex justify-center">
-          <div className="bg-primary/10 backdrop-blur-md px-2 py-1 rounded-full">
+        {/* ================= IMPROVED TABS ================= */}
+        <div className="sticky top-4 z-50 flex justify-center mb-6">
+          <div className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-lg px-4 py-2 rounded-full">
             {tabs.map((t) => (
               <button
                 key={t.key}
                 onClick={() => scrollToSection(t.key)}
-                className={`px-4 py-1.5 rounded-full text-sm transition ${activeTab === t.key
-                  ? "bg-primary text-white"
-                  : "cursor-pointer text-primaryText "
-                  }`}
+                className={`px-5 py-2 mx-1 rounded-full text-sm font-medium transition-all duration-300 ${
+                  activeTab === t.key
+                    ? "bg-primary text-white shadow-md"
+                    : "text-gray-600 hover:text-primary hover:bg-gray-100"
+                }`}
               >
                 {t.label}
               </button>
@@ -305,8 +406,8 @@ export default function EmployeeProfilePage() {
           </div>
         </div>
 
-        {/* ================= BIO ================= */}
-        <section ref={bioRef}>
+        {/* ================= BIO (Always visible) ================= */}
+        <section ref={bioRef} className="">
           <Card title="Personal Information">
             <Grid>
               <Info label="Full Name" value={`${basic.firstName} ${basic.lastName}`} />
@@ -319,113 +420,112 @@ export default function EmployeeProfilePage() {
                     : "—"
                 }
               />
-                <Info
+              <Info
                 label="About"
-                value={
-                  basic.about
-                }
+                value={basic.about}
               />
-
             </Grid>
           </Card>
         </section>
 
         {/* ================= EMPLOYMENT ================= */}
-        <section ref={employmentRef}>
-          <Card title="Employment Details">
-            <Grid>
-              <Info label="Department" value={basic.departmentId?.name} />
-              <Info label="Employment Type" value={basic.employmentType} />
-              <Info label="Joining Date" value={new Date(basic.dateOfJoining).toDateString()} />
-              <Info label="Manager" value={`${basic.reportingManagerId?.firstName} ${basic.reportingManagerId?.lastName}`} />
-              <Info label="Shift" value={`${basic.workingShiftId?.startTime} - ${basic.workingShiftId?.endTime}`} />
-            </Grid>
-          </Card>
-        </section>
-
-        {/* ================= STATS ================= */}
-        <section ref={statsRef}>
-          <div className="space-y-6">
-
-            <Card title="Monthly Attendance Breakdown">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-300 text-left text-gray-500">
-                      <th className="py-2">Month</th>
-                      <th>Present</th>
-                      <th>On Leave</th>
-                      <th>Absent</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {Object.entries(monthlyAttendance).map(
-                      ([month, stats]) => (
-                        <tr key={month} className="">
-                          <td className="py-2 font-medium">{month}</td>
-                          <td className="text-green-600">{stats.Present || 0}</td>
-                          <td className="text-yellow-600">{stats["On Leave"] || 0}</td>
-                          <td className="text-red-600">{stats.Absent || 0}</td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-
-
-            <Card title="Leave Summary">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <Stat title="Total Leaves" value={leaves.length} color="blue" />
-                <Stat title="Approved" value={leaveStatusCount.Approved} color="green" />
-                <Stat title="Pending" value={leaveStatusCount.Pending} color="yellow" />
-                <Stat title="Rejected" value={leaveStatusCount.Rejected} color="red" />
-              </div>
-
+        {canViewEmployment && (
+          <section ref={employmentRef} className="">
+            <Card title="Employment Details">
               <Grid>
-                {Object.entries(leaveTypeCount).map(([type, count]) => (
-                  <Info key={type} label={`${type} Leaves`} value={`${count} day(s)`} />
-                ))}
-
-                <Info
-                  label="Leave Balance"
-                  value={leaveBalance?.leaveBalances
-                    ?.map(lb => `${lb.leaveTypeCode}: ${lb.available}`)
-                    .join(" | ")}
-                  full
-                />
+                <Info label="Department" value={basic.departmentId?.name} />
+                <Info label="Employment Type" value={basic.employmentType} />
+                <Info label="Joining Date" value={new Date(basic.dateOfJoining).toDateString()} />
+                <Info label="Manager" value={`${basic.reportingManagerId?.firstName} ${basic.reportingManagerId?.lastName}`} />
+                <Info label="Shift" value={`${basic.workingShiftId?.startTime} - ${basic.workingShiftId?.endTime}`} />
               </Grid>
             </Card>
+          </section>
+        )}
 
+        {/* ================= STATS ================= */}
+        {canViewStats && (
+          <section ref={statsRef} className="">
+            <div className="space-y-6">
+              <Card title="Monthly Attendance Breakdown">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-300 text-left text-gray-500">
+                        <th className="py-2">Month</th>
+                        <th>Present</th>
+                        <th>On Leave</th>
+                        <th>Absent</th>
+                      </tr>
+                    </thead>
 
+                    <tbody>
+                      {Object.entries(monthlyAttendance).map(
+                        ([month, stats]) => (
+                          <tr key={month} className="">
+                            <td className="py-2 font-medium">{month}</td>
+                            <td className="text-green-600">{stats.Present || 0}</td>
+                            <td className="text-yellow-600">{stats["On Leave"] || 0}</td>
+                            <td className="text-red-600">{stats.Absent || 0}</td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
 
-          </div>
-        </section>
+              <Card title="Leave Summary">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <Stat title="Total Leaves" value={leaves.length} color="blue" />
+                  <Stat title="Approved" value={leaveStatusCount.Approved} color="green" />
+                  <Stat title="Pending" value={leaveStatusCount.Pending} color="yellow" />
+                  <Stat title="Rejected" value={leaveStatusCount.Rejected} color="red" />
+                </div>
+
+                <Grid>
+                  {Object.entries(leaveTypeCount).map(([type, count]) => (
+                    <Info key={type} label={`${type} Leaves`} value={`${count} day(s)`} />
+                  ))}
+
+                  <Info
+                    label="Leave Balance"
+                    value={leaveBalance?.leaveBalances
+                      ?.map(lb => `${lb.leaveTypeCode}: ${lb.available}`)
+                      .join(" | ")}
+                    full
+                  />
+                </Grid>
+              </Card>
+            </div>
+          </section>
+        )}
 
         {/* ================= COMPENSATION ================= */}
-        <section ref={compensationRef}>
-          <Card title="Compensation">
-            <p className="text-gray-500">Confidential</p>
-          </Card>
-        </section>
+        {canViewCompensation && (
+          <section ref={compensationRef} className="">
+            <Card title="Compensation">
+              <p className="text-gray-500">Confidential compensation information</p>
+            </Card>
+          </section>
+        )}
 
         {/* ================= DOCUMENTS ================= */}
-        <section ref={documentsRef}>
-          <Card title="Documents">
-            <p className="text-gray-500">Uploaded documents appear here</p>
-          </Card>
-        </section>
+        {canViewDocuments && (
+          <section ref={documentsRef} className="min-h-[400px]">
+            <Card title="Documents">
+              <p className="text-gray-500">Uploaded documents appear here</p>
+            </Card>
+          </section>
+        )}
 
         {/* ================= MODAL ================= */}
-        {showAddEdit && (
+        {showAddEdit && canEditProfile && (
           <AddEditEmployeeModal
             mode="edit"
             employee={basic}
             onClose={() => setShowAddEdit(false)}
             onSave={async () => {
-              // Refresh employee data after save
               try {
                 const res = await axios.get(`/hrms/employee/info/${employeeId}`);
                 setEmployee(res.data.data);
@@ -438,6 +538,8 @@ export default function EmployeeProfilePage() {
             employeeList={employeeList}
           />
         )}
+        
+       
       </div>
     </div>
   );
