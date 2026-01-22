@@ -192,6 +192,7 @@ export const NotificationProvider = ({ children }) => {
     if (senderId) payload.senderId = senderId;
     try {
       const response = await axios.post("hrms/notification/send", payload);
+      console.log("xxxxxxxxxxxxxxxxxxxx----------xxxxxxxxxxxxxxx",response.data)
       return response.data;
     } catch (error) {
       console.error(
