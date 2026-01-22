@@ -21,8 +21,21 @@ export default function AddEditEmployeeModal({
   const [imagePreview, setImagePreview] = useState(null);
   const [imageHovered, setImageHovered] = useState(false);
   const [autoEmployee, setAutoEmployee] = useState(false);
-  // Add this state near the top with other useState declarations
   const [sameAsCurrentAddress, setSameAsCurrentAddress] = useState(false);
+  const [expandedDocSections, setExpandedDocSections] = useState({});
+  const [uploadedDocuments, setUploadedDocuments] = useState({
+    idProofs: { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
+    academicDocuments: { 
+      tenth: { certificate: null, marksheet: null },
+      twelth: { certificate: null, marksheet: null },
+      graduation: { name: '', semester: '', certificate: null, marksheets: [] },
+      postGraduation: { name: '', semester: '', certificate: null, marksheets: [] },
+      nocFromCollege: null
+    },
+    employmentHistory: [],
+    otherDocuments: [],
+  });
+  const [documentUploadingStates, setDocumentUploadingStates] = useState({});
 
   function handleSameAsCurrentAddress(checked) {
     setSameAsCurrentAddress(checked);
@@ -106,6 +119,7 @@ export default function AddEditEmployeeModal({
     workingShiftId: "",
     onboardingStatus: "",
     probationEndDate: "",
+    experienceLevel: "",
     userRole: [],
     skills: [],
     skillInput: "",
@@ -191,6 +205,7 @@ export default function AddEditEmployeeModal({
           : employee.workingShiftId || '',
         onboardingStatus: employee.onboardingStatus || '',
         probationEndDate: formatDateForInput(employee.probationEndDate),
+        experienceLevel: employee.experienceLevel || '',
         userRole: employee.userRole || [],
         skills: employee.skills || [],
         skillInput: '',
@@ -268,6 +283,7 @@ export default function AddEditEmployeeModal({
           : employee.workingShiftId || '',
         onboardingStatus: employee.onboardingStatus || '',
         probationEndDate: formatDateForInput(employee.probationEndDate),
+        experienceLevel: employee.experienceLevel || '',
         userRole: employee.userRole || [],
         skills: employee.skills || [],
         skillInput: '',
@@ -280,7 +296,70 @@ export default function AddEditEmployeeModal({
     setStep(1);
     setErrors({});
   }, [employee, mode]);
- 
+
+  useEffect(() => {
+    if (employee && mode === 'edit' && employee._id) {
+      const loadDocuments = async () => {
+        try {
+          const { data } = await axios.get(`/user/get-personal-details/${employee._id}`);
+          
+          if (data?.result) {
+            const personalDetails = data.result;
+            
+            if (personalDetails.academicDocuments?.graduation?.marksheets && !Array.isArray(personalDetails.academicDocuments.graduation.marksheets)) {
+              personalDetails.academicDocuments.graduation.marksheets = [];
+            }
+            if (personalDetails.academicDocuments?.postGraduation?.marksheets && !Array.isArray(personalDetails.academicDocuments.postGraduation.marksheets)) {
+              personalDetails.academicDocuments.postGraduation.marksheets = [];
+            }
+            if (!Array.isArray(personalDetails.employmentHistory)) {
+              personalDetails.employmentHistory = [];
+            }
+            
+            if (personalDetails.employmentHistory && Array.isArray(personalDetails.employmentHistory)) {
+              personalDetails.employmentHistory = personalDetails.employmentHistory.map(emp => ({
+                ...emp,
+                offerLetter: Array.isArray(emp.offerLetter) ? emp.offerLetter : (emp.offerLetter ? [emp.offerLetter] : []),
+                experienceLetter: Array.isArray(emp.experienceLetter) ? emp.experienceLetter : (emp.experienceLetter ? [emp.experienceLetter] : []),
+                salarySlips: Array.isArray(emp.salarySlips) ? emp.salarySlips : (emp.salarySlips ? [emp.salarySlips] : []),
+                others: Array.isArray(emp.others) ? emp.others : (emp.others ? [emp.others] : [])
+              }));
+            }
+            
+            setUploadedDocuments({
+              idProofs: personalDetails.idProofs || { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
+              academicDocuments: personalDetails.academicDocuments || { 
+                tenth: { certificate: null, marksheet: null },
+                twelth: { certificate: null, marksheet: null },
+                graduation: { name: '', semester: '', certificate: null, marksheets: [] },
+                postGraduation: { name: '', semester: '', certificate: null, marksheets: [] },
+                nocFromCollege: null
+              },
+              employmentHistory: personalDetails.employmentHistory || [],
+              otherDocuments: personalDetails.otherDocuments || [],
+            });
+          }
+        } catch (err) {
+          console.error("Failed to load documents:", err);
+        }
+      };
+      
+      loadDocuments();
+    } else {
+      setUploadedDocuments({
+        idProofs: { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
+        academicDocuments: { 
+          tenth: { certificate: null, marksheet: null },
+          twelth: { certificate: null, marksheet: null },
+          graduation: { name: '', semester: '', certificate: null, marksheets: [] },
+          postGraduation: { name: '', semester: '', certificate: null, marksheets: [] },
+          nocFromCollege: null
+        },
+        employmentHistory: [],
+        otherDocuments: [],
+      });
+    }
+  }, [employee, mode]);
 
   useEffect(() => {
     function onKey(e) {
@@ -370,6 +449,231 @@ export default function AddEditEmployeeModal({
       toast.error("Error While Adding Employee Photo");
       setErrors((prev) => ({ ...prev, imageUrl: "Failed to upload image" }));
     }
+  };
+
+  const handleDocumentUpload = async (e, docPath) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setDocumentUploadingStates((prev) => ({ ...prev, [docPath]: true }));
+
+    const formData = new FormData();
+    formData.append("files", file);
+    
+    try {
+      const { data } = await axios.post("/user/add-pdf", formData);
+      
+      if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
+        const pdf = data.result.pdfUrls[0];
+        
+        setUploadedDocuments((prev) => {
+          const updated = JSON.parse(JSON.stringify(prev));
+          
+          const arrayMatch = docPath.match(/\[(\d+)\]/);
+          if (arrayMatch) {
+            const index = parseInt(arrayMatch[1]);
+            const pathWithoutIndex = docPath.replace(/\[\d+\]/, '');
+            const keys = pathWithoutIndex.split(".");
+            
+            let obj = updated;
+            for (let i = 0; i < keys.length - 1; i++) {
+              if (keys[i] === 'employmentHistory') {
+                obj = obj[keys[i]][index];
+              } else {
+                obj = obj[keys[i]];
+              }
+            }
+            
+            const lastKey = keys[keys.length - 1];
+            if (Array.isArray(obj[lastKey])) {
+              obj[lastKey].push({ url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() });
+            } else {
+              obj[lastKey] = { url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() };
+            }
+          } else {
+            const keys = docPath.split(".");
+            let obj = updated;
+            
+            for (let i = 0; i < keys.length - 1; i++) {
+              if (!obj[keys[i]] || typeof obj[keys[i]] !== 'object') {
+                obj[keys[i]] = {};
+              }
+              obj = obj[keys[i]];
+            }
+            
+            const lastKey = keys[keys.length - 1];
+            if (Array.isArray(obj[lastKey])) {
+              obj[lastKey].push({ url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() });
+            } else {
+              obj[lastKey] = { url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() };
+            }
+          }
+          
+          return updated;
+        });
+        
+        toast.success("Document uploaded successfully");
+      }
+    } catch (err) {
+      toast.error("Failed to upload document");
+      console.error("PDF upload error:", err);
+    } finally {
+      setDocumentUploadingStates((prev) => ({ ...prev, [docPath]: false }));
+    }
+  };
+
+  const handleRemoveDocument = async (docPath, index) => {
+    setDocumentUploadingStates((prev) => ({ ...prev, [docPath]: true }));
+
+    try {
+      let document = null;
+      
+      const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
+      if (arrayIndexMatch) {
+        const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
+        const arrayIdx = parseInt(arrayIndex);
+        const docs = uploadedDocuments[arrayName]?.[arrayIdx]?.[fieldName];
+        if (index !== undefined && Array.isArray(docs)) {
+          document = docs[index];
+        } else if (docs && !Array.isArray(docs)) {
+          document = docs;
+        }
+      } else {
+        const keys = docPath.split(".");
+        let obj = uploadedDocuments;
+        
+        for (let i = 0; i < keys.length; i++) {
+          obj = obj[keys[i]];
+          if (!obj) break;
+        }
+        
+        if (index !== undefined && Array.isArray(obj)) {
+          document = obj[index];
+        } else if (obj && !Array.isArray(obj)) {
+          document = obj;
+        }
+      }
+      
+      if (document?.key) {
+        try {
+          await axios.post("/user/remove-pdf", { key: document.key });
+        } catch (backendErr) {
+          console.warn("Backend PDF removal failed, removing from frontend:", backendErr);
+        }
+      }
+
+      setUploadedDocuments((prev) => {
+        const updated = JSON.parse(JSON.stringify(prev));
+        
+        const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
+        if (arrayIndexMatch) {
+          const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
+          const arrayIdx = parseInt(arrayIndex);
+          
+          if (updated[arrayName]?.[arrayIdx]?.[fieldName]) {
+            if (index !== undefined && Array.isArray(updated[arrayName][arrayIdx][fieldName])) {
+              updated[arrayName][arrayIdx][fieldName].splice(index, 1);
+            } else {
+              updated[arrayName][arrayIdx][fieldName] = null;
+            }
+          }
+        } else {
+          let updateObj = updated;
+          const pathKeys = docPath.split(".");
+          
+          for (let i = 0; i < pathKeys.length - 1; i++) {
+            updateObj = updateObj[pathKeys[i]];
+            if (!updateObj) return prev;
+          }
+          
+          const lastKey = pathKeys[pathKeys.length - 1];
+          
+          if (index !== undefined && Array.isArray(updateObj[lastKey])) {
+            updateObj[lastKey].splice(index, 1);
+          } else if (updateObj[lastKey]) {
+            updateObj[lastKey] = null;
+          }
+        }
+        
+        return updated;
+      });
+      
+      toast.success("Document removed successfully");
+    } catch (err) {
+      console.error("PDF removal error:", err);
+      toast.error("Failed to remove document");
+    } finally {
+      setDocumentUploadingStates((prev) => ({ ...prev, [docPath]: false }));
+    }
+  };
+
+  const toggleDocSection = (section) => {
+    const isDisabled =
+      !form.employmentType || !form.experienceLevel;
+    if (isDisabled) return;
+    
+    setExpandedDocSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const checkAllRequiredDocumentsUploaded = () => {
+    const requiredDocs = getRequiredDocuments();
+    
+    if (requiredDocs.idProofs) {
+      const hasIdProof = 
+        !!uploadedDocuments.idProofs?.aadhaar ||
+        !!uploadedDocuments.idProofs?.pan ||
+        !!uploadedDocuments.idProofs?.passportOrDL ||
+        !!uploadedDocuments.idProofs?.presentAddressProof ||
+        !!uploadedDocuments.idProofs?.permanentAddressProof;
+      
+      if (!hasIdProof) {
+        return false;
+      }
+    }
+    
+    if (requiredDocs.academicDocuments) {
+      const has10th = !!uploadedDocuments.academicDocuments?.tenth?.certificate && 
+                      !!uploadedDocuments.academicDocuments?.tenth?.marksheet;
+      
+      const has12th = !!uploadedDocuments.academicDocuments?.twelth?.certificate && 
+                      !!uploadedDocuments.academicDocuments?.twelth?.marksheet;
+      
+      const gradSemester = parseInt(uploadedDocuments.academicDocuments?.graduation?.semester) || 0;
+      const gradMarksheetCount = uploadedDocuments.academicDocuments?.graduation?.marksheets?.length || 0;
+      const hasGraduation = !!uploadedDocuments.academicDocuments?.graduation?.certificate && 
+                            gradSemester > 0 && 
+                            gradMarksheetCount === gradSemester;
+      
+      if (!has10th && !has12th && !hasGraduation) {
+        return false;
+      }
+    }
+    
+    if (requiredDocs.employmentHistory) {
+      if (!uploadedDocuments.employmentHistory || uploadedDocuments.employmentHistory.length === 0) {
+        return false;
+      }
+      
+      const hasCompleteEmploymentHistory = uploadedDocuments.employmentHistory.every(emp => 
+        emp.companyName &&
+        emp.designation &&
+        emp.employmentPeriod?.startDate &&
+        emp.employmentPeriod?.endDate &&
+        emp.offerLetter &&
+        emp.experienceLetter &&
+        emp.relievingLetter &&
+        emp.salarySlips?.length === 3 
+      );
+      
+      if (!hasCompleteEmploymentHistory) {
+        return false;
+      }
+    }
+    
+    return true;
   };
 
   function isValidEmail(email) {
@@ -552,6 +856,8 @@ export default function AddEditEmployeeModal({
         e.employmentType = "Employment type is required";
       if (!form.employmentStatus)
         e.employmentStatus = "Employment status is required";
+      if (!form.experienceLevel)
+        e.experienceLevel = "Experience level is required";
     }
 
     if (currentStep === 3) {
@@ -605,7 +911,7 @@ export default function AddEditEmployeeModal({
     setErrors(stepErrors);
 
     if (Object.keys(stepErrors).length === 0) {
-      setStep((s) => Math.min(4, s + 1));
+      setStep((s) => Math.min(5, s + 1));
     }
   }
 
@@ -646,6 +952,23 @@ export default function AddEditEmployeeModal({
     }
     setSubmitting(true);
 
+    const requiredDocs = getRequiredDocuments();
+
+    const missingDocs = [];
+
+    if (!requiredDocs.idProofs) {
+      missingDocs.push("ID Proofs");
+    }
+    if (!requiredDocs.academicDocuments) {
+      missingDocs.push("Academic Documents");
+    }
+    if (!requiredDocs.employmentHistory) {
+      missingDocs.push("Employment History");
+    }
+
+    const allRequiredDocsUploaded = checkAllRequiredDocumentsUploaded();
+    const onboardingStatusValue = allRequiredDocsUploaded ? "Completed" : "Pending";
+
     const submitData = {
       employeeId: form.employeeId,
       firstName: form.firstName,
@@ -683,15 +1006,17 @@ export default function AddEditEmployeeModal({
       designationId: form.designationId,
       reportingManagerId: form.reportingManagerId || "",
       dateOfJoining: form.dateOfJoining,
-      onboardingStatus: form.onboardingStatus || "Pending",
+      onboardingStatus: onboardingStatusValue,
       availableLeave: form.availableLeave
         ? parseInt(form.availableLeave)
         : undefined,
       workingShiftId: form.workingShiftId || "",
       probationEndDate: form.probationEndDate || null,
+      experienceLevel: form.experienceLevel,
       emergencyContacts: form.emergencyContacts.filter(
         (ec) => ec.name && ec.phone
       ),
+      documents: uploadedDocuments,
     };
 
     if (mode === "add") {
@@ -703,14 +1028,28 @@ export default function AddEditEmployeeModal({
       let res;
       if (mode === "add") {
         res = await axios.post("/hrms/employee/add-employee", submitData);
-        toast.success("Employee Added Successfully")
+        toast.success("Employee Added Successfully");
+        
+        if (missingDocs.length > 0) {
+          toast.info(
+            `Remember to upload ${missingDocs.join(", ")} to complete onboarding.`,
+            { duration: 5000 }
+          );
+        }
       } else if (mode === "edit") {
         const empId = employee._id || employee.id;
         res = await axios.put(
           `/hrms/employee/update-employee/${empId}`,
           submitData
         );
-        toast.success("Employee Updated")
+        toast.success("Employee Updated");
+        
+        if (missingDocs.length > 0) {
+          toast.info(
+            `Remember to upload ${missingDocs.join(", ")} to complete onboarding.`,
+            { duration: 5000 }
+          );
+        }
       }
 
       onSave && onSave(res.data.data || res.data.result);
@@ -927,6 +1266,25 @@ export default function AddEditEmployeeModal({
   //   }
   // }
 
+  const getRequiredDocuments = () => {
+  const isPermanentOrProbation =
+    ["Permanent", "Probation"].includes(form.employmentType);
+
+  const isInternship = form.employmentType === "Internship";
+
+  return {
+    idProofs: true,
+
+    academicDocuments: isPermanentOrProbation, 
+
+    showAcademicSection: isPermanentOrProbation || isInternship, 
+
+    employmentHistory:
+      isPermanentOrProbation && form.experienceLevel === "Experienced",
+  };
+};
+
+
   const isView = mode === "view";
   const isEdit = mode === "edit";
   const primaryLabel = isView
@@ -994,7 +1352,7 @@ export default function AddEditEmployeeModal({
 
         <div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
           <div className="flex items-center">
-            {[1, 2, 3, 4].map((s, index) => (
+            {[1, 2, 3, 4, 5].map((s, index) => (
               <React.Fragment key={s}>
                 {index > 0 && (
                   <div
@@ -1031,7 +1389,9 @@ export default function AddEditEmployeeModal({
                       ? "Employment"
                       : s === 3
                       ? "Job"
-                      : "Credentials"}
+                      : s === 4
+                      ? "Credentials"
+                      : "Documents"}
                   </div>
                 </div>
               </React.Fragment>
@@ -1703,6 +2063,24 @@ export default function AddEditEmployeeModal({
 
               <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
+                  Experience Level <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.experienceLevel || ""}
+                  onChange={(e) => update("experienceLevel", e.target.value)}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
+                    errors.experienceLevel ? "border-red-500" : ""
+                  }`}
+                  disabled={isView}
+                >
+                  <option value="">Select</option>
+                  <option value="Fresher">Fresher</option>
+                  <option value="Experienced">Experienced</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-[var(--color-primaryText)]">
                   Working Shift
                 </label>
                 <select
@@ -1812,29 +2190,28 @@ export default function AddEditEmployeeModal({
                   Reporting Manager
                 </label>
                 <select
-  value={form.reportingManagerId || ""}
-  onChange={(e) => update("reportingManagerId", e.target.value)}
-  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-    errors.reportingManagerId ? "border-red-500" : ""
-  }`}
-  disabled={isView}
->
-  <option value="">Select Reporting Manager</option>
+                  value={form.reportingManagerId || ""}
+                  onChange={(e) => update("reportingManagerId", e.target.value)}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
+                    errors.reportingManagerId ? "border-red-500" : ""
+                  }`}
+                  disabled={isView}
+                >
+                  <option value="">Select Reporting Manager</option>
 
-  {employeeList
-    .filter((mgr) => {
-      // In edit mode, remove self from reporting manager list
-      if (mode === "edit" && employee?._id) {
-        return mgr._id !== employee._id;
-      }
-      return true;
-    })
-    .map((mgr) => (
-      <option key={mgr._id} value={mgr._id}>
-        {mgr.firstName} {mgr.lastName}
-      </option>
-    ))}
-</select>
+                  {employeeList
+                    .filter((mgr) => {
+                      if (mode === "edit" && employee?._id) {
+                        return mgr._id !== employee._id;
+                      }
+                      return true;
+                    })
+                    .map((mgr) => (
+                      <option key={mgr._id} value={mgr._id}>
+                        {mgr.firstName} {mgr.lastName}
+                      </option>
+                    ))}
+                </select>
 
               </div>
 
@@ -1853,7 +2230,7 @@ export default function AddEditEmployeeModal({
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
                   Onboarding Status
                 </label>
@@ -1867,7 +2244,7 @@ export default function AddEditEmployeeModal({
                   <option value="InProgress">In Progress</option>
                   <option value="Completed">Completed</option>
                 </select>
-              </div>
+              </div> */}
 
               {/* <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
@@ -1975,6 +2352,806 @@ export default function AddEditEmployeeModal({
               )}
             </div>
           </div>
+
+          <div hidden={step !== 5}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h5 className="md:col-span-2 font-semibold text-lg mb-2">
+                Documents
+              </h5>
+
+              {(() => {
+                const requiredDocs = getRequiredDocuments();
+                const isDisabled = !form.employmentType || !form.experienceLevel;
+
+                const renderDocumentField = (label, docPath, isRequired = true) => {
+                  let docs = uploadedDocuments;
+                  
+                  const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
+                  if (arrayIndexMatch) {
+                    const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
+                    const index = parseInt(arrayIndex);
+                    docs = uploadedDocuments[arrayName]?.[index]?.[fieldName];
+                  } else {
+                    const keys = docPath.split(".");
+                    for (let i = 0; i < keys.length; i++) {
+                      if (docs && typeof docs === 'object') {
+                        docs = docs[keys[i]];
+                      } else {
+                        docs = undefined;
+                        break;
+                      }
+                    }
+                  }
+                  
+                  const isArray = Array.isArray(docs);
+                  const docArray = isArray ? (docs || []) : (docs ? [docs] : []);
+                  const showCheckmark = isArray ? docArray.length > 0 : !!docs;
+                  const countText = isArray ? `(${docArray.length})` : '';
+
+                  return (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        {label}
+                        {showCheckmark && <span className="text-green-600 ml-2">✓ {countText}</span>}
+                      </label>
+                      <div className="mt-2 space-y-2">
+                        {docArray.map((doc, idx) => {
+                          let displayName = `Document ${idx + 1}`;
+                          if (doc?.fileName) {
+                            displayName = doc.fileName;
+                          } else if (doc?.url) {
+                            const urlParts = doc.url.split('/');
+                            displayName = urlParts[urlParts.length - 1] || displayName;
+                          } else if (typeof doc === 'string') {
+                            displayName = doc.split('/').pop() || displayName;
+                          }
+                          
+                          return (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                              <a
+                                href={doc?.url || doc}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                              >
+                                {displayName}
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => isArray ? handleRemoveDocument(docPath, idx) : handleRemoveDocument(docPath)}
+                                disabled={documentUploadingStates[docPath]}
+                                className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          );
+                        })}
+
+                        <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
+                          <input
+                            type="file"
+                            multiple
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => handleDocumentUpload(e, docPath)}
+                            className="hidden"
+                            disabled={documentUploadingStates[docPath]}
+                          />
+                          <span className="text-sm text-gray-600">
+                            {documentUploadingStates[docPath] ? "Uploading..." : "Click to upload documents"}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  );
+                };
+
+                return (
+                  <div className="md:col-span-2 space-y-4">
+                    <div
+                      className={`border rounded-lg overflow-hidden ${
+                        isDisabled
+                          ? "bg-gray-50 border-gray-200 opacity-50"
+                          : "bg-blue-50 border-blue-200"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleDocSection("idProofs")}
+                        disabled={isDisabled}
+                        className={`w-full p-4 flex items-start justify-between ${
+                          isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-blue-100"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            <svg
+                              className={`w-5 h-5 ${
+                                isDisabled ? "text-gray-400" : "text-blue-600"
+                              }`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
+                            </svg>
+                          </div>
+                          <div className="text-left">
+                            <h6 className="font-semibold text-gray-900">
+                              ID Proofs (Aadhaar, PAN, Passport, etc.)
+                            </h6>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Required for all employees
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                            Required
+                          </span>
+                          <svg
+                            className={`w-5 h-5 transition-transform ${
+                              expandedDocSections.idProofs ? "rotate-180" : ""
+                            } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                            />
+                          </svg>
+                        </div>
+                      </button>
+
+                      {expandedDocSections.idProofs && !isDisabled && (
+                        <div className="border-t border-blue-200 p-4 space-y-4 bg-white">
+                          {renderDocumentField("Aadhaar Card", "idProofs.aadhaar")}
+                          {renderDocumentField("PAN Card", "idProofs.pan")}
+                          {renderDocumentField("Passport / Driving License / Voter ID", "idProofs.passportOrDL")}
+                          {renderDocumentField("Present Address Proof", "idProofs.presentAddressProof")}
+                          {renderDocumentField("Permanent Address Proof", "idProofs.permanentAddressProof")}
+                        </div>
+                      )}
+                    </div>
+
+                    {requiredDocs.showAcademicSection  && (
+                      <div
+                        className={`border rounded-lg overflow-hidden ${
+                          isDisabled
+                            ? "bg-gray-50 border-gray-200 opacity-50"
+                            : "bg-blue-50 border-blue-200"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleDocSection("academicDocuments")}
+                          disabled={isDisabled}
+                          className={`w-full p-4 flex items-start justify-between ${
+                            isDisabled
+                              ? "cursor-not-allowed"
+                              : "cursor-pointer hover:bg-blue-100"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              <svg
+                                className={`w-5 h-5 ${
+                                  isDisabled ? "text-gray-400" : "text-blue-600"
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3.5a1 1 0 000 1.814l.5.25v8.004c0 .596.231 1.17.645 1.574.413.403.97.645 1.555.645h1a1 1 0 001-1v-1a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 001 1h1c.585 0 1.142-.242 1.555-.645.414-.404.645-.978.645-1.574V7.654l.5-.25a1 1 0 000-1.814l-7-3.5z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <h6 className="font-semibold text-gray-900">
+                                {form.employmentType === 'Internship' ? 'Internship Documents' : 'Academic Documents (10th, 12th, Graduation, etc.)'}
+                              </h6>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {form.employmentType === 'Internship' ? 'NOC from College' : `Required for ${form.employmentType} employees`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                              Required
+                            </span>
+                            <svg
+                              className={`w-5 h-5 transition-transform ${
+                                expandedDocSections.academicDocuments
+                                  ? "rotate-180"
+                                  : ""
+                              } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+
+                        {expandedDocSections.academicDocuments && !isDisabled && (
+                          <div className="border-t border-blue-200 p-4 space-y-6 bg-white">
+                            {form.employmentType === 'Internship' ? (
+                              <div className="border rounded-lg p-4 bg-gray-50">
+                                <h5 className="font-semibold text-gray-900 mb-3">No Objection Certificate (NOC)</h5>
+                                <div className="space-y-3">
+                                  {renderDocumentField("NOC from College", "academicDocuments.nocFromCollege")}
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {/* 10th */}
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                  <h5 className="font-semibold text-gray-900 mb-3">10th Class</h5>
+                                  <div className="space-y-3">
+                                    {renderDocumentField("10th Certificate", "academicDocuments.tenth.certificate")}
+                                    {renderDocumentField("10th Marksheet", "academicDocuments.tenth.marksheet")}
+                                  </div>
+                                </div>
+
+                                {/* 12th */}
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                  <h5 className="font-semibold text-gray-900 mb-3">12th Class</h5>
+                                  <div className="space-y-3">
+                                    {renderDocumentField("12th Certificate", "academicDocuments.twelth.certificate")}
+                                    {renderDocumentField("12th Marksheet", "academicDocuments.twelth.marksheet")}
+                                  </div>
+                                </div>
+
+                                {/* Graduation */}
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                  <h5 className="font-semibold text-gray-900 mb-3">Graduation</h5>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700">Degree Name</label>
+                                      <input
+                                        type="text"
+                                        value={uploadedDocuments.academicDocuments?.graduation?.name || ''}
+                                        onChange={(e) => setUploadedDocuments(prev => ({
+                                          ...prev,
+                                          academicDocuments: {
+                                            ...prev.academicDocuments,
+                                            graduation: { ...prev.academicDocuments.graduation, name: e.target.value }
+                                          }
+                                        }))}
+                                        placeholder="e.g., B.Tech, B.Sc, etc."
+                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700">Number of Semesters</label>
+                                      <input
+                                        type="number"
+                                        value={uploadedDocuments.academicDocuments?.graduation?.semester || ''}
+                                        onChange={(e) => setUploadedDocuments(prev => ({
+                                          ...prev,
+                                          academicDocuments: {
+                                            ...prev.academicDocuments,
+                                            graduation: { ...prev.academicDocuments.graduation, semester: e.target.value }
+                                          }
+                                        }))}
+                                        placeholder="e.g., 8"
+                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        min="1"
+                                      />
+                                    </div>
+                                    {renderDocumentField("Graduation Certificate", "academicDocuments.graduation.certificate")}
+                                    {(uploadedDocuments.academicDocuments?.graduation?.name && uploadedDocuments.academicDocuments?.graduation?.semester) ? (
+                                      renderDocumentField("Semester Marksheets", "academicDocuments.graduation.marksheets")
+                                    ) : (
+                                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-sm text-blue-700">
+                                          Please fill in Degree Name and Number of Semesters to upload marksheets
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                    {/* Post Graduation */}
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                  <h5 className="font-semibold text-gray-900 mb-3">Post Graduation</h5>
+                                  <div className="space-y-3">
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700">Degree Name</label>
+                                      <input
+                                        type="text"
+                                        value={uploadedDocuments.academicDocuments?.postGraduation?.name || ''}
+                                        onChange={(e) => setUploadedDocuments(prev => ({
+                                          ...prev,
+                                          academicDocuments: {
+                                            ...prev.academicDocuments,
+                                            postGraduation: { ...prev.academicDocuments.postGraduation, name: e.target.value }
+                                          }
+                                        }))}
+                                        placeholder="e.g., M.Tech, M.Sc, MBA, etc."
+                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700">Number of Semesters</label>
+                                      <input
+                                        type="number"
+                                        value={uploadedDocuments.academicDocuments?.postGraduation?.semester || ''}
+                                        onChange={(e) => setUploadedDocuments(prev => ({
+                                          ...prev,
+                                          academicDocuments: {
+                                            ...prev.academicDocuments,
+                                            postGraduation: { ...prev.academicDocuments.postGraduation, semester: e.target.value }
+                                          }
+                                        }))}
+                                        placeholder="e.g., 4"
+                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        min="1"
+                                      />
+                                    </div>
+                                    {renderDocumentField("Post Graduation Certificate", "academicDocuments.postGraduation.certificate")}
+                                    {(uploadedDocuments.academicDocuments?.postGraduation?.name && uploadedDocuments.academicDocuments?.postGraduation?.semester) ? (
+                                      renderDocumentField("Semester Marksheets", "academicDocuments.postGraduation.marksheets")
+                                    ) : (
+                                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-sm text-blue-700">
+                                          Please fill in Degree Name and Number of Semesters to upload marksheets
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* NOC from College */}
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                  <h5 className="font-semibold text-gray-900 mb-3">No Objection Certificate (NOC) from College</h5>
+                                  <div className="space-y-3">
+                                    {renderDocumentField("NOC from College", "academicDocuments.nocFromCollege", false)}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Employment History */}
+                    {requiredDocs.employmentHistory && (
+                      <div
+                        className={`border rounded-lg overflow-hidden ${
+                          isDisabled
+                            ? "bg-gray-50 border-gray-200 opacity-50"
+                            : "bg-blue-50 border-blue-200"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleDocSection("employmentHistory")}
+                          disabled={isDisabled}
+                          className={`w-full p-4 flex items-start justify-between ${
+                            isDisabled
+                              ? "cursor-not-allowed"
+                              : "cursor-pointer hover:bg-blue-100"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              <svg
+                                className={`w-5 h-5 ${
+                                  isDisabled ? "text-gray-400" : "text-blue-600"
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <h6 className="font-semibold text-gray-900">
+                                Employment History (Offer Letter, Experience Letter, etc.)
+                              </h6>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Required for Experienced {form.employmentType} employees
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                              Required
+                            </span>
+                            <svg
+                              className={`w-5 h-5 transition-transform ${
+                                expandedDocSections.employmentHistory
+                                  ? "rotate-180"
+                                  : ""
+                              } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+
+                        {expandedDocSections.employmentHistory && !isDisabled && (
+                          <div className="border-t border-blue-200 p-4 space-y-6 bg-white">
+                            {uploadedDocuments.employmentHistory?.map((employment, idx) => (
+                              <div key={idx} className="border rounded-lg p-4 bg-gray-50">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h5 className="font-semibold text-gray-900">
+                                    {employment.companyName || `Employment Record ${idx + 1}`}
+                                  </h5>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setUploadedDocuments(prev => ({
+                                        ...prev,
+                                        employmentHistory: prev.employmentHistory.filter((_, i) => i !== idx)
+                                      }));
+                                    }}
+                                    className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <div className="space-y-3">
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="text-xs font-medium text-gray-600">Company Name</label>
+                                      <input
+                                        type="text"
+                                        value={employment.companyName || ''}
+                                        onChange={(e) => {
+                                          const updated = [...uploadedDocuments.employmentHistory];
+                                          updated[idx].companyName = e.target.value;
+                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                        }}
+                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-medium text-gray-600">Designation</label>
+                                      <input
+                                        type="text"
+                                        value={employment.designation || ''}
+                                        onChange={(e) => {
+                                          const updated = [...uploadedDocuments.employmentHistory];
+                                          updated[idx].designation = e.target.value;
+                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                        }}
+                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="text-xs font-medium text-gray-600">Start Date</label>
+                                      <input
+                                        type="date"
+                                        value={employment.employmentPeriod?.startDate ? new Date(employment.employmentPeriod.startDate).toISOString().split('T')[0] : ''}
+                                        onChange={(e) => {
+                                          const updated = [...uploadedDocuments.employmentHistory];
+                                          updated[idx].employmentPeriod = {
+                                            ...updated[idx].employmentPeriod,
+                                            startDate: e.target.value
+                                          };
+                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                        }}
+                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-medium text-gray-600">End Date</label>
+                                      <input
+                                        type="date"
+                                        value={employment.employmentPeriod?.endDate ? new Date(employment.employmentPeriod.endDate).toISOString().split('T')[0] : ''}
+                                        onChange={(e) => {
+                                          const updated = [...uploadedDocuments.employmentHistory];
+                                          updated[idx].employmentPeriod = {
+                                            ...updated[idx].employmentPeriod,
+                                            endDate: e.target.value
+                                          };
+                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                        }}
+                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                  </div>
+                                  {renderDocumentField("Offer Letter", `employmentHistory[${idx}].offerLetter`)}
+                                  {renderDocumentField("Experience Letter", `employmentHistory[${idx}].experienceLetter`)}
+                                  {renderDocumentField("Relieving Letter", `employmentHistory[${idx}].relievingLetter`)}
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-700">
+                                      Last 3 Months Salary Slips (Upload each month separately)
+                                    </label>
+                                    <div className="mt-2 space-y-2">
+                                      {employment.salarySlips?.map((slip, sipIdx) => (
+                                        <div key={sipIdx} className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-300">
+                                          <a
+                                            href={slip.documentUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                                          >
+                                            {slip.fileName || slip.month || `Salary Slip ${sipIdx + 1}`}
+                                          </a>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const updated = [...uploadedDocuments.employmentHistory];
+                                              updated[idx].salarySlips = updated[idx].salarySlips.filter((_, i) => i !== sipIdx);
+                                              setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                            }}
+                                            className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
+                                          >
+                                            Remove
+                                          </button>
+                                        </div>
+                                      ))}
+                                      <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
+                                        <input
+                                          type="file"
+                                          accept=".pdf,.jpg,.jpeg,.png"
+                                          onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              setDocumentUploadingStates((prev) => ({ ...prev, [`salarySlip-${idx}`]: true }));
+                                              const formData = new FormData();
+                                              formData.append("files", file);
+                                              
+                                              try {
+                                                const { data } = await axios.post("/user/add-pdf", formData);
+                                                if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
+                                                  const pdf = data.result.pdfUrls[0];
+                                                  const updated = [...uploadedDocuments.employmentHistory];
+                                                  if (!updated[idx].salarySlips) updated[idx].salarySlips = [];
+                                                  updated[idx].salarySlips.push({
+                                                    month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+                                                    fileName: file.name,
+                                                    documentUrl: pdf.url
+                                                  });
+                                                  setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                                  toast.success("Salary slip uploaded successfully");
+                                                }
+                                              } catch (err) {
+                                                toast.error("Failed to upload salary slip");
+                                                console.error("Salary slip upload error:", err);
+                                              } finally {
+                                                setDocumentUploadingStates((prev) => ({ ...prev, [`salarySlip-${idx}`]: false }));
+                                              }
+                                            }
+                                          }}
+                                          className="hidden"
+                                          disabled={documentUploadingStates[`salarySlip-${idx}`]}
+                                        />
+                                        <span className="text-sm text-gray-600">
+                                          {documentUploadingStates[`salarySlip-${idx}`] ? "Uploading..." : "Click to upload salary slip"}
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-700">
+                                      Other Documents <span className="text-gray-500 text-xs">(Optional)</span>
+                                    </label>
+                                    <div className="mt-2 space-y-2">
+                                      {employment.others?.map((doc, oIdx) => (
+                                        <div key={oIdx} className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-300">
+                                          <a
+                                            href={doc?.documentUrl || doc}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                                          >
+                                            {doc?.fileName || doc || `Document ${oIdx + 1}`}
+                                          </a>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const updated = [...uploadedDocuments.employmentHistory];
+                                              updated[idx].others = updated[idx].others.filter((_, i) => i !== oIdx);
+                                              setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                            }}
+                                            className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
+                                          >
+                                            Remove
+                                          </button>
+                                        </div>
+                                      ))}
+                                      <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
+                                        <input
+                                          type="file"
+                                          accept=".pdf,.jpg,.jpeg,.png"
+                                          onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              setDocumentUploadingStates((prev) => ({ ...prev, [`other-${idx}`]: true }));
+                                              const formData = new FormData();
+                                              formData.append("files", file);
+                                              
+                                              try {
+                                                const { data } = await axios.post("/user/add-pdf", formData);
+                                                if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
+                                                  const pdf = data.result.pdfUrls[0];
+                                                  const updated = [...uploadedDocuments.employmentHistory];
+                                                  if (!updated[idx].others) updated[idx].others = [];
+                                                  updated[idx].others.push({
+                                                    fileName: file.name,
+                                                    documentUrl: pdf.url
+                                                  });
+                                                  setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                                  toast.success("Document uploaded successfully");
+                                                }
+                                              } catch (err) {
+                                                toast.error("Failed to upload document");
+                                                console.error("Document upload error:", err);
+                                              } finally {
+                                                setDocumentUploadingStates((prev) => ({ ...prev, [`other-${idx}`]: false }));
+                                              }
+                                            }
+                                          }}
+                                          className="hidden"
+                                          disabled={documentUploadingStates[`other-${idx}`]}
+                                        />
+                                        <span className="text-sm text-gray-600">
+                                          {documentUploadingStates[`other-${idx}`] ? "Uploading..." : "Click to upload other document"}
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            {/* Add New Employment Record */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUploadedDocuments(prev => ({
+                                  ...prev,
+                                  employmentHistory: [
+                                    ...prev.employmentHistory,
+                                    {
+                                      companyName: '',
+                                      designation: '',
+                                      employmentPeriod: { startDate: null, endDate: null },
+                                      offerLetter: [],
+                                      experienceLetter: [],
+                                      relievingLetterUrl: null,
+                                      salarySlips: [],
+                                      others: []
+                                    }
+                                  ]
+                                }));
+                              }}
+                              className="w-full px-4 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+                            >
+                              + Add Employment Record
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Optional Documents */}
+                    {/* <div
+                      className={`border rounded-lg overflow-hidden ${
+                        isDisabled
+                          ? "bg-gray-50 border-gray-200 opacity-50"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="p-4 flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            <svg
+                              className="w-5 h-5 text-gray-400"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                              <path
+                                fillRule="evenodd"
+                                d="M4 5a2 2 0 012-2 1 1 0 000-2H6a6 6 0 016 6v3h1a1 1 0 100 2h-1a1 1 0 100 2h1a2 2 0 002-2v-3a8 8 0 00-8-8 2 2 0 00-2 2v2H2a1 1 0 100 2h2v2H2a1 1 0 100 2h2v1a2 2 0 002 2z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="text-left">
+                            <h6 className="font-semibold text-gray-900">
+                              Additional Documents
+                            </h6>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Bank Details, Health Insurance, Certificates, etc.
+                            </p>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">
+                          Optional
+                        </span>
+                      </div>
+                    </div> */}
+
+                    {/* Status Banner */}
+                    <div
+                      className={`p-4 border rounded-lg ${
+                        checkAllRequiredDocumentsUploaded()
+                          ? "border-green-200 bg-green-50"
+                          : "border-amber-200 bg-amber-50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">
+                          <svg
+                            className={`w-5 h-5 ${
+                              checkAllRequiredDocumentsUploaded()
+                                ? "text-green-600"
+                                : "text-amber-600"
+                            }`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            {checkAllRequiredDocumentsUploaded() ? (
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            ) : (
+                              <path
+                                fillRule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            )}
+                          </svg>
+                        </div>
+                        <div>
+                          <h6
+                            className={`font-semibold ${
+                              checkAllRequiredDocumentsUploaded()
+                                ? "text-green-900"
+                                : "text-amber-900"
+                            }`}
+                          >
+                            {checkAllRequiredDocumentsUploaded()
+                              ? "All Required Documents Uploaded"
+                              : "Onboarding Status"}
+                          </h6>
+                          <p
+                            className={`text-sm mt-1 ${
+                              checkAllRequiredDocumentsUploaded()
+                                ? "text-green-800"
+                                : "text-amber-800"
+                            }`}
+                          >
+                            {checkAllRequiredDocumentsUploaded()
+                              ? "Your onboarding status will be marked as Completed when you save this employee."
+                              : "Your onboarding status will automatically be set to Completed once all required documents are uploaded."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center justify-end  p-4 border-t border-gray-100 sticky bottom-0 bg-white">
@@ -1997,7 +3174,7 @@ export default function AddEditEmployeeModal({
                 >
                   Cancel
                 </button>
-                {step < 4 && (
+                {step < 5 && (
                   <button
                     onClick={next}
                     className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm hover:brightness-95"
@@ -2012,7 +3189,7 @@ export default function AddEditEmployeeModal({
 
           <div className="flex items-center gap-4">
             {!isView ? (
-              step === 4 && (
+              step === 5 && (
                 <button
                   onClick={submit}
                   disabled={submitting}

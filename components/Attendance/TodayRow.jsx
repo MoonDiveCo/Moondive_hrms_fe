@@ -181,6 +181,13 @@ export default function TodayRow({
               <WorkingTimeline
                 checkIn={checkIn}
                 checkOut={checkOut || null}
+                 leaveSession={
+                status === "leave-first-half"
+                  ? "FIRST_HALF"
+                  : status === "leave-second-half"
+                  ? "SECOND_HALF"
+                  : null
+              }
               />
             </div>
 
@@ -216,7 +223,7 @@ const HalfDayLeaveBlock = ({ position, label }) => (
       absolute top-0 bottom-0
       ${position === "left" ? "left-0" : "right-0"}
       w-1/2
-      bg-purple-50 border-purple-300
+       bg-purple/50 backdrop-blur-xs border border-purple-300
       flex items-center justify-center
       text-purple-700 text-xs font-medium
       rounded-full

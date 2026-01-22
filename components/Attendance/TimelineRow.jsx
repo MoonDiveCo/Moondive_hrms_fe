@@ -1,10 +1,8 @@
 'use client';
- 
+
 import { Sun, AlertCircle, CalendarDays, Umbrella } from 'lucide-react';
-import CheckInBadge from './CheckInBadge';
-import CheckOutBadge from './CheckOutBadge';
 import WorkingTimeline from './WorkingTimeline';
- 
+
 export default function TimelineRow({
   day,
   date,
@@ -22,119 +20,106 @@ export default function TimelineRow({
   const isFuture = status === 'future';
   const isPresent = status === 'present';
   const isHoliday = status === 'holiday';
-  const isLeave = status === 'leave';
+
+  const isFullDayLeave = status === 'leave';
   const isFirstHalfLeave = status === 'leave-first-half';
   const isSecondHalfLeave = status === 'leave-second-half';
- 
-  const isAnyLeave = isLeave || isFirstHalfLeave || isSecondHalfLeave;
+
+  const isHalfDayLeave = isFirstHalfLeave || isSecondHalfLeave;
+
   const isNonWorking =
-    !isFuture && (isAbsent || isWeekend || isHoliday || isAnyLeave);
- 
-  /* ---------- STATUS BADGE INFO ---------- */
+    !isFuture && (isAbsent || isWeekend || isHoliday || isFullDayLeave);
+
+  /* ---------- STATUS BADGE INFO (ONLY FULL DAY) ---------- */
   const getStatusInfo = () => {
     if (isAbsent)
       return { icon: <AlertCircle className="w-5 h-5" />, label: 'Absent', color: 'red' };
- 
+
     if (isHoliday)
       return {
         icon: <CalendarDays className="w-5 h-5" />,
         label: holidayName,
         color: 'blue',
       };
- 
-    if (isAnyLeave)
+
+    if (isFullDayLeave)
       return {
         icon: <Umbrella className="w-5 h-5" />,
         label: leaveLabel || 'Leave',
         color: 'purple',
       };
- 
+
     return null;
   };
- 
+
   const statusInfo = getStatusInfo();
- 
+
   return (
     <div className="flex items-center gap-4">
       <DateCol day={day} date={date} />
- 
+
       {/* ================= ROW CARD ================= */}
       <div
         className={`
           flex-1 h-20 rounded-xl relative overflow-hidden
           flex items-center px-6 transition-all
- 
           ${isFuture ? 'border border-dashed border-gray-300 bg-gray-50' : 'bg-white'}
- 
           ${isWeekend ? 'border border-yellow-200' : ''}
           ${isHoliday && !isFuture ? 'ring-1 ring-blue-300 border-l-4 border-blue-300' : ''}
           ${isPresent ? 'ring-1 ring-gray-200 border-l-4 border-green-300' : ''}
-          ${(isAbsent || isAnyLeave) && !isFuture ? 'ring-1 ring-red-400 border-l-4 border-red-400' : ''}
+          ${(isAbsent || isFullDayLeave) && !isFuture ? 'ring-1 ring-red-400 border-l-4 border-red-400' : ''}
         `}
       >
-        {/* ================= WEEKEND CLASSIC TRAY ================= */}
+        {/* ================= WEEKEND ================= */}
         {isWeekend && !isFuture && (
           <>
             <div className="absolute inset-0 bg-yellow-50 z-0" />
             <div className="absolute left-10 right-32 top-1/2 -translate-y-1/2 h-[1px] bg-yellow-200 z-0" />
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-yellow-100 border border-yellow-300 text-yellow-700 text-sm font-medium shadow-sm">
+              <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-yellow-100 border border-yellow-300 text-yellow-700 text-sm font-medium">
                 <Sun className="w-4 h-4" />
                 Weekend
               </div>
             </div>
           </>
         )}
- 
-        {/* ================= PRESENT DAY ================= */}
-        {isPresent && (
-          <>
-            {/* Check-in */}
-            {checkIn && (
-                <div className="font-semibold text-sm">
-                  {new Date(checkIn).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
-              // <div className="absolute left-8 top-3 z-10 text-left">
-              //   <CheckInBadge time={checkIn} status={status} />
-              // </div>
+
+        {/* ================= PRESENT / HALF DAY ================= */}
+        {(isPresent || isHalfDayLeave) && !isNonWorking && (
+          <div className="absolute inset-x-32 top-1/2 -translate-y-1/2 z-0 overflow-hidden">
+
+            {isFirstHalfLeave && (
+              <HalfDayLeaveBlock position="left" label="First Half Leave" />
             )}
- 
-            {/* Timeline */}
-            <div className="absolute inset-x-40 top-1/2 -translate-y-1/2 z-0">
+
+            {isSecondHalfLeave && (
+              <HalfDayLeaveBlock position="right" label="Second Half Leave" />
+            )}
+
+            <div className="relative z-9">
               <WorkingTimeline
                 checkIn={checkIn}
                 checkOut={checkOut || null}
                 breaks={breaks}
+                  leaveSession={
+                  status === "leave-first-half"
+                    ? "FIRST_HALF"
+                    : status === "leave-second-half"
+                    ? "SECOND_HALF"
+                    : null
+                }
               />
             </div>
- 
-            {/* Check-out */}
-            {checkOut && (
-              <div className="absolute right-40 top-3 z-10 text-right">
-                <div className="font-semibold text-sm">
-                  {new Date(checkOut).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
-                <CheckOutBadge time={checkOut} status="normal" />
-              </div>
-            )}
-          </>
+          </div>
         )}
- 
-        {/* ================= NON-WORKING BADGE (NOT WEEKEND) ================= */}
-        {isNonWorking && statusInfo && !isWeekend && (
+
+        {/* ================= FULL DAY LEAVE BADGE ================= */}
+        {isFullDayLeave && statusInfo && !isWeekend && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
             <div
               className={`
                 flex items-center gap-3 px-5 py-2 rounded-full text-xs font-medium
-                ${statusInfo.color === 'red' && 'bg-red-100 text-red-700'}
-                ${statusInfo.color === 'blue' && 'bg-blue-100 text-blue-700'}
-                ${statusInfo.color === 'purple' && 'bg-red-100 text-red-500'}
+                bg-red-100 text-red-500
               `}
             >
               {statusInfo.icon}
@@ -142,14 +127,14 @@ export default function TimelineRow({
             </div>
           </div>
         )}
- 
+
         {/* ================= UPCOMING ================= */}
         {isFuture && (
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 tracking-wide">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400">
             Upcoming
           </div>
         )}
- 
+
         {/* ================= HOURS ================= */}
         <div className="absolute right-6 top-1/2 -translate-y-1/2 text-right z-20">
           <div className="font-semibold text-lg">{hours || '00:00'}</div>
@@ -159,7 +144,7 @@ export default function TimelineRow({
     </div>
   );
 }
- 
+
 /* ---------- DATE COLUMN ---------- */
 function DateCol({ day, date }) {
   return (
@@ -169,5 +154,22 @@ function DateCol({ day, date }) {
     </div>
   );
 }
- 
- 
+
+/* ---------- HALF DAY BLOCK ---------- */
+const HalfDayLeaveBlock = ({ position, label }) => (
+  <div
+    className={`
+      absolute top-0 bottom-0
+      ${position === "left" ? "left-0" : "right-0"}
+      w-1/2
+      bg-purple/50 backdrop-blur-xs border border-purple-300
+      flex items-center justify-center
+      text-purple-700 text-xs font-medium
+      rounded-full
+      z-11
+    `}
+  >
+    <Umbrella className="w-5 h-5 mr-2" />
+    {label}
+  </div>
+);
