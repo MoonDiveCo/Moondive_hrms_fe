@@ -87,7 +87,7 @@ async function deleteLeaveType(code) {
 
             <div className="relative overflow-auto">
 
-        <table className="min-w-full divide-y divide-gray-100">
+        <table className="min-w-full divide-y divide-gray-100 text-xs">
           <thead className="bg-gray-50">
             <tr>
               {["Name", "Code", "Quota", "Paid", "Half Day", "Carry Forward", "Max CF",  "Actions"].map((h) => (
