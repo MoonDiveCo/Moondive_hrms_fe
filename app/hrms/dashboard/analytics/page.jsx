@@ -1066,7 +1066,7 @@ function AnalyticsEmployeeTable({ title, columns, data }) {
 
       {/* Table */}
       <div className='relative overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm'>
-        <table className='w-full text-sm'>
+        <table className='w-full text-xs'>
           <thead className='sticky top-0 bg-gray-50/80 backdrop-blur border-b border-gray-200'>
             <tr>
               {columns.map((c) => (
