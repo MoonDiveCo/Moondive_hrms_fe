@@ -201,7 +201,7 @@ const sendLateNotifications = async (lateData) => {
       if (u.userRole?.includes("HR")) {
         await notify({
           receiverId: u._id,
-          notificationTitle: "⏰ Late Check-In (HR)",
+          notificationTitle: " Late Check-In (HR)",
           // notificationMessage: `${user.name} checked in ${minutesLate} minutes late at ${checkInTime}.`,
           notificationMessage: `${user.name} checked in late at ${checkInTime}.`,
           relatedDomainType: "Attendance",
@@ -234,10 +234,8 @@ const sendLateNotifications = async (lateData) => {
         });
       }
     }
-
-    console.log("✅ Late check-in notifications sent correctly");
   } catch (error) {
-    console.error("❌ Failed to send late check-in notifications:", error);
+    console.error(" Failed to send late check-in notifications:", error);
   }
 };
 

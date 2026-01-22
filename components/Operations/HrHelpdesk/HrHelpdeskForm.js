@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useNotifications } from '../../../context/notificationcontext'; // Adjust path as needed
 
 const CATEGORY_OPTIONS = ['Leave', 'Payroll', 'Policy', 'Other'];
 const PRIORITY_OPTIONS = ['Low', 'Medium', 'High', 'Critical'];
@@ -35,6 +36,10 @@ export default function HRHelpdeskForm({ request, onSaved }) {
 
   const isUserView = hasRequest && !isHR;
 
+  /* ---------------- NOTIFICATIONS ---------------- */
+  
+  const { storeNotification } = useNotifications();
+
   /* ---------------- FORM STATE ---------------- */
 
   const emptyForm = {
@@ -57,44 +62,45 @@ export default function HRHelpdeskForm({ request, onSaved }) {
       setMe(res.data?.result?.user || null);
     });
 
-    axios.get('/hrms/employee/list').then((res) => {
+    const res=axios.get('/hrms/employee/list').then((res) => {
+      console.log("xxxxxxxxxxxxxxx---------------------",res.data)
       setEmployees(Array.isArray(res.data?.result) ? res.data.result : []);
+       console.log("cccccccccccc",form.priority)
+
     });
   }, []);
 
   /* ---------------- INIT FORM ---------------- */
 
-useEffect(() => {
-  if (!request) {
-    setForm(emptyForm);
-    return;
-  }
+  useEffect(() => {
+    if (!request) {
+      setForm(emptyForm);
+      return;
+    }
 
-  setForm({
-    category: request.category ?? '',
-    subject: request.subject ?? '',
-    description: request.description ?? '',
-    priority: request.priority ?? 'Medium',
+    setForm({
+      category: request.category ?? '',
+      subject: request.subject ?? '',
+      description: request.description ?? '',
+      priority: request.priority ?? 'Medium',
 
-    recipients: Array.isArray(request.recipients)
-      ? request.recipients.map(r =>
-          typeof r === 'string'
-            ? r
-            : r.userId?._id || r.userId
-        )
-      : [],
+      recipients: Array.isArray(request.recipients)
+        ? request.recipients.map(r =>
+            typeof r === 'string'
+              ? r
+              : r.userId?._id || r.userId
+          )
+        : [],
 
-    rejectReason: '',
-  });
-}, [request]);
-
+      rejectReason: '',
+    });
+  }, [request]);
 
   /* ---------------- PERMISSIONS ---------------- */
 
- const canEdit =
-  isCreate ||
-  (isUserView && ['Open', 'Rejected'].includes(request?.status));
-
+  const canEdit =
+    isCreate ||
+    (isUserView && ['Open', 'Rejected'].includes(request?.status));
 
   const canHrAct = isHR && hasRequest && request?.status === 'Open';
 
@@ -129,70 +135,179 @@ useEffect(() => {
     }));
   }
 
-  /* ---------------- ACTIONS ---------------- */
+  /* ---------------- NOTIFICATION HELPERS ---------------- */
 
+  // Send notification to all HR users
+  const notifyHRTeam = async (requestData) => {
+  try {
+    const hrUsers = employees.filter(emp =>
+      Array.isArray(emp.userRole) &&
+      emp.userRole.some(role =>
+        ['HR'].includes(role)
+      )
+    );
+    for (const emp of hrUsers) {
+      const payload = {
+        receiverId: emp._id ?? emp.id,
+        senderId: me?._id,
+        notificationTitle: `New Helpdesk Request (${form.category})`,
+        notificationMessage: `${me?.firstName} ${me?.lastName} raised a  request: ${form.subject}`,
+        relatedDomainType: 'HR',
+        priority: form.priority,
+        referenceId: requestData._id,
+      };
+      await storeNotification(payload);
+    }
+  } catch (err) {
+    console.error('Notification Error:', err);
+  }
+};
+
+  // Send notification to all recipients
+  const notifyRecipients = async () => {
+    try {
+      for (const recipientId of form.recipients) {
+        await storeNotification({
+          receiverId: recipientId,
+          notificationTitle: `HR Request Approved: ${form.category}`,
+          notificationMessage: `Your attention is needed for: ${form.subject}. This request has been approved by HR.`,
+          relatedDomainType: 'HR',
+          priority: form.priority,
+          senderId: me?._id,
+          policyId: requestId,
+        });
+      }
+    } catch (error) {
+      console.error('Error notifying recipients:', error);
+    }
+  };
+
+  // Notify the employee who raised the request
+  const notifyRequestRaiser = async (status, hrNote = '') => {
+    try {
+      const raiserName = `${request.raisedBy?.firstName || ''} ${request.raisedBy?.lastName || ''}`.trim();
+      await storeNotification({
+        receiverId: request.raisedBy?._id,
+        notificationTitle: `HR Request ${status}: ${form.category}`,
+        notificationMessage: status === 'Approved' 
+          ? `Your helpdesk request ${form.subject} has been approved by HR.`
+          : `Your helpdesk request ${form.subject} has been rejected. Reason: ${hrNote}`,
+        relatedDomainType: 'HR',
+        priority: status === 'Rejected' ? 'High' : form.priority,
+        senderId: me?._id,
+        policyId: requestId,
+      });
+    } catch (error) {
+      console.error('Error notifying request raiser:', error);
+    }
+  };
+
+  /* ---------------- ACTIONS ---------------- */
   async function submit() {
     if (!form.category || !form.subject || !form.description) {
       return toast.error('All fields are required');
     }
 
-    await axios.post('/hrms/hrhelpdesk', form);
-    toast.success('Request submitted');
-    onSaved();
+    try {
+      const response = await axios.post('/hrms/hrhelpdesk', form);
+      toast.success('Request submitted');
+      // Send notification to HR team
+      await notifyHRTeam(response.data?.result);
+      onSaved();
+    } catch (error) {
+      toast.error('Failed to submit request');
+      console.error(error);
+    }
   }
 
   async function resubmit() {
-    await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
-      ...form,
-      status: 'Open',
-    });
-    toast.success('Request resubmitted');
-    onSaved();
+    try {
+      await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
+        ...form,
+        status: 'Open',
+      });
+      toast.success('Request resubmitted');
+      
+      // Notify HR team about resubmission
+      await notifyHRTeam({ _id: requestId });
+      
+      onSaved();
+    } catch (error) {
+      toast.error('Failed to resubmit request');
+      console.error(error);
+    }
   }
+
   async function updateRequest() {
-  if (!requestId) return;
+    if (!requestId) return;
 
-  if (!form.category || !form.subject || !form.description) {
-    return toast.error('All fields are required');
+    if (!form.category || !form.subject || !form.description) {
+      return toast.error('All fields are required');
+    }
+
+    try {
+      await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
+        category: form.category,
+        subject: form.subject,
+        description: form.description,
+        priority: form.priority,
+        recipients: form.recipients,
+      });
+
+      toast.success('Request updated');
+      
+      // Notify HR team about update
+      await notifyHRTeam({ _id: requestId });
+      
+      onSaved();
+    } catch (error) {
+      toast.error('Failed to update request');
+      console.error(error);
+    }
   }
-
-  console.log(form)
-
-  await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
-    category: form.category,
-    subject: form.subject,
-    description: form.description,
-    priority: form.priority,
-    recipients: form.recipients,
-  });
-
-  toast.success('Request updated');
-  onSaved();
-}
-
 
   async function approve() {
-    console.log(form)
-    await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
-      status: 'Approved',
-      priority: form.priority,
-      recipients: form.recipients,
-    });
-    toast.success('Request approved');
-    onSaved();
+    try {
+      await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
+        status: 'Approved',
+        priority: form.priority,
+        recipients: form.recipients,
+      });
+      toast.success('Request approved');
+      
+      // Notify the person who raised the request
+      await notifyRequestRaiser('Approved');
+      
+      // Notify all recipients
+      await notifyRecipients();
+      
+      onSaved();
+    } catch (error) {
+      toast.error('Failed to approve request');
+      console.error(error);
+    }
   }
 
   async function reject() {
     if (!form.rejectReason) {
-      return toast.error('Rejection reason');
+      return toast.error('Rejection reason is required');
     }
 
-    await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
-      status: 'Rejected',
-      hrNote: form.rejectReason,
-    });
-    toast.success('Request rejected');
-    onSaved();
+    try {
+      await axios.patch(`/hrms/hrhelpdesk/${requestId}`, {
+        status: 'Rejected',
+        hrNote: form.rejectReason,
+      });
+      toast.success('Request rejected');
+      
+      // Notify the person who raised the request
+      await notifyRequestRaiser('Rejected', form.rejectReason);
+      
+      onSaved();
+    } catch (error) {
+      toast.error('Failed to reject request');
+      console.error(error);
+    }
   }
 
   /* ---------------- UI ---------------- */
@@ -232,15 +347,14 @@ useEffect(() => {
               </span>
               <p className='font-medium text-gray-900 mt-1'>
                 {request.recipients?.length
-  ? request.recipients
-      .map((r) => {
-        const u = r.userId;
-        return u ? `${u.firstName} ${u.lastName}` : '';
-      })
-      .filter(Boolean)
-      .join(', ')
-  : '—'}
-
+                  ? request.recipients
+                      .map((r) => {
+                        const u = r.userId;
+                        return u ? `${u.firstName} ${u.lastName}` : '';
+                      })
+                      .filter(Boolean)
+                      .join(', ')
+                  : '—'}
               </p>
             </div>
           </div>
@@ -417,46 +531,42 @@ useEffect(() => {
       )}
 
       {/* Action Buttons */}
-      
-<div className="flex pt-4 items-center justify-center gap-4">
-  
-  {/* CREATE */}
-  {isCreate && (
-    <button
-      onClick={submit}
-      className="w-64 bg-primary text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
-    >
-      Submit Request
-    </button>
-  )}
+      <div className="flex pt-4 items-center justify-center gap-4">
+        {/* CREATE */}
+        {isCreate && (
+          <button
+            onClick={submit}
+            className="w-64 bg-primary text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
+          >
+            Submit Request
+          </button>
+        )}
 
-  {/* UPDATE (OPEN / REJECTED) */}
-  {!isCreate && isUserView && canEdit && request?.status === 'Open' && (
-    <button
-      onClick={updateRequest}
-      className="w-64 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
-    >
-      Update Request
-    </button>
-  )}
+        {/* UPDATE (OPEN / REJECTED) */}
+        {!isCreate && isUserView && canEdit && request?.status === 'Open' && (
+          <button
+            onClick={updateRequest}
+            className="w-64 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
+          >
+            Update Request
+          </button>
+        )}
 
-  {/* RESUBMIT (REJECTED ONLY) */}
-  {!isCreate && isUserView && request?.status === 'Rejected' && (
-    <button
-      onClick={resubmit}
-      className="w-64 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
-    >
-      Update & Resubmit
-    </button>
-  )}
-</div>
-
+        {/* RESUBMIT (REJECTED ONLY) */}
+        {!isCreate && isUserView && request?.status === 'Rejected' && (
+          <button
+            onClick={resubmit}
+            className="w-64 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-full shadow-lg transition-all active:scale-[0.98]"
+          >
+            Update & Resubmit
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ---------------- FORM COMPONENTS ---------------- */
-
 
 function Input({ label, ...props }) {
   return (
