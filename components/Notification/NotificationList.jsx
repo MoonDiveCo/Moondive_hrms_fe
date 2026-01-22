@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { X } from "lucide-react";
@@ -11,7 +12,7 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
   const [portalEl] = useState(() => {
     if (typeof document === "undefined") return null;
     const el = document.createElement("div");
-    el.setAttribute("id", "notification-slideover-root");
+    el.id = "notification-slideover-root";
     return el;
   });
 
@@ -23,36 +24,37 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
     markAsRead,
     markAllAsRead,
   } = useNotifications();
-  
+
+  /* Mount portal */
   useEffect(() => {
     if (!portalEl) return;
     document.body.appendChild(portalEl);
     return () => portalEl.remove();
   }, [portalEl]);
 
+  /* Fetch notifications when opened */
   useEffect(() => {
     if (isOpen) fetchNotifications();
   }, [isOpen, fetchNotifications]);
 
-  // 🔥 THIS FIXES THE BLUR ISSUE
   if (!portalEl || !isOpen) return null;
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9999]">
       {/* Backdrop */}
       <div
-        onClick={onClose}
         className="absolute inset-0 bg-black/10 backdrop-blur-sm"
+        onClick={onClose}
       />
 
       {/* Drawer */}
       <aside
         ref={panelRef}
-        className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-white "
+        className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-white shadow-xl flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 shadow">
-          <h4 className="text-primaryText">Notifications</h4>
+          <h4 className="text-primaryText font-medium">Notifications</h4>
           <button onClick={onClose}>
             <X size={18} />
           </button>
@@ -73,12 +75,13 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
                   key={n._id}
                   notification={n}
                   onAutoRead={markAsRead}
+                  onClose={onClose}
                 />
               ))}
           </div>
 
-          {/* Bottom Action */}
-          {unreadCount >= 0 && (
+          {/* Footer */}
+          {unreadCount > 0 && (
             <div className="py-4 text-center mb-2 shadow">
               <button
                 onClick={markAllAsRead}
