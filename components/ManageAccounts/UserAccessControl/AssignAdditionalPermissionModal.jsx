@@ -114,9 +114,9 @@ const getRolePermissions = async () => {
         
         <div className="flex items-center justify-between px-6 py-5 border-b">
           <div>
-            <h3 className="text-xl font-semibold">
+            <h4 className="text-primaryText">
               {isEdit ? 'Edit Role' : 'Add Role'}
-            </h3>
+            </h4>
             <p className="text-sm text-gray-500">
               Create a new user role
             </p>

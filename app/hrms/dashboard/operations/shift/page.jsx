@@ -189,9 +189,9 @@ export default function Shifts() {
       <Toaster richColors position="top-right" />
 
       <div className="flex items-center justify-between p-4 ">
-        <h3 className=" text-blackText">
+        <h4 className=" text-primaryText">
           Shifts
-        </h3>
+        </h4>
         <div className="flex items-center gap-3">
           {allUserPermissions.includes("HRMS:SHIFT:WRITE")&&<button
             onClick={openAdd}

@@ -41,7 +41,7 @@ export default function HRHelpdeskViewModal({ isOpen, onClose, request }) {
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Request Details</h3>
+            <h4 className="text-primaryText">Request Details</h4>
           </div>
           <button
             onClick={onClose}

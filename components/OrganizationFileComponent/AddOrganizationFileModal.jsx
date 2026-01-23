@@ -64,9 +64,9 @@ export default function AddOrganizationFileModal({
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div>
-            <h3 className="text-lg font-semibold">
+            <h4 className="text-primaryText">
               {editMode ? 'Edit Organization File' : 'Add Organization File'}
-            </h3>
+            </h4>
             <p className="text-xs text-gray-500">
               {editMode 
                 ? 'Update document details and permissions' 

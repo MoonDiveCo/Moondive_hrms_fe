@@ -42,7 +42,7 @@ async function handleSave() {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
       <div className="bg-white p-5 rounded-xl w-96">
-        <h3 className="font-semibold mb-3">Update Holiday</h3>
+        <h4 className="font-primaryText mb-3">Update Holiday</h4>
 
         <select
           className="w-full border p-2 rounded mb-3"

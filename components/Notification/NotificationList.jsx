@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import { X } from "lucide-react";
+import { CheckCheck, X } from "lucide-react";
 import { useNotifications } from "@/context/notificationcontext";
 import NotificationCard from "./NotifcationCard";
 
@@ -43,26 +43,37 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
     <div className="fixed inset-0 z-[9999]">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/10 backdrop-blur-sm"
+        className="absolute inset-0"
         onClick={onClose}
       />
 
       {/* Drawer */}
       <aside
         ref={panelRef}
-        className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-white shadow-xl flex flex-col"
+        className="absolute right-25 top-12 h-[300px] w-[400px] bg-white shadow-2xl border border-gray-300 flex flex-col rounded-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 shadow">
-          <h4 className="text-primaryText font-medium">Notifications</h4>
-          <button onClick={onClose}>
+        <div className="flex items-center justify-between px-5 py-2 shadow">
+          <h5 className="text-primaryText font-medium">Notifications</h5>
+
+          {unreadCount > 0 && (
+            <div className="text-center"  title="Mark all as read">
+              <button
+                onClick={markAllAsRead}
+                className="text-sm text-primary font-medium hover:bg-gray-100 px-2 py-1 rounded-full transition"
+              >
+                <CheckCheck size={16} />
+              </button>
+            </div>
+          )}
+          {/* <button onClick={onClose}>
             <X size={18} />
-          </button>
+          </button> */}
         </div>
 
         {/* Content */}
-        <div className="flex flex-col h-[calc(100%-56px)]">
-          <div className="flex-1 overflow-y-auto px-5">
+        <div className="flex flex-col h-[calc(100%-46px)]">
+          <div className="flex-1 overflow-y-auto hide-scrollbar">
             {loading && (
               <p className="text-center text-sm text-gray-500 py-6">
                 Loading notifications...
@@ -79,18 +90,6 @@ export default function NotificationSlideOver({ isOpen, onClose }) {
                 />
               ))}
           </div>
-
-          {/* Footer */}
-          {unreadCount > 0 && (
-            <div className="py-4 text-center mb-2 shadow">
-              <button
-                onClick={markAllAsRead}
-                className="text-sm text-primary font-medium hover:underline"
-              >
-                ✓ Mark all as read
-              </button>
-            </div>
-          )}
         </div>
       </aside>
     </div>,

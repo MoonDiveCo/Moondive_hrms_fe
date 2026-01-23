@@ -53,10 +53,10 @@ export default function HolidayCalender({
 
   // const currentYear = new Date().getFullYear();
   async function fetchCalendarData(info) {
-      const viewStart = info?.view?.currentStart || info.start;
+    const viewStart = info?.view?.currentStart || info.start;
 
-      const year = viewStart.getFullYear();
-      const month = viewStart.getMonth() + 1;
+    const year = viewStart.getFullYear();
+    const month = viewStart.getMonth() + 1;
 
     const holidayRes = await axios.get("/hrms/holiday", {
       params: { organizationId, year, month },
@@ -84,50 +84,61 @@ export default function HolidayCalender({
           const end = new Date(l.endDate);
           return !(end < firstDay || start > lastDay);
         })
-        .map((l) => ({
-          id: l.id,
-          title: l.leaveType,
-          start: l.startDate,
-          end: l.endDate,
-          allDay: l.isHalfDay,
-          session: l.isHalfDay ? l.session : "Full Day",
-          source: "LEAVE",
-          status: l.status,
-          backgroundColor: LEAVE_COLORS[l.status],
-        })) || [];
+        .map((l) => {
+          // Normalize to YYYY-MM-DD from UTC string
+          const startStr = l.startDate.split("T")[0];
+
+          // Calculate exclusive end date (EndDate + 1 day) for FullCalendar
+          const endDatePart = l.endDate.split("T")[0];
+          const d = new Date(endDatePart + "T00:00:00Z");
+          d.setUTCDate(d.getUTCDate() + 1);
+          const endStr = d.toISOString().split("T")[0];
+
+          return {
+            id: l.id,
+            title: l.leaveType,
+            start: startStr,
+            end: endStr,
+            allDay: true, // Force all-day to prevent timezone shifts showing as 2 days
+            session: l.isHalfDay ? l.session : "Full Day",
+            source: "LEAVE",
+            status: l.status,
+            backgroundColor: LEAVE_COLORS[l.status],
+          };
+        }) || [];
 
     setEvents([...holidayEvents, ...leaveEvents]);
   }
 
-function handleDateClick(info) {
-  const clickedDate = new Date(info.dateStr);
-  clickedDate.setHours(0, 0, 0, 0);
-  const today = new Date();
-today.setHours(0, 0, 0, 0);
+  function handleDateClick(info) {
+    const clickedDate = new Date(info.dateStr);
+    clickedDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
 
-  const day = clickedDate.getDay();
+    const day = clickedDate.getDay();
 
-  if (day === 0 || day === 6) return;
+    if (day === 0 || day === 6) return;
 
-  if (clickedDate < today) return;
+    if (clickedDate < today) return;
 
-  onApplyLeave(info.dateStr);
-} 
+    onApplyLeave(info.dateStr);
+  }
 
 
   function handleEventClick(info) {
-   const { extendedProps, startStr, title, endStr } = info.event;
+    const { extendedProps, startStr, title, endStr } = info.event;
     if (extendedProps?.source) {
-      onViewLeave({extendedProps , startDate: startStr, endDate: endStr, title });
+      onViewLeave({ extendedProps, startDate: startStr, endDate: endStr, title });
     }
   }
 
-    function refreshCalendar() {
-  setReloadKey((prev) => prev + 1);
-}
+  function refreshCalendar() {
+    setReloadKey((prev) => prev + 1);
+  }
 
-    useEffect(() => {
+  useEffect(() => {
     onRefresh?.(refreshCalendar);
   }, []);
 
@@ -141,7 +152,7 @@ today.setHours(0, 0, 0, 0);
         height="100%"
         showNonCurrentDates={false}
         fixedWeekCount={false}
-        
+
         // validRange={{
         //     start: `${currentYear}-01-01`,
         //     end: `${currentYear + 1}-01-01`,
@@ -160,7 +171,7 @@ today.setHours(0, 0, 0, 0);
       />
 
       <div className="pt-6 pb-3 flex flex-wrap items-center gap-6 text-xs text-gray-600">
-        
+
         <div className="flex items-center gap-3">
           <span className="font-medium text-gray-500">Holidays:</span>
 
