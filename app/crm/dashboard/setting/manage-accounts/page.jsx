@@ -7,7 +7,7 @@ export default function ManageAccountsPage() {
         <div className="bg-white rounded-2xl border-[0.5px]  border-[#D0D5DD] p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-medium text-gray-900">Manage Account</h3>
+              <h4 className="text-primaryText">Manage Account</h4>
               <ul className="mt-2 flex items-center gap-5 text-sm font-normal text-[#464F60]">
                <li className="pr-3 border-r border-gray-300">Users</li>
   <li className="pr-3 border-r border-gray-300 text-amber-600 font-semibold">Organization Setup</li>

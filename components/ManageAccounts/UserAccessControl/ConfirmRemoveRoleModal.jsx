@@ -22,13 +22,13 @@ export default function ConfirmRemoveRoleModal({
 
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[420px] mx-4 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h4 className="text-primaryText">
             {isRevoke
               ? 'Revoke Permissions'
               : isDeleteRole
               ? 'Delete Role'
               : 'Confirm Remove'}
-          </h3>
+          </h4>
           <button onClick={onClose}>
             <X className="text-gray-400 hover:text-gray-600" />
           </button>

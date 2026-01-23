@@ -99,19 +99,21 @@ export default function EmployeeProfilePage() {
   useEffect(() => {
     async function loadOrganizationData() {
       try {
-        const [departmentRes, designationRes, shiftRes, rolesRes, employeesRes] = await Promise.all([
+        const [departmentRes, designationRes, shiftRes, rolesRes, employeesRes, docsRes] = await Promise.all([
           axios.get("/hrms/organization/get-allDepartment"),
           axios.get("/hrms/organization/get-alldesignation"),
           axios.get("/hrms/organization/get-shifts"),
           axios.get("/hrms/organization/get-roles"),
-          axios.get("/hrms/employee/list")
+          axios.get("/hrms/employee/list"),
+          axios.get(`/user/get-personal-details/${employeeId}`),
         ]);
 
         setOrganizationData({
           departments: departmentRes?.data?.result || [],
           designations: designationRes?.data?.result || [],
           shifts: shiftRes?.data?.result || [],
-          roles: rolesRes?.data?.result || []
+          roles: rolesRes?.data?.result || [],
+          documents: docsRes?.data?.result || [],
         });
 
         setEmployeeList(employeesRes?.data?.result || employeesRes?.data || []);
@@ -359,7 +361,8 @@ export default function EmployeeProfilePage() {
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-primaryText"> {basic.firstName} {basic.lastName} </h4>
-                <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded uppercase"> {basic.employmentStatus} </span>
+                {/* <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded uppercase"> {basic.employmentStatus} </span> */}
+                <span className={`text-[10px] font-bold px-2 py-0.5 ${basic.onboardingStatus === "Pending" ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'} rounded uppercase`}>Onboarding {basic.onboardingStatus} </span>
               </div>
               <p className="text-primaryText"> Employee ID: {basic.employeeId} · {basic.designationId?.name} </p>
             </div>
@@ -513,9 +516,18 @@ export default function EmployeeProfilePage() {
         {/* ================= DOCUMENTS ================= */}
         {canViewDocuments && (
           <section ref={documentsRef} className="min-h-[400px]">
-            <Card title="Documents">
-              <p className="text-gray-500">Uploaded documents appear here</p>
-            </Card>
+           <Card title="Documents">
+            { !organizationData?.documents ? (
+              <p className="text-gray-400 text-sm">No documents uploaded</p>
+            ) : (
+              <div className="space-y-10">
+                <IDProofsSection idProofs={organizationData.documents.idProofs} />
+                <AcademicSection academic={organizationData.documents.academicDocuments} />
+                <EmploymentSection history={organizationData.documents.employmentHistory} />
+              </div>
+            )}
+          </Card>
+
           </section>
         )}
 
@@ -583,3 +595,230 @@ function Stat({ title, value, color }) {
     </div>
   );
 }
+
+const DocumentTile = ({ url, fileName, uploadedAt, label }) => {
+  if (!url) return null;
+
+  const isImage = /\.(jpg|jpeg|png)$/i.test(fileName || url);
+  const isPDF = /\.pdf$/i.test(fileName || url);
+
+  return (
+    <div className="border border-gray-300 rounded-xl overflow-hidden hide-scrollbar bg-white shadow-sm transition">
+      {/* Preview */}
+      <div className="h-40 bg-gray-50 flex items-center hide-scrollbar overflow-hidden justify-center">
+        {isImage ? (
+          <img
+            src={url}
+            alt={fileName}
+            className="h-full w-full object-cover"
+          />
+        ) : isPDF ? (
+          <iframe
+            src={`${url}#toolbar=0&navpanes=0&scrollbar=0`}
+            className="w-full h-full border-none hide-scrollbar overflow-hidden"
+            scrolling="no"
+          />
+        ) : (
+          <span className="text-xs text-gray-400">No Preview</span>
+        )}
+      </div>
+
+      {/* Meta */}
+      <div className="p-3">
+        {label && (
+          <p className="text-[11px] text-gray-500 mb-0.5">{label}</p>
+        )}
+        <p className="text-sm font-medium text-gray-800 truncate">
+          {fileName || "Document"}
+        </p>
+        {uploadedAt && (
+          <p className="text-xs text-gray-400 mt-0.5">
+            Uploaded {new Date(uploadedAt).toLocaleDateString()}
+          </p>
+        )}
+
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block mt-2 text-xs text-primary font-medium hover:underline"
+        >
+          View full document →
+        </a>
+      </div>
+    </div>
+  );
+};
+
+const safeDocProps = (doc) => {
+  if (!doc) return {};
+  const { key, ...rest } = doc;
+  return rest;
+};
+
+
+const IDProofsSection = ({ idProofs }) => (
+  <div>
+    <h4 className="font-semibold text-sm mb-3">ID Proofs</h4>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {(() => {
+        const { key, ...aadhaar } = idProofs?.aadhaar || {};
+        return <DocumentTile {...aadhaar} label="Aadhaar Card" />;
+      })()}
+
+      {(() => {
+        const { key, ...pan } = idProofs?.pan || {};
+        return <DocumentTile {...pan} label="PAN Card" />;
+      })()}
+
+      {(() => {
+        const { key, ...passport } = idProofs?.passportOrDL || {};
+        return <DocumentTile {...passport} label="Passport / DL" />;
+      })()}
+
+      {(() => {
+        const { key, ...present } = idProofs?.presentAddressProof || {};
+        return <DocumentTile {...present} label="Present Address Proof" />;
+      })()}
+
+      {(() => {
+        const { key, ...permanent } = idProofs?.permanentAddressProof || {};
+        return <DocumentTile {...permanent} label="Permanent Address Proof" />;
+      })()}
+    </div>
+  </div>
+);
+
+
+
+const AcademicSection = ({ academic }) => {
+  if (!academic) return null;
+
+  return (
+    <div>
+      <h4 className="font-semibold text-sm mb-3">Academic Documents</h4>
+
+      <div className="space-y-6">
+        {/* 10th */}
+        <div>
+          <p className="text-xs font-medium text-gray-500 mb-2">10th Standard</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <DocumentTile
+              {...safeDocProps(academic?.tenth?.certificate)}
+              label="Certificate"
+            />
+            <DocumentTile
+              {...safeDocProps(academic?.tenth?.marksheet)}
+              label="Marksheet"
+            />
+          </div>
+        </div>
+
+        {/* 12th */}
+        <div>
+          <p className="text-xs font-medium text-gray-500 mb-2">12th Standard</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <DocumentTile
+              {...safeDocProps(academic?.twelth?.certificate)}
+              label="Certificate"
+            />
+            <DocumentTile
+              {...safeDocProps(academic?.twelth?.marksheet)}
+              label="Marksheet"
+            />
+          </div>
+        </div>
+
+        {/* Graduation */}
+        {academic?.graduation?.certificate && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">
+              Graduation — {academic.graduation.name}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <DocumentTile
+                {...safeDocProps(academic.graduation.certificate)}
+                label="Degree Certificate"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {academic.graduation.marksheets?.map((m, i) => (
+                <DocumentTile
+                  key={i}
+                  {...safeDocProps(m)}
+                  label={`Semester ${i + 1} Marksheet`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* NOC */}
+        <DocumentTile
+          {...safeDocProps(academic?.nocFromCollege)}
+          label="NOC from College"
+        />
+      </div>
+    </div>
+  );
+};
+
+
+const EmploymentSection = ({ history }) => {
+  if (!history?.length) return null;
+
+  return (
+    <div>
+      <h4 className="font-semibold text-sm mb-3">Employment History</h4>
+
+      <div className="space-y-6">
+        {history.map((job, idx) => (
+          <div key={idx} className="border rounded-xl p-4 bg-gray-50">
+            <div className="mb-3">
+              <h5 className="font-medium text-gray-900">
+                {job.companyName}
+              </h5>
+              <p className="text-xs text-gray-500">{job.designation}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {job.offerLetter?.map((d, i) => (
+                <DocumentTile
+                  key={i}
+                  {...safeDocProps(d)}
+                  label="Offer Letter"
+                />
+              ))}
+
+              {job.experienceLetter?.map((d, i) => (
+                <DocumentTile
+                  key={i}
+                  {...safeDocProps(d)}
+                  label="Experience Letter"
+                />
+              ))}
+
+              <DocumentTile
+                {...safeDocProps(job.relievingLetter)}
+                label="Relieving Letter"
+              />
+
+              {job.salarySlips?.map((s, i) => (
+                <DocumentTile
+                  key={i}
+                  url={s.documentUrl}
+                  fileName={s.fileName}
+                  label={`Salary Slip (${s.month})`}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+

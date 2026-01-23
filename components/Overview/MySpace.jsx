@@ -11,6 +11,7 @@ import {
   Calendar,
   Contact2,
   Dot,
+  Info,
   MailIcon,
   MapPin,
   PencilIcon,
@@ -93,6 +94,34 @@ export default function HRMSOverviewPage() {
     fetcherWithAuth,
     { refreshInterval: 30000 }
   );
+
+  const currentYear = dayjs().year();
+  const currentMonth = dayjs().month() + 1;
+
+  const { data: holidayData = [] } = useSWR(
+    user?.organizationId
+      ? `/hrms/holiday?organizationId=${user.organizationId}&year=${currentYear}&month=${currentMonth}`
+      : null,
+    fetcherWithAuth,
+    { refreshInterval: 300000 }
+  );
+
+  const holidayMap = React.useMemo(() => {
+  const map = {};
+
+  holidayData?.result?.data
+    ?.filter(h => h.isActive)
+    ?.filter(h => h.tyoe === 'PUBLIC')
+    ?.forEach(h => {
+      const dateKey = dayjs(h.date).format("YYYY-MM-DD");
+      map[dateKey] = {
+        name: h.name,
+        type: h.type,
+      };
+    });
+
+  return map;
+}, [holidayData]);
 
   useEffect(() => {
     const fetchWeek = async () => {
@@ -209,8 +238,8 @@ export default function HRMSOverviewPage() {
 
   const formattedAddress = currentAddress
     ? [currentAddress.city, currentAddress.state, currentAddress.country]
-        .filter(Boolean)
-        .join(', ')
+      .filter(Boolean)
+      .join(', ')
     : '—';
 
   function getPast7Days(base = new Date()) {
@@ -230,61 +259,84 @@ const attendanceItems = getPast7Days().map((d) => {
   const key = dayjs(d).format("YYYY-MM-DD");
   const record = weekAttendance[key]?.data?.[0];
 
-  if (!record || !record.sessions?.length) {
+  const day = dayjs(d);
+  const dayLabel = day.format("dddd, MMM DD");
+  const isWeekend = day.day() === 0 || day.day() === 6;
+  const holiday = holidayMap[key];
+
+  if (record?.status === "On Leave") {
     return {
-      day: dayjs(d).format("dddd, MMM DD"),
-      time: "—",
-      hours: "0h",
-      status: "Absent",
-      color: "orange",
+      day: dayLabel,
+      time: record.leaveType || "On Leave",
+      hours: "—",
+      status: "Leave",
+      color: "blue",
     };
   }
 
-  const sessions = record.sessions;
+  if (record?.sessions?.length) {
+    const sessions = record.sessions;
 
-  const firstIn = sessions[0]?.checkIn
-    ? dayjs(sessions[0].checkIn)
-    : null;
-
-  const lastSession = sessions[sessions.length - 1];
-  const lastOut = lastSession?.checkOut
-    ? dayjs(lastSession.checkOut)
-    : null;
-
-  const isToday = dayjs(d).isSame(dayjs(), "day");
-  const isStillCheckedIn = isToday && lastSession.checkIn && !lastSession.checkOut;
-
-  /* ✅ Calculate total worked ms from sessions */
-  let totalMs = sessions.reduce((sum, s) => {
-    if (!s.checkIn) return sum;
-
-    const start = dayjs(s.checkIn);
-    const end = s.checkOut
-      ? dayjs(s.checkOut)
-      : isToday
-      ? dayjs()
+    const firstIn = sessions[0]?.checkIn
+      ? dayjs(sessions[0].checkIn)
       : null;
 
-    if (!end) return sum;
-    return sum + end.diff(start);
-  }, 0);
+    const lastSession = sessions[sessions.length - 1];
+    const lastOut = lastSession?.checkOut
+      ? dayjs(lastSession.checkOut)
+      : null;
 
-  const totalHours = (totalMs / 3600000).toFixed(1) + "h";
+    const isToday = day.isSame(dayjs(), "day");
 
-  const time = firstIn
-    ? `${firstIn.format("hh:mm A")} ${
-        lastOut ? `— ${lastOut.format("hh:mm A")}` : "—"
-      }`
-    : "—";
+    let totalMs = sessions.reduce((sum, s) => {
+      if (!s.checkIn) return sum;
+      const start = dayjs(s.checkIn);
+      const end = s.checkOut ? dayjs(s.checkOut) : isToday ? dayjs() : null;
+      if (!end) return sum;
+      return sum + end.diff(start);
+    }, 0);
+
+    return {
+      day: dayLabel,
+      time: firstIn
+        ? `${firstIn.format("hh:mm A")} — ${lastOut?.format("hh:mm A") || "—"}`
+        : "—",
+      hours: (totalMs / 3600000).toFixed(1) + "h",
+      status: "Present",
+      color: "green",
+    };
+  }
+
+  if (holiday) {
+    return {
+      day: dayLabel,
+      time: holiday.name,
+      hours: "—",
+      status: "Holiday",
+      color: "purple",
+    };
+  }
+
+  if (isWeekend) {
+    return {
+      day: dayLabel,
+      time: "Weekend",
+      hours: "—",
+      status: "Weekend",
+      color: "gray",
+    };
+  }
 
   return {
-    day: dayjs(d).format("dddd, MMM DD"),
-    time,
-    hours: totalHours,
-    status: "Present",
-    color: "green",
+    day: dayLabel,
+    time: "—",
+    hours: "0h",
+    status: "Absent",
+    color: "orange",
   };
 });
+
+
 
   const tabs = [
     { id: 'leave', label: 'Leave', badge: myTotalLeavesCount },
@@ -331,9 +383,46 @@ const attendanceItems = getPast7Days().map((d) => {
             <span className='absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full' />
           </div>
           <div className='min-w-0'>
-            <h4 className='text-primaryText truncate'>
-              {user?.firstName} {user?.lastName}
-            </h4>
+            <div className='flex gap-4'>
+              <h4 className='text-primaryText truncate'>
+                {user?.firstName} {user?.lastName}
+              </h4>
+              {user?.onboardingStatus && (
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`px-2.5 py-0.5 text-xs rounded-full font-medium ${user.onboardingStatus === "Completed"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-amber-100 text-amber-700"
+                      }`}
+                  >
+                    {user.onboardingStatus === "Completed"
+                      ? "Onboarding Completed"
+                      : "Onboarding Pending"}
+                  </span>
+
+                  {user.onboardingStatus !== "Completed" && (
+                    <div className="relative group">
+                      <button
+                        type="button"
+                        className="p-1 rounded-full hover:bg-gray-100 text-gray-500"
+                      >
+                        <Info size={14} />
+                      </button>
+
+                      {/* Tooltip */}
+                      <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-64 hidden group-hover:block z-50">
+                        <div className="bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg">
+                          <p className="font-medium mb-1">Complete Onboarding</p>
+                          <span className="text-xs">
+                            Upload all required documents such as ID proofs, academic
+                            certificates, and employment records to complete onboarding.
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}</div>
             <p className='text-orange-500 font-medium'>
               {user?.designationName}
             </p>
@@ -404,10 +493,9 @@ const attendanceItems = getPast7Days().map((d) => {
                 </span>
                 <span
                   className={`text-xs font-semibold justify-start px-3 py-1 flex items-center rounded-full
-                    ${
-                      item.color === 'green'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-orange-100 text-orange-700'
+                    ${item.color === 'green'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-orange-100 text-orange-700'
                     }
                   `}
                 >
@@ -504,13 +592,12 @@ const attendanceItems = getPast7Days().map((d) => {
               .map((member) => (
                 <div
                   key={member._id}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 transition-all ${
-                    member._id === user?._id
-                      ? 'bg-orange-50 border border-orange-200'
-                      : member.isOnline
+                  className={`flex items-center justify-between rounded-xl px-4 py-3 transition-all ${member._id === user?._id
+                    ? 'bg-orange-50 border border-orange-200'
+                    : member.isOnline
                       ? 'bg-green-50 hover:bg-green-100'
                       : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <div className='flex items-center gap-3'>
                     <div className='relative shrink-0'>
@@ -539,11 +626,10 @@ const attendanceItems = getPast7Days().map((d) => {
                   </div>
 
                   <span
-                    className={`text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5 ${
-                      member.isOnline
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
+                    className={`text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5 ${member.isOnline
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-600'
+                      }`}
                   >
                     <Dot size={16} className='fill-current' />
                     {member.isOnline ? 'Online' : 'Offline'}
@@ -574,11 +660,10 @@ const attendanceItems = getPast7Days().map((d) => {
                   <button
                     key={t.id}
                     onClick={() => setActiveTab(t.id)}
-                    className={`relative pb-3 px-3 transition-colors ${
-                      isActive
-                        ? 'font-semibold text-primaryText'
-                        : 'text-gray-500'
-                    } hover:text-primaryText`}
+                    className={`relative pb-3 px-3 transition-colors ${isActive
+                      ? 'font-semibold text-primaryText'
+                      : 'text-gray-500'
+                      } hover:text-primaryText`}
                     style={{
                       borderBottom: isActive
                         ? '3px solid var(--color-primary)'
@@ -698,9 +783,9 @@ const attendanceItems = getPast7Days().map((d) => {
             >
               ×
             </button>
-            <h3 className='text-xl font-bold text-primaryText mb-6'>
+            <h4 className='text-xl font-bold text-primaryText mb-6'>
               Leave Request Details
-            </h3>
+            </h4>
 
             <div className='flex items-center gap-4 mb-6'>
               <img
@@ -801,11 +886,10 @@ const attendanceItems = getPast7Days().map((d) => {
                     confirmAction === 'reject' ? rejectReason.trim() : null
                   );
                 }}
-                className={`px-5 py-2.5 font-medium cursor-pointer rounded-lg transition ${
-                  confirmAction === 'approve'
-                    ? 'bg-green-100 hover:bg-green-200 text-green-700'
-                    : 'bg-red-100 hover:bg-red-200 text-red-700'
-                }`}
+                className={`px-5 py-2.5 font-medium cursor-pointer rounded-lg transition ${confirmAction === 'approve'
+                  ? 'bg-green-100 hover:bg-green-200 text-green-700'
+                  : 'bg-red-100 hover:bg-red-200 text-red-700'
+                  }`}
               >
                 Yes, {confirmAction === 'approve' ? 'Approve' : 'Reject'}
               </button>

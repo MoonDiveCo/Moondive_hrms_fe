@@ -258,9 +258,9 @@ export default function ProfileSlideOver({
         {/* header */}
         <div className='flex items-center justify-between px-6 py-4 border-b border-gray-100'>
           <div>
-            <h3 className='text-lg font-semibold text-[var(--color-blackText)]'>
+            <h4 className='text-primaryText'>
               My Account
-            </h3>
+            </h4>
             <div className='text-sm text-[var(--color-primaryText)]'>
               View and edit your profile
             </div>
@@ -565,9 +565,9 @@ export default function ProfileSlideOver({
               </div>
 
               <div className='text-center'>
-                <h3 className='text-lg font-semibold text-[var(--color-blackText)]'>
+                <h4 className='text-primaryText'>
                   Sign out
-                </h3>
+                </h4>
                 <p className='text-sm text-[var(--color-primaryText)] mt-1'>
                   Are you sure you want to sign out?
                 </p>
