@@ -1356,8 +1356,8 @@ export default function AddEditEmployeeModal({
                 {index > 0 && (
                   <div
                     className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${step >= s
-                        ? "border-[var(--color-primary)]"
-                        : "border-gray-400"
+                      ? "border-[var(--color-primary)]"
+                      : "border-gray-400"
                       }`}
                   />
                 )}
@@ -1372,8 +1372,8 @@ export default function AddEditEmployeeModal({
                 >
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step >= s
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-gray-100 text-gray-600"
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "bg-gray-100 text-gray-600"
                       } ${!isView ? "hover:opacity-80" : ""}`}
                   >
                     {s}
@@ -1395,35 +1395,9 @@ export default function AddEditEmployeeModal({
           </div>
         </div>
 
-        {(errorMessages.length > 0 || errors.submit) && (
+        {errors.submit && (
           <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <svg
-                className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <div className="flex-1">
-                <h4 className="text-sm font-semibold text-red-800 mb-1">
-                  {errors.submit ? "Error" : "Please fix the following errors:"}
-                </h4>
-                {errors.submit ? (
-                  <p className="text-sm text-red-700">{errors.submit}</p>
-                ) : (
-                  <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
-                    {errorMessages.map((msg, idx) => (
-                      <li key={idx}>{msg}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
+            <p className="text-sm text-red-700">{errors.submit}</p>
           </div>
         )}
 
@@ -1522,6 +1496,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+                )}
               </div>
 
               <div>
@@ -1535,6 +1512,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+                )}
               </div>
 
               <div>
@@ -1549,6 +1529,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                )}
               </div>
 
               <div>
@@ -1563,6 +1546,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors.dateOfBirth && (
+                  <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>
+                )}
               </div>
 
               <div>
@@ -1581,6 +1567,9 @@ export default function AddEditEmployeeModal({
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
+                {errors.gender && (
+                  <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
+                )}
               </div>
 
               <div>
@@ -1600,6 +1589,9 @@ export default function AddEditEmployeeModal({
                   <option value="Divorced">Divorced</option>
                   <option value="Widowed">Widowed</option>
                 </select>
+                {errors.maritalStatus && (
+                  <p className="text-red-500 text-xs mt-1">{errors.maritalStatus}</p>
+                )}
               </div>
 
               <div>
@@ -1615,6 +1607,9 @@ export default function AddEditEmployeeModal({
                   readOnly={isView}
                   placeholder="+1234567890"
                 />
+                {errors.mobileNumber && (
+                  <p className="text-red-500 text-xs mt-1">{errors.mobileNumber}</p>
+                )}
               </div>
 
               <div>
@@ -1631,6 +1626,9 @@ export default function AddEditEmployeeModal({
                   readOnly={isView}
                   placeholder="+1234567890"
                 />
+                {errors.alternateMobileNumber && (
+                  <p className="text-red-500 text-xs mt-1">{errors.alternateMobileNumber}</p>
+                )}
               </div>
 
               <div className="md:col-span-2">
@@ -1664,6 +1662,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[0].addressLine"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[0].addressLine"]}</p>
+                )}
               </div>
 
               <div>
@@ -1680,6 +1681,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[0].locality"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[0].locality"]}</p>
+                )}
               </div>
 
               <div>
@@ -1696,6 +1700,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[0].city"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[0].city"]}</p>
+                )}
               </div>
 
               <div>
@@ -1712,6 +1719,9 @@ export default function AddEditEmployeeModal({
                    ${errors["address[0].state"] ? "border-red-500" : ""}`}
                   readOnly={isView}
                 />
+                {errors["address[0].state"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[0].state"]}</p>
+                )}
               </div>
 
               <div>
@@ -1728,6 +1738,9 @@ export default function AddEditEmployeeModal({
                   className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].postalCode"] ? "border-red-500" : ""}`}
                   readOnly={isView}
                 />
+                {errors["address[0].postalCode"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[0].postalCode"]}</p>
+                )}
               </div>
 
               <div>
@@ -1744,6 +1757,9 @@ export default function AddEditEmployeeModal({
  ${errors["address[0].country"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[0].country"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[0].country"]}</p>
+                )}
               </div>
 
               <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
@@ -1782,6 +1798,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[1].addressLine"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[1].addressLine"]}</p>
+                )}
               </div>
 
               <div>
@@ -1798,6 +1817,9 @@ export default function AddEditEmployeeModal({
                     } ${errors["address[1].locality"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[1].locality"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[1].locality"]}</p>
+                )}
               </div>
 
               <div>
@@ -1814,6 +1836,9 @@ export default function AddEditEmployeeModal({
                     } ${errors["address[1].city"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[1].city"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[1].city"]}</p>
+                )}
               </div>
 
               <div>
@@ -1830,6 +1855,9 @@ export default function AddEditEmployeeModal({
                     } ${errors["address[1].state"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[1].state"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[1].state"]}</p>
+                )}
               </div>
 
               <div>
@@ -1846,6 +1874,9 @@ export default function AddEditEmployeeModal({
                     } ${errors["address[1].postalCode"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[1].postalCode"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[1].postalCode"]}</p>
+                )}
               </div>
 
               <div>
@@ -1862,6 +1893,9 @@ export default function AddEditEmployeeModal({
                     } ${errors["address[1].country"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
+                {errors["address[1].country"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["address[1].country"]}</p>
+                )}
               </div>
 
               <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
@@ -1883,6 +1917,9 @@ export default function AddEditEmployeeModal({
                   }`}
                   readOnly={isView}
                 />
+                {errors["emergencyContacts[0].name"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["emergencyContacts[0].name"]}</p>
+                )}
               </div>
 
               <div>
@@ -1914,6 +1951,9 @@ export default function AddEditEmployeeModal({
                   <option value="Friend">Friend</option>
                   <option value="Other">Other</option>
                 </select>
+                {errors["emergencyContacts[0].relationship"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["emergencyContacts[0].relationship"]}</p>
+                )}
               </div>
 
               <div>
@@ -1929,6 +1969,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors["emergencyContacts[0].phone"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["emergencyContacts[0].phone"]}</p>
+                )}
               </div>
 
               <div>
@@ -1946,6 +1989,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors["emergencyContacts[0].email"] && (
+                  <p className="text-red-500 text-xs mt-1">{errors["emergencyContacts[0].email"]}</p>
+                )}
               </div>
             </div>
           </div>
@@ -1974,6 +2020,9 @@ export default function AddEditEmployeeModal({
                     </option>
                   ))}
                 </select>
+                {errors.userRole && (
+                  <p className="text-red-500 text-xs mt-1">{errors.userRole}</p>
+                )}
               </div>
 
               <div>
@@ -2012,6 +2061,9 @@ export default function AddEditEmployeeModal({
                   <option value="Internship">Internship</option>
                   {/* <option value="Trainee">Trainee</option> */}
                 </select>
+                {errors.employmentType && (
+                  <p className="text-red-500 text-xs mt-1">{errors.employmentType}</p>
+                )}
               </div>
 
               <div>
@@ -2031,6 +2083,9 @@ export default function AddEditEmployeeModal({
                   {/* <option value="Resigned">Resigned</option> */}
                   <option value="Inactive">Inactive</option>
                 </select>
+                {errors.employmentStatus && (
+                  <p className="text-red-500 text-xs mt-1">{errors.employmentStatus}</p>
+                )}
               </div>
 
               <div>
@@ -2048,6 +2103,9 @@ export default function AddEditEmployeeModal({
                   <option value="Fresher">Fresher</option>
                   <option value="Experienced">Experienced</option>
                 </select>
+                {errors.experienceLevel && (
+                  <p className="text-red-500 text-xs mt-1">{errors.experienceLevel}</p>
+                )}
               </div>
 
               <div>
@@ -2132,6 +2190,9 @@ export default function AddEditEmployeeModal({
                     </option>
                   ))}
                 </select>
+                {errors.departmentId && (
+                  <p className="text-red-500 text-xs mt-1">{errors.departmentId}</p>
+                )}
               </div>
 
               <div>
@@ -2152,6 +2213,9 @@ export default function AddEditEmployeeModal({
                     </option>
                   ))}
                 </select>
+                {errors.designationId && (
+                  <p className="text-red-500 text-xs mt-1">{errors.designationId}</p>
+                )}
               </div>
 
               <div>
@@ -2180,7 +2244,9 @@ export default function AddEditEmployeeModal({
                       </option>
                     ))}
                 </select>
-
+                {errors.reportingManagerId && (
+                  <p className="text-red-500 text-xs mt-1">{errors.reportingManagerId}</p>
+                )}
               </div>
 
               <div>
@@ -2195,6 +2261,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors.dateOfJoining && (
+                  <p className="text-red-500 text-xs mt-1">{errors.dateOfJoining}</p>
+                )}
               </div>
 
               {/* <div>
@@ -2241,6 +2310,9 @@ export default function AddEditEmployeeModal({
                     }`}
                   readOnly={isView}
                 />
+                {errors.probationEndDate && (
+                  <p className="text-red-500 text-xs mt-1">{errors.probationEndDate}</p>
+                )}
               </div>
             </div>
           </div>
@@ -2434,8 +2506,8 @@ export default function AddEditEmployeeModal({
                   <div className="md:col-span-2 space-y-4">
                     <div
                       className={`border rounded-lg overflow-hidden ${isDisabled
-                          ? "bg-gray-50 border-gray-200 opacity-50"
-                          : "bg-blue-50 border-blue-200"
+                        ? "bg-gray-50 border-gray-200 opacity-50"
+                        : "bg-blue-50 border-blue-200"
                         }`}
                     >
                       <button
@@ -2500,8 +2572,8 @@ export default function AddEditEmployeeModal({
                     {requiredDocs.showAcademicSection && (
                       <div
                         className={`border rounded-lg overflow-hidden ${isDisabled
-                            ? "bg-gray-50 border-gray-200 opacity-50"
-                            : "bg-blue-50 border-blue-200"
+                          ? "bg-gray-50 border-gray-200 opacity-50"
+                          : "bg-blue-50 border-blue-200"
                           }`}
                       >
                         <button
@@ -2509,8 +2581,8 @@ export default function AddEditEmployeeModal({
                           onClick={() => toggleDocSection("academicDocuments")}
                           disabled={isDisabled}
                           className={`w-full p-4 flex items-start justify-between ${isDisabled
-                              ? "cursor-not-allowed"
-                              : "cursor-pointer hover:bg-blue-100"
+                            ? "cursor-not-allowed"
+                            : "cursor-pointer hover:bg-blue-100"
                             }`}
                         >
                           <div className="flex items-start gap-3">
@@ -2539,8 +2611,8 @@ export default function AddEditEmployeeModal({
                             </span>
                             <svg
                               className={`w-5 h-5 transition-transform ${expandedDocSections.academicDocuments
-                                  ? "rotate-180"
-                                  : ""
+                                ? "rotate-180"
+                                : ""
                                 } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
                               fill="none"
                               stroke="currentColor"
@@ -2703,8 +2775,8 @@ export default function AddEditEmployeeModal({
                     {requiredDocs.employmentHistory && (
                       <div
                         className={`border rounded-lg overflow-hidden ${isDisabled
-                            ? "bg-gray-50 border-gray-200 opacity-50"
-                            : "bg-blue-50 border-blue-200"
+                          ? "bg-gray-50 border-gray-200 opacity-50"
+                          : "bg-blue-50 border-blue-200"
                           }`}
                       >
                         <button
@@ -2712,8 +2784,8 @@ export default function AddEditEmployeeModal({
                           onClick={() => toggleDocSection("employmentHistory")}
                           disabled={isDisabled}
                           className={`w-full p-4 flex items-start justify-between ${isDisabled
-                              ? "cursor-not-allowed"
-                              : "cursor-pointer hover:bg-blue-100"
+                            ? "cursor-not-allowed"
+                            : "cursor-pointer hover:bg-blue-100"
                             }`}
                         >
                           <div className="flex items-start gap-3">
@@ -2743,8 +2815,8 @@ export default function AddEditEmployeeModal({
                             </span>
                             <svg
                               className={`w-5 h-5 transition-transform ${expandedDocSections.employmentHistory
-                                  ? "rotate-180"
-                                  : ""
+                                ? "rotate-180"
+                                : ""
                                 } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
                               fill="none"
                               stroke="currentColor"
@@ -3062,16 +3134,16 @@ export default function AddEditEmployeeModal({
                     {/* Status Banner */}
                     <div
                       className={`p-4 border rounded-lg ${checkAllRequiredDocumentsUploaded()
-                          ? "border-green-200 bg-green-50"
-                          : "border-amber-200 bg-amber-50"
+                        ? "border-green-200 bg-green-50"
+                        : "border-amber-200 bg-amber-50"
                         }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5">
                           <svg
                             className={`w-5 h-5 ${checkAllRequiredDocumentsUploaded()
-                                ? "text-green-600"
-                                : "text-amber-600"
+                              ? "text-green-600"
+                              : "text-amber-600"
                               }`}
                             fill="currentColor"
                             viewBox="0 0 20 20"
@@ -3094,8 +3166,8 @@ export default function AddEditEmployeeModal({
                         <div>
                           <h6
                             className={`font-semibold ${checkAllRequiredDocumentsUploaded()
-                                ? "text-green-900"
-                                : "text-amber-900"
+                              ? "text-green-900"
+                              : "text-amber-900"
                               }`}
                           >
                             {checkAllRequiredDocumentsUploaded()
@@ -3104,8 +3176,8 @@ export default function AddEditEmployeeModal({
                           </h6>
                           <p
                             className={`text-sm mt-1 ${checkAllRequiredDocumentsUploaded()
-                                ? "text-green-800"
-                                : "text-amber-800"
+                              ? "text-green-800"
+                              : "text-amber-800"
                               }`}
                           >
                             {checkAllRequiredDocumentsUploaded()

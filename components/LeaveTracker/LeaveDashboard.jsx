@@ -20,197 +20,185 @@ const fetcherWithAuth = async (url) => {
   return data;
 };
 
-export default function LeaveTrackerDashboard({showCalender = true }) {
+export default function LeaveTrackerDashboard({ showCalender = true }) {
   const [viewModal, setViewModal] = useState(false);
   const [rejectModal, setRejectModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [applyLeaveContext, setApplyLeaveContext] = useState(null);
-  // const [loading, setLoading] = useState(true);
-  // const [leaveDashboard, setLeaveDashboard] = useState([]);
-  // const [pendingLeaves, setPendingLeaves] = useState([]);
-  // const [userPendingLeaves, setUserPendingLeaves] = useState([]);
-  // const [holidays, setHolidays] = useState([]);
-  // const [allLeaves, setAllLeaves] = useState([]);
   const calendarRefreshRef = useRef(null);
 
 
   const { user } = useContext(AuthContext);
-    const userRole = user?.userRole[0];
-    const organizationId = user?.organizationId;
+  const userRole = user?.userRole[0];
+  const organizationId = user?.organizationId;
 
-    const SUPERADMIN_DUMMY_DASHBOARD =[
-  {
-    "code": "CL",
-    "name": "Casual Leave",
-    "availableThisMonth": 2,
-    "availableThisYear": 12,
-    "taken": 4,
-    "carryForwarded": 1,
-    "unlimited": false,
-    "isLWP": false,
-    "canCarryForward": true,
-    "isWindowed": false,
-    "window": null
-  },
-  {
-    "code": "EL",
-    "name": "Earned Leave",
-    "availableThisMonth": 1,
-    "availableThisYear": 18,
-    "taken": 7,
-    "carryForwarded": 5,
-    "unlimited": false,
-    "isLWP": false,
-    "canCarryForward": true,
-    "isWindowed": false,
-    "window": null
-  },
-  {
-    "code": "OL",
-    "name": "Optional Leave",
-    "availableThisMonth": 1,
-    "availableThisYear": 2,
-    "taken": 0,
-    "carryForwarded": 0,
-    "unlimited": false,
-    "isLWP": false,
-    "canCarryForward": false,
-    "isWindowed": true,
-    "window": {
-      "available": 1,
-      "months": 6
+  const SUPERADMIN_DUMMY_DASHBOARD = [
+    {
+      "code": "CL",
+      "name": "Casual Leave",
+      "availableThisMonth": 2,
+      "availableThisYear": 12,
+      "taken": 4,
+      "carryForwarded": 1,
+      "unlimited": false,
+      "isLWP": false,
+      "canCarryForward": true,
+      "isWindowed": false,
+      "window": null
+    },
+    {
+      "code": "EL",
+      "name": "Earned Leave",
+      "availableThisMonth": 1,
+      "availableThisYear": 18,
+      "taken": 7,
+      "carryForwarded": 5,
+      "unlimited": false,
+      "isLWP": false,
+      "canCarryForward": true,
+      "isWindowed": false,
+      "window": null
+    },
+    {
+      "code": "OL",
+      "name": "Optional Leave",
+      "availableThisMonth": 1,
+      "availableThisYear": 2,
+      "taken": 0,
+      "carryForwarded": 0,
+      "unlimited": false,
+      "isLWP": false,
+      "canCarryForward": false,
+      "isWindowed": true,
+      "window": {
+        "available": 1,
+        "months": 6
+      }
+    },
+    {
+      "code": "LWP",
+      "name": "Leave Without Pay",
+      "availableThisMonth": 0,
+      "availableThisYear": 0,
+      "taken": 9,
+      "carryForwarded": 0,
+      "unlimited": true,
+      "isLWP": true,
+      "canCarryForward": false,
+      "isWindowed": false,
+      "window": null
     }
-  },
-  {
-    "code": "LWP",
-    "name": "Leave Without Pay",
-    "availableThisMonth": 0,
-    "availableThisYear": 0,
-    "taken": 9,
-    "carryForwarded": 0,
-    "unlimited": true,
-    "isLWP": true,
-    "canCarryForward": false,
-    "isWindowed": false,
-    "window": null
-  }
-]
+  ]
 
 
-useEffect(() => {
-  if (!user?._id) return;
+  useEffect(() => {
+    if (!user?._id) return;
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const sseUrl = `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const sseUrl = `${process.env.NEXT_PUBLIC_API}/hrms/leave/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`;
 
-  const eventSource = new EventSource(sseUrl, { withCredentials: true });
+    const eventSource = new EventSource(sseUrl, { withCredentials: true });
 
-  eventSource.onmessage = (event) => {
-    let data;
-    try {
-      data = JSON.parse(event.data);
-    } catch (err) {
-      console.error("Invalid SSE payload:", err, event.data);
-      return;
-    }
-
-    if (data.type === "LEAVE_APPLIED") {
-      const payload = data.payload || data.leave || data.leaveRequest || data.data;
-
-      if (payload) {
-        mutate("/hrms/leave/get-leave", (cached) => {
-          if (!cached) return cached;
-
-          const leaves = cached.leaves || [];
-          const leaveRequests = cached.leaveRequests || [];
-
-          const newLeaves = payload.leave ? [payload.leave, ...leaves] : leaves;
-          const newLeaveRequests = payload.leaveRequest ? [payload.leaveRequest, ...leaveRequests] : leaveRequests;
-
-          return {
-            ...cached,
-            leaves: newLeaves,
-            leaveRequests: newLeaveRequests,
-          };
-        }, { revalidate: false });
+    eventSource.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (err) {
+        console.error("Invalid SSE payload:", err, event.data);
+        return;
       }
 
-      // mutate("/hrms/leave/get-leave");
-    }
+      if (data.type === "LEAVE_APPLIED") {
+        const payload = data.payload || data.leave || data.leaveRequest || data.data;
 
-    if (data.type === "LEAVE_UPDATED") {
-      const payload = data.payload || data.data;
+        if (payload) {
+          mutate("/hrms/leave/get-leave", (cached) => {
+            if (!cached) return cached;
 
-      if (payload) {
-        mutate("/hrms/leave/get-leave-dashboard", (cached) => {
-          if (!cached) return cached;
-          return cached; 
-        }, { revalidate: false });
+            const leaves = cached.leaves || [];
+            const leaveRequests = cached.leaveRequests || [];
+
+            const newLeaves = payload.leave ? [payload.leave, ...leaves] : leaves;
+            const newLeaveRequests = payload.leaveRequest ? [payload.leaveRequest, ...leaveRequests] : leaveRequests;
+
+            return {
+              ...cached,
+              leaves: newLeaves,
+              leaveRequests: newLeaveRequests,
+            };
+          }, { revalidate: false });
+        }
+
+        // mutate("/hrms/leave/get-leave");
       }
 
-      // mutate("/hrms/leave/get-leave-dashboard");
-      // mutate("/hrms/leave/get-leave");
+      if (data.type === "LEAVE_UPDATED") {
+        const payload = data.payload || data.data;
 
-      calendarRefreshRef.current?.();
-    }
-  };
+        // Invalidate cache to force re-fetch of latest data
+        mutate("/hrms/leave/get-leave-dashboard");
+        mutate("/hrms/leave/get-leave");
 
-  eventSource.onerror = (err) => {
-    console.error("SSE error:", err);
-    eventSource.close();
-  };
+        calendarRefreshRef.current?.();
+      }
+    };
 
-  return () => eventSource.close();
-}, [user?._id]);
+    eventSource.onerror = (err) => {
+      console.error("SSE error:", err);
+      eventSource.close();
+    };
 
-const isSuperAdmin = userRole === "SuperAdmin";
+    return () => eventSource.close();
+  }, [user?._id]);
 
-const { data: dashboardRes, isLoading: dashboardLoading} = useSWR(
-  !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
-  fetcherWithAuth,
-  // { refreshInterval: 30000 }
-);
+  const isSuperAdmin = userRole === "SuperAdmin";
 
-const { data: holidayRes } = useSWR(
-  organizationId
-    ? `/hrms/holiday?organizationId=${organizationId}&year=${new Date().getFullYear()}`
-    : null,
-  fetcherWithAuth,
-  // { refreshInterval: 30000 }
-);
+  const { data: dashboardRes, isLoading: dashboardLoading } = useSWR(
+    !isSuperAdmin ? "/hrms/leave/get-leave-dashboard" : null,
+    fetcherWithAuth,
+    // { refreshInterval: 30000 }
+  );
 
-const { data: leaveRes } = useSWR(
-  user?._id ? "/hrms/leave/get-leave" : null,
-  fetcherWithAuth,
-  // { refreshInterval: 30000 }
-);
+  const { data: holidayRes } = useSWR(
+    organizationId
+      ? `/hrms/holiday?organizationId=${organizationId}&year=${new Date().getFullYear()}`
+      : null,
+    fetcherWithAuth,
+    // { refreshInterval: 30000 }
+  );
 
-const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];
-const userPendingLeaves = dashboardRes?.pendingLeaves || dashboardRes?.data?.pendingLeaves || [];
+  const { data: leaveRes } = useSWR(
+    user?._id ? "/hrms/leave/get-leave" : null,
+    fetcherWithAuth,
+    // { refreshInterval: 30000 }
+  );
 
-const holidays = holidayRes?.result?.data || [];
+  const leaveDashboard = dashboardRes?.dashboard || dashboardRes?.data?.dashboard || [];
+  const userPendingLeaves = dashboardRes?.pendingLeaves || dashboardRes?.data?.pendingLeaves || [];
 
-const allLeaves = leaveRes?.leaves || [];
-const pendingLeaves = leaveRes?.leaveRequests || [];
+  const holidays = holidayRes?.result?.data || [];
 
-const loading =dashboardLoading && !isSuperAdmin;
+  const allLeaves = leaveRes?.leaves || [];
+  const pendingLeaves = leaveRes?.leaveRequests || [];
+
+  const loading = dashboardLoading && !isSuperAdmin;
 
   const leaveBalanceMap = useMemo(() => {
-  return leaveDashboard.reduce((acc, l) => {
-    acc[l.code] = l;
-    return acc;
-  }, {});
-}, [leaveDashboard]);
+    return leaveDashboard.reduce((acc, l) => {
+      acc[l.code] = l;
+      return acc;
+    }, {});
+  }, [leaveDashboard]);
 
 
-// useEffect(() => {
-//   if (userRole !== "SuperAdmin") {
-//     fetchLeaveDashboard();
-//     // fetchLeaveRequests();
-//   } else {
-//     setLoading(false);
-//   }
-// }, [userRole]);
+  // useEffect(() => {
+  //   if (userRole !== "SuperAdmin") {
+  //     fetchLeaveDashboard();
+  //     // fetchLeaveRequests();
+  //   } else {
+  //     setLoading(false);
+  //   }
+  // }, [userRole]);
 
   //   const fetchLeaveDashboard = async () => {
   //   try {
@@ -221,7 +209,7 @@ const loading =dashboardLoading && !isSuperAdmin;
   //   const leaves = await axios.get("/hrms/leave/get-leave", {
   //     params: { year: new Date().getFullYear() },
   //   });
-      
+
   //     setLeaveDashboard(data.dashboard || []);
   //     setUserPendingLeaves(data.pendingLeaves || []);
   //     setHolidays(holidays.data?.result?.data || []);
@@ -247,14 +235,14 @@ const loading =dashboardLoading && !isSuperAdmin;
   //   }
   // };
 
-   if(loading){
-    return(
+  if (loading) {
+    return (
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
         <DotLottieReact
           src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
           loop
           autoplay
-          style={{ width: 100, height: 100, alignItems: 'center' }} 
+          style={{ width: 100, height: 100, alignItems: 'center' }}
         />
       </div>
     )
@@ -268,72 +256,72 @@ const loading =dashboardLoading && !isSuperAdmin;
         ) : userRole === "SuperAdmin" ? (
           SUPERADMIN_DUMMY_DASHBOARD.map((leave) => (
             <LeaveCard
+              key={leave.code}
+              title={leave.name}
+              availableThisMonth={leave.availableThisMonth}
+              availableThisYear={leave.availableThisYear}
+              taken={leave.taken}
+              carryForwarded={leave.carryForwarded}
+              unlimited={leave.unlimited}
+              isLWP={leave.isLWP}
+              canCarryForward={leave.canCarryForward}
+              isWindowed={leave.isWindowed}
+              windowInfo={leave.window}
+            />
+          ))
+        ) : (
+          leaveDashboard.map((leave) => {
+            return (
+              <LeaveCard
                 key={leave.code}
+                code={leave.code}
                 title={leave.name}
+                available={leave.available}
+                taken={leave.taken}
+                unlimited={leave.unlimited}
+                carryForwarded={leave.carryForwarded}
                 availableThisMonth={leave.availableThisMonth}
                 availableThisYear={leave.availableThisYear}
-                taken={leave.taken}
-                carryForwarded={leave.carryForwarded}
-                unlimited={leave.unlimited}
                 isLWP={leave.isLWP}
                 canCarryForward={leave.canCarryForward}
                 isWindowed={leave.isWindowed}
                 windowInfo={leave.window}
-            />
-          ))
-        ) : (
-        leaveDashboard.map((leave) => {
-          return (
-            <LeaveCard
-              key={leave.code}
-              code={leave.code} 
-              title={leave.name}
-              available={leave.available}
-              taken={leave.taken}
-              unlimited={leave.unlimited}
-              carryForwarded={leave.carryForwarded}
-              availableThisMonth={leave.availableThisMonth}
-              availableThisYear={leave.availableThisYear}
-              isLWP={leave.isLWP}
-              canCarryForward={leave.canCarryForward}
-              isWindowed={leave.isWindowed}
-               windowInfo={leave.window}
-            />
-          );
-        })
+              />
+            );
+          })
         )}
       </div>
 
-  <div className="flex items-center gap-3 justify-between">
-    <button
-      onClick={() => setViewModal(true)}
-      className="relative flex justify-center cursor-pointer items-center gap-2 px-3 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-700"
-    >
-      View Leave Requests
+      <div className="flex items-center gap-3 justify-between">
+        <button
+          onClick={() => setViewModal(true)}
+          className="relative flex justify-center cursor-pointer items-center gap-2 px-3 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-700"
+        >
+          View Leave Requests
 
-      <span className="absolute -top-2 -right-2 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-red-500 text-white">
-        {pendingLeaves.filter((l) => l.decision == null).length}
-      </span>
-    </button>
+          <span className="absolute -top-2 -right-2 w-5 h-5 text-xs flex items-center justify-center rounded-full bg-red-500 text-white">
+            {pendingLeaves.filter((l) => l.decision == null).length}
+          </span>
+        </button>
 
-    <button
-      onClick={() => setApplyLeaveContext({})}
-      className="flex items-center justify-center cursor-pointer gap-2 px-3 py-2 bg-primary text-white text-sm font-medium rounded-full "
-    >
-      <span className="text-lg leading-none">+</span>
-      Apply for Leave
-    </button>
-  </div>
+        <button
+          onClick={() => setApplyLeaveContext({})}
+          className="flex items-center justify-center cursor-pointer gap-2 px-3 py-2 bg-primary text-white text-sm font-medium rounded-full "
+        >
+          <span className="text-lg leading-none">+</span>
+          Apply for Leave
+        </button>
+      </div>
 
 
-     {showCalender && <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
-        <HolidayCalendar organizationId={user.organizationId}  
-        leaves={allLeaves}
-        onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
-        onViewLeave={(data) => setSelectedLeave(data)}
-         onRefresh={(fn) => (calendarRefreshRef.current = fn)}
-          />
-        
+      {showCalender && <div className="h-[500px] rounded-lg bg-white flex items-center justify-center text-gray-400">
+        <HolidayCalendar organizationId={user.organizationId}
+          leaves={allLeaves}
+          onApplyLeave={(date) => setApplyLeaveContext({ startDate: date })}
+          onViewLeave={(data) => setSelectedLeave(data)}
+          onRefresh={(fn) => (calendarRefreshRef.current = fn)}
+        />
+
       </div>}
 
       {viewModal && (
@@ -341,39 +329,39 @@ const loading =dashboardLoading && !isSuperAdmin;
           requests={pendingLeaves}
           myLeaves={allLeaves}
           onClose={() => setViewModal(false)}
-        onResolved={async (leaveId) => {
-        // Ensure the latest leaves & dashboard data are fetched, then refresh calendar
-        await mutate("/hrms/leave/get-leave");
-        await mutate("/hrms/leave/get-leave-dashboard");
-        calendarRefreshRef.current?.();
-      }}
+          onResolved={async (leaveId) => {
+            // Ensure the latest leaves & dashboard data are fetched, then refresh calendar
+            await mutate("/hrms/leave/get-leave");
+            await mutate("/hrms/leave/get-leave-dashboard");
+            calendarRefreshRef.current?.();
+          }}
         />
       )}
 
-     {applyLeaveContext && (
-      <ApplyLeaveModal
-       context={{
-          ...applyLeaveContext,
-          refreshCalendar: () => calendarRefreshRef.current?.(),
-          refreshDashboard: () => {
-            mutate("/hrms/leave/get-leave-dashboard");
-            mutate("/hrms/leave/get-leave");
-          },
-        }}
-        pendingLeaves={userPendingLeaves}
-        leaveBalances={leaveBalanceMap}
-        holidays={holidays}
-        allLeaves={allLeaves}
-        onClose={() => {setApplyLeaveContext(null)}}
-      />
-    )}
+      {applyLeaveContext && (
+        <ApplyLeaveModal
+          context={{
+            ...applyLeaveContext,
+            refreshCalendar: () => calendarRefreshRef.current?.(),
+            refreshDashboard: () => {
+              mutate("/hrms/leave/get-leave-dashboard");
+              mutate("/hrms/leave/get-leave");
+            },
+          }}
+          pendingLeaves={userPendingLeaves}
+          leaveBalances={leaveBalanceMap}
+          holidays={holidays}
+          allLeaves={allLeaves}
+          onClose={() => { setApplyLeaveContext(null) }}
+        />
+      )}
 
-    {selectedLeave && (
-  <EventDetailsModal
-    data={selectedLeave}
-    onClose={() => setSelectedLeave(null)}
-  />
-)}
+      {selectedLeave && (
+        <EventDetailsModal
+          data={selectedLeave}
+          onClose={() => setSelectedLeave(null)}
+        />
+      )}
 
       {rejectModal && (
         <Modal title="Reject Leave Request" onClose={() => setRejectModal(false)}>
@@ -403,7 +391,7 @@ const loading =dashboardLoading && !isSuperAdmin;
         </Modal>
       )}
 
-      
+
     </div>
   );
 }
@@ -445,68 +433,68 @@ function LeaveCard({
   };
 
   return (
-<div className="relative group bg-white border border-gray-200 rounded-2xl h-[80px] overflow-hidden">
-  
-  <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
-    
-    <div className="flex items-center justify-center">
-      <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
-      >
-        <span className="font-semibold text-lg">
-          {primaryValue}
-        </span>
-      </div>
-    </div>
+    <div className="relative group bg-white border border-gray-200 rounded-2xl h-[80px] overflow-hidden">
 
-    <div className="flex flex-col leading-tight ml-3">
-      <span className="text-xs font-semibold uppercase text-gray-500">
-        {title}
-      </span>
-      <span className="text-xs text-gray-400">
-        {subLabel}
-      </span>
-    </div>
-  </div>
+      <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
 
-  <div className="absolute inset-0 bg-white opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
-    <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
-      
-      <div className="flex items-center justify-center">
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
-        >
-          <span className="font-semibold text-lg">
-            {primaryValue}
+        <div className="flex items-center justify-center">
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
+          >
+            <span className="font-semibold text-lg">
+              {primaryValue}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col leading-tight ml-3">
+          <span className="text-xs font-semibold uppercase text-gray-500">
+            {title}
+          </span>
+          <span className="text-xs text-gray-400">
+            {subLabel}
           </span>
         </div>
       </div>
 
-      <div className="text-xs text-gray-600 space-y-0.5 ml-3">
-        {!isLWP && (
-          <>
-            <div>
-              <span className="font-medium">{availableThisYear}</span>{" "}
-              Available / Year
+      <div className="absolute inset-0 bg-white opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
+        <div className="grid grid-cols-[48px_1fr] h-full items-center px-4 py-3">
+
+          <div className="flex items-center justify-center">
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center ${COLOR_MAP[code]}`}
+            >
+              <span className="font-semibold text-lg">
+                {primaryValue}
+              </span>
             </div>
+          </div>
 
-            {canCarryForward && (
-              <div>
-                <span className="font-medium">{carryForwarded}</span>{" "}
-                Carry Forward
-              </div>
+          <div className="text-xs text-gray-600 space-y-0.5 ml-3">
+            {!isLWP && (
+              <>
+                <div>
+                  <span className="font-medium">{availableThisYear}</span>{" "}
+                  Available / Year
+                </div>
+
+                {canCarryForward && (
+                  <div>
+                    <span className="font-medium">{carryForwarded}</span>{" "}
+                    Carry Forward
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
 
-        <div>
-          <span className="font-medium">{taken}</span>{" "}
-          Taken
+            <div>
+              <span className="font-medium">{taken}</span>{" "}
+              Taken
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
   );
 }
