@@ -135,13 +135,13 @@ export default function LeaveTypeModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-[900px] p-6 relative">
-        <h3 className="text-lg font-semibold mb-4">
+        <h4 className="text-primaryText mb-4">
           {isView
             ? "View Leave Type"
             : isEdit
             ? "Edit Leave Type"
             : "Add Leave Type"}
-        </h3>
+        </h4>
 
         <div className="grid grid-cols-2 gap-4">
           <div>

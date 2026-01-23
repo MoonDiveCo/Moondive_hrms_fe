@@ -102,9 +102,9 @@ async function handleDelete() {
           
           {/* HEADER */}
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-semibold">
+            <h4 className="text-primryText">
               {day?.isNew ? "Add Holiday" : "Edit Holiday"}
-            </h3>
+            </h4>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"

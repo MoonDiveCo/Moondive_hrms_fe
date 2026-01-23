@@ -40,9 +40,9 @@ export default function HRHelpdeskSlideOver({
         }`}
       >
         <div className="flex justify-between px-6 py-4 border-b">
-          <h3 className="font-semibold">
+          <h4 className="text-primaryText">
             {request ? 'Request Details' : 'New Request'}
-          </h3>
+          </h4>
           <button onClick={onClose}>
             <X />
           </button>

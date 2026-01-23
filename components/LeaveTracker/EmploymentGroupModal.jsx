@@ -136,9 +136,9 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-[850px] p-6 relative h-[90vh] overflow-y-auto z-10 hide-scrollbar">
-        <h3 className="text-lg font-semibold mb-2">
+        <h4 className="text-primaryText mb-2">
           {isView ? "View Employment Group" : isEdit ? "Edit Group" : "Add Group"}
-        </h3>
+        </h4>
 
         {/* Group Name */}
         <label className="text-sm font-medium">Group Name</label>

@@ -25,7 +25,7 @@ export default function AddEditEmployeeModal({
   const [expandedDocSections, setExpandedDocSections] = useState({});
   const [uploadedDocuments, setUploadedDocuments] = useState({
     idProofs: { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
-    academicDocuments: { 
+    academicDocuments: {
       tenth: { certificate: null, marksheet: null },
       twelth: { certificate: null, marksheet: null },
       graduation: { name: '', semester: '', certificate: null, marksheets: [] },
@@ -137,10 +137,10 @@ export default function AddEditEmployeeModal({
     }
   }
 
-    const [form, setForm] = useState(() => {
+  const [form, setForm] = useState(() => {
     if (employee && mode === 'edit') {
       const imageUrl = employee.photo || employee.imageUrl || '';
-     
+
       if (imageUrl) {
         setImagePreview(imageUrl);
       }
@@ -179,11 +179,11 @@ export default function AddEditEmployeeModal({
         ],
         emergencyContacts: employee.emergencyContacts?.length > 0
           ? employee.emergencyContacts.map(contact => ({
-              name: contact.name || '',
-              relationship: contact.relationship || '',
-              phone: String(contact.phone || ''),
-              email: contact.email || ''
-            }))
+            name: contact.name || '',
+            relationship: contact.relationship || '',
+            phone: String(contact.phone || ''),
+            email: contact.email || ''
+          }))
           : empty.emergencyContacts,
         // Fix: Add null checks before accessing _id
         departmentId: (employee.departmentId && typeof employee.departmentId === 'object')
@@ -214,11 +214,11 @@ export default function AddEditEmployeeModal({
     }
     return { ...empty };
   });
- 
+
 
   const [errors, setErrors] = useState({});
 
-   useEffect(() => {
+  useEffect(() => {
     if (employee && mode === 'edit') {
       const imageUrl = employee.photo || employee.imageUrl || '';
       setImagePreview(imageUrl);
@@ -257,11 +257,11 @@ export default function AddEditEmployeeModal({
         ],
         emergencyContacts: employee.emergencyContacts?.length > 0
           ? employee.emergencyContacts.map(contact => ({
-              name: contact.name || '',
-              relationship: contact.relationship || '',
-              phone: String(contact.phone || ''),
-              email: contact.email || ''
-            }))
+            name: contact.name || '',
+            relationship: contact.relationship || '',
+            phone: String(contact.phone || ''),
+            email: contact.email || ''
+          }))
           : empty.emergencyContacts,
         // Add null checks here too
         departmentId: (employee.departmentId && typeof employee.departmentId === 'object')
@@ -302,10 +302,10 @@ export default function AddEditEmployeeModal({
       const loadDocuments = async () => {
         try {
           const { data } = await axios.get(`/user/get-personal-details/${employee._id}`);
-          
+
           if (data?.result) {
             const personalDetails = data.result;
-            
+
             if (personalDetails.academicDocuments?.graduation?.marksheets && !Array.isArray(personalDetails.academicDocuments.graduation.marksheets)) {
               personalDetails.academicDocuments.graduation.marksheets = [];
             }
@@ -315,7 +315,7 @@ export default function AddEditEmployeeModal({
             if (!Array.isArray(personalDetails.employmentHistory)) {
               personalDetails.employmentHistory = [];
             }
-            
+
             if (personalDetails.employmentHistory && Array.isArray(personalDetails.employmentHistory)) {
               personalDetails.employmentHistory = personalDetails.employmentHistory.map(emp => ({
                 ...emp,
@@ -325,10 +325,10 @@ export default function AddEditEmployeeModal({
                 others: Array.isArray(emp.others) ? emp.others : (emp.others ? [emp.others] : [])
               }));
             }
-            
+
             setUploadedDocuments({
               idProofs: personalDetails.idProofs || { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
-              academicDocuments: personalDetails.academicDocuments || { 
+              academicDocuments: personalDetails.academicDocuments || {
                 tenth: { certificate: null, marksheet: null },
                 twelth: { certificate: null, marksheet: null },
                 graduation: { name: '', semester: '', certificate: null, marksheets: [] },
@@ -343,12 +343,12 @@ export default function AddEditEmployeeModal({
           console.error("Failed to load documents:", err);
         }
       };
-      
+
       loadDocuments();
     } else {
       setUploadedDocuments({
         idProofs: { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
-        academicDocuments: { 
+        academicDocuments: {
           tenth: { certificate: null, marksheet: null },
           twelth: { certificate: null, marksheet: null },
           graduation: { name: '', semester: '', certificate: null, marksheets: [] },
@@ -459,22 +459,22 @@ export default function AddEditEmployeeModal({
 
     const formData = new FormData();
     formData.append("files", file);
-    
+
     try {
       const { data } = await axios.post("/user/add-pdf", formData);
-      
+
       if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
         const pdf = data.result.pdfUrls[0];
-        
+
         setUploadedDocuments((prev) => {
           const updated = JSON.parse(JSON.stringify(prev));
-          
+
           const arrayMatch = docPath.match(/\[(\d+)\]/);
           if (arrayMatch) {
             const index = parseInt(arrayMatch[1]);
             const pathWithoutIndex = docPath.replace(/\[\d+\]/, '');
             const keys = pathWithoutIndex.split(".");
-            
+
             let obj = updated;
             for (let i = 0; i < keys.length - 1; i++) {
               if (keys[i] === 'employmentHistory') {
@@ -483,7 +483,7 @@ export default function AddEditEmployeeModal({
                 obj = obj[keys[i]];
               }
             }
-            
+
             const lastKey = keys[keys.length - 1];
             if (Array.isArray(obj[lastKey])) {
               obj[lastKey].push({ url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() });
@@ -493,14 +493,14 @@ export default function AddEditEmployeeModal({
           } else {
             const keys = docPath.split(".");
             let obj = updated;
-            
+
             for (let i = 0; i < keys.length - 1; i++) {
               if (!obj[keys[i]] || typeof obj[keys[i]] !== 'object') {
                 obj[keys[i]] = {};
               }
               obj = obj[keys[i]];
             }
-            
+
             const lastKey = keys[keys.length - 1];
             if (Array.isArray(obj[lastKey])) {
               obj[lastKey].push({ url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() });
@@ -508,10 +508,10 @@ export default function AddEditEmployeeModal({
               obj[lastKey] = { url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() };
             }
           }
-          
+
           return updated;
         });
-        
+
         toast.success("Document uploaded successfully");
       }
     } catch (err) {
@@ -527,7 +527,7 @@ export default function AddEditEmployeeModal({
 
     try {
       let document = null;
-      
+
       const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
       if (arrayIndexMatch) {
         const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
@@ -541,19 +541,19 @@ export default function AddEditEmployeeModal({
       } else {
         const keys = docPath.split(".");
         let obj = uploadedDocuments;
-        
+
         for (let i = 0; i < keys.length; i++) {
           obj = obj[keys[i]];
           if (!obj) break;
         }
-        
+
         if (index !== undefined && Array.isArray(obj)) {
           document = obj[index];
         } else if (obj && !Array.isArray(obj)) {
           document = obj;
         }
       }
-      
+
       if (document?.key) {
         try {
           await axios.post("/user/remove-pdf", { key: document.key });
@@ -564,12 +564,12 @@ export default function AddEditEmployeeModal({
 
       setUploadedDocuments((prev) => {
         const updated = JSON.parse(JSON.stringify(prev));
-        
+
         const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
         if (arrayIndexMatch) {
           const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
           const arrayIdx = parseInt(arrayIndex);
-          
+
           if (updated[arrayName]?.[arrayIdx]?.[fieldName]) {
             if (index !== undefined && Array.isArray(updated[arrayName][arrayIdx][fieldName])) {
               updated[arrayName][arrayIdx][fieldName].splice(index, 1);
@@ -580,24 +580,24 @@ export default function AddEditEmployeeModal({
         } else {
           let updateObj = updated;
           const pathKeys = docPath.split(".");
-          
+
           for (let i = 0; i < pathKeys.length - 1; i++) {
             updateObj = updateObj[pathKeys[i]];
             if (!updateObj) return prev;
           }
-          
+
           const lastKey = pathKeys[pathKeys.length - 1];
-          
+
           if (index !== undefined && Array.isArray(updateObj[lastKey])) {
             updateObj[lastKey].splice(index, 1);
           } else if (updateObj[lastKey]) {
             updateObj[lastKey] = null;
           }
         }
-        
+
         return updated;
       });
-      
+
       toast.success("Document removed successfully");
     } catch (err) {
       console.error("PDF removal error:", err);
@@ -611,7 +611,7 @@ export default function AddEditEmployeeModal({
     const isDisabled =
       !form.employmentType || !form.experienceLevel;
     if (isDisabled) return;
-    
+
     setExpandedDocSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -620,44 +620,44 @@ export default function AddEditEmployeeModal({
 
   const checkAllRequiredDocumentsUploaded = () => {
     const requiredDocs = getRequiredDocuments();
-    
+
     if (requiredDocs.idProofs) {
-      const hasIdProof = 
+      const hasIdProof =
         !!uploadedDocuments.idProofs?.aadhaar ||
         !!uploadedDocuments.idProofs?.pan ||
         !!uploadedDocuments.idProofs?.passportOrDL ||
         !!uploadedDocuments.idProofs?.presentAddressProof ||
         !!uploadedDocuments.idProofs?.permanentAddressProof;
-      
+
       if (!hasIdProof) {
         return false;
       }
     }
-    
+
     if (requiredDocs.academicDocuments) {
-      const has10th = !!uploadedDocuments.academicDocuments?.tenth?.certificate && 
-                      !!uploadedDocuments.academicDocuments?.tenth?.marksheet;
-      
-      const has12th = !!uploadedDocuments.academicDocuments?.twelth?.certificate && 
-                      !!uploadedDocuments.academicDocuments?.twelth?.marksheet;
-      
+      const has10th = !!uploadedDocuments.academicDocuments?.tenth?.certificate &&
+        !!uploadedDocuments.academicDocuments?.tenth?.marksheet;
+
+      const has12th = !!uploadedDocuments.academicDocuments?.twelth?.certificate &&
+        !!uploadedDocuments.academicDocuments?.twelth?.marksheet;
+
       const gradSemester = parseInt(uploadedDocuments.academicDocuments?.graduation?.semester) || 0;
       const gradMarksheetCount = uploadedDocuments.academicDocuments?.graduation?.marksheets?.length || 0;
-      const hasGraduation = !!uploadedDocuments.academicDocuments?.graduation?.certificate && 
-                            gradSemester > 0 && 
-                            gradMarksheetCount === gradSemester;
-      
+      const hasGraduation = !!uploadedDocuments.academicDocuments?.graduation?.certificate &&
+        gradSemester > 0 &&
+        gradMarksheetCount === gradSemester;
+
       if (!has10th && !has12th && !hasGraduation) {
         return false;
       }
     }
-    
+
     if (requiredDocs.employmentHistory) {
       if (!uploadedDocuments.employmentHistory || uploadedDocuments.employmentHistory.length === 0) {
         return false;
       }
-      
-      const hasCompleteEmploymentHistory = uploadedDocuments.employmentHistory.every(emp => 
+
+      const hasCompleteEmploymentHistory = uploadedDocuments.employmentHistory.every(emp =>
         emp.companyName &&
         emp.designation &&
         emp.employmentPeriod?.startDate &&
@@ -665,14 +665,14 @@ export default function AddEditEmployeeModal({
         emp.offerLetter &&
         emp.experienceLetter &&
         emp.relievingLetter &&
-        emp.salarySlips?.length === 3 
+        emp.salarySlips?.length === 3
       );
-      
+
       if (!hasCompleteEmploymentHistory) {
         return false;
       }
     }
-    
+
     return true;
   };
 
@@ -732,7 +732,7 @@ export default function AddEditEmployeeModal({
           const monthDiff = today.getMonth() - dob.getMonth();
           const actualAge =
             monthDiff < 0 ||
-            (monthDiff === 0 && today.getDate() < dob.getDate())
+              (monthDiff === 0 && today.getDate() < dob.getDate())
               ? age - 1
               : age;
 
@@ -1029,7 +1029,7 @@ export default function AddEditEmployeeModal({
       if (mode === "add") {
         res = await axios.post("/hrms/employee/add-employee", submitData);
         toast.success("Employee Added Successfully");
-        
+
         if (missingDocs.length > 0) {
           toast.info(
             `Remember to upload ${missingDocs.join(", ")} to complete onboarding.`,
@@ -1043,7 +1043,7 @@ export default function AddEditEmployeeModal({
           submitData
         );
         toast.success("Employee Updated");
-        
+
         if (missingDocs.length > 0) {
           toast.info(
             `Remember to upload ${missingDocs.join(", ")} to complete onboarding.`,
@@ -1094,8 +1094,7 @@ export default function AddEditEmployeeModal({
         } else {
           const errorMessage =
             error.response?.data?.message ||
-            `Failed to ${
-              mode === "add" ? "add" : "update"
+            `Failed to ${mode === "add" ? "add" : "update"
             } employee. Please try again.`;
           setErrors({ submit: errorMessage });
         }
@@ -1267,22 +1266,22 @@ export default function AddEditEmployeeModal({
   // }
 
   const getRequiredDocuments = () => {
-  const isPermanentOrProbation =
-    ["Permanent", "Probation"].includes(form.employmentType);
+    const isPermanentOrProbation =
+      ["Permanent", "Probation"].includes(form.employmentType);
 
-  const isInternship = form.employmentType === "Internship";
+    const isInternship = form.employmentType === "Internship";
 
-  return {
-    idProofs: true,
+    return {
+      idProofs: true,
 
-    academicDocuments: isPermanentOrProbation, 
+      academicDocuments: isPermanentOrProbation,
 
-    showAcademicSection: isPermanentOrProbation || isInternship, 
+      showAcademicSection: isPermanentOrProbation || isInternship,
 
-    employmentHistory:
-      isPermanentOrProbation && form.experienceLevel === "Experienced",
+      employmentHistory:
+        isPermanentOrProbation && form.experienceLevel === "Experienced",
+    };
   };
-};
 
 
   const isView = mode === "view";
@@ -1290,8 +1289,8 @@ export default function AddEditEmployeeModal({
   const primaryLabel = isView
     ? "Close"
     : isEdit
-    ? "Save changes"
-    : "Create employee";
+      ? "Save changes"
+      : "Create employee";
 
   const errorMessages = Object.entries(errors)
     .filter(([key]) => key !== "submit")
@@ -1329,13 +1328,13 @@ export default function AddEditEmployeeModal({
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 sticky top-0 bg-white z-10">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--color-blackText)]">
+            <h4 className="text-primaryText">
               {mode === "add"
                 ? "Add Employee"
                 : mode === "edit"
-                ? "Edit Employee"
-                : "View Employee"}
-            </h3>
+                  ? "Edit Employee"
+                  : "View Employee"}
+            </h4>
             <div className="text-sm text-[var(--color-primaryText)] mt-1">
               Multi-step employee form
             </div>
@@ -1356,17 +1355,15 @@ export default function AddEditEmployeeModal({
               <React.Fragment key={s}>
                 {index > 0 && (
                   <div
-                    className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${
-                      step >= s
+                    className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${step >= s
                         ? "border-[var(--color-primary)]"
                         : "border-gray-400"
-                    }`}
+                      }`}
                   />
                 )}
                 <div
-                  className={`flex items-center gap-3 shrink-0 ${
-                    !isView ? "cursor-pointer" : ""
-                  }`}
+                  className={`flex items-center gap-3 shrink-0 ${!isView ? "cursor-pointer" : ""
+                    }`}
                   onClick={() => {
                     if (!isView) {
                       setStep(s);
@@ -1374,11 +1371,10 @@ export default function AddEditEmployeeModal({
                   }}
                 >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                      step >= s
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step >= s
                         ? "bg-[var(--color-primary)] text-white"
                         : "bg-gray-100 text-gray-600"
-                    } ${!isView ? "hover:opacity-80" : ""}`}
+                      } ${!isView ? "hover:opacity-80" : ""}`}
                   >
                     {s}
                   </div>
@@ -1386,12 +1382,12 @@ export default function AddEditEmployeeModal({
                     {s === 1
                       ? "Personal"
                       : s === 2
-                      ? "Employment"
-                      : s === 3
-                      ? "Job"
-                      : s === 4
-                      ? "Credentials"
-                      : "Documents"}
+                        ? "Employment"
+                        : s === 3
+                          ? "Job"
+                          : s === 4
+                            ? "Credentials"
+                            : "Documents"}
                   </div>
                 </div>
               </React.Fragment>
@@ -1478,10 +1474,9 @@ export default function AddEditEmployeeModal({
                         className={`
                           absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg
                           transition-opacity duration-200 ease-in-out
-                          ${
-                            imageHovered
-                              ? "opacity-100"
-                              : "opacity-0 pointer-events-none"
+                          ${imageHovered
+                            ? "opacity-100"
+                            : "opacity-0 pointer-events-none"
                           }
                         `}
                       >
@@ -1523,10 +1518,9 @@ export default function AddEditEmployeeModal({
                 <input
                   value={form.firstName || ""}
                   onChange={(e) => update("firstName", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.firstName ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView }
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.firstName ? "border-red-500" : ""
+                    }`}
+                  readOnly={isView}
                 />
               </div>
 
@@ -1537,9 +1531,8 @@ export default function AddEditEmployeeModal({
                 <input
                   value={form.lastName || ""}
                   onChange={(e) => update("lastName", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.lastName ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.lastName ? "border-red-500" : ""
+                    }`}
                   readOnly={isView}
                 />
               </div>
@@ -1552,10 +1545,9 @@ export default function AddEditEmployeeModal({
                   type="email"
                   value={form.email || ""}
                   onChange={(e) => update("email", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.email ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView }
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.email ? "border-red-500" : ""
+                    }`}
+                  readOnly={isView}
                 />
               </div>
 
@@ -1567,9 +1559,8 @@ export default function AddEditEmployeeModal({
                   type="date"
                   value={form.dateOfBirth || ""}
                   onChange={(e) => update("dateOfBirth", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.dateOfBirth ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.dateOfBirth ? "border-red-500" : ""
+                    }`}
                   readOnly={isView}
                 />
               </div>
@@ -1581,9 +1572,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.gender || ""}
                   onChange={(e) => update("gender", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.gender ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.gender ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -1600,9 +1590,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.maritalStatus || ""}
                   onChange={(e) => update("maritalStatus", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.maritalStatus ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.maritalStatus ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -1620,11 +1609,10 @@ export default function AddEditEmployeeModal({
                 <input
                   value={form.mobileNumber || ""}
                   onChange={(e) => handleNumberInput(e, "mobileNumber")}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  }
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    }
                      ${errors.mobileNumber ? "border-red-500" : ""}`}
-                  readOnly={isView }
+                  readOnly={isView}
                   placeholder="+1234567890"
                 />
               </div>
@@ -1638,10 +1626,9 @@ export default function AddEditEmployeeModal({
                   onChange={(e) =>
                     handleNumberInput(e, "alternateMobileNumber")
                   }
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors.alternateMobileNumber ? "border-red-500" : ""}`}
-                  readOnly={isView }
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    } ${errors.alternateMobileNumber ? "border-red-500" : ""}`}
+                  readOnly={isView}
                   placeholder="+1234567890"
                 />
               </div>
@@ -1673,9 +1660,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(0, "addressLine", e.target.value)
                   }
                   placeholder="Street address, etc."
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["address[0].addressLine"] ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].addressLine"] ? "border-red-500" : ""
+                    }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1690,9 +1676,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(0, "locality", e.target.value)
                   }
                   placeholder="Neighborhood or locality"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["address[0].locality"] ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].locality"] ? "border-red-500" : ""
+                    }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1707,9 +1692,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(0, "city", e.target.value)
                   }
                   placeholder="City name"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["address[0].city"] ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].city"] ? "border-red-500" : ""
+                    }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1793,11 +1777,9 @@ export default function AddEditEmployeeModal({
                     updateAddressField(1, "addressLine", e.target.value)
                   }
                   placeholder="Street address, etc."
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${
-                    errors["address[1].addressLine"] ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    } ${errors["address[1].addressLine"] ? "border-red-500" : ""
+                    }`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1812,9 +1794,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(1, "locality", e.target.value)
                   }
                   placeholder="Neighborhood or locality"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].locality"] ? "border-red-500" : ""}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    } ${errors["address[1].locality"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1829,9 +1810,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(1, "city", e.target.value)
                   }
                   placeholder="City name"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].city"] ? "border-red-500" : ""}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    } ${errors["address[1].city"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1846,9 +1826,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(1, "state", e.target.value)
                   }
                   placeholder="State/Province"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].state"] ? "border-red-500" : ""}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    } ${errors["address[1].state"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1863,9 +1842,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(1, "postalCode", e.target.value)
                   }
                   placeholder="ZIP/Postal code"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].postalCode"] ? "border-red-500" : ""}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    } ${errors["address[1].postalCode"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1880,9 +1858,8 @@ export default function AddEditEmployeeModal({
                     updateAddressField(1, "country", e.target.value)
                   }
                   placeholder="Country name"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].country"] ? "border-red-500" : ""}`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                    } ${errors["address[1].country"] ? "border-red-500" : ""}`}
                   readOnly={isView || sameAsCurrentAddress}
                 />
               </div>
@@ -1948,9 +1925,8 @@ export default function AddEditEmployeeModal({
                   value={form.emergencyContacts?.[0]?.phone || ""}
                   onChange={(e) => handleEmergencyPhoneInput(e, 0)}
                   placeholder="+1234567890"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["emergencyContacts[0].phone"] ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["emergencyContacts[0].phone"] ? "border-red-500" : ""
+                    }`}
                   readOnly={isView}
                 />
               </div>
@@ -1966,9 +1942,8 @@ export default function AddEditEmployeeModal({
                     updateEmergencyContactField(0, "email", e.target.value)
                   }
                   placeholder="Emergency contact email"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["emergencyContacts[0].email"] ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["emergencyContacts[0].email"] ? "border-red-500" : ""
+                    }`}
                   readOnly={isView}
                 />
               </div>
@@ -1988,9 +1963,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.userRole?.[0] || ""}
                   onChange={(e) => update("userRole", [e.target.value])}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.userRole ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.userRole ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select role</option>
@@ -2028,9 +2002,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.employmentType || ""}
                   onChange={(e) => update("employmentType", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.employmentType ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employmentType ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -2048,9 +2021,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.employmentStatus || ""}
                   onChange={(e) => update("employmentStatus", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.employmentStatus ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employmentStatus ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -2068,9 +2040,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.experienceLevel || ""}
                   onChange={(e) => update("experienceLevel", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.experienceLevel ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.experienceLevel ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select</option>
@@ -2150,9 +2121,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.departmentId || ""}
                   onChange={(e) => update("departmentId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.departmentId ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.departmentId ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select Department</option>
@@ -2171,9 +2141,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.designationId || ""}
                   onChange={(e) => update("designationId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.designationId ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.designationId ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select Designation</option>
@@ -2192,9 +2161,8 @@ export default function AddEditEmployeeModal({
                 <select
                   value={form.reportingManagerId || ""}
                   onChange={(e) => update("reportingManagerId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.reportingManagerId ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.reportingManagerId ? "border-red-500" : ""
+                    }`}
                   disabled={isView}
                 >
                   <option value="">Select Reporting Manager</option>
@@ -2223,10 +2191,9 @@ export default function AddEditEmployeeModal({
                   type="date"
                   value={form.dateOfJoining || ""}
                   onChange={(e) => update("dateOfJoining", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.dateOfJoining ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView }
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.dateOfJoining ? "border-red-500" : ""
+                    }`}
+                  readOnly={isView}
                 />
               </div>
 
@@ -2270,9 +2237,8 @@ export default function AddEditEmployeeModal({
                   type="date"
                   value={form.probationEndDate || ""}
                   onChange={(e) => update("probationEndDate", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.probationEndDate ? "border-red-500" : ""
-                  }`}
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.probationEndDate ? "border-red-500" : ""
+                    }`}
                   readOnly={isView}
                 />
               </div>
@@ -2292,10 +2258,9 @@ export default function AddEditEmployeeModal({
                 <input
                   value={form.employeeId || ""}
                   onChange={(e) => update("employeeId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.employeeId ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView }
+                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employeeId ? "border-red-500" : ""
+                    }`}
+                  readOnly={isView}
                 />
                 {errors.employeeId && (
                   <p className="text-red-500 text-sm mt-1">
@@ -2324,9 +2289,8 @@ export default function AddEditEmployeeModal({
                     type="password"
                     value={form.password || ""}
                     onChange={(e) => update("password", e.target.value)}
-                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                      errors.password ? "border-red-500" : ""
-                    }`}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.password ? "border-red-500" : ""
+                      }`}
                     placeholder="Minimum 8 characters"
                   />
                   {errors.password && (
@@ -2365,7 +2329,7 @@ export default function AddEditEmployeeModal({
 
                 const renderDocumentField = (label, docPath, isRequired = true) => {
                   let docs = uploadedDocuments;
-                  
+
                   const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
                   if (arrayIndexMatch) {
                     const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
@@ -2382,7 +2346,7 @@ export default function AddEditEmployeeModal({
                       }
                     }
                   }
-                  
+
                   const isArray = Array.isArray(docs);
                   const docArray = isArray ? (docs || []) : (docs ? [docs] : []);
                   const showCheckmark = isArray ? docArray.length > 0 : !!docs;
@@ -2405,27 +2369,47 @@ export default function AddEditEmployeeModal({
                           } else if (typeof doc === 'string') {
                             displayName = doc.split('/').pop() || displayName;
                           }
-                          
+
                           return (
-                            <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
-                              <a
-                                href={doc?.url || doc}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline text-sm flex-1 truncate"
-                              >
-                                {displayName}
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => isArray ? handleRemoveDocument(docPath, idx) : handleRemoveDocument(docPath)}
-                                disabled={documentUploadingStates[docPath]}
-                                className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
-                              >
-                                Remove
-                              </button>
+                            <div
+                              key={idx}
+                              className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2"
+                            >
+                              {/* Preview */}
+                              <DocumentPreview
+                                url={doc?.url || doc}
+                                fileName={doc?.fileName}
+                              />
+
+                              {/* Meta */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-800 truncate max-w-[220px]">
+                                    {displayName}
+                                  </p>
+                                  {doc?.uploadedAt && (
+                                    <p className="text-xs text-gray-400">
+                                      Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    isArray
+                                      ? handleRemoveDocument(docPath, idx)
+                                      : handleRemoveDocument(docPath)
+                                  }
+                                  disabled={documentUploadingStates[docPath]}
+                                  className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                >
+                                  Remove
+                                </button>
+                              </div>
                             </div>
                           );
+
                         })}
 
                         <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
@@ -2449,26 +2433,23 @@ export default function AddEditEmployeeModal({
                 return (
                   <div className="md:col-span-2 space-y-4">
                     <div
-                      className={`border rounded-lg overflow-hidden ${
-                        isDisabled
+                      className={`border rounded-lg overflow-hidden ${isDisabled
                           ? "bg-gray-50 border-gray-200 opacity-50"
                           : "bg-blue-50 border-blue-200"
-                      }`}
+                        }`}
                     >
                       <button
                         type="button"
                         onClick={() => toggleDocSection("idProofs")}
                         disabled={isDisabled}
-                        className={`w-full p-4 flex items-start justify-between ${
-                          isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-blue-100"
-                        }`}
+                        className={`w-full p-4 flex items-start justify-between ${isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-blue-100"
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <div className="mt-0.5">
                             <svg
-                              className={`w-5 h-5 ${
-                                isDisabled ? "text-gray-400" : "text-blue-600"
-                              }`}
+                              className={`w-5 h-5 ${isDisabled ? "text-gray-400" : "text-blue-600"
+                                }`}
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -2489,9 +2470,8 @@ export default function AddEditEmployeeModal({
                             Required
                           </span>
                           <svg
-                            className={`w-5 h-5 transition-transform ${
-                              expandedDocSections.idProofs ? "rotate-180" : ""
-                            } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                            className={`w-5 h-5 transition-transform ${expandedDocSections.idProofs ? "rotate-180" : ""
+                              } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -2517,30 +2497,27 @@ export default function AddEditEmployeeModal({
                       )}
                     </div>
 
-                    {requiredDocs.showAcademicSection  && (
+                    {requiredDocs.showAcademicSection && (
                       <div
-                        className={`border rounded-lg overflow-hidden ${
-                          isDisabled
+                        className={`border rounded-lg overflow-hidden ${isDisabled
                             ? "bg-gray-50 border-gray-200 opacity-50"
                             : "bg-blue-50 border-blue-200"
-                        }`}
+                          }`}
                       >
                         <button
                           type="button"
                           onClick={() => toggleDocSection("academicDocuments")}
                           disabled={isDisabled}
-                          className={`w-full p-4 flex items-start justify-between ${
-                            isDisabled
+                          className={`w-full p-4 flex items-start justify-between ${isDisabled
                               ? "cursor-not-allowed"
                               : "cursor-pointer hover:bg-blue-100"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="mt-0.5">
                               <svg
-                                className={`w-5 h-5 ${
-                                  isDisabled ? "text-gray-400" : "text-blue-600"
-                                }`}
+                                className={`w-5 h-5 ${isDisabled ? "text-gray-400" : "text-blue-600"
+                                  }`}
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -2561,11 +2538,10 @@ export default function AddEditEmployeeModal({
                               Required
                             </span>
                             <svg
-                              className={`w-5 h-5 transition-transform ${
-                                expandedDocSections.academicDocuments
+                              className={`w-5 h-5 transition-transform ${expandedDocSections.academicDocuments
                                   ? "rotate-180"
                                   : ""
-                              } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                                } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -2659,7 +2635,7 @@ export default function AddEditEmployeeModal({
                                   </div>
                                 </div>
 
-                                    {/* Post Graduation */}
+                                {/* Post Graduation */}
                                 <div className="border rounded-lg p-4 bg-gray-50">
                                   <h5 className="font-semibold text-gray-900 mb-3">Post Graduation</h5>
                                   <div className="space-y-3">
@@ -2726,28 +2702,25 @@ export default function AddEditEmployeeModal({
                     {/* Employment History */}
                     {requiredDocs.employmentHistory && (
                       <div
-                        className={`border rounded-lg overflow-hidden ${
-                          isDisabled
+                        className={`border rounded-lg overflow-hidden ${isDisabled
                             ? "bg-gray-50 border-gray-200 opacity-50"
                             : "bg-blue-50 border-blue-200"
-                        }`}
+                          }`}
                       >
                         <button
                           type="button"
                           onClick={() => toggleDocSection("employmentHistory")}
                           disabled={isDisabled}
-                          className={`w-full p-4 flex items-start justify-between ${
-                            isDisabled
+                          className={`w-full p-4 flex items-start justify-between ${isDisabled
                               ? "cursor-not-allowed"
                               : "cursor-pointer hover:bg-blue-100"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="mt-0.5">
                               <svg
-                                className={`w-5 h-5 ${
-                                  isDisabled ? "text-gray-400" : "text-blue-600"
-                                }`}
+                                className={`w-5 h-5 ${isDisabled ? "text-gray-400" : "text-blue-600"
+                                  }`}
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -2769,11 +2742,10 @@ export default function AddEditEmployeeModal({
                               Required
                             </span>
                             <svg
-                              className={`w-5 h-5 transition-transform ${
-                                expandedDocSections.employmentHistory
+                              className={`w-5 h-5 transition-transform ${expandedDocSections.employmentHistory
                                   ? "rotate-180"
                                   : ""
-                              } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                                } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -2913,7 +2885,7 @@ export default function AddEditEmployeeModal({
                                               setDocumentUploadingStates((prev) => ({ ...prev, [`salarySlip-${idx}`]: true }));
                                               const formData = new FormData();
                                               formData.append("files", file);
-                                              
+
                                               try {
                                                 const { data } = await axios.post("/user/add-pdf", formData);
                                                 if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
@@ -2983,7 +2955,7 @@ export default function AddEditEmployeeModal({
                                               setDocumentUploadingStates((prev) => ({ ...prev, [`other-${idx}`]: true }));
                                               const formData = new FormData();
                                               formData.append("files", file);
-                                              
+
                                               try {
                                                 const { data } = await axios.post("/user/add-pdf", formData);
                                                 if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
@@ -3017,7 +2989,7 @@ export default function AddEditEmployeeModal({
                                 </div>
                               </div>
                             ))}
-                            
+
                             {/* Add New Employment Record */}
                             <button
                               type="button"
@@ -3089,20 +3061,18 @@ export default function AddEditEmployeeModal({
 
                     {/* Status Banner */}
                     <div
-                      className={`p-4 border rounded-lg ${
-                        checkAllRequiredDocumentsUploaded()
+                      className={`p-4 border rounded-lg ${checkAllRequiredDocumentsUploaded()
                           ? "border-green-200 bg-green-50"
                           : "border-amber-200 bg-amber-50"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5">
                           <svg
-                            className={`w-5 h-5 ${
-                              checkAllRequiredDocumentsUploaded()
+                            className={`w-5 h-5 ${checkAllRequiredDocumentsUploaded()
                                 ? "text-green-600"
                                 : "text-amber-600"
-                            }`}
+                              }`}
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >
@@ -3123,22 +3093,20 @@ export default function AddEditEmployeeModal({
                         </div>
                         <div>
                           <h6
-                            className={`font-semibold ${
-                              checkAllRequiredDocumentsUploaded()
+                            className={`font-semibold ${checkAllRequiredDocumentsUploaded()
                                 ? "text-green-900"
                                 : "text-amber-900"
-                            }`}
+                              }`}
                           >
                             {checkAllRequiredDocumentsUploaded()
                               ? "All Required Documents Uploaded"
                               : "Onboarding Status"}
                           </h6>
                           <p
-                            className={`text-sm mt-1 ${
-                              checkAllRequiredDocumentsUploaded()
+                            className={`text-sm mt-1 ${checkAllRequiredDocumentsUploaded()
                                 ? "text-green-800"
                                 : "text-amber-800"
-                            }`}
+                              }`}
                           >
                             {checkAllRequiredDocumentsUploaded()
                               ? "Your onboarding status will be marked as Completed when you save this employee."
@@ -3193,9 +3161,8 @@ export default function AddEditEmployeeModal({
                 <button
                   onClick={submit}
                   disabled={submitting}
-                  className={`px-4 py-2 ml-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
-                    submitting ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  className={`px-4 py-2 ml-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${submitting ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                 >
                   {submitting ? "Saving..." : primaryLabel}
                 </button>
@@ -3214,3 +3181,32 @@ export default function AddEditEmployeeModal({
     </div>
   );
 }
+
+const DocumentPreview = ({ url, fileName }) => {
+  if (!url) return null;
+
+  const isImage = /\.(jpg|jpeg|png)$/i.test(fileName || url);
+  const isPDF = /\.pdf$/i.test(fileName || url);
+
+  return (
+    <div className="w-full h-28 rounded-lg overflow-hidden hide-scrollbar border border-gray-300 shadow-md bg-gray-50">
+      {isImage ? (
+        <img
+          src={url}
+          alt={fileName}
+          className="w-full h-full object-cover overflow-hidden hide-scrollbar"
+        />
+      ) : isPDF ? (
+        <iframe
+          src={`${url}#page=1&toolbar=0&navpanes=0`}
+          className="w-full h-full border-none overflow-hidden hide-scrollbar"
+        />
+      ) : (
+        <div className="h-full flex items-center justify-center text-xs text-gray-400">
+          No preview
+        </div>
+      )}
+    </div>
+  );
+};
+

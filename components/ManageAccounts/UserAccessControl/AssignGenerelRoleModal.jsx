@@ -59,9 +59,9 @@ export default function AssignGeneralRoleModal({ role, onClose, onSuccess }) {
         
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h4 className="text-primaryText">
               Assign Role
-            </h3>
+            </h4>
             <p className="text-sm text-gray-500">
               Assign users to <span className="font-medium">{role.name}</span>
             </p>

@@ -23,11 +23,13 @@ export default function Employees({ initialEmployees = [] }) {
   // New design states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedEmploymentType, setSelectedEmploymentType] = useState('all');
+  const [selectedOnboardingStatus, setSelectedOnboardingStatus] = useState('all');
   const [sortBy, setSortBy] = useState('name'); // 'name' or 'role'
   const [collapsedDepartments, setCollapsedDepartments] = useState({});
   const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  
+
   const departmentDropdownRef = useRef(null);
   const sortDropdownRef = useRef(null);
   const { allUserPermissions } = useContext(AuthContext);
@@ -100,7 +102,7 @@ export default function Employees({ initialEmployees = [] }) {
   function getDisplayEmployee(emp) {
     let departmentName = 'Unknown Dept';
     let departmentId = null;
-    
+
     if (emp.departmentId) {
       if (typeof emp.departmentId === 'object' && emp.departmentId.name) {
         departmentName = emp.departmentId.name;
@@ -138,10 +140,32 @@ export default function Employees({ initialEmployees = [] }) {
     };
   }
 
+  const getOnboardingStatusMeta = (status) => {
+    if (!status) {
+      return {
+        color: "bg-gray-300",
+        label: "Onboarding not started",
+      };
+    }
+
+    if (status === "Completed") {
+      return {
+        color: "bg-green-500",
+        label: "Onboarding completed",
+      };
+    }
+
+    return {
+      color: "bg-amber-400",
+      label: "Onboarding Pending",
+    };
+  };
+
+
   // Group employees by department
   function getGroupedEmployees() {
     const displayEmployees = employees.map(emp => getDisplayEmployee(emp));
-    
+
     // Filter by search query
     let filteredEmployees = displayEmployees.filter(emp => {
       const searchLower = searchQuery.toLowerCase();
@@ -156,6 +180,28 @@ export default function Employees({ initialEmployees = [] }) {
     // Filter by selected department
     if (selectedDepartment && selectedDepartment !== 'all') {
       filteredEmployees = filteredEmployees.filter(emp => emp.departmentId === selectedDepartment);
+    }
+
+    if (selectedEmploymentType !== 'all') {
+      filteredEmployees = filteredEmployees.filter(
+        emp => emp.employmentType === selectedEmploymentType
+      );
+    }
+
+    if (selectedOnboardingStatus !== 'all') {
+      filteredEmployees = filteredEmployees.filter(emp => {
+        const status = emp.onboardingStatus;
+
+        if (selectedOnboardingStatus === 'Completed') {
+          return status === "Completed" === true;
+        }
+
+        if (selectedOnboardingStatus === 'Pending') {
+          return status && status === "Pending" === true;
+        }
+
+        return true;
+      });
     }
 
     // Sort employees
@@ -193,13 +239,13 @@ export default function Employees({ initialEmployees = [] }) {
 
   function getDepartmentIcon(deptName) {
     const lowerName = deptName.toLowerCase();
-    
+
     if (lowerName.includes('management') || lowerName.includes('executive')) {
       return (
         <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" 
-              stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       );
@@ -207,8 +253,8 @@ export default function Employees({ initialEmployees = [] }) {
       return (
         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" 
-              stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+              stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       );
@@ -216,8 +262,8 @@ export default function Employees({ initialEmployees = [] }) {
       return (
         <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-5a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" 
-              stroke="#DB2777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-5a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+              stroke="#DB2777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       );
@@ -225,8 +271,8 @@ export default function Employees({ initialEmployees = [] }) {
       return (
         <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
-              stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       );
@@ -282,13 +328,13 @@ export default function Employees({ initialEmployees = [] }) {
   }
 
   function handleEmployeeClick(emp) {
-  const slug = emp.name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    const slug = emp.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
-  router.push(`/hrms/dashboard/employees/${slug}-${emp.id}`);
-}
+    router.push(`/hrms/dashboard/employees/${slug}-${emp.id}`);
+  }
 
 
   async function handleSave(newEmp) {
@@ -360,14 +406,15 @@ export default function Employees({ initialEmployees = [] }) {
                 className='px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 flex items-center gap-2 min-w-[180px] justify-between'
               >
                 <span className='text-gray-700'>
-                  {selectedDepartment === '' || selectedDepartment === 'all' 
-                    ? 'All Departments' 
-                    : organizationData?.departments?.find(d => d._id === selectedDepartment)?.name || 'All Departments'}
+                  Filters
+                  {/* {selectedDepartment === '' || selectedDepartment === 'all'
+                    ? 'All Departments'
+                    : organizationData?.departments?.find(d => d._id === selectedDepartment)?.name || 'All Departments'} */}
                 </span>
-                <svg 
-                  className={`w-4 h-4 text-gray-500 transition-transform ${showDepartmentDropdown ? 'rotate-180' : ''}`} 
-                  fill='none' 
-                  viewBox='0 0 24 24' 
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform ${showDepartmentDropdown ? 'rotate-180' : ''}`}
+                  fill='none'
+                  viewBox='0 0 24 24'
                   stroke='currentColor'
                 >
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
@@ -375,34 +422,89 @@ export default function Employees({ initialEmployees = [] }) {
               </button>
 
               {showDepartmentDropdown && (
-                <div className='absolute top-full right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-2'>
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-2">
+
+                  {/* ───── Department ───── */}
+                  {/* <p className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">
+                    Department
+                  </p>
+
                   <button
                     onClick={() => {
                       setSelectedDepartment('all');
                       setShowDepartmentDropdown(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                      selectedDepartment === '' || selectedDepartment === 'all' ? 'bg-gray-50 font-medium' : ''
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${selectedDepartment === 'all' ? 'bg-blue-50 text-blue-700 font-medium' : ''
+                      }`}
                   >
                     All Departments
-                  </button>
-                  {organizationData?.departments?.map((dept) => (
+                  </button> */}
+{/* 
+                  {organizationData?.departments?.map(dept => (
                     <button
                       key={dept._id}
                       onClick={() => {
                         setSelectedDepartment(dept._id);
                         setShowDepartmentDropdown(false);
                       }}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                        selectedDepartment === dept._id ? 'bg-blue-50 text-blue-700 font-medium' : ''
-                      }`}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${selectedDepartment === dept._id ? 'bg-blue-50 text-blue-700 font-medium' : ''
+                        }`}
                     >
                       {dept.name}
+                    </button>
+                  ))} */}
+
+                  <div className="my-2 border-t border-gray-100" />
+
+                  {/* ───── Employment Type ───── */}
+                  <p className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">
+                    Employment Type
+                  </p>
+
+                  {['all', 'Permanent', 'Probation', 'Internship'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        setSelectedEmploymentType(type);
+                        setShowDepartmentDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${selectedEmploymentType === type ? 'bg-blue-50 text-blue-700 font-medium' : ''
+                        }`}
+                    >
+                      {type === 'all' ? 'All Types' : type}
+                    </button>
+                  ))}
+
+                  <div className="my-2 border-t border-gray-100" />
+
+                  {/* ───── Onboarding Status ───── */}
+                  <p className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">
+                    Onboarding Status
+                  </p>
+
+                  {[
+                    { key: 'all', label: 'All Statuses' },
+                    { key: 'Completed', label: 'Completed' },
+                    { key: 'Pending', label: 'Pending' },
+                    // { key: 'not_started', label: 'Not Started' },
+                  ].map(status => (
+                    <button
+                      key={status.key}
+                      onClick={() => {
+                        setSelectedOnboardingStatus(status.key);
+                        setShowDepartmentDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${selectedOnboardingStatus === status.key
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : ''
+                        }`}
+                    >
+                      {status.label}
                     </button>
                   ))}
                 </div>
               )}
+
             </div>
 
             {allUserPermissions.includes("HRMS:EMPLOYEES:WRITE") && (
@@ -411,7 +513,7 @@ export default function Employees({ initialEmployees = [] }) {
                 onClick={openAdd}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                  <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
                 Add Employee
               </button>
@@ -422,10 +524,10 @@ export default function Employees({ initialEmployees = [] }) {
         {/* Search and Sort Bar */}
         <div className='bg-white rounded-xl border border-gray-200 p-4 mb-6 flex items-center gap-4'>
           <div className='flex-1 relative'>
-            <svg 
+            <svg
               className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400'
-              fill='none' 
-              viewBox='0 0 24 24' 
+              fill='none'
+              viewBox='0 0 24 24'
               stroke='currentColor'
             >
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' />
@@ -441,7 +543,7 @@ export default function Employees({ initialEmployees = [] }) {
 
           <div className='flex items-center gap-3'>
             <span className='text-sm text-gray-600'>Sort by:</span>
-            
+
             {/* Sort Dropdown */}
             <div className='relative' ref={sortDropdownRef}>
               <button
@@ -450,10 +552,10 @@ export default function Employees({ initialEmployees = [] }) {
                 style={{ color: sortBy === 'name' ? '#F97316' : '#6B7280' }}
               >
                 {sortBy === 'name' ? 'Name (A-Z)' : 'Role'}
-                <svg 
-                  className={`w-4 h-4 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} 
-                  fill='none' 
-                  viewBox='0 0 24 24' 
+                <svg
+                  className={`w-4 h-4 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`}
+                  fill='none'
+                  viewBox='0 0 24 24'
                   stroke='currentColor'
                 >
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
@@ -467,9 +569,8 @@ export default function Employees({ initialEmployees = [] }) {
                       setSortBy('name');
                       setShowSortDropdown(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                      sortBy === 'name' ? 'bg-orange-50 text-orange-600 font-medium' : ''
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${sortBy === 'name' ? 'bg-orange-50 text-orange-600 font-medium' : ''
+                      }`}
                   >
                     Name (A-Z)
                   </button>
@@ -478,9 +579,8 @@ export default function Employees({ initialEmployees = [] }) {
                       setSortBy('role');
                       setShowSortDropdown(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                      sortBy === 'role' ? 'bg-orange-50 text-orange-600 font-medium' : ''
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${sortBy === 'role' ? 'bg-orange-50 text-orange-600 font-medium' : ''
+                      }`}
                   >
                     Role
                   </button>
@@ -494,7 +594,7 @@ export default function Employees({ initialEmployees = [] }) {
         <div className='space-y-6'>
           {Object.entries(groupedEmployees).map(([deptId, dept]) => {
             const isCollapsed = collapsedDepartments[deptId];
-            
+
             return (
               <div key={deptId} className='bg-white rounded-xl border border-gray-200 overflow-hidden'>
                 {/* Department Header */}
@@ -515,10 +615,10 @@ export default function Employees({ initialEmployees = [] }) {
                     <span className='text-sm font-medium text-gray-600'>
                       {dept.employees.length} {dept.employees.length === 1 ? 'Person' : 'People'}
                     </span>
-                    <svg 
+                    <svg
                       className={`w-5 h-5 text-gray-400 transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
-                      fill='none' 
-                      viewBox='0 0 24 24' 
+                      fill='none'
+                      viewBox='0 0 24 24'
                       stroke='currentColor'
                     >
                       <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
@@ -529,23 +629,31 @@ export default function Employees({ initialEmployees = [] }) {
                 {/* Employee Cards */}
                 {!isCollapsed && (
                   <div className='px-6 pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                    {dept.employees.map((emp) => (
-                      <div
-                        key={emp.id}
-                        onClick={() => handleEmployeeClick(emp)}
-                        className='flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-300 hover:shadow-sm transition cursor-pointer'
-                      >
-                        <img
-                          src={emp.avatar}
-                          alt={emp.name}
-                          className='w-12 h-12 rounded-full object-cover flex-shrink-0'
-                        />
-                        <div className='min-w-0 flex-1'>
-                          <h5 className='font-semibold text-gray-900 text-sm truncate'>{emp.name}</h5>
-                          <span className=' text-gray-500 truncate'>{emp.designation}</span>
+                    {dept.employees.map((emp) => {
+                      const { color, label } = getOnboardingStatusMeta(emp.onboardingStatus);
+                      return (
+                        <div
+                          key={emp.id}
+                          onClick={() => handleEmployeeClick(emp)}
+                          className='flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-300 hover:shadow-sm transition cursor-pointer'
+                        >
+
+                          <span
+                            className={` top-3 right-3 w-2.5 h-2.5 rounded-full ${color}`}
+                            title={label}
+                          />
+                          <img
+                            src={emp.avatar}
+                            alt={emp.name}
+                            className='w-12 h-12 rounded-full object-cover flex-shrink-0'
+                          />
+                          <div className='min-w-0 flex-1'>
+                            <h5 className='font-semibold text-gray-900 text-sm truncate'>{emp.name}</h5>
+                            <span className=' text-gray-500 truncate'>{emp.designation}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -571,7 +679,7 @@ export default function Employees({ initialEmployees = [] }) {
                 className='px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition inline-flex items-center gap-2'
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                  <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
                 Add Your First Employee
               </button>
