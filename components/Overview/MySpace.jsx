@@ -54,6 +54,17 @@ const fetcherWithAuth = async (url) => {
   return res.data.data;
 };
 
+// Separate fetcher for holidays (different response structure)
+const holidayFetcher = async (url) => {
+  const token = localStorage.getItem('token');
+  const res = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  console.log('Holiday API response:', res.data);
+  // Holiday API returns data in result.data, not just data
+  return res.data.result?.data || [];
+};
+
 export default function HRMSOverviewPage() {
   const { workedSeconds } = useAttendance();
   const { user } = useContext(AuthContext);
@@ -97,31 +108,57 @@ export default function HRMSOverviewPage() {
 
   const currentYear = dayjs().year();
   const currentMonth = dayjs().month() + 1;
+  const prevMonth = dayjs().subtract(1, 'month').month() + 1;
+  const prevYear = dayjs().subtract(1, 'month').year();
 
-  const { data: holidayData = [] } = useSWR(
+  // Fetch current month holidays
+  const { data: currentMonthHolidays = [] } = useSWR(
     user?.organizationId
       ? `/hrms/holiday?organizationId=${user.organizationId}&year=${currentYear}&month=${currentMonth}`
       : null,
-    fetcherWithAuth,
+    holidayFetcher,
     { refreshInterval: 300000 }
   );
 
+  // Fetch previous month holidays (for cross-month 7-day windows)
+  const { data: prevMonthHolidays = [] } = useSWR(
+    user?.organizationId
+      ? `/hrms/holiday?organizationId=${user.organizationId}&year=${prevYear}&month=${prevMonth}`
+      : null,
+    holidayFetcher,
+    { refreshInterval: 300000 }
+  );
+
+  // Fixed holidayMap
   const holidayMap = React.useMemo(() => {
-  const map = {};
+    const map = {};
 
-  holidayData?.result?.data
-    ?.filter(h => h.isActive)
-    ?.filter(h => h.tyoe === 'PUBLIC')
-    ?.forEach(h => {
-      const dateKey = dayjs(h.date).format("YYYY-MM-DD");
-      map[dateKey] = {
-        name: h.name,
-        type: h.type,
-      };
-    });
+    // Combine both months
+    const allHolidays = [
+      ...(currentMonthHolidays || []),
+      ...(prevMonthHolidays || [])
+    ];
 
-  return map;
-}, [holidayData]);
+    console.log('Current month holidays:', currentMonthHolidays);
+    console.log('Previous month holidays:', prevMonthHolidays);
+    console.log('All holidays combined:', allHolidays);
+
+    allHolidays
+      ?.filter(h => h?.isActive)
+      // Show all holiday types (PUBLIC, OPTIONAL, etc.)
+      ?.forEach(h => {
+        const dateKey = dayjs(h.date).format("YYYY-MM-DD");
+        console.log(`Adding holiday: ${dateKey} - ${h.name} (${h.type})`);
+        map[dateKey] = {
+          name: h.name,
+          type: h.type,
+        };
+      });
+
+    console.log('Final holiday map:', map);
+
+    return map;
+  }, [currentMonthHolidays, prevMonthHolidays]);
 
   useEffect(() => {
     const fetchWeek = async () => {
@@ -193,32 +230,6 @@ export default function HRMSOverviewPage() {
     fetchReportingManager();
   }, [user?.reportingManagerId]);
 
-  // useEffect(() => {
-  //   if (!user?.departmentId) return;
-
-  //   const fetchDepartment = async () => {
-  //     try {
-  //       setLoading(true)
-  //       const res = await axios.get(
-  //         `${process.env.NEXT_PUBLIC_API}/hrms/organization/view-department/${user.departmentId}`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${localStorage.getItem("token")}`,
-  //           },
-  //         }
-  //       );
-  //       const dept = res.data?.result;
-  //       // setDepartmentMembers(dept?.employeeId || []);
-  //       setLoading(false)
-  //     } catch (err) {
-  //       setDepartmentMembers([]);
-  //       setLoading(false)
-  //     }
-  //   };
-
-  //   fetchDepartment();
-  // }, [user?.departmentId]);
-
   if (loading) {
     return (
       <div className='absolute inset-0 z-20 flex items-center justify-center bg-black/5 backdrop-blur-sm rounded-2xl'>
@@ -255,88 +266,103 @@ export default function HRMSOverviewPage() {
 
     return days;
   }
-const attendanceItems = getPast7Days().map((d) => {
-  const key = dayjs(d).format("YYYY-MM-DD");
-  const record = weekAttendance[key]?.data?.[0];
 
-  const day = dayjs(d);
-  const dayLabel = day.format("dddd, MMM DD");
-  const isWeekend = day.day() === 0 || day.day() === 6;
-  const holiday = holidayMap[key];
+  const attendanceItems = getPast7Days().map((d) => {
+    const key = dayjs(d).format("YYYY-MM-DD");
+    const record = weekAttendance[key]?.data?.[0];
 
-  if (record?.status === "On Leave") {
+    const day = dayjs(d);
+    const dayLabel = day.format("dddd, MMM DD");
+    const isWeekend = day.day() === 0 || day.day() === 6;
+    const holiday = holidayMap[key];
+
+    // Priority 1: Check for PUBLIC holiday FIRST
+    if (holiday && holiday.type === 'PUBLIC') {
+      return {
+        day: dayLabel,
+        time: holiday.name,
+        hours: "—",
+        status: "Holiday",
+        color: "purple",
+      };
+    }
+
+    // Priority 2: Check for weekend
+    if (isWeekend) {
+      return {
+        day: dayLabel,
+        time: "Weekend",
+        hours: "—",
+        status: "Weekend",
+        color: "gray",
+      };
+    }
+
+    // Priority 3: Check for leave
+    if (record?.status === "On Leave") {
+      return {
+        day: dayLabel,
+        time: record.leaveType || "On Leave",
+        hours: "—",
+        status: "Leave",
+        color: "blue",
+      };
+    }
+
+    // Priority 4: Check for attendance sessions
+    if (record?.sessions?.length) {
+      const sessions = record.sessions;
+
+      const firstIn = sessions[0]?.checkIn
+        ? dayjs(sessions[0].checkIn)
+        : null;
+
+      const lastSession = sessions[sessions.length - 1];
+      const lastOut = lastSession?.checkOut
+        ? dayjs(lastSession.checkOut)
+        : null;
+
+      const isToday = day.isSame(dayjs(), "day");
+
+      let totalMs = sessions.reduce((sum, s) => {
+        if (!s.checkIn) return sum;
+        const start = dayjs(s.checkIn);
+        const end = s.checkOut ? dayjs(s.checkOut) : isToday ? dayjs() : null;
+        if (!end) return sum;
+        return sum + end.diff(start);
+      }, 0);
+
+      return {
+        day: dayLabel,
+        time: firstIn
+          ? `${firstIn.format("hh:mm A")} — ${lastOut?.format("hh:mm A") || "—"}`
+          : "—",
+        hours: (totalMs / 3600000).toFixed(1) + "h",
+        status: "Present",
+        color: "green",
+      };
+    }
+
+    // Priority 5: Check for OPTIONAL holiday
+    if (holiday && holiday.type === 'OPTIONAL') {
+      return {
+        day: dayLabel,
+        time: holiday.name,
+        hours: "—",
+        status: "Optional",
+        color: "sky",
+      };
+    }
+
+    // Priority 6: Default to absent
     return {
       day: dayLabel,
-      time: record.leaveType || "On Leave",
-      hours: "—",
-      status: "Leave",
-      color: "blue",
+      time: "—",
+      hours: "0h",
+      status: "Absent",
+      color: "orange",
     };
-  }
-
-  if (record?.sessions?.length) {
-    const sessions = record.sessions;
-
-    const firstIn = sessions[0]?.checkIn
-      ? dayjs(sessions[0].checkIn)
-      : null;
-
-    const lastSession = sessions[sessions.length - 1];
-    const lastOut = lastSession?.checkOut
-      ? dayjs(lastSession.checkOut)
-      : null;
-
-    const isToday = day.isSame(dayjs(), "day");
-
-    let totalMs = sessions.reduce((sum, s) => {
-      if (!s.checkIn) return sum;
-      const start = dayjs(s.checkIn);
-      const end = s.checkOut ? dayjs(s.checkOut) : isToday ? dayjs() : null;
-      if (!end) return sum;
-      return sum + end.diff(start);
-    }, 0);
-
-    return {
-      day: dayLabel,
-      time: firstIn
-        ? `${firstIn.format("hh:mm A")} — ${lastOut?.format("hh:mm A") || "—"}`
-        : "—",
-      hours: (totalMs / 3600000).toFixed(1) + "h",
-      status: "Present",
-      color: "green",
-    };
-  }
-
-  if (holiday) {
-    return {
-      day: dayLabel,
-      time: holiday.name,
-      hours: "—",
-      status: "Holiday",
-      color: "purple",
-    };
-  }
-
-  if (isWeekend) {
-    return {
-      day: dayLabel,
-      time: "Weekend",
-      hours: "—",
-      status: "Weekend",
-      color: "gray",
-    };
-  }
-
-  return {
-    day: dayLabel,
-    time: "—",
-    hours: "0h",
-    status: "Absent",
-    color: "orange",
-  };
-});
-
-
+  });
 
   const tabs = [
     { id: 'leave', label: 'Leave', badge: myTotalLeavesCount },
@@ -422,7 +448,8 @@ const attendanceItems = getPast7Days().map((d) => {
                     </div>
                   )}
                 </div>
-              )}</div>
+              )}
+            </div>
             <p className='text-orange-500 font-medium'>
               {user?.designationName}
             </p>
@@ -460,6 +487,7 @@ const attendanceItems = getPast7Days().map((d) => {
           </button>
         </div>
       </div>
+      
       <div className='bg-white rounded-2xl primaryShadow p-6 mt-3'>
         <div className='flex items-center gap-3 mb-6'>
           <div className='w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center'>
@@ -467,7 +495,7 @@ const attendanceItems = getPast7Days().map((d) => {
           </div>
           <div>
             <h4 className='text-primaryText'>Attendance Summary</h4>
-            <p className='text-sm text-gray-400'>Current Week Overview</p>
+            <p className='text-sm text-gray-400'>Past 7 Days Overview</p>
           </div>
         </div>
         <div className='space-y-2'>
@@ -488,18 +516,26 @@ const attendanceItems = getPast7Days().map((d) => {
                 </div>
               </div>
               <div className='flex items-center justify-between gap-4 min-w-[150px]'>
-                <span className='text-sm font-medium text-gray-600 '>
+                <span className='text-sm font-medium text-gray-600'>
                   {item.hours}
                 </span>
                 <span
                   className={`text-xs font-semibold justify-start px-3 py-1 flex items-center rounded-full
                     ${item.color === 'green'
                       ? 'bg-green-100 text-green-700'
+                      : item.color === 'blue'
+                      ? 'bg-blue-100 text-blue-700'
+                      : item.color === 'purple'
+                      ? 'bg-purple-100 text-purple-700'
+                      : item.color === 'sky'
+                      ? 'bg-sky-100 text-sky-700'
+                      : item.color === 'gray'
+                      ? 'bg-gray-100 text-gray-600'
                       : 'bg-orange-100 text-orange-700'
                     }
                   `}
                 >
-                  <Dot size={20} className='' />
+                  <Dot size={20} />
                   {item.status}
                 </span>
               </div>
@@ -507,6 +543,7 @@ const attendanceItems = getPast7Days().map((d) => {
           ))}
         </div>
       </div>
+
       <div className='mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <div className='bg-white rounded-2xl primaryShadow p-6'>
           <div className='flex items-center gap-3 mb-6'>
@@ -581,11 +618,6 @@ const attendanceItems = getPast7Days().map((d) => {
             </div>
           </div>
 
-          {/* <div className="flex items-center gap-4 text-sm mb-5"> */}
-          {/* <span> */}
-          {/* TOTAL <strong>{departmentMembers.length}</strong> */}
-          {/* </span> */}
-          {/* </div> */}
           <div className='space-y-3 max-h-[300px] overflow-y-auto'>
             {[...departmentMembers]
               .sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0))

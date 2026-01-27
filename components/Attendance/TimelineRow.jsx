@@ -39,7 +39,7 @@ export default function TimelineRow({
       return {
         icon: <CalendarDays className="w-5 h-5" />,
         label: holidayName,
-        color: 'blue',
+        color: 'purple',
       };
 
     if (isFullDayLeave)
@@ -65,7 +65,7 @@ export default function TimelineRow({
           flex items-center px-6 transition-all
           ${isFuture ? 'border border-dashed border-gray-300 bg-gray-50' : 'bg-white'}
           ${isWeekend ? 'border border-yellow-200' : ''}
-          ${isHoliday && !isFuture ? 'ring-1 ring-blue-300 border-l-4 border-blue-300' : ''}
+          ${isHoliday && !isFuture ? 'ring-1 ring-purple-300 border-l-4 border-purple-400' : ''}
           ${isPresent ? 'ring-1 ring-gray-200 border-l-4 border-green-300' : ''}
           ${(isAbsent || isFullDayLeave) && !isFuture ? 'ring-1 ring-red-400 border-l-4 border-red-400' : ''}
         `}
@@ -79,6 +79,20 @@ export default function TimelineRow({
               <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-yellow-100 border border-yellow-300 text-yellow-700 text-sm font-medium">
                 <Sun className="w-4 h-4" />
                 Weekend
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ================= HOLIDAY ================= */}
+        {isHoliday && !isFuture && !isWeekend && (
+          <>
+            <div className="absolute inset-0 bg-purple-50 z-0" />
+            <div className="absolute left-10 right-32 top-1/2 -translate-y-1/2 h-[1px] bg-purple-200 z-0" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+              <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-purple-100 border border-purple-300 text-purple-700 text-sm font-medium">
+                <CalendarDays className="w-4 h-4" />
+                {holidayName || 'Holiday'}
               </div>
             </div>
           </>
