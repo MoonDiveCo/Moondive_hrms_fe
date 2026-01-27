@@ -11,7 +11,10 @@ async function fetchLeaves({ type, value, userId }) {
   });
 
   const leaves = res.data?.leaves || [];
-  console.log(leaves)
+  console.log("=== LEAVE DATA FROM API ===");
+  leaves.forEach((l) => {
+    console.log(`Leave: ${l.leaveType}, Start: ${l.startDate}, End: ${l.endDate}, isHalfDay: ${l.isHalfDay}`);
+  });
   const map = {};
 
   leaves.forEach((leave) => {
@@ -19,11 +22,15 @@ async function fetchLeaves({ type, value, userId }) {
 
     const start = new Date(leave.startDate);
     const end = new Date(leave.endDate);
+    const startNorm = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+    const endNorm = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
 
-    let cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    let cursor = new Date(startNorm);
 
-    while (cursor <= end) {
-      const key = new Date(cursor).toDateString();
+
+    while (cursor.getTime() <= endNorm.getTime()) {     
+      const localDateForKey = new Date(cursor.getUTCFullYear(), cursor.getUTCMonth(), cursor.getUTCDate());
+      const key = localDateForKey.toDateString();
 
       if (!leave.isHalfDay && leave.leaveStatus === "Approved") {
         map[key] = {
@@ -31,13 +38,14 @@ async function fetchLeaves({ type, value, userId }) {
           isHalfDay: false,
           session: null,
           leaveStatus: leave.leaveStatus
-
         };
       }
 
       if (leave.isHalfDay && leave.leaveStatus === "Approved") {
-        const startKey = new Date(start).toDateString();
-        const endKey = new Date(end).toDateString();
+        const startLocal = new Date(startNorm.getUTCFullYear(), startNorm.getUTCMonth(), startNorm.getUTCDate());
+        const endLocal = new Date(endNorm.getUTCFullYear(), endNorm.getUTCMonth(), endNorm.getUTCDate());
+        const startKey = startLocal.toDateString();
+        const endKey = endLocal.toDateString();
 
         if (leave.session === "First Half" && key === startKey) {
           map[key] = {
@@ -45,8 +53,6 @@ async function fetchLeaves({ type, value, userId }) {
             isHalfDay: true,
             session: "First Half",
             leaveStatus: leave.leaveStatus
-
-
           };
         } else if (leave.session === "Second Half" && key === endKey) {
           map[key] = {
@@ -54,12 +60,11 @@ async function fetchLeaves({ type, value, userId }) {
             isHalfDay: true,
             session: "Second Half",
             leaveStatus: leave.leaveStatus
-
           };
         }
       }
-
-      cursor.setDate(cursor.getDate() + 1);
+      
+      cursor = new Date(cursor.getTime() + 24 * 60 * 60 * 1000);
     }
   });
 
