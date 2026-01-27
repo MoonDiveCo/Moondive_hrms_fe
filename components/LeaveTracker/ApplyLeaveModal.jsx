@@ -330,6 +330,7 @@ export default function ApplyLeaveModal({
       const response = await axios.post("/hrms/leave/add-leave", payload);
       if (response.data?.data?.length) {
        const reportingManagerId = response.data.data[0].reportingIds[0];
+       console.log("---------------",reportingManagerId)
         await sendLeaveNotification(reportingManagerId);
       }
       toast.success("Leave Added Successfully")
