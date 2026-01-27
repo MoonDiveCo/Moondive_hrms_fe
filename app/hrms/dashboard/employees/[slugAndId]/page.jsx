@@ -36,30 +36,25 @@ export default function EmployeeProfilePage() {
   const documentsRef = useRef(null);
   const isAutoScrollingRef = useRef(false);
 
+  // ✅ Check if viewing own profile
+  const isOwnProfile = employee?.basic?.employeeId && user?.employeeId 
+    ? String(employee.basic.employeeId).trim() === String(user.employeeId).trim()
+    : false;
+
   // ✅ Permission checks
   const isSuperAdmin = user?.userRole?.includes("SuperAdmin");
   const isHR = user?.userRole?.includes("HR") || user?.userRole?.includes("HumanResources");
   const hasWildcard = submodules?.includes("*");
   
-  // ✅ Check if viewing own profile - comparing with employee basic data
-  const isOwnProfile = employee?.basic?.employeeId === user?.employeeId;
-
-  // ✅ Define which sections each role can see
-  // Own profile: can see everything
-  // Admin/HR: can see employment, stats, documents
-  // SuperAdmin: can see compensation too
-  const canViewEmployment = isSuperAdmin || isHR || hasWildcard || isOwnProfile;
-  const canViewStats = isSuperAdmin || isHR || hasWildcard || isOwnProfile;
-  const canViewCompensation = isSuperAdmin || hasWildcard || isOwnProfile;
-  const canViewDocuments = isSuperAdmin || isHR || hasWildcard || isOwnProfile;
+  // ✅ STRICT RULE: ONLY SuperAdmin OR viewing own profile can see other tabs
+  // Regular users and HR can ONLY see Bio for other employees
+  const canViewEmployment = isOwnProfile || isSuperAdmin;
+  const canViewStats = isOwnProfile || isSuperAdmin;
+  const canViewCompensation = isOwnProfile || isSuperAdmin;
+  const canViewDocuments = isOwnProfile || isSuperAdmin;
   
-  // ✅ Can edit if: admin/HR/wildcard/explicit permission OR viewing own profile
-  const canEditProfile = 
-    isSuperAdmin || 
-    isHR || 
-    hasWildcard || 
-    canPerform("EDIT", "HRMS", "EMPLOYEE") ||
-    isOwnProfile;
+  // ✅ Can edit: ONLY own profile OR SuperAdmin
+  const canEditProfile = isOwnProfile || isSuperAdmin;
 
   // ✅ Filter tabs based on permissions
   const tabs = [
@@ -123,7 +118,7 @@ export default function EmployeeProfilePage() {
     }
 
     loadOrganizationData();
-  }, []);
+  }, [employeeId]);
 
   /* ================= TAB SYNC - IMPROVED ================= */
 
@@ -164,7 +159,7 @@ export default function EmployeeProfilePage() {
     });
 
     return () => observer.disconnect();
-  }, [employee]); // Add employee dependency to re-observe when data loads
+  }, [employee]);
 
   useEffect(() => {
     // Add scroll listener as fallback
@@ -361,7 +356,6 @@ export default function EmployeeProfilePage() {
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-primaryText"> {basic.firstName} {basic.lastName} </h4>
-                {/* <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded uppercase"> {basic.employmentStatus} </span> */}
                 <span className={`text-[10px] font-bold px-2 py-0.5 ${basic.onboardingStatus === "Pending" ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'} rounded uppercase`}>Onboarding {basic.onboardingStatus} </span>
               </div>
               <p className="text-primaryText"> Employee ID: {basic.employeeId} · {basic.designationId?.name} </p>
@@ -371,8 +365,8 @@ export default function EmployeeProfilePage() {
           {/* ✅ Show buttons if can edit */}
           {canEditProfile && (
             <div className="flex gap-3">
-              {/* ✅ Export PDF only for own profile or admin/HR */}
-              {(isOwnProfile || isSuperAdmin || isHR || hasWildcard) && (
+              {/* ✅ Export PDF only for own profile or SuperAdmin */}
+              {(isOwnProfile || isSuperAdmin) && (
                 <button 
                   onClick={handleExportPDF} 
                   className="shadow-md px-4 py-2 rounded-lg text-sm font-semibold"
@@ -821,4 +815,3 @@ const EmploymentSection = ({ history }) => {
     </div>
   );
 };
-
