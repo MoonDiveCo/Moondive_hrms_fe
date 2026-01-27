@@ -76,7 +76,7 @@ const LeaveCard = ({
             {activeTab === "PENDING" && (
               <button
                 disabled={processingId}
-                onClick={() => handleAction(itemId, "Approved")}
+                onClick={() => handleAction(itemId, "Approved", l)}
                 className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs disabled:opacity-50"
               >
                 Approve
@@ -137,7 +137,7 @@ const LeaveCard = ({
               Cancel
             </button>
             <button
-              onClick={() => handleAction(itemId, "Rejected")}
+              onClick={() => handleAction(itemId, "Rejected", l)}
               className="text-xs bg-red-600 text-white px-3 py-1 rounded"
             >
               Confirm
@@ -211,8 +211,8 @@ export default function LeaveRequestsModal({
       return acc;
     }, {});
 
-  /* -------------------- ACTION HANDLER -------------------- */
-  async function handleAction(leaveId, action) {
+  /* -------------------- ACTION HANDLER WITH NOTIFICATIONS -------------------- */
+  async function handleAction(leaveId, action, leaveData) {
     if (action === "Rejected" && !reasonMap[leaveId]?.trim()) {
       toast.error("Rejection reason is required");
       return;
@@ -221,15 +221,44 @@ export default function LeaveRequestsModal({
     try {
       setProcessingId(leaveId);
 
-      await axios.put("/hrms/leave/update-leave-decision", {
+      // Update leave decision
+      const res=await axios.put("/hrms/leave/update-leave-decision", {
         leaveEntryId: leaveId,
         action,
         reason: reasonMap[leaveId] || "",
       });
+     console.log("--xx-xxx-xxx",res)
+      // Send notification to employee
+      const employeeId = leaveData?.employee?._id || leaveData?.employeeId || leaveData?.employee?.id;
+      
+      if (employeeId) {
+        const notificationTitle = action === "Approved" 
+          ? "Leave Request Approved" 
+          : "Leave Request Rejected";
+        
+        const notificationMessage = action === "Approved"
+          ? `Your leave request for ${leaveData.leaveType} from ${new Date(leaveData.startDate).toLocaleDateString()} has been approved.`
+          : `Your leave request for ${leaveData.leaveType} from ${new Date(leaveData.startDate).toLocaleDateString()} has been rejected. Reason: ${reasonMap[leaveId] || "No reason provided"}`;
+
+        try {
+          await storeNotification({
+            receiverId: employeeId,
+            notificationTitle,
+            notificationMessage,
+            relatedDomainType: "Leave Management",
+            priority: action === "Rejected" ? "High" : "Medium",
+            senderId: currentUser?._id || currentUser?.id,
+          });
+        } catch (notifError) {
+          console.error("Failed to send notification:", notifError);
+          // Don't throw - notification failure shouldn't fail the leave action
+        }
+      }
 
       toast.success(`Leave request ${action.toLowerCase()} successfully`);
       onResolved(leaveId);
-    } catch {
+    } catch (error) {
+      console.error("Error updating leave:", error);
       toast.error("Failed to update leave");
     } finally {
       setProcessingId(null);
