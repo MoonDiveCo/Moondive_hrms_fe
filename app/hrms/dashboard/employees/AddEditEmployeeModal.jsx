@@ -2960,19 +2960,17 @@ export default function AddEditEmployeeModal({
                                           >
                                             {doc?.fileName || doc || `Document ${oIdx + 1}`}
                                           </a>
-                                          {canEditStep(5) && (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                const updated = [...uploadedDocuments.employmentHistory];
-                                                updated[idx].others = updated[idx].others.filter((_, i) => i !== oIdx);
-                                                setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                              }}
-                                              className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
-                                            >
-                                              Remove
-                                            </button>
-                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const updated = [...uploadedDocuments.employmentHistory];
+                                              updated[idx].others = updated[idx].others.filter((_, i) => i !== oIdx);
+                                              setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                            }}
+                                            className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
+                                          >
+                                            Remove
+                                          </button>
                                         </div>
                                       ))}
                                       <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
@@ -3020,36 +3018,135 @@ export default function AddEditEmployeeModal({
                               </div>
                             ))}
                             
-                            {canEditStep(5) && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setUploadedDocuments(prev => ({
-                                    ...prev,
-                                    employmentHistory: [
-                                      ...prev.employmentHistory,
-                                      {
-                                        companyName: '',
-                                        designation: '',
-                                        employmentPeriod: { startDate: null, endDate: null },
-                                        offerLetter: [],
-                                        experienceLetter: [],
-                                        relievingLetterUrl: null,
-                                        salarySlips: [],
-                                        others: []
-                                      }
-                                    ]
-                                  }));
-                                }}
-                                className="w-full px-4 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition"
-                              >
-                                + Add Employment Record
-                              </button>
-                            )}
+                            {/* Add New Employment Record */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUploadedDocuments(prev => ({
+                                  ...prev,
+                                  employmentHistory: [
+                                    ...prev.employmentHistory,
+                                    {
+                                      companyName: '',
+                                      designation: '',
+                                      employmentPeriod: { startDate: null, endDate: null },
+                                      offerLetter: [],
+                                      experienceLetter: [],
+                                      relievingLetterUrl: null,
+                                      salarySlips: [],
+                                      others: []
+                                    }
+                                  ]
+                                }));
+                              }}
+                              className="w-full px-4 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+                            >
+                              + Add Employment Record
+                            </button>
                           </div>
                         )}
                       </div>
                     )}
+
+                    {/* Optional Documents */}
+                    {/* <div
+                      className={`border rounded-lg overflow-hidden ${
+                        isDisabled
+                          ? "bg-gray-50 border-gray-200 opacity-50"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="p-4 flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            <svg
+                              className="w-5 h-5 text-gray-400"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                              <path
+                                fillRule="evenodd"
+                                d="M4 5a2 2 0 012-2 1 1 0 000-2H6a6 6 0 016 6v3h1a1 1 0 100 2h-1a1 1 0 100 2h1a2 2 0 002-2v-3a8 8 0 00-8-8 2 2 0 00-2 2v2H2a1 1 0 100 2h2v2H2a1 1 0 100 2h2v1a2 2 0 002 2z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="text-left">
+                            <h6 className="font-semibold text-gray-900">
+                              Additional Documents
+                            </h6>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Bank Details, Health Insurance, Certificates, etc.
+                            </p>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">
+                          Optional
+                        </span>
+                      </div>
+                    </div> */}
+
+                    {/* Status Banner */}
+                    <div
+                      className={`p-4 border rounded-lg ${
+                        checkAllRequiredDocumentsUploaded()
+                          ? "border-green-200 bg-green-50"
+                          : "border-amber-200 bg-amber-50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">
+                          <svg
+                            className={`w-5 h-5 ${
+                              checkAllRequiredDocumentsUploaded()
+                                ? "text-green-600"
+                                : "text-amber-600"
+                            }`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            {checkAllRequiredDocumentsUploaded() ? (
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            ) : (
+                              <path
+                                fillRule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            )}
+                          </svg>
+                        </div>
+                        <div>
+                          <h6
+                            className={`font-semibold ${
+                              checkAllRequiredDocumentsUploaded()
+                                ? "text-green-900"
+                                : "text-amber-900"
+                            }`}
+                          >
+                            {checkAllRequiredDocumentsUploaded()
+                              ? "All Required Documents Uploaded"
+                              : "Onboarding Status"}
+                          </h6>
+                          <p
+                            className={`text-sm mt-1 ${
+                              checkAllRequiredDocumentsUploaded()
+                                ? "text-green-800"
+                                : "text-amber-800"
+                            }`}
+                          >
+                            {checkAllRequiredDocumentsUploaded()
+                              ? "Your onboarding status will be marked as Completed when you save this employee."
+                              : "Your onboarding status will automatically be set to Completed once all required documents are uploaded."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
@@ -3079,7 +3176,7 @@ export default function AddEditEmployeeModal({
                 </button>
                 {step < 5 && (
                   <button
-                    onClick={handleNext}
+                    onClick={next}
                     className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm hover:brightness-95"
                     disabled={submitting}
                   >
