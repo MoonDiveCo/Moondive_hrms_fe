@@ -1173,10 +1173,16 @@ function PendingLeaveTable({ onApprovedToday }) {
     { refreshInterval: 10000 }
   );
 
-  useEffect(() => {
-    const filtered = (leaveRes?.leaveRequests || []).filter(l => !l.decision);
-    setRows(filtered);
-  }, [leaveRes]);
+useEffect(() => {
+  const filtered = (leaveRes?.leaveRequests || [])
+    .filter(l => !l.decision)
+    .sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+  setRows(filtered);
+}, [leaveRes]);
+
 
 
   async function handleAction(row, action) {

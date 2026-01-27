@@ -307,28 +307,33 @@ export default function OverviewPage() {
                     No pending leave requests
                   </div>
                 ) : (
-                  pendingLeaves.slice(0, 3).map((leave) => (
-                    <LeaveRow
-                      key={leave.leaveId}
-                      name={`${leave.employee.firstName} ${leave.employee.lastName}`}
-                      info={`${leave.leaveType} • ${format(
-                        new Date(leave.startDate),
-                        "dd MMM"
-                      )} • ${leave.isHalfDay
-                        ? `Half Day (${leave.session})`
-                        : 'Full Day'
-                        }`}
-                      loading={processingId === leave.leaveId}
-                      onApprove={() =>
-                        setConfirmAction({ leaveId: leave.leaveId, action: "Approved" })
-                      }
-                      onReject={() =>
-                        setConfirmAction({ leaveId: leave.leaveId, action: "Rejected" })
-                      }
-                    />
-
-                  ))
+                  [...pendingLeaves]
+                    .sort(
+                      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                    )
+                    .slice(0, 3)
+                    .map((leave) => (
+                      <LeaveRow
+                        key={leave.leaveId}
+                        name={`${leave?.employee?.firstName} ${leave?.employee?.lastName}`}
+                        info={`${leave.leaveType} • ${format(
+                          new Date(leave.startDate),
+                          "dd MMM"
+                        )} • ${leave.isHalfDay
+                            ? `Half Day (${leave.session})`
+                            : "Full Day"
+                          }`}
+                        loading={processingId === leave.leaveId}
+                        onApprove={() =>
+                          setConfirmAction({ leaveId: leave.leaveId, action: "Approved" })
+                        }
+                        onReject={() =>
+                          setConfirmAction({ leaveId: leave.leaveId, action: "Rejected" })
+                        }
+                      />
+                    ))
                 )}
+
               </div>
 
             </section>
