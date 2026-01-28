@@ -44,17 +44,18 @@ export default function EmployeeProfilePage() {
   // ✅ Permission checks
   const isSuperAdmin = user?.userRole?.includes("SuperAdmin");
   const isHR = user?.userRole?.includes("HR") || user?.userRole?.includes("HumanResources");
-  const hasWildcard = submodules?.includes("*");
   
-  // ✅ STRICT RULE: ONLY SuperAdmin OR viewing own profile can see other tabs
-  // Regular users and HR can ONLY see Bio for other employees
-  const canViewEmployment = isOwnProfile || isSuperAdmin;
-  const canViewStats = isOwnProfile || isSuperAdmin;
-  const canViewCompensation = isOwnProfile || isSuperAdmin;
-  const canViewDocuments = isOwnProfile || isSuperAdmin;
+  // ✅ NEW RULES:
+  // - Bio: Everyone can see
+  // - Employment, Stats, Documents: Own profile OR SuperAdmin OR HR
+  // - Compensation: ONLY own profile OR SuperAdmin (HR CANNOT see other's compensation)
+  const canViewEmployment = isOwnProfile || isSuperAdmin || isHR;
+  const canViewStats = isOwnProfile || isSuperAdmin || isHR;
+  const canViewCompensation = isOwnProfile || isSuperAdmin; // HR excluded for others
+  const canViewDocuments = isOwnProfile || isSuperAdmin || isHR;
   
-  // ✅ Can edit: ONLY own profile OR SuperAdmin
-  const canEditProfile = isOwnProfile || isSuperAdmin;
+  // ✅ Can edit: Own profile OR SuperAdmin OR HR
+  const canEditProfile = isOwnProfile || isSuperAdmin || isHR;
 
   // ✅ Filter tabs based on permissions
   const tabs = [
@@ -365,8 +366,8 @@ export default function EmployeeProfilePage() {
           {/* ✅ Show buttons if can edit */}
           {canEditProfile && (
             <div className="flex gap-3">
-              {/* ✅ Export PDF only for own profile or SuperAdmin */}
-              {(isOwnProfile || isSuperAdmin) && (
+              {/* ✅ Export PDF for own profile, SuperAdmin, or HR */}
+              {(isOwnProfile || isSuperAdmin || isHR) && (
                 <button 
                   onClick={handleExportPDF} 
                   className="shadow-md px-4 py-2 rounded-lg text-sm font-semibold"
@@ -630,9 +631,7 @@ const DocumentTile = ({ url, fileName, uploadedAt, label }) => {
             Uploaded {new Date(uploadedAt).toLocaleDateString()}
           </p>
         )}
-
-        <a
-          href={url}
+         <a href={url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block mt-2 text-xs text-primary font-medium hover:underline"
