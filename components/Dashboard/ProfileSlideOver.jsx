@@ -56,6 +56,7 @@ export default function ProfileSlideOver({
       .get('/user/get-profile', { withCredentials: true })
       .then((res) => {
         const data = res?.data?.result || res?.data?.data || res?.data;
+        console.log("9090909090",data)
         const userObj = data?.user ?? data;
         if (!mounted) return;
         const prepared = {

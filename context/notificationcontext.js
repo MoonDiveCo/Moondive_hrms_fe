@@ -416,6 +416,9 @@ export const NotificationProvider = ({ children }) => {
       }
     };
   }, [addNotification, fetchNotifications]);
+
+
+
  
   // Register service worker
   useEffect(() => {
