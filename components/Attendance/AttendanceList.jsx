@@ -89,7 +89,7 @@ export default function AttendanceList({ currentDate, rangeMode = 'week' }) {
           const holiday = holidayMap[key];
           const leave = leaveMap[key];
 
-          console.log(holiday)
+         
 
           const holidayName =
             holiday &&
@@ -99,7 +99,7 @@ export default function AttendanceList({ currentDate, rangeMode = 'week' }) {
               ? `Optional Leave (${holiday.name})`
               : null);
 
-              console.log(holidayName)
+              
 
           const { status, label } = resolveDayStatus({
             dateObj,

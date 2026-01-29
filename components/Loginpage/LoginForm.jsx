@@ -82,7 +82,7 @@ export default function LoginForm({
 
       // Request notification permission and save FCM token
       try {
-        console.log("Requesting notification permission...");
+       
         const permissionGranted = await requestNotificationPermission();
         if (permissionGranted) {
           console.log("✅ Notification permission granted and FCM token saved");

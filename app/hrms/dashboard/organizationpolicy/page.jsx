@@ -324,7 +324,6 @@ const handleFileUpload = async () => {
       );
 
       const createdPolicy = response.data.data;
-      console.log("xxxxxxxxxxxxxx",createdPolicy)
 
       /* 🔔 HR → SUPER ADMIN */
       if (!isSuperAdmin && createdPolicy.status === "PENDING_APPROVAL") {

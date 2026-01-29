@@ -41,7 +41,6 @@ export default function MainNavbar({
 
 useEffect(() => {
   if (isSignedIn && !authLoading) {
-    console.log("✅ Auth ready, fetching notifications");
     fetchNotifications();
   }
 }, [isSignedIn, authLoading]);

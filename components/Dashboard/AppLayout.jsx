@@ -140,7 +140,6 @@ export default function AppLayout({ module, children, showMainNavbar = true }) {
     }
 
     if (!isRouteAllowed) {
-      console.log("Unauthorized access to:", pathname);
       router.replace("/unauthorized");
     }
   }, [

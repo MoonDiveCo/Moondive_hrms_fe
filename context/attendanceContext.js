@@ -31,10 +31,9 @@ export function AttendanceProvider({ children }) {
     const fetchUserssData=async()=>{
     try{
       const res=await axios.get("/hrms/roles/get-employee")
-      console.log("xxxxxxxxxxx",res)
       setUserData(res.data.result)
   }catch(err){
-      console.log("Failed to fetch user data for attendance context:",err)
+      console.error("Failed to fetch user data for attendance context:",err)
     }}
     useEffect(()=>{if(isSignedIn) fetchUserssData()},[ isSignedIn])
 
@@ -253,8 +252,6 @@ const sendLateNotifications = async (lateData) => {
       });
 
       updateTodayInCalendar("Present");
-      console.log("✅ Check-in response:", res.data);
-
       // ✅ Extract data from actual response structure
       const { late, lateByMinutes, sessions, data: responseData } = res.data;
 
