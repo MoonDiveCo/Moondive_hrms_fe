@@ -77,13 +77,11 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete, del
 
   const handleConfirmCancel = (e) => {
     e.stopPropagation();
-    console.log('Cancel clicked');
     handleConfirmClose();
   };
 
   const handleConfirmBackdrop = (e) => {
     if (e.target === e.currentTarget) {
-      console.log('Backdrop clicked');
       handleConfirmClose();
     }
   };
@@ -96,7 +94,6 @@ export default function EmployeeModal({ employee, onClose, onEdit, onDelete, del
       if (buttonPressed) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('GLOBAL MOUSE UP - TRIGGERING CONFIRM');
         handleConfirm();
         setButtonPressed(false);
       }
