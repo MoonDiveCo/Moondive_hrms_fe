@@ -197,7 +197,6 @@ export default function HRMSOverviewPage() {
     }
   }, [membersData]);
 
-  console.log(departmentMembers);
 
   useEffect(() => {
     if (!user?.reportingManagerId) return;
