@@ -227,7 +227,6 @@ export default function LeaveRequestsModal({
         action,
         reason: reasonMap[leaveId] || "",
       });
-     console.log("--xx-xxx-xxx",res)
       // Send notification to employee
       const employeeId = leaveData?.employee?._id || leaveData?.employeeId || leaveData?.employee?.id;
       

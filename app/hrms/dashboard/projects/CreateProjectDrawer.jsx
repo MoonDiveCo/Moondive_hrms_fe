@@ -11,7 +11,6 @@ export default function CreateProjectDrawer({
   editingProject = null, // ✅ already passed
 }) {
   // UI State
-  console.log('editingProject', editingProject);
   const [openSections, setOpenSections] = useState({
     basic: true,
     timeline: false,

@@ -60,7 +60,7 @@ const holidayFetcher = async (url) => {
   const res = await axios.get(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  console.log('Holiday API response:', res.data);
+ 
   // Holiday API returns data in result.data, not just data
   return res.data.result?.data || [];
 };
@@ -138,24 +138,16 @@ export default function HRMSOverviewPage() {
       ...(currentMonthHolidays || []),
       ...(prevMonthHolidays || [])
     ];
-
-    console.log('Current month holidays:', currentMonthHolidays);
-    console.log('Previous month holidays:', prevMonthHolidays);
-    console.log('All holidays combined:', allHolidays);
-
     allHolidays
       ?.filter(h => h?.isActive)
       // Show all holiday types (PUBLIC, OPTIONAL, etc.)
       ?.forEach(h => {
         const dateKey = dayjs(h.date).format("YYYY-MM-DD");
-        console.log(`Adding holiday: ${dateKey} - ${h.name} (${h.type})`);
         map[dateKey] = {
           name: h.name,
           type: h.type,
         };
       });
-
-    console.log('Final holiday map:', map);
 
     return map;
   }, [currentMonthHolidays, prevMonthHolidays]);
@@ -516,7 +508,7 @@ export default function HRMSOverviewPage() {
                 </div>
               </div>
               <div className='flex items-center justify-between gap-4 min-w-[150px]'>
-                <span className='text-sm font-medium text-gray-600'>
+                <span className='text-xs font-medium text-gray-600'>
                   {item.hours}
                 </span>
                 <span

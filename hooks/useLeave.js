@@ -11,9 +11,7 @@ async function fetchLeaves({ type, value, userId }) {
   });
 
   const leaves = res.data?.leaves || [];
-  console.log("=== LEAVE DATA FROM API ===");
   leaves.forEach((l) => {
-    console.log(`Leave: ${l.leaveType}, Start: ${l.startDate}, End: ${l.endDate}, isHalfDay: ${l.isHalfDay}`);
   });
   const map = {};
 

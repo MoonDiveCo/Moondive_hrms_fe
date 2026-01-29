@@ -63,9 +63,9 @@ export default function HRHelpdeskForm({ request, onSaved }) {
     });
 
     const res=axios.get('/hrms/employee/list').then((res) => {
-      console.log("xxxxxxxxxxxxxxx---------------------",res.data)
+     
       setEmployees(Array.isArray(res.data?.result) ? res.data.result : []);
-       console.log("cccccccccccc",form.priority)
+       
 
     });
   }, []);

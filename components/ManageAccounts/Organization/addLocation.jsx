@@ -107,8 +107,6 @@ export default function AddLocationModal({
       }
 
       const savedItem = extractSavedItem(res) || null;
-      console.log('[AddLocationModal] savedItem:', savedItem);
-
       // optimistic local update if parent didn't provide onSaved
       if (typeof onSaved !== 'function') {
         if (savedItem) {

@@ -101,7 +101,6 @@ export default function AcknowledgementStatusModal({
                         className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Send reminder email"
                         onClick={() => {
-                          console.log('Send reminder to:', user?.firstName, user?.lastName);
                           // TODO: Implement email reminder API call
                         }}
                       >
