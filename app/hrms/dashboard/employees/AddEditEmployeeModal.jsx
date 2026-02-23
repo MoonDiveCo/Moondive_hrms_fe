@@ -13,6 +13,9 @@ export default function AddEditEmployeeModal({
   onSave,
   organizationData,
   employeeList,
+  isOwnProfile = false,
+  isSuperAdmin = false,
+  isHR = false,
 }) {
   const modalRef = useRef(null);
   const [step, setStep] = useState(1);
@@ -618,8 +621,9 @@ export default function AddEditEmployeeModal({
     }));
   };
 
-  const checkAllRequiredDocumentsUploaded = () => {
+  const getMissingRequiredDocuments = () => {
     const requiredDocs = getRequiredDocuments();
+    const missing = [];
     
     if (requiredDocs.idProofs) {
       const hasIdProof = 
@@ -629,9 +633,7 @@ export default function AddEditEmployeeModal({
         !!uploadedDocuments.idProofs?.presentAddressProof ||
         !!uploadedDocuments.idProofs?.permanentAddressProof;
       
-      if (!hasIdProof) {
-        return false;
-      }
+      if (!hasIdProof) missing.push("ID Proofs");
     }
     
     if (requiredDocs.academicDocuments) {
@@ -643,37 +645,42 @@ export default function AddEditEmployeeModal({
       
       const gradSemester = parseInt(uploadedDocuments.academicDocuments?.graduation?.semester) || 0;
       const gradMarksheetCount = uploadedDocuments.academicDocuments?.graduation?.marksheets?.length || 0;
-      const hasGraduation = !!uploadedDocuments.academicDocuments?.graduation?.certificate && 
-                            gradSemester > 0 && 
-                            gradMarksheetCount === gradSemester;
+      const hasGraduation = gradSemester === 0 || (!!uploadedDocuments.academicDocuments?.graduation?.certificate && gradMarksheetCount === gradSemester);
       
-      if (!has10th && !has12th && !hasGraduation) {
-        return false;
+      const pgSemester = parseInt(uploadedDocuments.academicDocuments?.postGraduation?.semester) || 0;
+      const pgMarksheetCount = uploadedDocuments.academicDocuments?.postGraduation?.marksheets?.length || 0;
+      const hasPostGraduation = pgSemester === 0 || (!!uploadedDocuments.academicDocuments?.postGraduation?.certificate && pgMarksheetCount === pgSemester);
+
+      if (!has10th || !has12th || !hasGraduation || !hasPostGraduation) {
+        missing.push("Academic Documents (10th, 12th, and all matching semesters)");
       }
     }
     
     if (requiredDocs.employmentHistory) {
       if (!uploadedDocuments.employmentHistory || uploadedDocuments.employmentHistory.length === 0) {
-        return false;
-      }
-      
-      const hasCompleteEmploymentHistory = uploadedDocuments.employmentHistory.every(emp => 
-        emp.companyName &&
-        emp.designation &&
-        emp.employmentPeriod?.startDate &&
-        emp.employmentPeriod?.endDate &&
-        emp.offerLetter &&
-        emp.experienceLetter &&
-        emp.relievingLetter &&
-        emp.salarySlips?.length === 3 
-      );
-      
-      if (!hasCompleteEmploymentHistory) {
-        return false;
+        missing.push("Employment History Details");
+      } else {
+        const hasCompleteEmploymentHistory = uploadedDocuments.employmentHistory.every(emp => 
+          emp.companyName &&
+          emp.designation &&
+          emp.employmentPeriod?.startDate &&
+          emp.employmentPeriod?.endDate &&
+          emp.offerLetter &&
+          emp.experienceLetter &&
+          emp.relievingLetter &&
+          emp.salarySlips?.length === 3 
+        );
+        if (!hasCompleteEmploymentHistory) {
+          missing.push("Complete Employment History Files (Offer, Experience, Relieving, 3x Salary Slips)");
+        }
       }
     }
     
-    return true;
+    return missing;
+  };
+
+  const checkAllRequiredDocumentsUploaded = () => {
+    return getMissingRequiredDocuments().length === 0;
   };
 
   function isValidEmail(email) {
@@ -955,21 +962,9 @@ export default function AddEditEmployeeModal({
     }
     setSubmitting(true);
 
-    const requiredDocs = getRequiredDocuments();
+    const missingDocs = getMissingRequiredDocuments();
 
-    const missingDocs = [];
-
-    if (!requiredDocs.idProofs) {
-      missingDocs.push("ID Proofs");
-    }
-    if (!requiredDocs.academicDocuments) {
-      missingDocs.push("Academic Documents");
-    }
-    if (!requiredDocs.employmentHistory) {
-      missingDocs.push("Employment History");
-    }
-
-    const allRequiredDocsUploaded = checkAllRequiredDocumentsUploaded();
+    const allRequiredDocsUploaded = missingDocs.length === 0;
     const onboardingStatusValue = allRequiredDocsUploaded ? "Completed" : "Pending";
 
     const submitData = {
@@ -1209,9 +1204,15 @@ export default function AddEditEmployeeModal({
 };
 
 
-  const isView = mode === "view";
+  const isFormViewMode = mode === "view";
   const isEdit = mode === "edit";
-  const primaryLabel = isView
+  
+  // Rule: Employees editing their own profile can only edit Step 1 and Step 5.
+  const isEmployeeEditingSelf = isOwnProfile && !isSuperAdmin && !isHR;
+  const isProtectedStep = step > 1 && step < 5;
+  const isView = isFormViewMode || (mode === "edit" && isEmployeeEditingSelf && isProtectedStep);
+
+  const primaryLabel = isFormViewMode
     ? "Close"
     : isEdit
     ? "Save changes"
@@ -1245,9 +1246,20 @@ export default function AddEditEmployeeModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <style dangerouslySetInnerHTML={{__html: `
+        .employee-modal-restricted input:read-only,
+        .employee-modal-restricted textarea:read-only,
+        .employee-modal-restricted select:disabled,
+        .employee-modal-restricted input:disabled {
+          background-color: #f3f4f6 !important;
+          color: #6b7280 !important;
+          cursor: not-allowed !important;
+          border-color: #e5e7eb !important;
+        }
+      `}} />
       <div
         ref={modalRef}
-        className="relative w-[min(900px,95%)] h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto hide-scrollbar"
+        className={`relative w-[min(900px,95%)] h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto hide-scrollbar ${isView ? 'employee-modal-restricted' : ''}`}
         role="dialog"
         aria-modal="true"
       >
@@ -1289,10 +1301,10 @@ export default function AddEditEmployeeModal({
                 )}
                 <div
                   className={`flex items-center gap-3 shrink-0 ${
-                    !isView ? "cursor-pointer" : ""
+                    !isFormViewMode ? "cursor-pointer" : ""
                   }`}
                   onClick={() => {
-                    if (!isView) {
+                    if (!isFormViewMode) {
                       setStep(s);
                     }
                   }}
@@ -1302,7 +1314,7 @@ export default function AddEditEmployeeModal({
                       step >= s
                         ? "bg-[var(--color-primary)] text-white"
                         : "bg-gray-100 text-gray-600"
-                    } ${!isView ? "hover:opacity-80" : ""}`}
+                    } ${!isFormViewMode ? "hover:opacity-80" : ""}`}
                   >
                     {s}
                   </div>
@@ -3050,7 +3062,7 @@ export default function AddEditEmployeeModal({
 
         <div className="flex items-center justify-end  p-4 border-t border-gray-100 sticky bottom-0 bg-white">
           <div className="flex items-center gap-2">
-            {!isView && (
+            {!isFormViewMode && (
               <>
                 {step > 1 && (
                   <button
@@ -3082,7 +3094,7 @@ export default function AddEditEmployeeModal({
           </div>
 
           <div className="flex items-center gap-4">
-            {!isView ? (
+            {!isFormViewMode ? (
               step === 5 && (
                 <button
                   onClick={submit}

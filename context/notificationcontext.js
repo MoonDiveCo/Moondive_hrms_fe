@@ -254,26 +254,54 @@ export const NotificationProvider = ({ children }) => {
   const getFCMToken = async () => {
     try {
       if (!messaging) {
+        console.warn("FCM messaging not initialized");
+        return null;
+      }
+
+      if (typeof window === "undefined" || !("Notification" in window)) {
+        console.warn("Notifications not supported by this browser");
+        return null;
+      }
+
+      if (Notification.permission === "denied") {
+        console.warn("Notification permission denied. Cannot proceed.");
         return null;
       }
  
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
+        console.warn("Notification permission not granted.");
         return null;
       }
  
+      // Ensure the service worker is registered and ready before getting token
+      let registration;
+      try {
+        registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        await navigator.serviceWorker.ready;
+      } catch (swError) {
+        console.error("Service Worker registration failed:", swError);
+        return null;
+      }
+
       const token = await getToken(messaging, {
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: registration,
       });
  
       if (!token) {
+        console.warn("Got empty token from FCM");
         return null;
       }
       setFcmToken(token);
       await saveFCMTokenToServer(token);
       return token;
     } catch (err) {
-      console.error("FCM error:", err);
+      console.error("FCM Token Registration Error:", err);
+      // Fallback: If it's an AbortError due to a duplicate worker, unregistering might help on next load
+      if (err.name === 'AbortError') {
+         console.warn("AbortError encountered. Make sure old service workers are unregistered.");
+      }
       return null;
     }
   };

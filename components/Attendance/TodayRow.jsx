@@ -61,10 +61,10 @@ export default function TodayRow({
   };
 
   const statusInfo = getStatusInfo();
-  const [workedHours, setWorkedHours] = useState('00:00');
 
   const effectiveCheckOut =
-    checkOut && !isNaN(new Date(checkOut).getTime()) ? checkOut : new Date();
+    checkOut && !isNaN(new Date(checkOut).getTime()) ? checkOut : null;
+
   function formatTime(value) {
     if (!value) return null;
     const d = new Date(value);
@@ -74,34 +74,6 @@ export default function TodayRow({
       minute: '2-digit',
     });
   }
-
-  const calculateWorked = () => {
-    if (!checkIn) return '00:00';
-
-    const start = new Date(checkIn);
-    if (isNaN(start.getTime())) return '00:00';
-
-    const end = effectiveCheckOut ? new Date(effectiveCheckOut) : new Date();
-
-    const diffMs = Math.max(0, end - start);
-    const minutes = Math.floor(diffMs / 60000);
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-
-    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-  };
-
-  useEffect(() => {
-    setWorkedHours(calculateWorked());
-
-    if (effectiveCheckOut) return;
-
-    const interval = setInterval(() => {
-      setWorkedHours(calculateWorked());
-    }, 1000); // ← visible live updates
-
-    return () => clearInterval(interval);
-  }, [checkIn, effectiveCheckOut]);
 
   return (
     <div className='flex items-center gap-4'>
@@ -208,7 +180,7 @@ export default function TodayRow({
 
         {!isFullDayLeave && (
           <div className='w-24 text-right'>
-            <div className='font-bold text-lg'>{workedHours}</div>
+            <div className='font-bold text-lg'>{hours}</div>
             <div className='text-xs text-gray-500'>Hrs worked</div>
           </div>
         )}
