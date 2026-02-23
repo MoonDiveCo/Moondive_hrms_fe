@@ -323,12 +323,17 @@ export default function HRMSOverviewPage() {
         return sum + end.diff(start);
       }, 0);
 
+      const totalMinutes = Math.floor(totalMs / 60000);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      const formattedHours = h > 0 ? `${h}h ${m}m` : `${m}m`;
+
       return {
         day: dayLabel,
         time: firstIn
           ? `${firstIn.format("hh:mm A")} — ${lastOut?.format("hh:mm A") || "—"}`
           : "—",
-        hours: (totalMs / 3600000).toFixed(1) + "h",
+        hours: totalMs > 0 ? formattedHours : "0h",
         status: "Present",
         color: "green",
       };

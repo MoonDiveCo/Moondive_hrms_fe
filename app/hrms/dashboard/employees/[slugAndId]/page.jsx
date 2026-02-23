@@ -35,9 +35,12 @@ export default function EmployeeProfilePage() {
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // ✅ PDF Export State
+  const [isExporting, setIsExporting] = useState(false);
+
   const deleteEmployee = async () => {
     try {
-      const res = await axios.put(`/hrms/employee/delete-employee/${employeeId}`);
+      const res = await axios.delete(`/hrms/employee/delete-employee/${employeeId}`);
       if (res.data.responseCode === 200) {
         toast.success("Delete Successful");
         router.push("/hrms/dashboard/employees");
@@ -366,68 +369,145 @@ const hasEmployment = (docs) =>
 
   const handleExportPDF = async () => {
     if (!pdfRef.current) return;
+    
+    const toastId = toast.loading("Generating PDF... Please wait");
+    setIsExporting(true);
 
-    const canvas = await html2canvas(pdfRef.current, {
-      scale: 2,
-      useCORS: true,
-      onclone: (doc) => {
-        doc.querySelectorAll("img").forEach((img) => {
-          img.src = "https://i.pravatar.cc/150";
-        });
-      },
-      allowTaint: false,
-      imageTimeout: 15000,
-      backgroundColor: "#ffffff",
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-      onclone: (clonedDoc) => {
-        const allElements = clonedDoc.querySelectorAll("*");
+    try {
+      const images = Array.from(pdfRef.current.querySelectorAll("img"));
+      await Promise.all(images.map(async (img) => {
+        if (img.src && typeof img.src === 'string' && img.src.includes('amazonaws.com')) {
+           try {
+             const response = await fetch(`${img.src}?t=${new Date().getTime()}`, { mode: 'cors' });
+             const blob = await response.blob();
+             return new Promise((resolve) => {
+               const reader = new FileReader();
+               reader.onloadend = () => {
+                 img.dataset.originalSrc = img.src;
+                 img.src = reader.result;
+                 resolve();
+               };
+               reader.readAsDataURL(blob);
+             });
+           } catch(e) {
+             console.warn("Could not pre-fetch image for PDF", img.src, e);
+             img.dataset.originalSrc = img.src; 
+             img.src = "https://i.pravatar.cc/150"; 
+           }
+        }
+      }));
 
-        allElements.forEach((el) => {
-          const style = clonedDoc.defaultView.getComputedStyle(el);
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        imageTimeout: 15000,
+        backgroundColor: "#ffffff",
+        onclone: (clonedDoc) => {
+          const allElements = clonedDoc.querySelectorAll("*");
+          allElements.forEach((el) => {
+            const style = clonedDoc.defaultView.getComputedStyle(el);
 
-          if (style.color.includes("lab(")) {
-            el.style.color = "#000000";
-          }
+            if (style.color.includes("lab(")) {
+              el.style.color = "#000000";
+            }
+            if (style.backgroundColor.includes("lab(")) {
+              el.style.backgroundColor = "#ffffff";
+            }
+            if (style.borderColor.includes("lab(")) {
+              el.style.borderColor = "#cccccc";
+            }
+            if (style.outlineColor.includes("lab(")) {
+              el.style.outlineColor = "transparent";
+            }
+            if (style.boxShadow && style.boxShadow.includes("lab(")) {
+              el.style.boxShadow = "none";
+            }
+            if (style.overflow === "hidden" || style.overflowY === "auto") {
+              el.style.overflow = "visible";
+              el.style.overflowY = "visible";
+            }
+          });
+        },
+      });
 
-          if (style.backgroundColor.includes("lab(")) {
-            el.style.backgroundColor = "#ffffff";
-          }
+      images.forEach(img => {
+        if (img.dataset.originalSrc) {
+           img.src = img.dataset.originalSrc;
+           delete img.dataset.originalSrc;
+        }
+      });
 
-          if (style.borderColor.includes("lab(")) {
-            el.style.borderColor = "#cccccc";
-          }
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF("p", "mm", "a4");
 
-          if (style.outlineColor.includes("lab(")) {
-            el.style.outlineColor = "transparent";
-          }
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      const padding = 10;
+      const contentWidth = pdfWidth - (padding * 2);
+      const contentHeight = (canvas.height * contentWidth) / canvas.width;
 
-          if (style.boxShadow && style.boxShadow.includes("lab(")) {
-            el.style.boxShadow = "none";
-          }
-        });
-      },
-    });
+      let heightLeft = contentHeight;
+      let position = padding;
+      let pageNumber = 1;
 
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
+      pdf.addImage(imgData, "JPEG", padding, position, contentWidth, contentHeight);
+      
+      const links = Array.from(pdfRef.current.querySelectorAll("a[href]"));
+      const scaleRatio = contentWidth / canvas.width;
+      const originalContainerRect = pdfRef.current.getBoundingClientRect();
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const addLinksForPage = (currentPageYStart, currentPageYEnd, currentPagePositionOffset) => {
+          links.forEach(link => {
+              const rect = link.getBoundingClientRect();
+              
+              const relativeY = (rect.top - originalContainerRect.top) * 2; 
+              
+              if (relativeY >= currentPageYStart && relativeY < currentPageYEnd) {
+                 const relativeX = (rect.left - originalContainerRect.left) * 2;
+                 
+                 const pdfX = padding + (relativeX * scaleRatio);
+                 const offsetInsidePage = relativeY - currentPageYStart;
+                 const pdfY = padding + currentPagePositionOffset + (offsetInsidePage * scaleRatio);
+                 
+                 const pdfW = (rect.width * 2) * scaleRatio;
+                 const pdfH = (rect.height * 2) * scaleRatio;
+                 
+                 pdf.link(pdfX, pdfY, pdfW, pdfH, { url: link.href });
+              }
+          });
+      };
+      const pageHeightInPixels = (pdf.internal.pageSize.getHeight() - (padding * 2)) / scaleRatio;
+      addLinksForPage(0, pageHeightInPixels, 0);
 
-    let heightLeft = pdfHeight;
-    let position = 0;
+      heightLeft -= (pdf.internal.pageSize.getHeight() - (padding * 2));
 
-    pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
-    heightLeft -= pdf.internal.pageSize.getHeight();
+      while (heightLeft > 0) {
+        position = heightLeft - contentHeight + padding;
+        pdf.addPage();
+        pageNumber++;
+        pdf.addImage(imgData, "JPEG", padding, position, contentWidth, contentHeight);
+        
+        const pageYStart = (pageNumber - 1) * pageHeightInPixels;
+        const pageYEnd = pageNumber * pageHeightInPixels;
+        const pageOffset = position - padding; 
+        
+        addLinksForPage(pageYStart, pageYEnd, pageOffset);
 
-    while (heightLeft > 0) {
-      position -= pdf.internal.pageSize.getHeight();
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pdf.internal.pageSize.getHeight();
+        heightLeft -= (pdf.internal.pageSize.getHeight() - (padding * 2));
+      }
+
+      pdf.save(`${basic.firstName}_${basic.lastName}_Profile.pdf`);
+      toast.success("PDF exported successfully!", { id: toastId });
+    } catch (error) {
+      console.error("PDF Export Error: ", error);
+      toast.error("Failed to export PDF due to image CORS restrictions. Try again.", { id: toastId });
+    } finally {
+      setIsExporting(false);
     }
-
-    pdf.save(`${basic.firstName}_${basic.lastName}_Profile.pdf`);
   };
 
   /* ================= RENDER ================= */
@@ -454,7 +534,7 @@ const hasEmployment = (docs) =>
                 onClick={() => setOpenConfirmModal(true)}
                 disabled={isDeleting}
                 title="Delete Employee"
-                className="flex items-center justify-center p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center cursor-pointer justify-center p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
               >
                 {isDeleting ? (
                   <Trash2 className="w-5 h-5 animate-spin" />
@@ -468,14 +548,14 @@ const hasEmployment = (docs) =>
                 {(isOwnProfile || isSuperAdmin || isHR) && (
                   <button 
                     onClick={handleExportPDF} 
-                    className="shadow-md px-4 py-2 rounded-lg text-sm font-semibold bg-white"
+                    className="shadow-md px-4 cursor-pointer py-2 rounded-lg text-sm font-semibold bg-white"
                   > 
                     Export PDF 
                   </button>
                 )}
                 <button 
                   onClick={() => setShowAddEdit(true)} 
-                  className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold"
+                  className="bg-primary cursor-pointer text-white px-4 py-2 rounded-lg text-sm font-semibold"
                 > 
                   Edit Profile 
                 </button>
@@ -607,15 +687,15 @@ const hasEmployment = (docs) =>
             ) : (
         <div className="space-y-10">
         {hasIdProofs(organizationData?.documents) && (
-          <IDProofsSection idProofs={organizationData.documents.idProofs} />
+          <IDProofsSection idProofs={organizationData.documents.idProofs} isExporting={isExporting} />
         )}
 
         {hasAcademicDocs(organizationData?.documents) && (
-          <AcademicSection academic={organizationData.documents.academicDocuments} />
+          <AcademicSection academic={organizationData.documents.academicDocuments} isExporting={isExporting} />
         )}
 
         {hasEmployment(organizationData?.documents) && (
-          <EmploymentSection history={organizationData.documents.employmentHistory} />
+          <EmploymentSection history={organizationData.documents.employmentHistory} isExporting={isExporting} />
         )}
       </div>
             )}
@@ -650,6 +730,9 @@ const hasEmployment = (docs) =>
             }}
             organizationData={organizationData}
             employeeList={employeeList}
+            isOwnProfile={isOwnProfile}
+            isSuperAdmin={isSuperAdmin}
+            isHR={isHR}
           />
         )}
         
@@ -745,93 +828,90 @@ function Stat({ title, value, color }) {
   );
 }
 
-const DocumentTile = ({ url, fileName, uploadedAt, label }) => {
+const DocumentTile = ({ url, fileName, uploadedAt, label, isExporting }) => {
   if (!url) return null;
 
   const isImage = /\.(jpg|jpeg|png)$/i.test(fileName || url);
   const isPDF = /\.pdf$/i.test(fileName || url);
 
   return (
-    <div className="border border-gray-300 rounded-xl overflow-hidden hide-scrollbar bg-white shadow-sm transition">
+    <div className={`border ${isExporting ? 'border-gray-200 shadow-none' : 'border-gray-300 shadow-sm'} rounded-xl overflow-hidden hide-scrollbar bg-white transition`}>
       {/* Preview */}
-      <div className="h-40 bg-gray-50 flex items-center hide-scrollbar overflow-hidden justify-center">
-        {isImage ? (
-          <img
-            src={url}
-            alt={fileName}
-            className="h-full w-full object-cover"
-          />
-        ) : isPDF ? (
-          <iframe
-            src={`${url}#toolbar=0&navpanes=0&scrollbar=0`}
-            className="w-full h-full border-none hide-scrollbar overflow-hidden"
-            scrolling="no"
-          />
-        ) : (
-          <span className="text-xs text-gray-400">No Preview</span>
-        )}
-      </div>
+      {!isExporting && (
+        <div className="h-40 bg-gray-50 flex items-center hide-scrollbar overflow-hidden justify-center">
+          {isImage ? (
+            <img
+              src={url}
+              alt={fileName}
+              className="h-full w-full object-cover"
+            />
+          ) : isPDF ? (
+            <iframe
+              src={`${url}#toolbar=0&navpanes=0&scrollbar=0`}
+              className="w-full h-full border-none hide-scrollbar overflow-hidden"
+              scrolling="no"
+            />
+          ) : (
+            <span className="text-xs text-gray-400">No Preview</span>
+          )}
+        </div>
+      )}
 
       {/* Meta */}
-      <div className="p-3">
+      <div className={`p-3 ${isExporting ? 'bg-gray-50' : ''}`}>
         {label && (
           <p className="text-[11px] text-gray-500 mb-0.5">{label}</p>
         )}
-        <p className="text-sm font-medium text-gray-800 truncate">
+        {/* <p className="text-sm font-medium text-gray-800 truncate">
           {fileName || "Document"}
-        </p>
-        {uploadedAt && (
+        </p> */}
+        {!isExporting && uploadedAt && (
           <p className="text-xs text-gray-400 mt-0.5">
             Uploaded {new Date(uploadedAt).toLocaleDateString()}
           </p>
         )}
-         <a href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-2 text-xs text-primary font-medium hover:underline"
-        >
-          View full document →
-        </a>
+      <a href={url} className="inline-block mt-2 text-xs text-primary font-medium hover:underline break-all" target="_blank" rel="noopener noreferrer">
+        {isExporting ? fileName : "View full document →"}
+      </a>
       </div>
     </div>
   );
 };
 
-const safeDocProps = (doc) => {
-  if (!doc) return {};
+const safeDocProps = (doc, isExporting) => {
+  if (!doc) return { isExporting };
   const { key, ...rest } = doc;
-  return rest;
+  return { ...rest, isExporting };
 };
 
-
-const IDProofsSection = ({ idProofs }) => (
+const IDProofsSection = ({ idProofs, isExporting }) => (
   <div>
     <h4 className="font-semibold text-sm mb-3">ID Proofs</h4>
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {(() => {
         const { key, ...aadhaar } = idProofs?.aadhaar || {};
-        return <DocumentTile {...aadhaar} label="Aadhaar Card" />;
+        return <DocumentTile {...aadhaar} label="Aadhaar Card" isExporting={isExporting} />;
       })()}
 
       {(() => {
         const { key, ...pan } = idProofs?.pan || {};
-        return <DocumentTile {...pan} label="PAN Card" />;
+        return <DocumentTile {...pan} label="PAN Card" isExporting={isExporting} />;
       })()}
 
       {(() => {
         const { key, ...passport } = idProofs?.passportOrDL || {};
-        return <DocumentTile {...passport} label="Passport / DL" />;
+        return <DocumentTile {...passport} label="Passport / DL" isExporting={isExporting} />;
       })()}
 
       {(() => {
         const { key, ...present } = idProofs?.presentAddressProof || {};
-        return <DocumentTile {...present} label="Present Address Proof" />;
+        return <DocumentTile {...present} label="Present Address Proof" isExporting={isExporting} />;
       })()}
 
       {(() => {
         const { key, ...permanent } = idProofs?.permanentAddressProof || {};
-        return <DocumentTile {...permanent} label="Permanent Address Proof" />;
+        return <DocumentTile {...permanent} label="Permanent Address Proof" isExporting={isExporting} />;
       })()}
     </div>
   </div>
@@ -839,7 +919,7 @@ const IDProofsSection = ({ idProofs }) => (
 
 
 
-const AcademicSection = ({ academic }) => {
+const AcademicSection = ({ academic, isExporting }) => {
   if (!academic) return null;
 
   return (
@@ -852,11 +932,11 @@ const AcademicSection = ({ academic }) => {
           <p className="text-xs font-medium text-gray-500 mb-2">10th Standard</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <DocumentTile
-              {...safeDocProps(academic?.tenth?.certificate)}
+              {...safeDocProps(academic?.tenth?.certificate, isExporting)}
               label="Certificate"
             />
             <DocumentTile
-              {...safeDocProps(academic?.tenth?.marksheet)}
+              {...safeDocProps(academic?.tenth?.marksheet, isExporting)}
               label="Marksheet"
             />
           </div>
@@ -867,11 +947,11 @@ const AcademicSection = ({ academic }) => {
           <p className="text-xs font-medium text-gray-500 mb-2">12th Standard</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <DocumentTile
-              {...safeDocProps(academic?.twelth?.certificate)}
+              {...safeDocProps(academic?.twelth?.certificate, isExporting)}
               label="Certificate"
             />
             <DocumentTile
-              {...safeDocProps(academic?.twelth?.marksheet)}
+              {...safeDocProps(academic?.twelth?.marksheet, isExporting)}
               label="Marksheet"
             />
           </div>
@@ -886,7 +966,7 @@ const AcademicSection = ({ academic }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <DocumentTile
-                {...safeDocProps(academic.graduation.certificate)}
+                {...safeDocProps(academic.graduation.certificate, isExporting)}
                 label="Degree Certificate"
               />
             </div>
@@ -895,7 +975,7 @@ const AcademicSection = ({ academic }) => {
               {academic.graduation.marksheets?.map((m, i) => (
                 <DocumentTile
                   key={i}
-                  {...safeDocProps(m)}
+                  {...safeDocProps(m, isExporting)}
                   label={`Semester ${i + 1} Marksheet`}
                 />
               ))}
@@ -905,7 +985,7 @@ const AcademicSection = ({ academic }) => {
 
         {/* NOC */}
         <DocumentTile
-          {...safeDocProps(academic?.nocFromCollege)}
+          {...safeDocProps(academic?.nocFromCollege, isExporting)}
           label="NOC from College"
         />
       </div>
@@ -914,7 +994,7 @@ const AcademicSection = ({ academic }) => {
 };
 
 
-const EmploymentSection = ({ history }) => {
+const EmploymentSection = ({ history, isExporting }) => {
   if (!history?.length) return null;
 
   return (
@@ -935,7 +1015,7 @@ const EmploymentSection = ({ history }) => {
               {job.offerLetter?.map((d, i) => (
                 <DocumentTile
                   key={i}
-                  {...safeDocProps(d)}
+                  {...safeDocProps(d, isExporting)}
                   label="Offer Letter"
                 />
               ))}
@@ -943,13 +1023,13 @@ const EmploymentSection = ({ history }) => {
               {job.experienceLetter?.map((d, i) => (
                 <DocumentTile
                   key={i}
-                  {...safeDocProps(d)}
+                  {...safeDocProps(d, isExporting)}
                   label="Experience Letter"
                 />
               ))}
 
               <DocumentTile
-                {...safeDocProps(job.relievingLetter)}
+                {...safeDocProps(job.relievingLetter, isExporting)}
                 label="Relieving Letter"
               />
 
@@ -959,6 +1039,7 @@ const EmploymentSection = ({ history }) => {
                   url={s.documentUrl}
                   fileName={s.fileName}
                   label={`Salary Slip (${s.month})`}
+                  isExporting={isExporting}
                 />
               ))}
             </div>
