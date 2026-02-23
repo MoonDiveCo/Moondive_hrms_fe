@@ -278,7 +278,10 @@ export const NotificationProvider = ({ children }) => {
       let registration;
       try {
         registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        await navigator.serviceWorker.ready;
+        await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker activation timed out')), 10000)),
+        ]);
       } catch (swError) {
         console.error("Service Worker registration failed:", swError);
         return null;
