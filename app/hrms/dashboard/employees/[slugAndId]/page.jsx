@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import AddEditEmployeeModal from "../AddEditEmployeeModal";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
@@ -9,15 +9,19 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { AuthContext } from "@/context/authContext";
 import { RBACContext } from "@/context/rbacContext";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 /* ================= MAIN ================= */
 
 export default function EmployeeProfilePage() {
   const { slugAndId } = useParams();
   const employeeId = slugAndId?.split("-").pop();
+  const router = useRouter();
 
   // ✅ Add auth context
-  const { user } = useContext(AuthContext);
+  const { user, allUserPermissions } = useContext(AuthContext);
+  const deletePermission = allUserPermissions.includes("HRMS:EMPLOYEES:DELETE");
   const { canPerform, submodules } = useContext(RBACContext);
 
   const [employee, setEmployee] = useState(null);
@@ -27,6 +31,87 @@ export default function EmployeeProfilePage() {
   const [organizationData, setOrganizationData] = useState(null);
   const [employeeList, setEmployeeList] = useState([]);
   const pdfRef = useRef(null);
+
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const deleteEmployee = async () => {
+    try {
+      const res = await axios.put(`/hrms/employee/delete-employee/${employeeId}`);
+      if (res.data.responseCode === 200) {
+        toast.success("Delete Successful");
+        router.push("/hrms/dashboard/employees");
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error while deleting employee:", err);
+      toast.error("Failed To Delete Employee");
+      return false;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    await deleteEmployee();
+    setOpenConfirmModal(false);
+  };
+
+  const hasAnyDocuments = (documents) => {
+  if (!documents) return false;
+
+  const { idProofs, academicDocuments, employmentHistory } = documents;
+
+  if (employmentHistory?.length > 0) return true;
+
+  if (idProofs && Object.values(idProofs).some(value => value)) {
+    return true;
+  }
+
+  if (academicDocuments) {
+    const academicValues = Object.values(academicDocuments);
+
+    for (let item of academicValues) {
+      if (!item) continue;
+
+      if (Array.isArray(item)) {
+        if (item.length > 0) return true;
+      } else if (typeof item === "object") {
+        if (Object.values(item).some(val =>
+          Array.isArray(val) ? val.length > 0 : val
+        )) {
+          return true;
+        }
+      } else if (item) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+const hasIdProofs = (docs) =>
+  docs?.idProofs &&
+  Object.values(docs.idProofs).some(v => v);
+
+const hasAcademicDocs = (docs) =>
+  docs?.academicDocuments &&
+  Object.values(docs.academicDocuments).some(item => {
+    if (!item) return false;
+    if (Array.isArray(item)) return item.length > 0;
+    if (typeof item === "object")
+      return Object.values(item).some(val =>
+        Array.isArray(val) ? val.length > 0 : val
+      );
+    return false;
+  });
+
+const hasEmployment = (docs) =>
+  docs?.employmentHistory?.length > 0;
+
 
   /* ---------- section refs ---------- */
   const bioRef = useRef(null);
@@ -62,8 +147,8 @@ export default function EmployeeProfilePage() {
     { key: "bio", label: "Bio", visible: true },
     { key: "employment", label: "Employment", visible: canViewEmployment },
     { key: "stats", label: "Stats", visible: canViewStats },
-    { key: "compensation", label: "Compensation", visible: canViewCompensation },
     { key: "documents", label: "Documents", visible: canViewDocuments },
+    { key: "compensation", label: "Compensation", visible: canViewCompensation },
   ].filter(tab => tab.visible);
 
   // Create section map based on visible tabs
@@ -359,30 +444,44 @@ export default function EmployeeProfilePage() {
                 <h4 className="text-primaryText"> {basic.firstName} {basic.lastName} </h4>
                 <span className={`text-[10px] font-bold px-2 py-0.5 ${basic.onboardingStatus === "Pending" ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'} rounded uppercase`}>Onboarding {basic.onboardingStatus} </span>
               </div>
-              <p className="text-primaryText"> Employee ID: {basic.employeeId} · {basic.designationId?.name} </p>
+              <p className="text-primaryText"> <span className="font-semibold text-sm">Employee ID:</span> {basic.employeeId} · {basic.designationId?.name} </p>
             </div>
           </div>
           
-          {/* ✅ Show buttons if can edit */}
-          {canEditProfile && (
-            <div className="flex gap-3">
-              {/* ✅ Export PDF for own profile, SuperAdmin, or HR */}
-              {(isOwnProfile || isSuperAdmin || isHR) && (
-                <button 
-                  onClick={handleExportPDF} 
-                  className="shadow-md px-4 py-2 rounded-lg text-sm font-semibold"
-                > 
-                  Export PDF 
-                </button>
-              )}
-              <button 
-                onClick={() => setShowAddEdit(true)} 
-                className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold"
-              > 
-                Edit Profile 
+          <div className="flex gap-3">
+            {deletePermission && (
+              <button
+                onClick={() => setOpenConfirmModal(true)}
+                disabled={isDeleting}
+                title="Delete Employee"
+                className="flex items-center justify-center p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <Trash2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-5 h-5" />
+                )}
               </button>
-            </div>
-          )}
+            )}
+            {canEditProfile && (
+              <>
+                {(isOwnProfile || isSuperAdmin || isHR) && (
+                  <button 
+                    onClick={handleExportPDF} 
+                    className="shadow-md px-4 py-2 rounded-lg text-sm font-semibold bg-white"
+                  > 
+                    Export PDF 
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowAddEdit(true)} 
+                  className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold"
+                > 
+                  Edit Profile 
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* ================= IMPROVED TABS ================= */}
@@ -489,7 +588,7 @@ export default function EmployeeProfilePage() {
                   <Info
                     label="Leave Balance"
                     value={leaveBalance?.leaveBalances
-                      ?.map(lb => `${lb.leaveTypeCode}: ${lb.available}`)
+                      ?.map(lb => `${lb.leaveTypeCode}: ${lb.leaveTypeCode==="LWP" ? lb.monthlyUsed : lb.available}`)
                       .join(" | ")}
                     full
                   />
@@ -499,30 +598,38 @@ export default function EmployeeProfilePage() {
           </section>
         )}
 
-        {/* ================= COMPENSATION ================= */}
+        {/* ================= DOCUMENTS ================= */}
+        {canViewDocuments && (
+          <section ref={documentsRef} className="min-h-[400px]">
+           <Card title="Documents">
+            {   !hasAnyDocuments(organizationData?.documents) ? (
+              <p className="text-gray-400 text-sm">No documents uploaded</p>
+            ) : (
+        <div className="space-y-10">
+        {hasIdProofs(organizationData?.documents) && (
+          <IDProofsSection idProofs={organizationData.documents.idProofs} />
+        )}
+
+        {hasAcademicDocs(organizationData?.documents) && (
+          <AcademicSection academic={organizationData.documents.academicDocuments} />
+        )}
+
+        {hasEmployment(organizationData?.documents) && (
+          <EmploymentSection history={organizationData.documents.employmentHistory} />
+        )}
+      </div>
+            )}
+          </Card>
+
+          </section>
+        )}
+
+                {/* ================= COMPENSATION ================= */}
         {canViewCompensation && (
           <section ref={compensationRef} className="">
             <Card title="Compensation">
               <p className="text-gray-500">Confidential compensation information</p>
             </Card>
-          </section>
-        )}
-
-        {/* ================= DOCUMENTS ================= */}
-        {canViewDocuments && (
-          <section ref={documentsRef} className="min-h-[400px]">
-           <Card title="Documents">
-            { !organizationData?.documents ? (
-              <p className="text-gray-400 text-sm">No documents uploaded</p>
-            ) : (
-              <div className="space-y-10">
-                <IDProofsSection idProofs={organizationData.documents.idProofs} />
-                <AcademicSection academic={organizationData.documents.academicDocuments} />
-                <EmploymentSection history={organizationData.documents.employmentHistory} />
-              </div>
-            )}
-          </Card>
-
           </section>
         )}
 
@@ -544,6 +651,53 @@ export default function EmployeeProfilePage() {
             organizationData={organizationData}
             employeeList={employeeList}
           />
+        )}
+        
+        {openConfirmModal && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpenConfirmModal(false)} />
+            <div className="relative w-[min(500px,90%)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <h3 className="text-primaryText">
+                  Confirm Delete
+                </h3>
+                <button
+                  onClick={() => setOpenConfirmModal(false)}
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-md"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6">
+                <div className="text-center">
+                  <p className="text-sm text-[var(--color-primaryText)] mt-1">
+                    Are you sure you want to delete {basic.firstName} {basic.lastName}?
+                  </p>
+                  <p className="text-xs text-red-500 mt-2">This action cannot be undone</p>
+                </div>
+
+                <div className="mt-6 flex justify-center gap-3 border-t border-gray-100 pt-4">
+                  <button
+                    onClick={() => setOpenConfirmModal(false)}
+                    className="px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-[var(--color-primaryText)] hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting}
+                    className="px-4 py-2 rounded-md bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
         
        
