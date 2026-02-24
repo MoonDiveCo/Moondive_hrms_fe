@@ -308,10 +308,30 @@ export default function OverviewPage() {
                   </div>
                 ) : (
                   [...pendingLeaves]
-                    .sort(
-                      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-                    )
-                    .slice(0, 3)
+                  .sort((a, b) => {
+                    const startOfDay = (d) => {
+                      const date = new Date(d);
+                      date.setHours(0, 0, 0, 0);
+                      return date;
+                    };
+
+                    const today = startOfDay(new Date());
+                    const aDate = startOfDay(a.startDate);
+                    const bDate = startOfDay(b.startDate);
+
+                    const getPriority = (date) => {
+                      if (date.getTime() === today.getTime()) return 1; // Today
+                      if (date > today) return 2; // Upcoming
+                      return 3; // Previous
+                    };
+
+                    const priorityDiff = getPriority(aDate) - getPriority(bDate);
+                    if (priorityDiff !== 0) return priorityDiff;
+
+                    // If same bucket → sort by latest created
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                  })
+                  .slice(0, 3)
                     .map((leave) => (
                       <LeaveRow
                         key={leave.leaveId}

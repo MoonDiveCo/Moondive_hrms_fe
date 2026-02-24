@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 
 const SHIFT_START = "09:00";
-const SHIFT_END = "18:00";
+const SHIFT_END = "19:00";
 
 /* ---------- SHIFT META ---------- */
 function getShiftMeta() {
@@ -100,7 +100,7 @@ export default function WorkingTimeline({
   const width = Math.max(0, liveEnd - start);
 
   return (
-    <div className="relative h-10 flex items-center">
+    <div className="relative h-10 flex items-center mx-1.5">
       {/* Base line */}
       <div className="absolute h-[2px] w-full bg-gray-200" />
 
@@ -114,7 +114,7 @@ export default function WorkingTimeline({
 
       {/* Start dot */}
       <div
-        className="absolute w-2.5 h-2.5 bg-green-500 rounded-full"
+        className="absolute w-2.5 h-2.5 bg-green-500 rounded-full -translate-x-1/2"
         style={{ left: `${start}%` }}
       />
 
@@ -122,7 +122,7 @@ export default function WorkingTimeline({
       <motion.div
         animate={{ left: `${liveEnd}%` }}
         transition={{ ease: "linear", duration: 0.5 }}
-        className={`absolute w-2.5 h-2.5 rounded-full ${
+        className={`absolute w-2.5 h-2.5 rounded-full -translate-x-1/2 ${
           checkOut || leaveSession === "SECOND_HALF"
             ? "bg-red-500"
             : "bg-green-400"
