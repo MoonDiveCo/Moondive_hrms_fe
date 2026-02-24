@@ -7,6 +7,7 @@ import { toast, Toaster } from 'sonner';
 import EntityTable from '../../../../../components/Common/EntityTable';
 import ShiftModal from '../../../../../components/Operations/Shift/ShiftModal';
 import { AuthContext } from '@/context/authContext';
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export default function Shifts() {
   const [shifts, setShifts] = useState([]);
@@ -180,7 +181,18 @@ export default function Shifts() {
     },
   ];
 
-  if (loading) return <div className="p-4">Loading...</div>;
+if(loading){
+    return(
+      <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+        <DotLottieReact
+          src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
+          loop
+          autoplay
+          style={{ width: 100, height: 100, alignItems: 'center' }} // add this
+        />
+      </div>
+    )
+  }
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (

@@ -78,11 +78,11 @@ export default function Employees({ initialEmployees = [] }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (initialEmployees.length === 0) {
-      fetchEmployees();
-    }
-  }, [initialEmployees.length]);
+  // useEffect(() => {
+  //   if (initialEmployees.length === 0) {
+  //     fetchEmployees();
+  //   }
+  // }, [initialEmployees.length]);
 
   async function fetchEmployees() {
     setLoading(true);
@@ -193,11 +193,11 @@ export default function Employees({ initialEmployees = [] }) {
         const status = emp.onboardingStatus;
 
         if (selectedOnboardingStatus === 'Completed') {
-          return status === "Completed" === true;
+          return status === "Completed";
         }
 
         if (selectedOnboardingStatus === 'Pending') {
-          return status && status === "Pending" === true;
+          return status === "Pending";
         }
 
         return true;

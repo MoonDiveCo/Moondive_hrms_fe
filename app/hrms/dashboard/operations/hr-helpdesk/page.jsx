@@ -489,10 +489,15 @@ const unviewedCount = (() => {
           description="Are you sure you want to delete this request?"
           onClose={() => setDeleteRow(null)}
           onConfirm={async () => {
-            await axios.delete(`/hrms/hrhelpdesk/${deleteRow._id}`);
-            toast.success('Request deleted');
-            setDeleteRow(null);
-            fetchData();
+            try {
+              await axios.delete(`/hrms/hrhelpdesk/${deleteRow._id}`);
+              toast.success('Request deleted');
+              setDeleteRow(null);
+              fetchData();
+            } catch (err) {
+              console.error("Failed to delete the hr help desk request:", err);
+              toast.error(err.response?.data?.responseMessage || 'Failed to delete request');
+            }
           }}
         />
       )}

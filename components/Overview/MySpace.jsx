@@ -477,9 +477,9 @@ export default function HRMSOverviewPage() {
         <div className='shrink-0'>
           <button
             onClick={() => setOpenProfile(true)}
-            className='px-5 flex items-center gap-2 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition'
+            className='px-4 flex items-center gap-2 py-2 border cursor-pointer border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition'
           >
-            <PencilIcon size={16} /> Edit Profile
+            <PencilIcon size={16} /> Edit
           </button>
         </div>
       </div>

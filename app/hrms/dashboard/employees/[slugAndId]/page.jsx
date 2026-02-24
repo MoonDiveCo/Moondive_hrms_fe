@@ -612,9 +612,15 @@ const hasEmployment = (docs) =>
               <Grid>
                 <Info label="Department" value={basic.departmentId?.name} />
                 <Info label="Employment Type" value={basic.employmentType} />
-                <Info label="Joining Date" value={new Date(basic.dateOfJoining).toDateString()} />
-                <Info label="Manager" value={`${basic.reportingManagerId?.firstName} ${basic.reportingManagerId?.lastName}`} />
-                <Info label="Shift" value={`${basic.workingShiftId?.startTime} - ${basic.workingShiftId?.endTime}`} />
+                <Info label="Joining Date" value={basic.dateOfJoining ? new Date(basic.dateOfJoining).toDateString() : "—"} />
+                {basic.employmentType === "Probation" && basic.probationEndDate && (
+                  <Info label="Probation End Date" value={new Date(basic.probationEndDate).toDateString()} />
+                )}
+                {basic.employmentType === "Internship" && basic.internshipEndDate && (
+                  <Info label="Internship End Date" value={new Date(basic.internshipEndDate).toDateString()} />
+                )}
+                <Info label="Manager" value={`${basic.reportingManagerId?.firstName || "Unknown"} ${basic.reportingManagerId?.lastName || ""}`.trim()} />
+                <Info label="Shift" value={`${basic.workingShiftId?.startTime || ""} - ${basic.workingShiftId?.endTime || ""}`.replace(" - ", "") || "—"} />
               </Grid>
             </Card>
           </section>

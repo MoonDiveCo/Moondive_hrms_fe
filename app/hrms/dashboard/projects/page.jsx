@@ -157,7 +157,7 @@ export default function ProjectPage() {
       }
     } catch (err) {
       console.error('Error deleting project:', err);
-      toast.error(res.data?.responseMessage ||'Failed To Delete Project');
+      toast.error(err ||'Failed To Delete Project');
     }
     setOpenMenuId(null);
   };
@@ -203,7 +203,7 @@ export default function ProjectPage() {
   return (
     <div className='bg-background-light font-body text-gray-800 '>
       {/* ================= GLOBAL CSS ================= */}
-      <style jsx global>{`
+      <style>{`
         .tree-line-vertical {
           width: 2px;
           height: 32px;
