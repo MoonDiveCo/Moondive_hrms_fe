@@ -271,9 +271,19 @@ const handleEditItem = async (formData, id) => {
 };
 
 const handleDeleteInventory = async (id) => {
-  await axios.delete(`/cms/inventory/delete-inventory/${id}`);
-  setEditOpen(false);
-  fetchData();
+  const confirmed = window.confirm("Are you sure you want to delete this inventory item? This action cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    await axios.delete(`/cms/inventory/delete-inventory/${id}`);
+    toast.success("Inventory item deleted successfully");
+    setEditOpen(false);
+    fetchData();
+    fetchAllInventory();
+  } catch (error) {
+    console.error("Error deleting inventory:", error);
+    toast.error(error.response?.data?.message || "Failed to delete inventory item");
+  }
 };
 
   const handleEdit = (item) => {

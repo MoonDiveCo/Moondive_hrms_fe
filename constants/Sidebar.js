@@ -97,13 +97,13 @@ export function MenuProvider({ children }) {
               href: "/cms/dashboard/inventory-management",
               position: "top"
       },
-      "CRM:CRM_OVERVIEW:VIEW":{ label: "Overview", icon: OverviewIcon, href: "/crm/dashboard",position: "top" },
-      "CRM:SALES:VIEW":{
-              label: "Sales Dashboard",
-              icon: OverviewIcon,
-              href: "/crm/dashboard/sales",
-              position: "top"
-            },
+      "CRM:CRM_OVERVIEW:VIEW":{ label: "Dashboard", icon: OverviewIcon, href: "/crm/dashboard",position: "top" },
+      // "CRM:SALES:VIEW":{
+      //         label: "Sales Dashboard",
+      //         icon: OverviewIcon,
+      //         href: "/crm/dashboard/sales",
+      //         position: "top"
+      //       },
       "CRM:LEADS:VIEW":{
               label: "Leads",
               icon: CandidateIcon,

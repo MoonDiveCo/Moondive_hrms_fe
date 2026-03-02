@@ -32,20 +32,21 @@ export default function ManageTestimonials() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchAllModerations()
-    setTestimonials(modData?.testimonial || [])
-  }, [modData])
+    fetchAllModerations();
+  }, []);
 
-   const fetchAllModerations = async () => {
+  const fetchAllModerations = async () => {
     try {
-      const allData = await axios.get(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/moderation-data`)
-      setModData(allData?.data?.result || {})
-      setLoading(false)
+      const allData = await axios.get(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/moderation-data`);
+      const result = allData?.data?.result || {};
+      setModData(result);
+      setTestimonials(result?.testimonial || []);
+      setLoading(false);
     } catch (error) {
-      setLoading(false)
-      console.error('Error fetching moderation data:', error)
+      setLoading(false);
+      console.error('Error fetching moderation data:', error);
     }
-  }
+  };
 
   const handleEdit = (index) => {
     setIsAddMode(false);
@@ -133,7 +134,7 @@ export default function ManageTestimonials() {
               <button
                   className="p-2 bg-red-50 rounded-full hover:bg-red-100 transition"
                   onClick={() => {
-                    setDeleteIndex(index);
+                    setDeleteIndex(t._id);
                     setOpenDeleteModal(true);
                   }}
                 >
