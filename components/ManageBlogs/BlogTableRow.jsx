@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const BlogTableRow = ({ blog, openEditModal  }) => {
+const BlogTableRow = ({ blog, openEditModal, canEdit = true, canDelete = true }) => {
   const router =  useRouter()
   return (
     <tr className="border-b border-gray-200 hover:bg-gray-50">
@@ -60,13 +60,17 @@ const BlogTableRow = ({ blog, openEditModal  }) => {
             <Eye className="w-4 h-4 text-primaryText cursor-pointer" />
           </button>
 
+          {canEdit && (
           <button onClick={() => openEditModal(blog)}>
             <Edit className="w-4 h-4 text-primaryText cursor-pointer" />
           </button>
+          )}
 
+          {canDelete && (
           <button onClick={() => console.log("Delete", blog._id)}>
             <Trash2 className="w-4 h-4 text-red-600 cursor-pointer" />
           </button>
+          )}
 
         </div>
       </td>

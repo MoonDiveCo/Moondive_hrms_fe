@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
 
 
 
@@ -28,6 +29,7 @@ function getDefaultStats() {
 }
 
 export default function InProcessPage() {
+  const { canPerform } = useContext(RBACContext);
   const [baseLeads, setBaseLeads] = useState([]); 
   const [allLeads, setAllLeads] = useState([]); 
   const [loading, setLoading] = useState(true);
@@ -395,6 +397,7 @@ export default function InProcessPage() {
             onToggleSelectAll={undefined}
             showContactActions={true}
             showSelection={false}
+            canEdit={canPerform("EDIT", "CRM", "IN_PROCESS")}
           />
         </div>
       </div>

@@ -103,7 +103,7 @@ export default function ProjectPage() {
   // ✅ ONLY DATA STATE
   const [projects, setProjects] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const { user } = useContext(AuthContext);
+  const { user, allUserPermissions } = useContext(AuthContext);
   const toggleProject = (id) => {
     setOpenProject((prev) => (prev === id ? null : id));
   };
@@ -182,10 +182,9 @@ export default function ProjectPage() {
     return Math.round(diffDays * hoursPerDay);
   };
 
-  const isAdmin =
-    user?.userRole?.includes('SuperAdmin') ||
-    user?.userRole?.includes('Admin') ||
-    user?.permissions?.includes('*');
+  const canWriteProject = allUserPermissions.includes('HRMS:PROJECTS:WRITE') || allUserPermissions.includes('*');
+  const canEditProject = allUserPermissions.includes('HRMS:PROJECTS:EDIT') || allUserPermissions.includes('*');
+  const canDeleteProject = allUserPermissions.includes('HRMS:PROJECTS:DELETE') || allUserPermissions.includes('*');
 
   if (loading) {
     return (
@@ -255,7 +254,7 @@ export default function ProjectPage() {
               Monitor active projects, resources, and timeline estimations.
             </p>
           </div>
-           {user?.userRole?.includes('SuperAdmin') || user?.userRole?.includes('Admin') ?  (     
+           {canWriteProject && (
           <div className='flex gap-3'>
 
             <button
@@ -265,8 +264,6 @@ export default function ProjectPage() {
               Add Project
             </button>
           </div>
-           ) :(
-            ''
            )}
         </div>
 
@@ -351,7 +348,7 @@ export default function ProjectPage() {
                     </svg>
                   </button>
                 </div>
-                {isAdmin && (
+                {(canEditProject || canDeleteProject) && (
                   <div className='relative ml-2'>
                     <button
                       onClick={() =>
@@ -401,6 +398,7 @@ export default function ProjectPage() {
                               Edit Project
                             </span>
                           </button>
+                          {canDeleteProject && (
                           <button
                             onClick={() => handleDeleteProject(project._id)}
                             className='w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600'
@@ -420,6 +418,7 @@ export default function ProjectPage() {
                               Delete Project
                             </span>
                           </button>
+                          )}
                         </div>
                       </>
                     )}

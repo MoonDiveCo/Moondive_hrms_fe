@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import InventoryCard from "@/components/InventoryManagement/InventoryCard";
 import AddInventoryModal, { buildInventorySlug } from "@/components/InventoryManagement/AddInventoryModal";
@@ -7,10 +7,12 @@ import EditInventoryModal from "@/components/InventoryManagement/EditInventoryMo
 import FilterDropdown from "@/components/UI/FilterDropdown";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { toast, Toaster } from "sonner";
+import { RBACContext } from '@/context/rbacContext';
 
 const categories = ["Laptop", "Monitor", "Mouse", "Keyboard", "Accessories", "OfficeInventory"];
 
 function InventoryManagement() {
+  const { canPerform } = useContext(RBACContext);
   const [inventory, setInventory] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeCategory, setActiveCategory] = useState("Laptop");
@@ -363,12 +365,14 @@ const filteredInventory = React.useMemo(() => {
           </button>
         ))}
 
+        {canPerform("WRITE", "CMS", "INVENTORY") && (
         <button
           className="ml-auto bg-primary text-xs flex justify-center items-center text-white px-3 py-2 rounded-full mb-2"
           onClick={() => setAddOpen(true)}
           >
             + Add Item
         </button>
+        )}
       </div>
 
     <div className="flex gap-4">
@@ -491,7 +495,7 @@ const filteredInventory = React.useMemo(() => {
           <InventoryCard
             key={item._id}
             item={item}
-            onClick={() => handleEdit(item)}
+            onClick={() => canPerform("EDIT", "CMS", "INVENTORY") && handleEdit(item)}
           />
         ))}
       </div>
@@ -574,7 +578,7 @@ const filteredInventory = React.useMemo(() => {
         item={selectedItem}
         onClose={() => setEditOpen(false)}
         onSave={(form, _id) => handleEditItem(form, _id)}
-        onDelete={(id)=>handleDeleteInventory(id)}
+        onDelete={canPerform("DELETE", "CMS", "INVENTORY") ? (id) => handleDeleteInventory(id) : undefined}
       />
     </div>
   );
