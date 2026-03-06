@@ -247,13 +247,14 @@ export default function AddEditRoleModal({
                           key={module}
                           className="hover:bg-gray-50 border border-[#D0D5DD]"
                         >
-                          <td className="px-4 py-4 font-medium flex items-center">
-                          {module}
-
-                          {MODULE_INFO[module] && (
-                            <InfoTooltip info={MODULE_INFO[module]} />
-                          )}
-                        </td>
+                          <td className="px-4 py-4 font-medium">
+                            <span className="inline-flex items-center">
+                              {module}
+                              {MODULE_INFO[module] && (
+                                <InfoTooltip info={MODULE_INFO[module]} />
+                              )}
+                            </span>
+                          </td>
 
                           {ACTION_COLUMNS.map((action) => {
                             const permission = Object.values(
@@ -273,75 +274,51 @@ export default function AddEditRoleModal({
                                 key={action}
                                 className="px-3 py-4 text-center"
                               >
-                                <label className={`inline-flex items-center justify-center ${!allowed ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                  <input
-                                    type="checkbox"
-                                    disabled={!allowed}
-                                    checked={checked}
-                                    onChange={() =>
-                                      allowed &&
-                                      togglePermission(permission)
+                                <div
+                                  onClick={() => allowed && togglePermission(permission)}
+                                  className={`
+                                    inline-flex items-center justify-center
+                                    h-5 w-5 rounded-full border-2
+                                    ${
+                                      checked
+                                        ? 'border-[var(--color-primary)] bg-white'
+                                        : 'border-gray-400 bg-white'
                                     }
-                                    className="sr-only peer"
-                                  />
-                                  <div
-                                    className={`
-                                      h-5 w-5 rounded-full border-2
-                                      flex items-center justify-center
-                                      ${
-                                        checked
-                                          ? 'border-[var(--color-primary)] bg-white'
-                                          : 'border-gray-400 bg-white'
-                                      }
-                                      ${
-                                        !allowed
-                                          ? 'opacity-40'
-                                          : 'hover:border-[var(--color-primary)]'
-                                      }
-                                      peer-focus:ring-2
-                                      peer-focus:ring-[var(--color-primary)]
-                                      peer-focus:ring-offset-2
-                                    `}
-                                  >
-                                    {checked && (
-                                      <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
-                                    )}
-                                  </div>
-                                </label>
+                                    ${
+                                      !allowed
+                                        ? 'opacity-40 cursor-not-allowed'
+                                        : 'cursor-pointer hover:border-[var(--color-primary)]'
+                                    }
+                                  `}
+                                >
+                                  {checked && (
+                                    <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
+                                  )}
+                                </div>
                               </td>
                             );
                           })}
 
                           {/* ALL column — toggle all permissions in this row */}
                           <td className="px-3 py-4 text-center">
-                            <label className="inline-flex items-center justify-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={rowAllSelected}
-                                onChange={() => toggleRowAll(module, actions)}
-                                className="sr-only peer"
-                              />
-                              <div
-                                className={`
-                                  h-5 w-5 rounded border-2
-                                  flex items-center justify-center
-                                  ${
-                                    rowAllSelected
-                                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
-                                      : 'border-gray-400 bg-white hover:border-[var(--color-primary)]'
-                                  }
-                                  peer-focus:ring-2
-                                  peer-focus:ring-[var(--color-primary)]
-                                  peer-focus:ring-offset-2
-                                `}
-                              >
-                                {rowAllSelected && (
-                                  <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                                    <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                )}
-                              </div>
-                            </label>
+                            <div
+                              onClick={() => toggleRowAll(module, actions)}
+                              className={`
+                                inline-flex items-center justify-center
+                                h-5 w-5 rounded border-2 cursor-pointer
+                                ${
+                                  rowAllSelected
+                                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                                    : 'border-gray-400 bg-white hover:border-[var(--color-primary)]'
+                                }
+                              `}
+                            >
+                              {rowAllSelected && (
+                                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                                  <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
