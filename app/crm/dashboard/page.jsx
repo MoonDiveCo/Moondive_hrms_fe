@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, Download, MoreVertical } from "lucide-react";
 import LeadList from "../../../components/CrmDashboard/LeadList";
 import LeadStats from "../../../components/CrmDashboard/LeadStats";
@@ -101,6 +101,45 @@ useEffect(() => {
     });
   };
 
+  const fetchAllLeads = async () => {
+    setLoading(true);
+    try {
+      const statusForService = filters.status || "New";
+      const {
+        contactLeads,
+        chatbotLeads,
+        scheduleLeads,
+        sdrLeads: sdrFromService,
+        allLeads: combinedFromService,
+      } = await getLeadsFromAllSources({
+        status: statusForService,
+        search: filters.search,
+        time: filters.time,
+        score: filters.score,
+        page: filters.page,
+        limit: filters.limit,
+      });
+      setDirectLeads(contactLeads);
+      setChatbotLeads(chatbotLeads);
+      setScheduleMeetingLeads(scheduleLeads);
+
+      setLeadScoringLeads(sdrFromService);
+      setSdrLeads(sdrFromService);
+      await fetchStats();
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      setDirectLeads([]);
+      setChatbotLeads([]);
+      setScheduleMeetingLeads([]);
+      setLeadScoringLeads([]);
+      setSdrLeads([]);
+      setAllLeads([]);
+      setTopLeads([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Generic bulk status update
   const bulkUpdateStatus = async (newStatus) => {
     if (selectedLeadIds.length === 0) {
@@ -141,45 +180,6 @@ useEffect(() => {
   // Specific actions
   const handleMoveSelectedToInProcess = () => bulkUpdateStatus("In Process");
   const handleMoveSelectedToArchived = () => bulkUpdateStatus("Archived");
-
-  const fetchAllLeads = async () => {
-    setLoading(true);
-    try {
-      const statusForService = filters.status || "New";
-      const {
-        contactLeads,
-        chatbotLeads,
-        scheduleLeads,
-        sdrLeads: sdrFromService,
-        allLeads: combinedFromService,
-      } = await getLeadsFromAllSources({
-        status: statusForService,
-        search: filters.search,
-        time: filters.time,
-        score: filters.score,
-        page: filters.page,
-        limit: filters.limit,
-      });
-      setDirectLeads(contactLeads);
-      setChatbotLeads(chatbotLeads);
-      setScheduleMeetingLeads(scheduleLeads);
-
-      setLeadScoringLeads(sdrFromService);
-      setSdrLeads(sdrFromService);
-      await fetchStats();
-    } catch (error) {
-      console.error("Error fetching leads:", error);
-      setDirectLeads([]);
-      setChatbotLeads([]);
-      setScheduleMeetingLeads([]);
-      setLeadScoringLeads([]);
-      setSdrLeads([]);
-      setAllLeads([]);
-      setTopLeads([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     fetchAllLeads();
@@ -435,6 +435,37 @@ useEffect(() => {
       console.error("Failed to export leads:", error);
     }
   };
+
+  // ---------- COMPUTED KPIs (must be before early returns) ----------
+  const highestScore = useMemo(() => {
+    if (!topLeads.length) return 0;
+    return Math.max(...topLeads.map((l) => l.leadScore || 0));
+  }, [topLeads]);
+
+  const highestScoreLead = useMemo(() => {
+    if (!topLeads.length) return null;
+    return topLeads.reduce((best, l) =>
+      (l.leadScore || 0) > (best.leadScore || 0) ? l : best
+    , topLeads[0]);
+  }, [topLeads]);
+
+  const topAvgScore = useMemo(() => {
+    if (!topLeads.length) return 0;
+    return Math.round(
+      topLeads.reduce((sum, l) => sum + (l.leadScore || 0), 0) / topLeads.length
+    );
+  }, [topLeads]);
+
+  const contactedCount = useMemo(() => {
+    return topLeads.filter((l) => l.lastEmailSent).length;
+  }, [topLeads]);
+
+  const needActionCount = useMemo(() => {
+    return topLeads.filter((l) => !l.lastEmailSent).length;
+  }, [topLeads]);
+
+  const weeklyTrend = stats?.weeklyTrend || [];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm">
@@ -455,319 +486,296 @@ useEffect(() => {
     );
   }
 
- 
- 
-
- 
   return (
-    <div className="w-full p-4">
-      <div className="w-full">
-        <div className="mb-2 flex justify-between items-center">
+    <div className="w-full p-6">
+      <div className="w-full flex flex-col gap-8">
+        {/* Header */}
+        <div className="flex justify-between items-center">
           <div>
-            <h4 className="text-primaryText ">Overview</h4>
+            <h4 className="text-primaryText font-bold">Leads Dashboard Overview</h4>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExport}
+              className="flex items-center justify-center gap-2 cursor-pointer rounded-full bg-primary text-white px-6 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Download className="w-3 h-3 text-white" />
+              Export CSV
+            </button>
           </div>
         </div>
-        <div className="">
-          {topLeads.length > 0 && (
-            <div className="mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <TopLeadMetric
-                  label="Highest Score"
-                  value={`${topLeads[0]?.leadScore || 0}/100`}
-                  sublabel={
-                    topLeads[0]
-                      ? `${topLeads[0].firstName || ""} ${
-                          topLeads[0].lastName || ""
-                        }`
-                      : "N/A"
-                  }
-                  color="from-blue-400 to-blue-600"
-                />
 
-                <TopLeadMetric
-                  label="Average Score"
-                  value={`${
-                    topLeads.length > 0
-                      ? Math.round(
-                          topLeads.reduce(
-                            (sum, l) => sum + (l.leadScore || 0),
-                            0
-                          ) / topLeads.length
-                        )
-                      : 0
-                  }/100`}
-                  sublabel="Top 10 average"
-                  color="from-blue-400 to-blue-600"
-                />
-
-                <TopLeadMetric
-                  label="Contacted"
-                  value={`${topLeads.filter((l) => l.lastEmailSent).length}/${
-                    topLeads.length
-                  }`}
-                  sublabel="Already reached out"
-                  color="from-blue-400 to-blue-600"
-                />
-
-                <TopLeadMetric
-                  label="Need Action"
-                  value={topLeads.filter((l) => !l.lastEmailSent).length}
-                  sublabel="Not contacted yet"
-                  color="from-red-400 to-red-600"
-                />
-              </div>
-            </div>
-          )}
+        {/* Quick KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <KpiCard
+            label="Highest Score"
+            value={highestScore}
+            change={stats?.scoreImprovement || 0}
+            subtitle={
+              highestScoreLead
+                ? `${highestScoreLead.firstName || ""} ${highestScoreLead.lastName || ""}`.trim()
+                : "Peak lead quality"
+            }
+          />
+          <KpiCard
+            label="Average Score"
+            value={topAvgScore}
+            change={stats?.scoreImprovement || 0}
+            subtitle="Top 10 average"
+          />
+          <KpiCard
+            label="Contacted"
+            value={contactedCount}
+            change={null}
+            subtitle="Already reached out"
+          />
+          <KpiCard
+            label="Need Action"
+            value={needActionCount}
+            change={null}
+            subtitle="Not contacted yet"
+          />
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard
+        {/* Deep Metrics & Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Total Leads */}
+          <MetricCard
             label="Total Leads"
-            value={stats.totalLeads}
-            change={stats.leadsThisWeek}
-            changeLabel="this week"
-          />
-          <StatCard
+            value={stats?.totalLeads || 0}
+            change={stats?.weekOverWeekGrowth || 0}
+            icon="📊"
+          >
+            <MiniLineChart data={weeklyTrend} dashed={false} />
+          </MetricCard>
+
+          {/* Hot Leads */}
+          <MetricCard
             label="Hot Leads"
-            value={stats.hotLeads}
-            change={stats.hotLeadsPercentage}
-            changeLabel="of total"
-            isPercentage
-          />
-          <StatCard
+            value={stats?.hotLeads || 0}
+            change={stats?.hotLeadsPercentage || 0}
+            icon="🔥"
+          >
+            <MiniLineChart data={weeklyTrend} dashed={true} />
+          </MetricCard>
+
+          {/* Avg Lead Score */}
+          <MetricCard
             label="Avg Lead Score"
-            value={Math.round(stats.averageScore)}
-            change={stats.scoreImprovement}
-            changeLabel="vs last week"
-          />
-          <StatCard
+            value={Math.round(stats?.averageScore || 0)}
+            change={stats?.scoreImprovement || 0}
+            icon="📈"
+          >
+            <MiniBarChart data={weeklyTrend} />
+          </MetricCard>
+
+          {/* This Week */}
+          <MetricCard
             label="This Week"
-            value={stats.leadsThisWeek}
-            change={stats.weekOverWeekGrowth}
-            changeLabel="growth"
-            isPercentage
-          />
-        </div>
-
-        {/* Tabs and Filters + Lead List */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6" aria-label="Tabs">
-              {[
-                {
-                  id: "all",
-                  label: "All Leads",
-                  count: stats.totalLeads,
-                },
-                {
-                  id: "hot",
-                  label: "Hot",
-                  count: stats.hotLeads,
-                },
-                {
-                  id: "warm",
-                  label: "Warm",
-                  count: stats.warmLeads,
-                },
-                {
-                  id: "cold",
-                  label: "Cold",
-                  count: stats.coldLeads,
-                },
-                {
-                  id: "archived",
-                  label: "Archived",
-                  count: stats.archivedLeads || 0,
-                },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`
-                    py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                    ${
-                      activeTab === tab.id
-                        ? "border-primary text-primary"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }
-                  `}
-                >
-                  {tab.label}
-                  <span className="ml-2 py-0.5 px-2 rounded-full bg-gray-100 text-gray-600 text-xs">
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Filters & Search */}
-          <div className="p-3 border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
-              {/* LEFT SIDE → Search */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search leads"
-                    value={filters.search}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        search: e.target.value,
-                        page: 1,
-                      }))
-                    }
-                    className="w-full pl-10 pr-4 py-2 rounded-full border bg-whiteBg text-blackText border-gray-300 text-xs md:text-sm hover:border-primary focus:border-primary focus:ring-0 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* MIDDLE → Filters */}
-              <div className="flex flex-wrap items-center gap-3 justify-end">
-                <FilterDropdown
-                  label="Sort by Time"
-                  value={filters.time}
-                  options={[
-                    { value: "newest", label: "Newest" },
-                    { value: "oldest", label: "Oldest" },
-                  ]}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, time: val, page: 1 }))
-                  }
-                />
-
-                <FilterDropdown
-                  label="Sort by Score"
-                  value={filters.score}
-                  options={[
-                    { value: "highest", label: "Highest" },
-                    { value: "lowest", label: "Lowest" },
-                  ]}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, score: val, page: 1 }))
-                  }
-                />
-
-                <FilterDropdown
-                  label="All Sources"
-                  value={filters.leadType}
-                  options={[
-                    { value: "", label: "All Sources" },
-                    { value: "direct", label: "Contact Form" },
-                    { value: "chatbot", label: "Chatbot" },
-                    { value: "schedule", label: "Schedule Meeting" },
-                    { value: "sdrLeads", label: "SDR Leads" },
-                  ]}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, leadType: val, page: 1 }))
-                  }
-                />
-              </div>
-
-              {/* RIGHT SIDE → Selection Count + Move Button */}
-              {selectedLeadIds.length > 0 && (
-                <div className="flex items-center gap-3 ml-auto">
-                  <FilterDropdown
-                    label="Select"
-                    value=""
-                    align="right"
-                    options={[
-                      { value: "in_process", label: "Move In-Process" },
-                      { value: "archived", label: "Move Archived" },
-                    ]}
-                    onChange={(val) => {
-                      if (val === "in_process") handleMoveSelectedToInProcess();
-                      if (val === "archived") handleMoveSelectedToArchived();
-                    }}
-                    renderTrigger={({ open, toggle }) => (
-                      <button
-                        onClick={toggle}
-                        className="
-                          h-9 px-3 border-gray-200
-                          flex items-center gap-2
-                          rounded-full border
-                          bg-white
-                          focus:border-primary
-                          cursor-pointer
-                          text-xs md:text-sm font-semibold
-                        "
-                      >
-                        <span className="py-0.5 px-2 rounded-full bg-gray-100 text-gray-700 text-[10px] md:text-xs font-semibold">
-                          {selectedLeadIds.length}
-                        </span>
-                        <span>Select</span>
-                        <MoreVertical
-                          className={`w-4 h-4 transition-transform ${
-                            open ? "rotate-90" : ""
-                          }`}
-                        />
-                      </button>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="xl:max-w-[75vw] 2xl:max-w-[82vw]">
-            <LeadList
-              leads={allLeads}
-              loading={loading}
-              onSelectLead={setSelectedLead}
-              onRefresh={fetchAllLeads}
-              currentPage={filters.page}
-              leadsPerPage={filters.limit}
-              onPageChange={(newPage) =>
-                setFilters((prev) => ({ ...prev, page: newPage }))
-              }
-              selectedLeadIds={selectedLeadIds}
-              onToggleLeadSelect={handleToggleLeadSelect}
-              onToggleSelectAll={handleToggleSelectAll}
-              showContactActions={false}
-              showSelection={true}
+            value={stats?.leadsThisWeek || 0}
+            change={stats?.weekOverWeekGrowth || 0}
+            icon="⚡"
+          >
+            <DonutChart
+              value={stats?.leadsThisWeek || 0}
+              total={stats?.totalLeads || 1}
             />
-          </div>
+          </MetricCard>
         </div>
+
         <LeadStats stats={stats} />
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, change, changeLabel, isPercentage = false }) {
-  const displayValue = value ?? 0;
-  const displayChange = change ?? 0;
+/* ── Helper Components ───────────────────────────────── */
+
+function KpiCard({ label, value, change, subtitle }) {
+  const isPositive = change !== null && change >= 0;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="text-2xl font-bold text-primary-500 mb-1">
-        {displayValue}
+    <div className="bg-white p-6 rounded-2xl border border-primary/5 shadow-sm hover:shadow-md transition-shadow">
+      <p className="text-gray-500 text-sm font-medium mb-1">{label}</p>
+      <div className="flex items-baseline gap-2">
+        <p className="text-3xl font-bold text-blackText">
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </p>
+        {change !== null && (
+          <span
+            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+              isPositive
+                ? "text-emerald-600 bg-emerald-50"
+                : "text-rose-600 bg-rose-50"
+            }`}
+          >
+            {isPositive ? "+" : ""}
+            {change}%
+          </span>
+        )}
       </div>
-      <div className="text-sm text-primary-600 mb-2">{label}</div>
-      <div className="text-xs text-primary-500">
-        <span className="font-medium text-primary-800">
-          {isPercentage ? `${displayChange}%` : displayChange}
-        </span>{" "}
-        {changeLabel}
+      {subtitle && (
+        <p className="text-gray-400 text-xs mt-3 italic">{subtitle}</p>
+      )}
+    </div>
+  );
+}
+
+function MetricCard({ label, value, change, icon, children }) {
+  const isPositive = change >= 0;
+
+  return (
+    <div className="bg-white p-8 rounded-2xl border border-primary/5 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <p className="text-gray-500 font-medium">{label}</p>
+          <h3 className="text-4xl font-bold mt-1 text-blackText">
+            {typeof value === "number" ? value.toLocaleString() : value}
+          </h3>
+          <div className="flex items-center gap-2 mt-2">
+            <span
+              className={`text-sm font-bold ${
+                isPositive ? "text-emerald-500" : "text-rose-500"
+              }`}
+            >
+              {isPositive ? "+" : ""}
+              {change}%
+            </span>
+            <span className="text-gray-400 text-sm">vs last 7 days</span>
+          </div>
+        </div>
+        {/* <div className="p-3 bg-primary/5 rounded-xl text-xl">{icon}</div> */}
+      </div>
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}
+
+function MiniLineChart({ data = [], dashed = false }) {
+  const values = data.length
+    ? data.map((d) => d.count ?? d.value ?? 0)
+    : [30, 60, 45, 80, 55, 90, 40];
+
+  const max = Math.max(...values, 1);
+  const w = 500;
+  const h = 120;
+  const pad = 10;
+
+  const points = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (w - pad * 2);
+    const y = h - pad - (v / max) * (h - pad * 2);
+    return `${x},${y}`;
+  });
+
+  const pathD = `M${points.join(" L")}`;
+  const areaD = `${pathD} L${pad + ((values.length - 1) / (values.length - 1)) * (w - pad * 2)},${h} L${pad},${h} Z`;
+
+  const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-32 overflow-visible">
+        {!dashed && (
+          <>
+            <defs>
+              <linearGradient id="areaGradOverview" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="rgba(255,123,48,0.2)" />
+                <stop offset="100%" stopColor="rgba(255,123,48,0)" />
+              </linearGradient>
+            </defs>
+            <path d={areaD} fill="url(#areaGradOverview)" />
+          </>
+        )}
+        <path
+          d={pathD}
+          fill="none"
+          stroke="#FF7B30"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={dashed ? "8 4" : "none"}
+        />
+      </svg>
+      <div className="flex justify-between mt-2 px-2">
+        {days.slice(0, values.length).map((d) => (
+          <span key={d} className="text-[10px] font-bold text-gray-400">
+            {d}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
 
-function TopLeadMetric({ label, value, sublabel, icon, color }) {
+function MiniBarChart({ data = [] }) {
+  const values = data.length
+    ? data.map((d) => d.count ?? d.value ?? 0)
+    : [60, 45, 85, 70, 100, 30, 25];
+
+  const max = Math.max(...values, 1);
+  const days = ["M", "T", "W", "T", "F", "S", "S"];
+  const opacities = [0.1, 0.3, 0.6, 0.4, 1, 0.2, 0.2];
+
   return (
-    <div
-      className={`bg-linear-to-br ${color} rounded-lg shadow-sm p-6 text-white`}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div className="text-3xl">{icon}</div>
+    <div className="flex items-end justify-between h-32 gap-3 px-2">
+      {values.slice(0, 7).map((v, i) => {
+        const pct = (v / max) * 100;
+        return (
+          <div key={i} className="flex flex-col items-center flex-1 gap-2">
+            <div
+              className="w-full rounded-t-lg transition-all"
+              style={{
+                height: `${Math.max(pct, 5)}%`,
+                backgroundColor: `rgba(255,123,48,${opacities[i] || 0.3})`,
+              }}
+            />
+            <span className="text-[10px] font-bold text-gray-400">
+              {days[i]}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DonutChart({ value, total }) {
+  const pct = Math.min(Math.round((value / total) * 100), 100) || 0;
+  const r = 70;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (pct / 100) * circumference;
+
+  return (
+    <div className="flex items-center justify-center h-40">
+      <div className="relative w-40 h-40">
+        <svg className="w-full h-full" style={{ transform: "rotate(-90deg)" }}>
+          <circle
+            cx="80"
+            cy="80"
+            r={r}
+            fill="transparent"
+            stroke="#f1f5f9"
+            strokeWidth="8"
+          />
+          <circle
+            cx="80"
+            cy="80"
+            r={r}
+            fill="transparent"
+            stroke="#FF7B30"
+            strokeWidth="8"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="transition-all duration-700"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-bold text-blackText">{pct}%</span>
+          <span className="text-[10px] uppercase font-bold text-gray-400">
+            Goal Met
+          </span>
+        </div>
       </div>
-      <div className="text-3xl font-bold mb-1">{value}</div>
-      <div className="text-sm font-medium mb-1">{label}</div>
-      <div className="text-xs opacity-90">{sublabel}</div>
     </div>
   );
 }

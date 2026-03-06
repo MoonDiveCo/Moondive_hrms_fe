@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Search, Download, MoreVertical } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -8,8 +8,10 @@ import LeadList from "../../../../components/CrmDashboard/LeadList";
 import LeadStats from "../../../../components/CrmDashboard/LeadStats";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
 
 export default function LeadDashboard() {
+  const { canPerform } = useContext(RBACContext);
   const [stats, setStats] = useState(getDefaultStats());
   const [baseLeads, setBaseLeads] = useState([]);  
   const [allLeads, setAllLeads] = useState([]);    
@@ -471,7 +473,7 @@ export default function LeadDashboard() {
                 />
               </div>
 
-              {selectedLeadIds.length > 0 && (
+              {selectedLeadIds.length > 0 && canPerform("EDIT", "CRM", "LEADS") && (
                 <div className="flex items-center gap-3 ml-auto">
                   <FilterDropdown
                     label="Select"
@@ -530,7 +532,8 @@ export default function LeadDashboard() {
               onToggleLeadSelect={handleToggleLeadSelect}
               onToggleSelectAll={handleToggleSelectAll}
               showContactActions={false}
-              showSelection={true}
+              showSelection={canPerform("EDIT", "CRM", "LEADS")}
+              canEdit={canPerform("EDIT", "CRM", "LEADS")}
             />
           </div>
         </div>

@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import Head from 'next/head'
 import {
   TEXT_ACTIONS,
@@ -44,6 +44,7 @@ import LayoutTab from '@/components/ManageCaseStudies/LayoutTab'
 import CtaTab from '@/components/ManageCaseStudies/CtaTab'
 import FilterDropdown from '@/components/UI/FilterDropdown'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
 
 // Available sections for case study
 const AVAILABLE_SECTIONS = [
@@ -203,6 +204,7 @@ const quillFormats = [
 ]
 
 const ManageCaseStudies = () => {
+  const { canPerform } = useContext(RBACContext);
   const [searchQuery, setSearchQuery] = useState('')
   const [caseStudiesData, setCaseStudiesData] = useState([])
   const [editingCaseStudy, setEditingCaseStudy] = useState(null)
@@ -1218,8 +1220,12 @@ const handleFileSelect = async (e) => {
             <h4 className="text-primaryText">
               {TEXT_CASE_STUDIES}
             </h4>
+            {canPerform("WRITE", "CMS", "CASE_STUDIES") && (
+            <>
             <button
-              onClick={handleGenerateCaseStudy}
+              onClick={() => {
+                setShowGenerationConfirmModal(true)
+              }}
               className="flex item-center rounded-full bg-primary px-3 py-2 text-white transition-colors mr-4"
             >
               <span className='text-xs'>Generate Case Study</span>
@@ -1237,6 +1243,8 @@ const handleFileSelect = async (e) => {
             >
               <span className='text-xs flex items-center'><Plus className="mr-2 h-4 w-4" /> {TEXT_ADD_NEW_CASE_STUDIES}</span>
             </button>
+            </>
+            )}
           </div>
 
           <div className="flex h-full w-full flex-col rounded-lg bg-transparent shadow-sm border border-gray-300 ">
@@ -1354,12 +1362,14 @@ const handleFileSelect = async (e) => {
                             >
                               <Eye className="h-4 w-4 text-primaryText" />
                             </button>
+                            {canPerform("EDIT", "CMS", "CASE_STUDIES") && (
                             <button
                               className="rounded-full p-1 text-primaryText "
                               onClick={() => handleEdit(study)}
                             >
                               <Edit className="h-4 w-4" />
                             </button>
+                            )}
                             <button
                                 className={`rounded-full p-1 hover:bg-gray-50 ${study.status === 'published'
                                   ? 'text-yellow-600'
@@ -1384,12 +1394,14 @@ const handleFileSelect = async (e) => {
                                   <Globe className="h-4 w-4" />
                                 )}
                               </button>
+                            {canPerform("DELETE", "CMS", "CASE_STUDIES") && (
                             <button
                               className="rounded-full p-1 text-red-600 hover:bg-red-50"
                               onClick={() => handleDelete(study._id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
+                            )}
                           </div>
                         </td>
                       </tr>

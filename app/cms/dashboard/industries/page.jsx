@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
 import { BarChart3, Copy, Edit, ExternalLink, Eye, FileText, Filter, Globe, Plus, Search, Trash2, TrashIcon, X } from 'lucide-react';
@@ -14,6 +14,7 @@ import PlatformsTab from '@/components/ManageIndustries/PlatformsTab';
 import SectionsTab from '@/components/ManageIndustries/SectionsTab';
 import FilterDropdown from '@/components/UI/FilterDropdown';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), {
   ssr: false,
@@ -61,6 +62,7 @@ const quillFormats = [
 ]
 
 const ManageIndustries = () => {
+  const { canPerform } = useContext(RBACContext);
   const [searchQuery, setSearchQuery] = useState('')
   const [industryPages, setIndustryPages] = useState([])
   const [editingPage, setEditingPage] = useState(null)
@@ -527,12 +529,14 @@ const ManageIndustries = () => {
               <h4 className=" text-primaryText">
                 Industry Pages
               </h4>
+              {canPerform("WRITE", "CMS", "INDUSTARIES") && (
               <button
                 onClick={handleAddNew}
                 className="flex items-center rounded-full bg-primary px-3 py-2 text-white transition-colors "
               >
                 <span className='flex text-xs items-center'><Plus className="mr-1 h-3 w-3" /> Add New Industry Page</span>
               </button>
+              )}
             </div>
 
             {/* Statistics Cards */}
@@ -739,6 +743,7 @@ const ManageIndustries = () => {
                               >
                                 <Eye className="h-4 w-4" color="black" />
                               </button>
+                              {canPerform("EDIT", "CMS", "INDUSTARIES") && (
                               <button
                                 className="rounded-full p-1 text-primaryText "
                                 onClick={() => handleEdit(page)}
@@ -746,6 +751,7 @@ const ManageIndustries = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
+                              )}
                               <button
                                 className="rounded-full p-1 text-primaryText"
                                 onClick={() => handleDuplicate(page)}
@@ -776,6 +782,7 @@ const ManageIndustries = () => {
                                   <Globe className="h-4 w-4" />
                                 )}
                               </button>
+                              {canPerform("DELETE", "CMS", "INDUSTARIES") && (
                               <button
                                 className="rounded-full p-1 text-red-600 hover:bg-red-50"
                                 onClick={() => handleDelete(page._id)}
@@ -783,6 +790,7 @@ const ManageIndustries = () => {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
+                              )}
                             </div>
                           </td>
                         </tr>

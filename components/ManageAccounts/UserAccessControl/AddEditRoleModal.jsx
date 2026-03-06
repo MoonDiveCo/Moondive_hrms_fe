@@ -23,7 +23,7 @@ export default function AddEditRoleModal({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (mode === 'edit' && role) {
+    if (mode === 'edit' && role) { 
       setRoleName(role.name || '');
       setPermissions(role.permissions || []);
     }
@@ -49,6 +49,53 @@ export default function AddEditRoleModal({
     }));
   }, []);
 
+  const allPossiblePermissions = useMemo(() => {
+    return Object.values(ACTION_PERMISSIONS);
+  }, []);
+
+  const allSelected = useMemo(() => {
+    return allPossiblePermissions.length > 0 &&
+      allPossiblePermissions.every((p) => permissions.includes(p));
+  }, [permissions, allPossiblePermissions]);
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setPermissions([]);
+    } else {
+      setPermissions([...allPossiblePermissions]);
+    }
+  };
+
+  const isRowAllSelected = (module, actions) => {
+    return ACTION_COLUMNS.every((action) => {
+      if (!actions.includes(action)) return true;
+      const permission = Object.values(ACTION_PERMISSIONS).find(
+        (p) => p.endsWith(`:${module}:${action}`)
+      );
+      return permission && permissions.includes(permission);
+    });
+  };
+
+  const toggleRowAll = (module, actions) => {
+    const rowPerms = ACTION_COLUMNS
+      .filter((action) => actions.includes(action))
+      .map((action) =>
+        Object.values(ACTION_PERMISSIONS).find(
+          (p) => p.endsWith(`:${module}:${action}`)
+        )
+      )
+      .filter(Boolean);
+
+    const allChecked = isRowAllSelected(module, actions);
+
+    if (allChecked) {
+      // Uncheck all in this row
+      setPermissions((prev) => prev.filter((p) => !rowPerms.includes(p)));
+    } else {
+      // Check all in this row
+      setPermissions((prev) => [...new Set([...prev, ...rowPerms])]);
+    }
+  };
 
   const togglePermission = (permission) => {
     setPermissions((prev) =>
@@ -120,16 +167,47 @@ export default function AddEditRoleModal({
         
         <div className="px-6 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
           
-          <div className="max-w-md">
-            <label className="block text-sm font-medium">
-              Role Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              value={roleName}
-              onChange={(e) => setRoleName(e.target.value)}
-              className="mt-2 w-full rounded-md border px-3 py-2 focus:border-[var(--color-primary)]"
-              placeholder="e.g. HR, Manager"
-            />
+          {/* Role Name + Select All */}
+          <div className="flex items-end justify-between gap-4">
+            <div className="max-w-md flex-1">
+              <label className="block text-sm font-medium">
+                Role Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={roleName}
+                onChange={(e) => setRoleName(e.target.value)}
+                className="mt-2 w-full rounded-md border px-3 py-2 focus:border-[var(--color-primary)]"
+                placeholder="e.g. HR, Manager"
+              />
+            </div>
+
+            {/* Select All Toggle */}
+            <button
+              type="button"
+              onClick={toggleSelectAll}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border
+                ${allSelected
+                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
+                }
+              `}
+            >
+              <div className={`
+                h-4 w-4 rounded border-2 flex items-center justify-center transition-all
+                ${allSelected
+                  ? 'border-white bg-white'
+                  : 'border-gray-400'
+                }
+              `}>
+                {allSelected && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              {allSelected ? 'Deselect All' : 'Select All'}
+            </button>
           </div>
 
           
@@ -137,98 +215,117 @@ export default function AddEditRoleModal({
             <h4 className="text-sm font-medium mb-3">Permissions</h4>
 
             <div className="overflow-hidden border border-[#D0D5DD] rounded-lg">
-              <table className="min-w-full divide-y">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold w-1/3">
-                      Module
-                    </th>
-                    {ACTION_COLUMNS.map((action) => (
-                      <th
-                        key={action}
-                        className="px-3 py-3 text-center text-sm font-semibold"
-                      >
-                        {action}
+              
+              {/* Scrollable table with sticky header */}
+              <div className="max-h-[45vh] overflow-y-auto">
+                <table className="min-w-full divide-y">
+                  <thead className="bg-gray-50 sticky top-0 z-10 shadow-[0_1px_0_0_#D0D5DD]">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold w-1/3 bg-gray-50">
+                        Module
                       </th>
-                    ))}
-                  </tr>
-                </thead>
+                      {ACTION_COLUMNS.map((action) => (
+                        <th
+                          key={action}
+                          className="px-3 py-3 text-center text-sm font-semibold bg-gray-50"
+                        >
+                          {action}
+                        </th>
+                      ))}
+                      <th className="px-3 py-3 text-center text-sm font-semibold bg-gray-50">
+                        ALL
+                      </th>
+                    </tr>
+                  </thead>
 
-                <tbody className="divide-y bg-white">
-                  {permissionMatrix.map(({ module, actions }) => (
-                    <tr
-                      key={module}
-                      className="hover:bg-gray-50 border border-[#D0D5DD]"
-                    >
-                      <td className="px-4 py-4 font-medium flex items-center">
-                      {module}
+                  <tbody className="divide-y bg-white">
+                    {permissionMatrix.map(({ module, actions }) => {
+                      const rowAllSelected = isRowAllSelected(module, actions);
 
-                      {MODULE_INFO[module] && (
-                        <InfoTooltip info={MODULE_INFO[module]} />
-                      )}
-                    </td>
+                      return (
+                        <tr
+                          key={module}
+                          className="hover:bg-gray-50 border border-[#D0D5DD]"
+                        >
+                          <td className="px-4 py-4 font-medium">
+                            <span className="inline-flex items-center">
+                              {module}
+                              {MODULE_INFO[module] && (
+                                <InfoTooltip info={MODULE_INFO[module]} />
+                              )}
+                            </span>
+                          </td>
 
-                      {ACTION_COLUMNS.map((action) => {
-                        const permission = Object.values(
-                          ACTION_PERMISSIONS
-                        ).find(
-                          (p) =>
-                            p.endsWith(`:${module}:${action}`)
-                        );
+                          {ACTION_COLUMNS.map((action) => {
+                            const permission = Object.values(
+                              ACTION_PERMISSIONS
+                            ).find(
+                              (p) =>
+                                p.endsWith(`:${module}:${action}`)
+                            );
 
-                        const allowed = actions.includes(action);
-                        const checked =
-                          permission &&
-                          permissions.includes(permission);
+                            const allowed = actions.includes(action);
+                            const checked =
+                              permission &&
+                              permissions.includes(permission);
 
-                        return (
-                          <td
-                            key={action}
-                            className="px-3 py-4 text-center"
-                          >
-                            <div className="relative inline-flex items-center">
-                              <input
-                                type="checkbox"
-                                disabled={!allowed}
-                                checked={checked}
-                                onChange={() =>
-                                  allowed &&
-                                  togglePermission(permission)
-                                }
-                                className="absolute opacity-0 peer"
-                              />
-
-                              <div
-                                className={`
-                                  h-5 w-5 rounded-full border-2
-                                  flex items-center justify-center
-                                  ${
-                                    checked
-                                      ? 'border-[var(--color-primary)] bg-white'
-                                      : 'border-gray-400 bg-white'
-                                  }
-                                  ${
-                                    !allowed
-                                      ? 'opacity-40 cursor-not-allowed'
-                                      : 'cursor-pointer hover:border-[var(--color-primary)]'
-                                  }
-                                  peer-focus:ring-2
-                                  peer-focus:ring-[var(--color-primary)]
-                                  peer-focus:ring-offset-2
-                                `}
+                            return (
+                              <td
+                                key={action}
+                                className="px-3 py-4 text-center"
                               >
-                                {checked && (
-                                  <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
-                                )}
-                              </div>
+                                <div
+                                  onClick={() => allowed && togglePermission(permission)}
+                                  className={`
+                                    inline-flex items-center justify-center
+                                    h-5 w-5 rounded-full border-2
+                                    ${
+                                      checked
+                                        ? 'border-[var(--color-primary)] bg-white'
+                                        : 'border-gray-400 bg-white'
+                                    }
+                                    ${
+                                      !allowed
+                                        ? 'opacity-40 cursor-not-allowed'
+                                        : 'cursor-pointer hover:border-[var(--color-primary)]'
+                                    }
+                                  `}
+                                >
+                                  {checked && (
+                                    <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" />
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          })}
+
+                          {/* ALL column — toggle all permissions in this row */}
+                          <td className="px-3 py-4 text-center">
+                            <div
+                              onClick={() => toggleRowAll(module, actions)}
+                              className={`
+                                inline-flex items-center justify-center
+                                h-5 w-5 rounded border-2 cursor-pointer
+                                ${
+                                  rowAllSelected
+                                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]'
+                                    : 'border-gray-400 bg-white hover:border-[var(--color-primary)]'
+                                }
+                              `}
+                            >
+                              {rowAllSelected && (
+                                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                                  <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
                             </div>
                           </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {error && (
@@ -266,30 +363,58 @@ export default function AddEditRoleModal({
 }
 
 function InfoTooltip({ info }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const iconRef = useRef(null);
+
+  const handleEnter = () => {
+    if (iconRef.current) {
+      const rect = iconRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.top - 8,   // above the icon with a small gap
+        left: rect.left + rect.width / 2,
+      });
+    }
+    setShow(true);
+  };
+
   return (
-    <div className="relative group ml-2 inline-block">
-      <span className="cursor-pointer text-gray-400 hover:text-gray-600">
+    <>
+      <span
+        ref={iconRef}
+        className="ml-2 cursor-pointer text-gray-400 hover:text-gray-600 inline-block"
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setShow(false)}
+      >
         ⓘ
       </span>
 
-      <div
-        className="
-          absolute left-0 top-6 z-50 hidden w-72 rounded-lg border bg-white p-4 text-sm shadow-lg
-          group-hover:block
-        "
-      >
-        <p className="font-semibold mb-1">{info.title}</p>
-        <p className="text-gray-600 mb-2">{info.description}</p>
+      {show && (
+        <div
+          className="fixed z-[9999] w-72 rounded-lg border bg-white p-4 text-sm shadow-xl"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            transform: 'translate(-50%, -100%)',
+          }}
+          onMouseEnter={() => setShow(true)}
+          onMouseLeave={() => setShow(false)}
+        >
+          {/* Arrow pointing down */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white" />
 
-        {info.features?.length > 0 && (
-          <ul className="list-disc pl-4 space-y-1 text-gray-700">
-            {info.features.map((f) => (
-              <li key={f}>{f}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
+          <p className="font-semibold mb-1">{info.title}</p>
+          <p className="text-gray-600 mb-2">{info.description}</p>
+
+          {info.features?.length > 0 && (
+            <ul className="list-disc pl-4 space-y-1 text-gray-700">
+              {info.features.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </>
   );
 }
-

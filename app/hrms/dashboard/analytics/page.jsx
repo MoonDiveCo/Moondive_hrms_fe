@@ -1299,7 +1299,7 @@ useEffect(() => {
 }
 
 return (
-  <div className="space-y-6 max-h-[60vh] overflow-auto">
+  <div className="space-y-6 max-h-[60vh] overflow-auto hide-scrollbar">
     {(() => {
       const startOfDay = (d) => {
         const date = new Date(d);
