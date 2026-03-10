@@ -98,6 +98,8 @@ export default function ProjectPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [statusModal, setStatusModal] = useState(null); // { projectId, currentStatus }
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // ✅ ONLY DATA STATE
@@ -153,11 +155,11 @@ export default function ProjectPage() {
         toast.success('Project Deleted Successfully');
         fetchProjects(); // Refresh list
       } else {
-        toast.error(res.data?.responseMessage ||'Failed To Delete Project');
+        toast.error(res.data?.responseMessage || 'Failed To Delete Project');
       }
     } catch (err) {
       console.error('Error deleting project:', err);
-      toast.error(res.data?.responseMessage ||'Failed To Delete Project');
+      toast.error(res.data?.responseMessage || 'Failed To Delete Project');
     }
     setOpenMenuId(null);
   };
@@ -165,6 +167,34 @@ export default function ProjectPage() {
     setIsDrawerOpen(false);
     setEditingProject(null);
   };
+
+  const STATUS_OPTIONS = [
+    { value: 'planning', label: 'Planning Phase', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { value: 'in-progress', label: 'In Progress', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-700 border-green-200' },
+    { value: 'on-hold', label: 'On Hold', color: 'bg-gray-100 text-gray-600 border-gray-200' },
+  ];
+
+  const handleStatusChange = async (projectId, newStatus) => {
+    setIsUpdatingStatus(true);
+    try {
+      const res = await axios.patch(`/hrms/projects/update-project/${projectId}`, { status: newStatus });
+      if (res.data?.success || res.data?.responseCode === 200) {
+        toast.success('Status updated successfully');
+        setProjects((prev) =>
+          prev.map((p) => (p._id === projectId ? { ...p, status: newStatus } : p))
+        );
+        setStatusModal(null);
+      } else {
+        toast.error(res.data?.responseMessage || 'Failed to update status');
+      }
+    } catch (err) {
+      toast.error('Failed to update status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const calculateProjectHours = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
 
@@ -180,6 +210,26 @@ export default function ProjectPage() {
     const hoursPerDay = 8; // standard working hours
 
     return Math.round(diffDays * hoursPerDay);
+  };
+
+  const getTimelineProgress = (startDate, endDate, status) => {
+    if (!startDate || !endDate) return null;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const today = new Date();
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+    const total = end - start;
+    if (total <= 0) return null;
+    const isCompleted = status === 'completed';
+    const elapsed = today - start;
+    const rawPct = Math.round((elapsed / total) * 100);
+    const pct = isCompleted ? 100 : Math.min(100, Math.max(0, rawPct));
+    const daysLeft = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+    const totalDays = Math.round(total / (1000 * 60 * 60 * 24));
+    const fmt = (d) =>
+      new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const completedEarly = isCompleted && daysLeft > 0;
+    return { pct, daysLeft, totalDays, startFmt: fmt(start), endFmt: fmt(end), isCompleted, completedEarly };
   };
 
   const isAdmin =
@@ -255,19 +305,19 @@ export default function ProjectPage() {
               Monitor active projects, resources, and timeline estimations.
             </p>
           </div>
-           {user?.userRole?.includes('SuperAdmin') || user?.userRole?.includes('Admin') ?  (     
-          <div className='flex gap-3'>
+          {user?.userRole?.includes('SuperAdmin') || user?.userRole?.includes('Admin') ? (
+            <div className='flex gap-3'>
 
-            <button
-              className='flex items-center gap-2 px-4 py-2.5 bg-primary cursor-pointer text-white rounded-lg  transition-all shadow-lg shadow-orange-500/20'
-              onClick={() => setIsDrawerOpen(true)}
-            >
-              Add Project
-            </button>
-          </div>
-           ) :(
+              <button
+                className='flex items-center gap-2 px-4 py-2.5 bg-primary cursor-pointer text-white rounded-lg  transition-all shadow-lg shadow-orange-500/20'
+                onClick={() => setIsDrawerOpen(true)}
+              >
+                Add Project
+              </button>
+            </div>
+          ) : (
             ''
-           )}
+          )}
         </div>
 
         {/* ================= PROJECT CARD ================= */}
@@ -285,159 +335,202 @@ export default function ProjectPage() {
               }}
             >
               {/* SUMMARY */}
-              <div className='p-5 flex items-center gap-4 bg-primary/5 relative'>
-                <div
-                  onClick={() => toggleProject(project._id)}
-                  className='flex-1 flex items-center gap-4 cursor-pointer hover:bg-primary/8 transition-colors duration-200 -mx-5 px-5 py-5 -my-5'
-                >
-                  <div className='flex-1'>
-                    <h5 className='font-semibold'>{project.name}</h5>
-                  </div>
+              <div className='bg-primary/5 relative'>
+                <div className='p-5 flex items-center gap-4 relative'>
+                  <div
+                    onClick={() => toggleProject(project._id)}
+                    className='flex-1 flex items-center gap-4 cursor-pointer hover:bg-primary/8 transition-colors duration-200 -mx-5 px-5 py-5 -my-5'
+                  >
+                    <div className='flex-1'>
+                      <h5 className='font-semibold'>{project.name}</h5>
+                    </div>
 
-                  <div className='w-full md:w-32'>
-                    <span className='inline-flex items-center px-4 py-2 text-xs font-medium text-[#5e888d] border border-[#5e888d] rounded-full'>
-                      {project.status}
-                    </span>
-                  </div>
-
-                  <div className='w-full md:w-48 flex items-center gap-3'>
-                    <img
-                      className='w-11 h-11 rounded-full border border-white object-cover'
-                      src={
-                        project.projectManager?.imageUrl ||
-                        'https://img.freepik.com/free-photo/waist-up-portrait-handsome-serious-unshaven-male-keeps-hands-together-dressed-dark-blue-shirt-has-talk-with-interlocutor-stands-against-white-wall-self-confident-man-freelancer_273609-16320.jpg?semt=ais_hybrid&w=740&q=80'
-                      }
-                      alt={`${project.projectManager?.firstName}`}
-                      width={32}
-                      height={32}
-                    />
-                    <div className='text-sm flex-row'>
-                      <p className='text-black font-medium'>
-                        {project.projectManager?.firstName}{' '}
-                        {project.projectManager?.lastName}
-                      </p>
-                      <span className='text-xs text-text-secondary'>
-                        Project Lead
+                    <div className='w-full md:w-32'>
+                      <span className='inline-flex items-center px-4 py-2 text-xs font-medium text-[#5e888d] border border-[#5e888d] rounded-full'>
+                        {project.status}
                       </span>
                     </div>
-                  </div>
-                  <div className='w-full md:w-32 flex items-center gap-2 text-sm text-text-secondary'>
-                    <Users className='w-4 h-4  text-[#5e888d]' />
-                    <p>{project.projectMembers?.length || 0} members</p>
-                  </div>
 
-                  <div className='w-full md:w-32 flex items-center gap-2 text-sm text-text-secondary'>
-                    <Clock className='w-4 h-4 text-[#5e888d] ' />
-                    <p>
-                      {calculateProjectHours(
-                        project.startDate,
-                        project.endDate
-                      )}{' '}
-                      hrs
-                    </p>
-                  </div>
+                    <div className='w-full md:w-48 flex items-center gap-3'>
+                      <img
+                        className='w-11 h-11 rounded-full border border-white object-cover'
+                        src={
+                          project.projectManager?.imageUrl ||
+                          'https://img.freepik.com/free-photo/waist-up-portrait-handsome-serious-unshaven-male-keeps-hands-together-dressed-dark-blue-shirt-has-talk-with-interlocutor-stands-against-white-wall-self-confident-man-freelancer_273609-16320.jpg?semt=ais_hybrid&w=740&q=80'
+                        }
+                        alt={`${project.projectManager?.firstName}`}
+                        width={32}
+                        height={32}
+                      />
+                      <div className='text-sm flex-row'>
+                        <p className='text-black font-medium'>
+                          {project.projectManager?.firstName}{' '}
+                          {project.projectManager?.lastName}
+                        </p>
+                        <span className='text-xs text-text-secondary'>
+                          Project Lead
+                        </span>
+                      </div>
+                    </div>
+                    <div className='w-full md:w-32 flex items-center gap-2 text-sm text-text-secondary'>
+                      <Users className='w-4 h-4  text-[#5e888d]' />
+                      <p>{project.projectMembers?.length || 0} members</p>
+                    </div>
 
-                  <button className='p-2 rounded-full bg-primary/10 text-primary  cursor-pointer transition-all duration-300'>
-                    <svg
-                      className={`w-5 h-5 transition-transform duration-300 ${
-                        openProject === project._id ? 'rotate-180' : ''
-                      }`}
-                      viewBox='0 0 24 24'
-                      fill='none'
-                      stroke='currentColor'
-                      strokeWidth='2.5'
-                    >
-                      <path d='M6 9l6 6 6-6' />
-                    </svg>
-                  </button>
-                </div>
-                {isAdmin && (
-                  <div className='relative ml-2'>
-                    <button
-                      onClick={() =>
-                        setOpenMenuId(
-                          openMenuId === project._id ? null : project._id
-                        )
-                      }
-                      className='p-2 rounded-full hover:bg-gray-100 transition-colors'
-                    >
+                    <div className='w-full md:w-32 flex items-center gap-2 text-sm text-text-secondary'>
+                      <Clock className='w-4 h-4 text-[#5e888d] ' />
+                      <p>
+                        {calculateProjectHours(
+                          project.startDate,
+                          project.endDate
+                        )}{' '}
+                        hrs
+                      </p>
+                    </div>
+
+                    <button className='p-2 rounded-full bg-primary/10 text-primary  cursor-pointer transition-all duration-300'>
                       <svg
-                        width='20'
-                        height='20'
+                        className={`w-5 h-5 transition-transform duration-300 ${openProject === project._id ? 'rotate-180' : ''
+                          }`}
                         viewBox='0 0 24 24'
                         fill='none'
                         stroke='currentColor'
-                        strokeWidth='2'
+                        strokeWidth='2.5'
                       >
-                        <circle cx='12' cy='12' r='1' />
-                        <circle cx='12' cy='5' r='1' />
-                        <circle cx='12' cy='19' r='1' />
+                        <path d='M6 9l6 6 6-6' />
                       </svg>
                     </button>
-
-                    {openMenuId === project._id && (
-                      <>
-                        <div
-                          className='fixed inset-0 z-10'
-                          onClick={() => setOpenMenuId(null)}
-                        />
-                        <div className='absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-20'>
-                          <button
-                            onClick={() => handleEditProject(project)}
-                            className='w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100'
-                          >
-                            <svg
-                              width='18'
-                              height='18'
-                              viewBox='0 0 24 24'
-                              fill='none'
-                              stroke='currentColor'
-                              strokeWidth='2'
-                            >
-                              <path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' />
-                              <path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' />
-                            </svg>
-                            <span className='text-sm font-medium text-gray-700'>
-                              Edit Project
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProject(project._id)}
-                            className='w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600'
-                          >
-                            <svg
-                              width='18'
-                              height='18'
-                              viewBox='0 0 24 24'
-                              fill='none'
-                              stroke='currentColor'
-                              strokeWidth='2'
-                            >
-                              <polyline points='3 6 5 6 21 6' />
-                              <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
-                            </svg>
-                            <span className='text-sm font-medium'>
-                              Delete Project
-                            </span>
-                          </button>
-                        </div>
-                      </>
-                    )}
                   </div>
-                )}
-                {/* Three Dots Menu - Only for Admin */}
+                  {isAdmin && (
+                    <div className='relative ml-2'>
+                      <button
+                        onClick={() =>
+                          setOpenMenuId(
+                            openMenuId === project._id ? null : project._id
+                          )
+                        }
+                        className='p-2 rounded-full hover:bg-gray-100 transition-colors'
+                      >
+                        <svg
+                          width='20'
+                          height='20'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                        >
+                          <circle cx='12' cy='12' r='1' />
+                          <circle cx='12' cy='5' r='1' />
+                          <circle cx='12' cy='19' r='1' />
+                        </svg>
+                      </button>
+
+                      {openMenuId === project._id && (
+                        <>
+                          <div
+                            className='fixed inset-0 z-10'
+                            onClick={() => setOpenMenuId(null)}
+                          />
+                          <div className='absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-xl z-20'>
+                            <button
+                              onClick={() => handleEditProject(project)}
+                              className='w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100'
+                            >
+                              <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                                <path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' />
+                                <path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' />
+                              </svg>
+                              <span className='text-sm font-medium text-gray-700'>Edit Project</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setStatusModal({ projectId: project._id, currentStatus: project.status });
+                                setOpenMenuId(null);
+                              }}
+                              className='w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100'
+                            >
+                              <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                                <path d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z' />
+                                <line x1='7' y1='7' x2='7.01' y2='7' />
+                              </svg>
+                              <span className='text-sm font-medium text-gray-700'>Change Status</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProject(project._id)}
+                              className='w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600'
+                            >
+                              <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                                <polyline points='3 6 5 6 21 6' />
+                                <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
+                              </svg>
+                              <span className='text-sm font-medium'>Delete Project</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {/* Three Dots Menu - Only for Admin */}
+                </div>
+
+                {/* ── TIMELINE PROGRESS BAR (compact, below summary row) ── */}
+                {(() => {
+                  const tl = getTimelineProgress(project.startDate, project.endDate, project.status);
+                  if (!tl) return null;
+                  const isOverdue = !tl.isCompleted && tl.daysLeft < 0;
+                  const isNearEnd = !tl.isCompleted && !isOverdue && tl.daysLeft <= 7;
+                  const barColor = tl.isCompleted
+                    ? 'bg-green-500'
+                    : isOverdue
+                      ? 'bg-red-500'
+                      : isNearEnd
+                        ? 'bg-amber-500'
+                        : 'bg-[#5e888d]';
+                  const textColor = tl.isCompleted
+                    ? 'text-green-600'
+                    : isOverdue
+                      ? 'text-red-600'
+                      : isNearEnd
+                        ? 'text-amber-600'
+                        : 'text-[#5e888d]';
+                  const label = tl.isCompleted
+                    ? tl.completedEarly
+                      ? `✓ Completed ${tl.daysLeft} day${tl.daysLeft !== 1 ? 's' : ''} before deadline`
+                      : '✓ Completed'
+                    : isOverdue
+                      ? `Overdue by ${Math.abs(tl.daysLeft)} day${Math.abs(tl.daysLeft) !== 1 ? 's' : ''}`
+                      : tl.daysLeft === 0
+                        ? 'Due today'
+                        : `${tl.daysLeft} day${tl.daysLeft !== 1 ? 's' : ''} left · ${tl.pct}%`;
+                  return (
+                    <div>
+                      <div className='flex items-center justify-between text-xs text-gray-500 px-5 pb-1.5'>
+                        <span className='font-medium'>{tl.startFmt}</span>
+                        <span className={`font-semibold ${textColor}`}>{label}</span>
+                        <span className='font-medium'>{tl.endFmt}</span>
+                      </div>
+                      <div className='w-full h-1.5 bg-gray-200 overflow-hidden'>
+                        <div
+                          className={`h-full transition-all duration-700 ${barColor}`}
+                          style={{ width: `${tl.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* ================= EXPANDED - SMOOTH ANIMATION ================= */}
               <div
-                className={`bg-gray-50 border-t border-primary/30 ring-1 ring-primary/10 overflow-hidden transition-all duration-500 ease-in-out ${
-                  openProject === project._id
-                    ? 'max-h-[2000px] opacity-100'
-                    : 'max-h-0 opacity-0'
-                }`}
+                className={`bg-gray-50 border-t border-primary/30 ring-1 ring-primary/10 overflow-hidden transition-all duration-500 ease-in-out ${openProject === project._id
+                  ? 'max-h-[2000px] opacity-100'
+                  : 'max-h-0 opacity-0'
+                  }`}
               >
                 {openProject === project._id && (
                   <div className='p-6 md:p-8 animate-slide-down'>
+
+
                     {/* ================= TEAM HIERARCHY ================= */}
                     <div className='relative'>
                       <div className='absolute top-0 left-0 text-xs font-bold text-text-secondary uppercase tracking-wide'>
@@ -475,8 +568,8 @@ export default function ProjectPage() {
                           {project.projectMembers?.filter(
                             (m) => m._id !== project.projectManager?._id
                           ).length > 0 && (
-                            <div className='tree-line-vertical' />
-                          )}
+                              <div className='tree-line-vertical' />
+                            )}
 
                           {/* ================= TEAM MEMBERS ================= */}
                           <TeamMembers members={project.projectMembers?.filter((m) => m._id !== project.projectManager?._id) || []} />
@@ -497,6 +590,71 @@ export default function ProjectPage() {
           onProjectAdded={fetchProjects}
           editingProject={editingProject}
         />
+
+        {/* ── STATUS QUICK-CHANGE MODAL ── */}
+        {statusModal && (
+          <>
+            {/* Backdrop */}
+            <div
+              className='fixed inset-0 bg-black/30 backdrop-blur-sm z-50'
+              onClick={() => setStatusModal(null)}
+            />
+            {/* Modal */}
+            <div className='fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none'>
+              <div className='bg-white rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto overflow-hidden'>
+                {/* Header */}
+                <div className='flex items-center justify-between px-5 py-4 border-b border-gray-100'>
+                  <div>
+                    <h5 className='font-semibold text-gray-900'>Change Status</h5>
+                    <p className='text-xs text-gray-400 mt-0.5'>Select a new status for this project</p>
+                  </div>
+                  <button
+                    onClick={() => setStatusModal(null)}
+                    className='w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors'
+                  >
+                    <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5'>
+                      <path d='M18 6L6 18M6 6l12 12' />
+                    </svg>
+                  </button>
+                </div>
+                {/* Status Options */}
+                <div className='p-4 space-y-2'>
+                  {STATUS_OPTIONS.map((opt) => {
+                    const isCurrent = statusModal.currentStatus === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        disabled={isCurrent || isUpdatingStatus}
+                        onClick={() => handleStatusChange(statusModal.projectId, opt.value)}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all
+                          ${isCurrent
+                            ? `${opt.color} border cursor-default opacity-80`
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer'
+                          }`}
+                      >
+                        <div className='flex items-center gap-3'>
+                          <span className={`w-2.5 h-2.5 rounded-full ${isCurrent ? 'bg-current' : 'bg-gray-300'}`} />
+                          <span className={`text-sm font-medium ${isCurrent ? '' : 'text-gray-700'}`}>
+                            {opt.label}
+                          </span>
+                        </div>
+                        {isCurrent && (
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5'>
+                            <polyline points='20 6 9 17 4 12' />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Footer */}
+                {isUpdatingStatus && (
+                  <div className='px-5 pb-4 text-center text-xs text-gray-400'>Updating status…</div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
