@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 
 export default function CreateProjectDrawer({
   isOpen = true,
-  onClose = () => {},
-  onProjectAdded = () => {}, // Callback to refresh parent list after success
+  onClose = () => { },
+  onProjectAdded = () => { }, // Callback to refresh parent list after success
   editingProject = null, // ✅ already passed
 }) {
   // UI State
@@ -92,7 +92,7 @@ export default function CreateProjectDrawer({
         name: `${emp.firstName} ${emp.lastName}`,
         // Handle nested population safely
         role: emp.designationId?.name || emp.designation || 'Employee',
-        avatar: emp.profilePic || '👤', // Use placeholder or actual image URL
+        avatar: emp.imageUrl || '👤', // Use placeholder or actual image URL
         // Store original object if needed
         original: emp,
       }));
@@ -214,9 +214,8 @@ export default function CreateProjectDrawer({
 
       {/* Drawer */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[840px] h-full bg-gray-50 shadow-2xl transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[840px] h-full bg-gray-50 shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
         {/* Header */}
         <header className='flex items-center justify-between px-8 py-6 bg-white border-b border-gray-200 shrink-0'>
@@ -277,9 +276,8 @@ export default function CreateProjectDrawer({
                 fill='none'
                 stroke='currentColor'
                 strokeWidth='2'
-                className={`text-gray-400 transition-transform duration-300 ${
-                  openSections.basic ? 'rotate-180' : ''
-                }`}
+                className={`text-gray-400 transition-transform duration-300 ${openSections.basic ? 'rotate-180' : ''
+                  }`}
               >
                 <polyline points='6 9 12 15 18 9' />
               </svg>
@@ -424,9 +422,8 @@ export default function CreateProjectDrawer({
                 fill='none'
                 stroke='currentColor'
                 strokeWidth='2'
-                className={`text-gray-400 transition-transform duration-300 ${
-                  openSections.timeline ? 'rotate-180' : ''
-                }`}
+                className={`text-gray-400 transition-transform duration-300 ${openSections.timeline ? 'rotate-180' : ''
+                  }`}
               >
                 <polyline points='6 9 12 15 18 9' />
               </svg>
@@ -495,9 +492,8 @@ export default function CreateProjectDrawer({
                 fill='none'
                 stroke='currentColor'
                 strokeWidth='2'
-                className={`text-gray-400 transition-transform duration-300 ${
-                  openSections.team ? 'rotate-180' : ''
-                }`}
+                className={`text-gray-400 transition-transform duration-300 ${openSections.team ? 'rotate-180' : ''
+                  }`}
               >
                 <polyline points='6 9 12 15 18 9' />
               </svg>
@@ -524,7 +520,7 @@ export default function CreateProjectDrawer({
                           <div className='w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white text-xl overflow-hidden'>
                             {/* Render Avatar Logic */}
                             {projectLead.avatar &&
-                            projectLead.avatar.length > 5 ? (
+                              projectLead.avatar.length > 5 ? (
                               <img
                                 src={projectLead.avatar}
                                 alt='avatar'
@@ -555,9 +551,8 @@ export default function CreateProjectDrawer({
                         fill='none'
                         stroke='currentColor'
                         strokeWidth='2'
-                        className={`text-teal-600 transition-transform ${
-                          showLeadDropdown ? 'rotate-180' : ''
-                        }`}
+                        className={`text-teal-600 transition-transform ${showLeadDropdown ? 'rotate-180' : ''
+                          }`}
                       >
                         <polyline points='6 9 12 15 18 9' />
                       </svg>
@@ -703,11 +698,10 @@ export default function CreateProjectDrawer({
                                   !isLead && toggleTeamMember(member)
                                 }
                                 disabled={isLead}
-                                className={`w-full px-4 py-3 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-0 ${
-                                  isLead
+                                className={`w-full px-4 py-3 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-0 ${isLead
                                     ? 'opacity-40 cursor-not-allowed'
                                     : 'hover:bg-gray-50 cursor-pointer'
-                                }`}
+                                  }`}
                               >
                                 <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg overflow-hidden'>
                                   {member.avatar && member.avatar.length > 5 ? (
@@ -842,9 +836,8 @@ export default function CreateProjectDrawer({
                 fill='none'
                 stroke='currentColor'
                 strokeWidth='2'
-                className={`text-gray-400 transition-transform duration-300 ${
-                  openSections.attachments ? 'rotate-180' : ''
-                }`}
+                className={`text-gray-400 transition-transform duration-300 ${openSections.attachments ? 'rotate-180' : ''
+                  }`}
               >
                 <polyline points='6 9 12 15 18 9' />
               </svg>
@@ -891,11 +884,10 @@ export default function CreateProjectDrawer({
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className={`px-8 py-2.5 rounded-lg text-white text-sm font-bold shadow-lg shadow-orange-500/25 transition-all ${
-                isLoading
+              className={`px-8 py-2.5 rounded-lg text-white text-sm font-bold shadow-lg shadow-orange-500/25 transition-all ${isLoading
                   ? 'bg-orange-300 cursor-not-allowed'
                   : 'bg-orange-500 hover:bg-orange-600 hover:shadow-orange-500/40 active:scale-95'
-              }`}
+                }`}
             >
               {editingProject ? 'Update Project' : 'Create Project'}
 

@@ -23,12 +23,18 @@ export default function AddEditEmployeeModal({
   const [submitting, setSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageHovered, setImageHovered] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedDataUrl, setCapturedDataUrl] = useState(null);
+  const capturedBlobRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const [autoEmployee, setAutoEmployee] = useState(false);
   const [sameAsCurrentAddress, setSameAsCurrentAddress] = useState(false);
   const [expandedDocSections, setExpandedDocSections] = useState({});
   const [uploadedDocuments, setUploadedDocuments] = useState({
     idProofs: { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
-    academicDocuments: { 
+    academicDocuments: {
       tenth: { certificate: null, marksheet: null },
       twelth: { certificate: null, marksheet: null },
       graduation: { name: '', semester: '', certificate: null, marksheets: [] },
@@ -141,10 +147,10 @@ export default function AddEditEmployeeModal({
     }
   }
 
-    const [form, setForm] = useState(() => {
+  const [form, setForm] = useState(() => {
     if (employee && mode === 'edit') {
       const imageUrl = employee.photo || employee.imageUrl || '';
-     
+
       if (imageUrl) {
         setImagePreview(imageUrl);
       }
@@ -183,11 +189,11 @@ export default function AddEditEmployeeModal({
         ],
         emergencyContacts: employee.emergencyContacts?.length > 0
           ? employee.emergencyContacts.map(contact => ({
-              name: contact.name || '',
-              relationship: contact.relationship || '',
-              phone: String(contact.phone || ''),
-              email: contact.email || ''
-            }))
+            name: contact.name || '',
+            relationship: contact.relationship || '',
+            phone: String(contact.phone || ''),
+            email: contact.email || ''
+          }))
           : empty.emergencyContacts,
         // Fix: Add null checks before accessing _id
         departmentId: (employee.departmentId && typeof employee.departmentId === 'object')
@@ -219,11 +225,11 @@ export default function AddEditEmployeeModal({
     }
     return { ...empty };
   });
- 
+
 
   const [errors, setErrors] = useState({});
 
-   useEffect(() => {
+  useEffect(() => {
     if (employee && mode === 'edit') {
       const imageUrl = employee.photo || employee.imageUrl || '';
       setImagePreview(imageUrl);
@@ -262,11 +268,11 @@ export default function AddEditEmployeeModal({
         ],
         emergencyContacts: employee.emergencyContacts?.length > 0
           ? employee.emergencyContacts.map(contact => ({
-              name: contact.name || '',
-              relationship: contact.relationship || '',
-              phone: String(contact.phone || ''),
-              email: contact.email || ''
-            }))
+            name: contact.name || '',
+            relationship: contact.relationship || '',
+            phone: String(contact.phone || ''),
+            email: contact.email || ''
+          }))
           : empty.emergencyContacts,
         // Add null checks here too
         departmentId: (employee.departmentId && typeof employee.departmentId === 'object')
@@ -308,10 +314,10 @@ export default function AddEditEmployeeModal({
       const loadDocuments = async () => {
         try {
           const { data } = await axios.get(`/user/get-personal-details/${employee._id}`);
-          
+
           if (data?.result) {
             const personalDetails = data.result;
-            
+
             if (personalDetails.academicDocuments?.graduation?.marksheets && !Array.isArray(personalDetails.academicDocuments.graduation.marksheets)) {
               personalDetails.academicDocuments.graduation.marksheets = [];
             }
@@ -321,7 +327,7 @@ export default function AddEditEmployeeModal({
             if (!Array.isArray(personalDetails.employmentHistory)) {
               personalDetails.employmentHistory = [];
             }
-            
+
             if (personalDetails.employmentHistory && Array.isArray(personalDetails.employmentHistory)) {
               personalDetails.employmentHistory = personalDetails.employmentHistory.map(emp => ({
                 ...emp,
@@ -331,10 +337,10 @@ export default function AddEditEmployeeModal({
                 others: Array.isArray(emp.others) ? emp.others : (emp.others ? [emp.others] : [])
               }));
             }
-            
+
             setUploadedDocuments({
               idProofs: personalDetails.idProofs || { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
-              academicDocuments: personalDetails.academicDocuments || { 
+              academicDocuments: personalDetails.academicDocuments || {
                 tenth: { certificate: null, marksheet: null },
                 twelth: { certificate: null, marksheet: null },
                 graduation: { name: '', semester: '', certificate: null, marksheets: [] },
@@ -349,12 +355,12 @@ export default function AddEditEmployeeModal({
           console.error("Failed to load documents:", err);
         }
       };
-      
+
       loadDocuments();
     } else {
       setUploadedDocuments({
         idProofs: { aadhaar: null, pan: null, passportOrDL: null, presentAddressProof: null, permanentAddressProof: null },
-        academicDocuments: { 
+        academicDocuments: {
           tenth: { certificate: null, marksheet: null },
           twelth: { certificate: null, marksheet: null },
           graduation: { name: '', semester: '', certificate: null, marksheets: [] },
@@ -377,11 +383,13 @@ export default function AddEditEmployeeModal({
 
   useEffect(() => {
     function handleClick(e) {
+      // Don't close main modal when camera overlay is open
+      if (showCamera) return;
       if (modalRef.current && !modalRef.current.contains(e.target)) onClose();
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [onClose]);
+  }, [onClose, showCamera]);
 
   useEffect(() => {
     if (organizationData) {
@@ -457,6 +465,128 @@ export default function AddEditEmployeeModal({
     }
   };
 
+  // ─── Camera capture ───────────────────────────────────────────────────────
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false,
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+    } catch (err) {
+      toast.error("Camera access denied or unavailable");
+      console.error("Camera error:", err);
+    }
+  };
+
+  const stopCamera = useCallback(() => {
+    setCameraStream((prev) => {
+      if (prev) prev.getTracks().forEach((t) => t.stop());
+      return null;
+    });
+    setShowCamera(false);
+  }, []);
+
+  // Snapshot the current video frame → show preview (does NOT upload yet)
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+
+    // Save data URL for preview display
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    setCapturedDataUrl(dataUrl);
+
+    // Store blob for upload when user confirms
+    canvas.toBlob(
+      (blob) => { capturedBlobRef.current = blob; },
+      "image/jpeg",
+      0.9
+    );
+  };
+
+  // User is happy → upload the stored blob
+  const usePhoto = async () => {
+    const blob = capturedBlobRef.current;
+    if (!blob) return;
+
+    stopCamera();
+    setCapturedDataUrl(null);
+
+    const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+    const formData = new FormData();
+    formData.append("imageFile", file);
+    try {
+      const { data } = await axios.post("/user/aws-image", formData);
+      toast.success("Photo uploaded successfully!");
+      if (data?.result?.imageUrls) {
+        const newImageUrl = data.result.imageUrls[0];
+        update("imageUrl", newImageUrl);
+        setImagePreview(newImageUrl);
+      }
+    } catch (err) {
+      toast.error("Error uploading photo");
+      console.error("Capture upload error:", err);
+    }
+  };
+
+  // User wants another shot → discard preview, go back to live feed
+  const retakePhoto = () => {
+    capturedBlobRef.current = null;
+    setCapturedDataUrl(null);
+  };
+
+  // Cancel → stop stream entirely and clear preview
+  const cancelCamera = () => {
+    capturedBlobRef.current = null;
+    setCapturedDataUrl(null);
+    stopCamera();
+  };
+
+  // Clear the current employee photo
+  const removePhoto = async () => {
+    const currentUrl = imagePreview || form.imageUrl;
+    // Clear the UI immediately so the user sees a response right away
+    setImagePreview(null);
+    update("imageUrl", "");
+
+    // If there's an S3 URL, extract the key and call the remove API
+    if (currentUrl) {
+      try {
+        const url = new URL(currentUrl);
+        // S3 URL format: https://<bucket>.s3.<region>.amazonaws.com/<key>
+        // The key is everything after the first slash of the pathname
+        const Key = decodeURIComponent(url.pathname.slice(1));
+        await axios.post("/user/remove-image", { Key });
+        toast.success("Photo removed successfully");
+      } catch (err) {
+        // Don't re-show the image on error — it's already cleared from UI
+        console.warn("Failed to delete image from S3:", err);
+        toast.error("Photo removed locally, but server cleanup failed");
+      }
+    }
+  };
+
+  // Attach stream to video element when modal opens
+  useEffect(() => {
+    if (showCamera && videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [showCamera, cameraStream]);
+
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+    };
+  }, [cameraStream]);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const handleDocumentUpload = async (e, docPath) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -465,22 +595,22 @@ export default function AddEditEmployeeModal({
 
     const formData = new FormData();
     formData.append("files", file);
-    
+
     try {
       const { data } = await axios.post("/user/add-pdf", formData);
-      
+
       if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
         const pdf = data.result.pdfUrls[0];
-        
+
         setUploadedDocuments((prev) => {
           const updated = JSON.parse(JSON.stringify(prev));
-          
+
           const arrayMatch = docPath.match(/\[(\d+)\]/);
           if (arrayMatch) {
             const index = parseInt(arrayMatch[1]);
             const pathWithoutIndex = docPath.replace(/\[\d+\]/, '');
             const keys = pathWithoutIndex.split(".");
-            
+
             let obj = updated;
             for (let i = 0; i < keys.length - 1; i++) {
               if (keys[i] === 'employmentHistory') {
@@ -489,7 +619,7 @@ export default function AddEditEmployeeModal({
                 obj = obj[keys[i]];
               }
             }
-            
+
             const lastKey = keys[keys.length - 1];
             if (Array.isArray(obj[lastKey])) {
               obj[lastKey].push({ url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() });
@@ -499,14 +629,14 @@ export default function AddEditEmployeeModal({
           } else {
             const keys = docPath.split(".");
             let obj = updated;
-            
+
             for (let i = 0; i < keys.length - 1; i++) {
               if (!obj[keys[i]] || typeof obj[keys[i]] !== 'object') {
                 obj[keys[i]] = {};
               }
               obj = obj[keys[i]];
             }
-            
+
             const lastKey = keys[keys.length - 1];
             if (Array.isArray(obj[lastKey])) {
               obj[lastKey].push({ url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() });
@@ -514,10 +644,10 @@ export default function AddEditEmployeeModal({
               obj[lastKey] = { url: pdf.url, key: pdf.key, fileName: file.name, uploadedAt: new Date() };
             }
           }
-          
+
           return updated;
         });
-        
+
         toast.success("Document uploaded successfully");
       }
     } catch (err) {
@@ -533,7 +663,7 @@ export default function AddEditEmployeeModal({
 
     try {
       let document = null;
-      
+
       const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
       if (arrayIndexMatch) {
         const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
@@ -547,19 +677,19 @@ export default function AddEditEmployeeModal({
       } else {
         const keys = docPath.split(".");
         let obj = uploadedDocuments;
-        
+
         for (let i = 0; i < keys.length; i++) {
           obj = obj[keys[i]];
           if (!obj) break;
         }
-        
+
         if (index !== undefined && Array.isArray(obj)) {
           document = obj[index];
         } else if (obj && !Array.isArray(obj)) {
           document = obj;
         }
       }
-      
+
       if (document?.key) {
         try {
           await axios.post("/user/remove-pdf", { key: document.key });
@@ -570,12 +700,12 @@ export default function AddEditEmployeeModal({
 
       setUploadedDocuments((prev) => {
         const updated = JSON.parse(JSON.stringify(prev));
-        
+
         const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
         if (arrayIndexMatch) {
           const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
           const arrayIdx = parseInt(arrayIndex);
-          
+
           if (updated[arrayName]?.[arrayIdx]?.[fieldName]) {
             if (index !== undefined && Array.isArray(updated[arrayName][arrayIdx][fieldName])) {
               updated[arrayName][arrayIdx][fieldName].splice(index, 1);
@@ -586,24 +716,24 @@ export default function AddEditEmployeeModal({
         } else {
           let updateObj = updated;
           const pathKeys = docPath.split(".");
-          
+
           for (let i = 0; i < pathKeys.length - 1; i++) {
             updateObj = updateObj[pathKeys[i]];
             if (!updateObj) return prev;
           }
-          
+
           const lastKey = pathKeys[pathKeys.length - 1];
-          
+
           if (index !== undefined && Array.isArray(updateObj[lastKey])) {
             updateObj[lastKey].splice(index, 1);
           } else if (updateObj[lastKey]) {
             updateObj[lastKey] = null;
           }
         }
-        
+
         return updated;
       });
-      
+
       toast.success("Document removed successfully");
     } catch (err) {
       console.error("PDF removal error:", err);
@@ -617,7 +747,7 @@ export default function AddEditEmployeeModal({
     const isDisabled =
       !form.employmentType || !form.experienceLevel;
     if (isDisabled) return;
-    
+
     setExpandedDocSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -627,29 +757,29 @@ export default function AddEditEmployeeModal({
   const getMissingRequiredDocuments = () => {
     const requiredDocs = getRequiredDocuments();
     const missing = [];
-    
+
     if (requiredDocs.idProofs) {
-      const hasIdProof = 
+      const hasIdProof =
         !!uploadedDocuments.idProofs?.aadhaar ||
         !!uploadedDocuments.idProofs?.pan ||
         !!uploadedDocuments.idProofs?.passportOrDL ||
         !!uploadedDocuments.idProofs?.presentAddressProof ||
         !!uploadedDocuments.idProofs?.permanentAddressProof;
-      
+
       if (!hasIdProof) missing.push("ID Proofs");
     }
-    
+
     if (requiredDocs.academicDocuments) {
-      const has10th = !!uploadedDocuments.academicDocuments?.tenth?.certificate && 
-                      !!uploadedDocuments.academicDocuments?.tenth?.marksheet;
-      
-      const has12th = !!uploadedDocuments.academicDocuments?.twelth?.certificate && 
-                      !!uploadedDocuments.academicDocuments?.twelth?.marksheet;
-      
+      const has10th = !!uploadedDocuments.academicDocuments?.tenth?.certificate &&
+        !!uploadedDocuments.academicDocuments?.tenth?.marksheet;
+
+      const has12th = !!uploadedDocuments.academicDocuments?.twelth?.certificate &&
+        !!uploadedDocuments.academicDocuments?.twelth?.marksheet;
+
       const gradSemester = parseInt(uploadedDocuments.academicDocuments?.graduation?.semester) || 0;
       const gradMarksheetCount = uploadedDocuments.academicDocuments?.graduation?.marksheets?.length || 0;
       const hasGraduation = gradSemester === 0 || (!!uploadedDocuments.academicDocuments?.graduation?.certificate && gradMarksheetCount === gradSemester);
-      
+
       const pgSemester = parseInt(uploadedDocuments.academicDocuments?.postGraduation?.semester) || 0;
       const pgMarksheetCount = uploadedDocuments.academicDocuments?.postGraduation?.marksheets?.length || 0;
       const hasPostGraduation = pgSemester === 0 || (!!uploadedDocuments.academicDocuments?.postGraduation?.certificate && pgMarksheetCount === pgSemester);
@@ -658,12 +788,12 @@ export default function AddEditEmployeeModal({
         missing.push("Academic Documents (10th, 12th, and all matching semesters)");
       }
     }
-    
+
     if (requiredDocs.employmentHistory) {
       if (!uploadedDocuments.employmentHistory || uploadedDocuments.employmentHistory.length === 0) {
         missing.push("Employment History Details");
       } else {
-        const hasCompleteEmploymentHistory = uploadedDocuments.employmentHistory.every(emp => 
+        const hasCompleteEmploymentHistory = uploadedDocuments.employmentHistory.every(emp =>
           emp.companyName &&
           emp.designation &&
           emp.employmentPeriod?.startDate &&
@@ -671,14 +801,14 @@ export default function AddEditEmployeeModal({
           emp.offerLetter &&
           emp.experienceLetter &&
           emp.relievingLetter &&
-          emp.salarySlips?.length === 3 
+          emp.salarySlips?.length === 3
         );
         if (!hasCompleteEmploymentHistory) {
           missing.push("Complete Employment History Files (Offer, Experience, Relieving, 3x Salary Slips)");
         }
       }
     }
-    
+
     return missing;
   };
 
@@ -742,7 +872,7 @@ export default function AddEditEmployeeModal({
           const monthDiff = today.getMonth() - dob.getMonth();
           const actualAge =
             monthDiff < 0 ||
-            (monthDiff === 0 && today.getDate() < dob.getDate())
+              (monthDiff === 0 && today.getDate() < dob.getDate())
               ? age - 1
               : age;
 
@@ -1042,7 +1172,7 @@ export default function AddEditEmployeeModal({
       if (mode === "add") {
         res = await axios.post("/hrms/employee/add-employee", submitData);
         toast.success("Employee Added Successfully");
-        
+
         if (missingDocs.length > 0) {
           toast.info(
             `Remember to upload ${missingDocs.join(", ")} to complete onboarding.`,
@@ -1056,7 +1186,7 @@ export default function AddEditEmployeeModal({
           submitData
         );
         toast.success("Employee Updated");
-        
+
         if (missingDocs.length > 0) {
           toast.info(
             `Remember to upload ${missingDocs.join(", ")} to complete onboarding.`,
@@ -1107,8 +1237,7 @@ export default function AddEditEmployeeModal({
         } else {
           const errorMessage =
             error.response?.data?.message ||
-            `Failed to ${
-              mode === "add" ? "add" : "update"
+            `Failed to ${mode === "add" ? "add" : "update"
             } employee. Please try again.`;
           setErrors({ submit: errorMessage });
         }
@@ -1201,27 +1330,27 @@ export default function AddEditEmployeeModal({
     return result;
   }
   const getRequiredDocuments = () => {
-  const isPermanentOrProbation =
-    ["Permanent", "Probation"].includes(form.employmentType);
+    const isPermanentOrProbation =
+      ["Permanent", "Probation"].includes(form.employmentType);
 
-  const isInternship = form.employmentType === "Internship";
+    const isInternship = form.employmentType === "Internship";
 
-  return {
-    idProofs: true,
+    return {
+      idProofs: true,
 
-    academicDocuments: isPermanentOrProbation, 
+      academicDocuments: isPermanentOrProbation,
 
-    showAcademicSection: isPermanentOrProbation || isInternship, 
+      showAcademicSection: isPermanentOrProbation || isInternship,
 
-    employmentHistory:
-      isPermanentOrProbation && form.experienceLevel === "Experienced",
+      employmentHistory:
+        isPermanentOrProbation && form.experienceLevel === "Experienced",
+    };
   };
-};
 
 
   const isFormViewMode = mode === "view";
   const isEdit = mode === "edit";
-  
+
   // Rule: Employees editing their own profile can only edit Step 1 and Step 5.
   const isEmployeeEditingSelf = isOwnProfile && !isSuperAdmin && !isHR;
   const isProtectedStep = step > 1 && step < 5;
@@ -1230,8 +1359,8 @@ export default function AddEditEmployeeModal({
   const primaryLabel = isFormViewMode
     ? "Close"
     : isEdit
-    ? "Save changes"
-    : "Create employee";
+      ? "Save changes"
+      : "Create employee";
 
   const errorMessages = Object.entries(errors)
     .filter(([key]) => key !== "submit")
@@ -1259,9 +1388,11 @@ export default function AddEditEmployeeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <style dangerouslySetInnerHTML={{__html: `
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <style dangerouslySetInnerHTML={{
+          __html: `
         .employee-modal-restricted input:read-only,
         .employee-modal-restricted textarea:read-only,
         .employee-modal-restricted select:disabled,
@@ -1272,869 +1403,871 @@ export default function AddEditEmployeeModal({
           border-color: #e5e7eb !important;
         }
       `}} />
-      <div
-        ref={modalRef}
-        className={`relative w-[min(900px,95%)] h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto hide-scrollbar ${isView ? 'employee-modal-restricted' : ''}`}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <div>
-            <h3 className="text-lg font-semibold text-[var(--color-blackText)]">
-              {mode === "add"
-                ? "Add Employee"
-                : mode === "edit"
-                ? "Edit Employee"
-                : "View Employee"}
-            </h3>
-            <div className="text-sm text-[var(--color-primaryText)] mt-1">
-              Multi-step employee form
+        <div
+          ref={modalRef}
+          className={`relative w-[min(900px,95%)] h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-y-auto hide-scrollbar ${isView ? 'employee-modal-restricted' : ''}`}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 sticky top-0 bg-white z-10">
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--color-blackText)]">
+                {mode === "add"
+                  ? "Add Employee"
+                  : mode === "edit"
+                    ? "Edit Employee"
+                    : "View Employee"}
+              </h3>
+              <div className="text-sm text-[var(--color-primaryText)] mt-1">
+                Multi-step employee form
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="text-gray-500 hover:text-gray-700 p-2 rounded-md"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((s, index) => (
+                <React.Fragment key={s}>
+                  {index > 0 && (
+                    <div
+                      className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${step >= s
+                        ? "border-[var(--color-primary)]"
+                        : "border-gray-400"
+                        }`}
+                    />
+                  )}
+                  <div
+                    className={`flex items-center gap-3 shrink-0 ${!isFormViewMode ? "cursor-pointer" : ""
+                      }`}
+                    onClick={() => {
+                      if (!isFormViewMode) {
+                        setStep(s);
+                      }
+                    }}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step >= s
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-gray-100 text-gray-600"
+                        } ${!isFormViewMode ? "hover:opacity-80" : ""}`}
+                    >
+                      {s}
+                    </div>
+                    <div className="text-sm text-[var(--color-primaryText)] whitespace-nowrap">
+                      {s === 1
+                        ? "Personal"
+                        : s === 2
+                          ? "Employment"
+                          : s === 3
+                            ? "Job"
+                            : s === 4
+                              ? "Credentials"
+                              : "Documents"}
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="text-gray-500 hover:text-gray-700 p-2 rounded-md"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="px-6 pt-4 pb-3 border-b border-gray-100 sticky top-[60px] bg-white z-10">
-          <div className="flex items-center">
-            {[1, 2, 3, 4, 5].map((s, index) => (
-              <React.Fragment key={s}>
-                {index > 0 && (
-                  <div
-                    className={`flex-1 h-1 border-t-2 border-dotted mx-4 ${
-                      step >= s
-                        ? "border-[var(--color-primary)]"
-                        : "border-gray-400"
-                    }`}
-                  />
-                )}
-                <div
-                  className={`flex items-center gap-3 shrink-0 ${
-                    !isFormViewMode ? "cursor-pointer" : ""
-                  }`}
-                  onClick={() => {
-                    if (!isFormViewMode) {
-                      setStep(s);
-                    }
-                  }}
-                >
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                      step >= s
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-gray-100 text-gray-600"
-                    } ${!isFormViewMode ? "hover:opacity-80" : ""}`}
-                  >
-                    {s}
-                  </div>
-                  <div className="text-sm text-[var(--color-primaryText)] whitespace-nowrap">
-                    {s === 1
-                      ? "Personal"
-                      : s === 2
-                      ? "Employment"
-                      : s === 3
-                      ? "Job"
-                      : s === 4
-                      ? "Credentials"
-                      : "Documents"}
-                  </div>
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
 
 
+          <div className="p-6">
+            <div hidden={step !== 1}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2">
+                  Personal Details
+                </h5>
 
-        <div className="p-6">
-          <div hidden={step !== 1}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2">
-                Personal Details
-              </h5>
-
-              <div className="md:col-span-2">
-                <label className="text-sm text-[var(--color-primaryText)] block mb-2">
-                  Employee Photo
-                </label>
-                <div className="flex items-center justify-center">
-                  <div
-                    className="relative w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center cursor-pointer overflow-hidden"
-                    onMouseEnter={() => !isView && setImageHovered(true)}
-                    onMouseLeave={() => !isView && setImageHovered(false)}
-                  >
-                    {imagePreview ? (
-                      <Image
-                        src={imagePreview}
-                        alt="Employee photo"
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-gray-400">
-                        <svg
-                          className="w-12 h-12 mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
-                        <span className="text-xs">No photo</span>
-                      </div>
-                    )}
-                    {!isView && (
-                      <div
-                        className={`
-                          absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg
+                <div className="md:col-span-2">
+                  <label className="text-sm text-[var(--color-primaryText)] block mb-2">
+                    Employee Photo
+                  </label>
+                  <div className="flex items-center justify-center">
+                    <div
+                      className="relative w-32 h-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center cursor-pointer overflow-hidden"
+                      onMouseEnter={() => !isView && setImageHovered(true)}
+                      onMouseLeave={() => !isView && setImageHovered(false)}
+                    >
+                      {imagePreview ? (
+                        <Image
+                          src={imagePreview}
+                          alt="Employee photo"
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-gray-400">
+                          <svg
+                            className="w-12 h-12 mb-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                          <span className="text-xs">No photo</span>
+                        </div>
+                      )}
+                      {!isView && (
+                        <div
+                          className={`
+                          absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2 rounded-lg
                           transition-opacity duration-200 ease-in-out
-                          ${
-                            imageHovered
+                          ${imageHovered
                               ? "opacity-100"
                               : "opacity-0 pointer-events-none"
-                          }
+                            }
                         `}
-                      >
-                        <label
-                          htmlFor="image-upload"
-                          className="bg-[var(--color-primary)] text-white px-4 py-2 rounded text-sm font-medium hover:bg-opacity-90 cursor-pointer"
                         >
-                          {mode === "edit" ? "Edit" : "Add"}
-                        </label>
-                      </div>
-                    )}
+                          {/* Upload from disk */}
+                          <label
+                            htmlFor="image-upload"
+                            className="bg-[var(--color-primary)] text-white px-3 py-1.5 rounded text-xs font-medium hover:brightness-110 cursor-pointer flex items-center gap-1.5"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Upload
+                          </label>
+
+                          {/* Live camera */}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); startCamera(); }}
+                            className="bg-white/20 border border-white/70 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-white/30 cursor-pointer flex items-center gap-1.5"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Camera
+                          </button>
+
+                          {/* Remove photo — only when one exists */}
+                          {imagePreview && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); removePhoto(); }}
+                              className="bg-red-500 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-red-600 cursor-pointer flex items-center gap-1.5"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-[var(--color-primaryText)] text-center mt-2">
-                  {mode === "view"
-                    ? "Employee photo"
-                    : "Click to upload employee photo"}
-                </p>
-                {!isView && (
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageChange}
-                  />
-                )}
-                {errors.imageUrl && (
-                  <p className="text-red-500 text-sm mt-1 text-center">
-                    {errors.imageUrl}
+                  <p className="text-xs text-[var(--color-primaryText)] text-center mt-2">
+                    {mode === "view"
+                      ? "Employee photo"
+                      : "Hover to upload or take a live photo"}
                   </p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  First name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.firstName || ""}
-                  onChange={(e) => update("firstName", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.firstName ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView }
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Last name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.lastName || ""}
-                  onChange={(e) => update("lastName", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.lastName ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Email address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={form.email || ""}
-                  onChange={(e) => update("email", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.email ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView }
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Date of Birth <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={form.dateOfBirth || ""}
-                  onChange={(e) => update("dateOfBirth", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.dateOfBirth ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Gender <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.gender || ""}
-                  onChange={(e) => update("gender", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.gender ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Marital Status <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.maritalStatus || ""}
-                  onChange={(e) => update("maritalStatus", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.maritalStatus ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select</option>
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Divorced">Divorced</option>
-                  <option value="Widowed">Widowed</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Mobile Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.mobileNumber || ""}
-                  onChange={(e) => handleNumberInput(e, "mobileNumber")}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  }
-                     ${errors.mobileNumber ? "border-red-500" : ""}`}
-                  readOnly={isView }
-                  placeholder="+1234567890"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Alternate Mobile Number
-                </label>
-                <input
-                  value={form.alternateMobileNumber || ""}
-                  onChange={(e) =>
-                    handleNumberInput(e, "alternateMobileNumber")
-                  }
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors.alternateMobileNumber ? "border-red-500" : ""}`}
-                  readOnly={isView }
-                  placeholder="+1234567890"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  About
-                </label>
-                <textarea
-                  value={form.about || ""}
-                  onChange={(e) => update("about", e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
-
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
-                Current Address Details
-              </h5>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Address Line <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[0]?.addressLine || ""}
-                  onChange={(e) =>
-                    updateAddressField(0, "addressLine", e.target.value)
-                  }
-                  placeholder="Street address, etc."
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["address[0].addressLine"] ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Locality <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[0]?.locality || ""}
-                  onChange={(e) =>
-                    updateAddressField(0, "locality", e.target.value)
-                  }
-                  placeholder="Neighborhood or locality"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["address[0].locality"] ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[0]?.city || ""}
-                  onChange={(e) =>
-                    updateAddressField(0, "city", e.target.value)
-                  }
-                  placeholder="City name"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["address[0].city"] ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  State <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[0]?.state || ""}
-                  onChange={(e) =>
-                    updateAddressField(0, "state", e.target.value)
-                  }
-                  placeholder="State/Province"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  
-                   ${errors["address[0].state"] ? "border-red-500" : ""}`}
-                  readOnly={isView}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Postal Code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  // type="text"
-                  value={form.address?.[0]?.postalCode || ""}
-                  onChange={(e) =>
-                    updateAddressField(0, "postalCode", e.target.value)
-                  }
-                  placeholder="ZIP/Postal code"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].postalCode"] ? "border-red-500" : ""}`}
-                  readOnly={isView}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Country <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[0]?.country || ""}
-                  onChange={(e) =>
-                    updateAddressField(0, "country", e.target.value)
-                  }
-                  placeholder="Country name"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  
- ${errors["address[0].country"] ? "border-red-500" : ""}`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
-
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
-                Permanent Address Details
-              </h5>
-              {!isView && (
-                <div className="md:col-span-2 -mt-2 mb-2">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                  {!isView && (
                     <input
-                      type="checkbox"
-                      checked={sameAsCurrentAddress}
-                      onChange={(e) =>
-                        handleSameAsCurrentAddress(e.target.checked)
-                      }
-                      className="w-4 h-4 rounded border-gray-300  cursor-pointer"
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageChange}
                     />
-                    <span className="text-sm text-[var(--color-primaryText)]">
-                      Same as Current Address
-                    </span>
-                  </label>
+                  )}
+                  {/* Hidden canvas for camera capture */}
+                  <canvas ref={canvasRef} className="hidden" />
+                  {errors.imageUrl && (
+                    <p className="text-red-500 text-sm mt-1 text-center">
+                      {errors.imageUrl}
+                    </p>
+                  )}
                 </div>
-              )}
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Address Line <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[1]?.addressLine || ""}
-                  onChange={(e) =>
-                    updateAddressField(1, "addressLine", e.target.value)
-                  }
-                  placeholder="Street address, etc."
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${
-                    errors["address[1].addressLine"] ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    First name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.firstName || ""}
+                    onChange={(e) => update("firstName", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.firstName ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView}
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Locality <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[1]?.locality || ""}
-                  onChange={(e) =>
-                    updateAddressField(1, "locality", e.target.value)
-                  }
-                  placeholder="Neighborhood or locality"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].locality"] ? "border-red-500" : ""}`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Last name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.lastName || ""}
+                    onChange={(e) => update("lastName", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.lastName ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView}
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[1]?.city || ""}
-                  onChange={(e) =>
-                    updateAddressField(1, "city", e.target.value)
-                  }
-                  placeholder="City name"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].city"] ? "border-red-500" : ""}`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Email address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email || ""}
+                    onChange={(e) => update("email", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.email ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView}
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  State <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[1]?.state || ""}
-                  onChange={(e) =>
-                    updateAddressField(1, "state", e.target.value)
-                  }
-                  placeholder="State/Province"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].state"] ? "border-red-500" : ""}`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Date of Birth <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.dateOfBirth || ""}
+                    onChange={(e) => update("dateOfBirth", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.dateOfBirth ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView}
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Postal Code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[1]?.postalCode || ""}
-                  onChange={(e) =>
-                    updateAddressField(1, "postalCode", e.target.value)
-                  }
-                  placeholder="ZIP/Postal code"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].postalCode"] ? "border-red-500" : ""}`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.gender || ""}
+                    onChange={(e) => update("gender", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.gender ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Country <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.address?.[1]?.country || ""}
-                  onChange={(e) =>
-                    updateAddressField(1, "country", e.target.value)
-                  }
-                  placeholder="Country name"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${
-                    sameAsCurrentAddress ? "bg-gray-100" : ""
-                  } ${errors["address[1].country"] ? "border-red-500" : ""}`}
-                  readOnly={isView || sameAsCurrentAddress}
-                />
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Marital Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.maritalStatus || ""}
+                    onChange={(e) => update("maritalStatus", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.maritalStatus ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                  </select>
+                </div>
 
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
-                Emergency Contact
-              </h5>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Mobile Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.mobileNumber || ""}
+                    onChange={(e) => handleNumberInput(e, "mobileNumber")}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      }
+                     ${errors.mobileNumber ? "border-red-500" : ""}`}
+                    readOnly={isView}
+                    placeholder="+1234567890"
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Contact Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.emergencyContacts?.[0]?.name || ""}
-                  onChange={(e) =>
-                    updateEmergencyContactField(0, "name", e.target.value)
-                  }
-                  placeholder="Full name of contact"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Alternate Mobile Number
+                  </label>
+                  <input
+                    value={form.alternateMobileNumber || ""}
+                    onChange={(e) =>
+                      handleNumberInput(e, "alternateMobileNumber")
+                    }
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      } ${errors.alternateMobileNumber ? "border-red-500" : ""}`}
+                    readOnly={isView}
+                    placeholder="+1234567890"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    About
+                  </label>
+                  <textarea
+                    value={form.about || ""}
+                    onChange={(e) => update("about", e.target.value)}
+                    rows={3}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
+                  Current Address Details
+                </h5>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Address Line <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[0]?.addressLine || ""}
+                    onChange={(e) =>
+                      updateAddressField(0, "addressLine", e.target.value)
+                    }
+                    placeholder="Street address, etc."
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].addressLine"] ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Locality <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[0]?.locality || ""}
+                    onChange={(e) =>
+                      updateAddressField(0, "locality", e.target.value)
+                    }
+                    placeholder="Neighborhood or locality"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].locality"] ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[0]?.city || ""}
+                    onChange={(e) =>
+                      updateAddressField(0, "city", e.target.value)
+                    }
+                    placeholder="City name"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].city"] ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    State <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[0]?.state || ""}
+                    onChange={(e) =>
+                      updateAddressField(0, "state", e.target.value)
+                    }
+                    placeholder="State/Province"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  
+                   ${errors["address[0].state"] ? "border-red-500" : ""}`}
+                    readOnly={isView}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Postal Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    // type="text"
+                    value={form.address?.[0]?.postalCode || ""}
+                    onChange={(e) =>
+                      updateAddressField(0, "postalCode", e.target.value)
+                    }
+                    placeholder="ZIP/Postal code"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["address[0].postalCode"] ? "border-red-500" : ""}`}
+                    readOnly={isView}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Country <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[0]?.country || ""}
+                    onChange={(e) =>
+                      updateAddressField(0, "country", e.target.value)
+                    }
+                    placeholder="Country name"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  
+ ${errors["address[0].country"] ? "border-red-500" : ""}`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
+                  Permanent Address Details
+                </h5>
+                {!isView && (
+                  <div className="md:col-span-2 -mt-2 mb-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sameAsCurrentAddress}
+                        onChange={(e) =>
+                          handleSameAsCurrentAddress(e.target.checked)
+                        }
+                        className="w-4 h-4 rounded border-gray-300  cursor-pointer"
+                      />
+                      <span className="text-sm text-[var(--color-primaryText)]">
+                        Same as Current Address
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Address Line <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[1]?.addressLine || ""}
+                    onChange={(e) =>
+                      updateAddressField(1, "addressLine", e.target.value)
+                    }
+                    placeholder="Street address, etc."
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      } ${errors["address[1].addressLine"] ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Locality <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[1]?.locality || ""}
+                    onChange={(e) =>
+                      updateAddressField(1, "locality", e.target.value)
+                    }
+                    placeholder="Neighborhood or locality"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      } ${errors["address[1].locality"] ? "border-red-500" : ""}`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[1]?.city || ""}
+                    onChange={(e) =>
+                      updateAddressField(1, "city", e.target.value)
+                    }
+                    placeholder="City name"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      } ${errors["address[1].city"] ? "border-red-500" : ""}`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    State <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[1]?.state || ""}
+                    onChange={(e) =>
+                      updateAddressField(1, "state", e.target.value)
+                    }
+                    placeholder="State/Province"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      } ${errors["address[1].state"] ? "border-red-500" : ""}`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Postal Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[1]?.postalCode || ""}
+                    onChange={(e) =>
+                      updateAddressField(1, "postalCode", e.target.value)
+                    }
+                    placeholder="ZIP/Postal code"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      } ${errors["address[1].postalCode"] ? "border-red-500" : ""}`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Country <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.address?.[1]?.country || ""}
+                    onChange={(e) =>
+                      updateAddressField(1, "country", e.target.value)
+                    }
+                    placeholder="Country name"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]  ${sameAsCurrentAddress ? "bg-gray-100" : ""
+                      } ${errors["address[1].country"] ? "border-red-500" : ""}`}
+                    readOnly={isView || sameAsCurrentAddress}
+                  />
+                </div>
+
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2 mt-4">
+                  Emergency Contact
+                </h5>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Contact Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={form.emergencyContacts?.[0]?.name || ""}
+                    onChange={(e) =>
+                      updateEmergencyContactField(0, "name", e.target.value)
+                    }
+                    placeholder="Full name of contact"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]
                     errors["emergencyContacts[0].name"] ? "border-red-500" : ""
                   }`}
-                  readOnly={isView}
-                />
-              </div>
+                    readOnly={isView}
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Relationship <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.emergencyContacts?.[0]?.relationship || ""}
-                  onChange={(e) =>
-                    updateEmergencyContactField(
-                      0,
-                      "relationship",
-                      e.target.value
-                    )
-                  }
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Relationship <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.emergencyContacts?.[0]?.relationship || ""}
+                    onChange={(e) =>
+                      updateEmergencyContactField(
+                        0,
+                        "relationship",
+                        e.target.value
+                      )
+                    }
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]
                   
                     errors["emergencyContacts[0].relationship"]
                       ? "border-red-500"
                       : ""
                   }`}
-                  disabled={isView}
-                >
-                  <option value="">Select Relationship</option>
-                  <option value="Spouse">Spouse</option>
-                  <option value="Parent">Parent</option>
-                  <option value="Sibling">Sibling</option>
-                  <option value="Child">Child</option>
-                  <option value="Friend">Friend</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+                    disabled={isView}
+                  >
+                    <option value="">Select Relationship</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Child">Child</option>
+                    <option value="Friend">Friend</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={form.emergencyContacts?.[0]?.phone || ""}
-                  onChange={(e) => handleEmergencyPhoneInput(e, 0)}
-                  placeholder="+1234567890"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["emergencyContacts[0].phone"] ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView}
-                />
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Phone <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={form.emergencyContacts?.[0]?.phone || ""}
+                    onChange={(e) => handleEmergencyPhoneInput(e, 0)}
+                    placeholder="+1234567890"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["emergencyContacts[0].phone"] ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView}
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={form.emergencyContacts?.[0]?.email || ""}
-                  onChange={(e) =>
-                    updateEmergencyContactField(0, "email", e.target.value)
-                  }
-                  placeholder="Emergency contact email"
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors["emergencyContacts[0].email"] ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView}
-                />
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={form.emergencyContacts?.[0]?.email || ""}
+                    onChange={(e) =>
+                      updateEmergencyContactField(0, "email", e.target.value)
+                    }
+                    placeholder="Emergency contact email"
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors["emergencyContacts[0].email"] ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div hidden={step !== 2}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2">
-                Employement Details
-              </h5>
+            <div hidden={step !== 2}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2">
+                  Employement Details
+                </h5>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Assigned Role <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.userRole?.[0] || ""}
-                  onChange={(e) => update("userRole", [e.target.value])}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.userRole ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select role</option>
-                  {organizationData?.roles?.map((d) => (
-                    <option key={d._id} value={d.name}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Source of Hire
-                </label>
-                <select
-                  value={form.sourceOfHire || ""}
-                  onChange={(e) => update("sourceOfHire", e.target.value)}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
-                  disabled={isView}
-                >
-                  <option value="">Select</option>
-                  <option value="Direct">Direct</option>
-                  <option value="Referral">Referral</option>
-                  <option value="Web">Web</option>
-                  <option value="NewsPaper">NewsPaper</option>
-                  <option value="Advertisement">Advertisement</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Employment Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.employmentType || ""}
-                  onChange={(e) => update("employmentType", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.employmentType ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select</option>
-                  <option value="Permanent">Permanent</option>
-                  <option value="Probation">Probation</option>
-                  <option value="Internship">Internship</option>
-                  {/* <option value="Trainee">Trainee</option> */}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Employment Status <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.employmentStatus || ""}
-                  onChange={(e) => update("employmentStatus", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.employmentStatus ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select</option>
-                  <option value="Active">Active</option>
-                  {/* <option value="On Probation">On Probation</option> */}
-                  {/* <option value="Resigned">Resigned</option> */}
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Experience Level <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.experienceLevel || ""}
-                  onChange={(e) => update("experienceLevel", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.experienceLevel ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select</option>
-                  <option value="Fresher">Fresher</option>
-                  <option value="Experienced">Experienced</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Working Shift
-                </label>
-                <select
-                  value={form.workingShiftId || ""}
-                  onChange={(e) => update("workingShiftId", e.target.value)}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
-                  disabled={isView}
-                >
-                  <option value="">Select Shift</option>
-                  {organizationData?.shifts?.map((d) => (
-                    <option key={d._id} value={d._id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Skills (press Enter or comma to add)
-                </label>
-                <div className="mt-1">
-                  {!isView && (
-                    <input
-                      value={form.skillInput}
-                      onChange={(e) => update("skillInput", e.target.value)}
-                      onKeyDown={onSkillKeyDown}
-                      onBlur={addSkillFromInput}
-                      placeholder="Add skill..."
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] flex-1 min-w-[100px] mb-3 w-[60%]"
-                    />
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    {form.skills.map((s, i) => (
-                      <div
-                        key={s + "-" + i}
-                        className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-sm"
-                      >
-                        <span>{s}</span>
-                        {!isView && (
-                          <button
-                            onClick={() => removeSkill(i)}
-                            type="button"
-                            className="text-gray-500 hover:text-gray-700"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Assigned Role <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.userRole?.[0] || ""}
+                    onChange={(e) => update("userRole", [e.target.value])}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.userRole ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select role</option>
+                    {organizationData?.roles?.map((d) => (
+                      <option key={d._id} value={d.name}>
+                        {d.name}
+                      </option>
                     ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Source of Hire
+                  </label>
+                  <select
+                    value={form.sourceOfHire || ""}
+                    onChange={(e) => update("sourceOfHire", e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
+                    disabled={isView}
+                  >
+                    <option value="">Select</option>
+                    <option value="Direct">Direct</option>
+                    <option value="Referral">Referral</option>
+                    <option value="Web">Web</option>
+                    <option value="NewsPaper">NewsPaper</option>
+                    <option value="Advertisement">Advertisement</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Employment Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.employmentType || ""}
+                    onChange={(e) => update("employmentType", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employmentType ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select</option>
+                    <option value="Permanent">Permanent</option>
+                    <option value="Probation">Probation</option>
+                    <option value="Internship">Internship</option>
+                    {/* <option value="Trainee">Trainee</option> */}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Employment Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.employmentStatus || ""}
+                    onChange={(e) => update("employmentStatus", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employmentStatus ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select</option>
+                    <option value="Active">Active</option>
+                    {/* <option value="On Probation">On Probation</option> */}
+                    {/* <option value="Resigned">Resigned</option> */}
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Experience Level <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.experienceLevel || ""}
+                    onChange={(e) => update("experienceLevel", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.experienceLevel ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select</option>
+                    <option value="Fresher">Fresher</option>
+                    <option value="Experienced">Experienced</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Working Shift
+                  </label>
+                  <select
+                    value={form.workingShiftId || ""}
+                    onChange={(e) => update("workingShiftId", e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)]"
+                    disabled={isView}
+                  >
+                    <option value="">Select Shift</option>
+                    {organizationData?.shifts?.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Skills (press Enter or comma to add)
+                  </label>
+                  <div className="mt-1">
+                    {!isView && (
+                      <input
+                        value={form.skillInput}
+                        onChange={(e) => update("skillInput", e.target.value)}
+                        onKeyDown={onSkillKeyDown}
+                        onBlur={addSkillFromInput}
+                        placeholder="Add skill..."
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] flex-1 min-w-[100px] mb-3 w-[60%]"
+                      />
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {form.skills.map((s, i) => (
+                        <div
+                          key={s + "-" + i}
+                          className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-sm"
+                        >
+                          <span>{s}</span>
+                          {!isView && (
+                            <button
+                              onClick={() => removeSkill(i)}
+                              type="button"
+                              className="text-gray-500 hover:text-gray-700"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div hidden={step !== 3}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2">
-                Job Details
-              </h5>
+            <div hidden={step !== 3}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2">
+                  Job Details
+                </h5>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Department <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.departmentId || ""}
-                  onChange={(e) => update("departmentId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.departmentId ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select Department</option>
-                  {organizationData?.departments?.map((d) => (
-                    <option key={d._id} value={d._id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Designation <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.designationId || ""}
-                  onChange={(e) => update("designationId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.designationId ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select Designation</option>
-                  {organizationData?.designations?.map((d) => (
-                    <option key={d._id} value={d._id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Reporting Manager
-                </label>
-                <select
-                  value={form.reportingManagerId || ""}
-                  onChange={(e) => update("reportingManagerId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.reportingManagerId ? "border-red-500" : ""
-                  }`}
-                  disabled={isView}
-                >
-                  <option value="">Select Reporting Manager</option>
-
-                  {employeeList
-                    .filter((mgr) => {
-                      if (mode === "edit" && employee?._id) {
-                        return mgr._id !== employee._id;
-                      }
-                      return true;
-                    })
-                    .map((mgr) => (
-                      <option key={mgr._id} value={mgr._id}>
-                        {mgr.firstName} {mgr.lastName}
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Department <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.departmentId || ""}
+                    onChange={(e) => update("departmentId", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.departmentId ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select Department</option>
+                    {organizationData?.departments?.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.name}
                       </option>
                     ))}
-                </select>
+                  </select>
+                </div>
 
-              </div>
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Designation <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.designationId || ""}
+                    onChange={(e) => update("designationId", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.designationId ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select Designation</option>
+                    {organizationData?.designations?.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-[var(--color-primaryText)]">
+                    Reporting Manager
+                  </label>
+                  <select
+                    value={form.reportingManagerId || ""}
+                    onChange={(e) => update("reportingManagerId", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.reportingManagerId ? "border-red-500" : ""
+                      }`}
+                    disabled={isView}
+                  >
+                    <option value="">Select Reporting Manager</option>
+
+                    {employeeList
+                      .filter((mgr) => {
+                        if (mode === "edit" && employee?._id) {
+                          return mgr._id !== employee._id;
+                        }
+                        return true;
+                      })
+                      .map((mgr) => (
+                        <option key={mgr._id} value={mgr._id}>
+                          {mgr.firstName} {mgr.lastName}
+                        </option>
+                      ))}
+                  </select>
+
+                </div>
 
               <div>
                 <label className="text-sm text-[var(--color-primaryText)] block mb-2">
@@ -2156,7 +2289,7 @@ export default function AddEditEmployeeModal({
                 )}
               </div>
 
-              {/* <div>
+                {/* <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
                   Onboarding Status
                 </label>
@@ -2172,7 +2305,7 @@ export default function AddEditEmployeeModal({
                 </select>
               </div> */}
 
-              {/* <div>
+                {/* <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
                   Available Leave (days per month)
                 </label>
@@ -2234,777 +2367,763 @@ export default function AddEditEmployeeModal({
             </div>
           </div>
 
-          <div hidden={step !== 4}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2">
-                Credentials
-              </h5>
+            <div hidden={step !== 4}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2">
+                  Credentials
+                </h5>
 
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Employee ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.employeeId || ""}
-                  onChange={(e) => update("employeeId", e.target.value)}
-                  className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                    errors.employeeId ? "border-red-500" : ""
-                  }`}
-                  readOnly={isView }
-                />
-                {errors.employeeId && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.employeeId}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm text-[var(--color-primaryText)]">
-                  Email (from Personal Details)
-                </label>
-                <input
-                  value={form.email || ""}
-                  readOnly
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
-                />
-              </div>
-
-              {!isView && mode === "add" && (
-                <div className="md:col-span-2">
+                <div>
                   <label className="text-sm text-[var(--color-primaryText)]">
-                    Password <span className="text-red-500">*</span>
+                    Employee ID <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="password"
-                    value={form.password || ""}
-                    onChange={(e) => update("password", e.target.value)}
-                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
-                      errors.password ? "border-red-500" : ""
-                    }`}
-                    placeholder="Minimum 8 characters"
+                    value={form.employeeId || ""}
+                    onChange={(e) => update("employeeId", e.target.value)}
+                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.employeeId ? "border-red-500" : ""
+                      }`}
+                    readOnly={isView}
                   />
-                  {errors.password && (
+                  {errors.employeeId && (
                     <p className="text-red-500 text-sm mt-1">
-                      {errors.password}
+                      {errors.employeeId}
                     </p>
                   )}
                 </div>
-              )}
 
-              {isView && (
-                <div className="md:col-span-2">
+                <div>
                   <label className="text-sm text-[var(--color-primaryText)]">
-                    Password
+                    Email (from Personal Details)
                   </label>
                   <input
-                    type="password"
-                    value="********"
+                    value={form.email || ""}
                     readOnly
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
                   />
                 </div>
-              )}
+
+                {!isView && mode === "add" && (
+                  <div className="md:col-span-2">
+                    <label className="text-sm text-[var(--color-primaryText)]">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={form.password || ""}
+                      onChange={(e) => update("password", e.target.value)}
+                      className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.password ? "border-red-500" : ""
+                        }`}
+                      placeholder="Minimum 8 characters"
+                    />
+                    {errors.password && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.password}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {isView && (
+                  <div className="md:col-span-2">
+                    <label className="text-sm text-[var(--color-primaryText)]">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value="********"
+                      readOnly
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div hidden={step !== 5}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h5 className="md:col-span-2 font-semibold text-lg mb-2">
-                Documents
-              </h5>
+            <div hidden={step !== 5}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h5 className="md:col-span-2 font-semibold text-lg mb-2">
+                  Documents
+                </h5>
 
-              {(() => {
-                const requiredDocs = getRequiredDocuments();
-                const isDisabled = !form.employmentType || !form.experienceLevel;
+                {(() => {
+                  const requiredDocs = getRequiredDocuments();
+                  const isDisabled = !form.employmentType || !form.experienceLevel;
 
-                const renderDocumentField = (label, docPath, isRequired = true) => {
-                  let docs = uploadedDocuments;
-                  
-                  const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
-                  if (arrayIndexMatch) {
-                    const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
-                    const index = parseInt(arrayIndex);
-                    docs = uploadedDocuments[arrayName]?.[index]?.[fieldName];
-                  } else {
-                    const keys = docPath.split(".");
-                    for (let i = 0; i < keys.length; i++) {
-                      if (docs && typeof docs === 'object') {
-                        docs = docs[keys[i]];
-                      } else {
-                        docs = undefined;
-                        break;
+                  const renderDocumentField = (label, docPath, isRequired = true) => {
+                    let docs = uploadedDocuments;
+
+                    const arrayIndexMatch = docPath.match(/(\w+)\[(\d+)\]\.(\w+)/);
+                    if (arrayIndexMatch) {
+                      const [, arrayName, arrayIndex, fieldName] = arrayIndexMatch;
+                      const index = parseInt(arrayIndex);
+                      docs = uploadedDocuments[arrayName]?.[index]?.[fieldName];
+                    } else {
+                      const keys = docPath.split(".");
+                      for (let i = 0; i < keys.length; i++) {
+                        if (docs && typeof docs === 'object') {
+                          docs = docs[keys[i]];
+                        } else {
+                          docs = undefined;
+                          break;
+                        }
                       }
                     }
-                  }
-                  
-                  const isArray = Array.isArray(docs);
-                  const docArray = isArray ? (docs || []) : (docs ? [docs] : []);
-                  const showCheckmark = isArray ? docArray.length > 0 : !!docs;
-                  const countText = isArray ? `(${docArray.length})` : '';
+
+                    const isArray = Array.isArray(docs);
+                    const docArray = isArray ? (docs || []) : (docs ? [docs] : []);
+                    const showCheckmark = isArray ? docArray.length > 0 : !!docs;
+                    const countText = isArray ? `(${docArray.length})` : '';
+
+                    return (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          {label}
+                          {showCheckmark && <span className="text-green-600 ml-2">✓ {countText}</span>}
+                        </label>
+                        <div className="mt-2 space-y-2">
+                          {docArray.map((doc, idx) => {
+                            let displayName = `Document ${idx + 1}`;
+                            if (doc?.fileName) {
+                              displayName = doc.fileName;
+                            } else if (doc?.url) {
+                              const urlParts = doc.url.split('/');
+                              displayName = urlParts[urlParts.length - 1] || displayName;
+                            } else if (typeof doc === 'string') {
+                              displayName = doc.split('/').pop() || displayName;
+                            }
+
+                            return (
+                              <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                                <a
+                                  href={doc?.url || doc}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                                >
+                                  {displayName}
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => isArray ? handleRemoveDocument(docPath, idx) : handleRemoveDocument(docPath)}
+                                  disabled={documentUploadingStates[docPath]}
+                                  className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            );
+                          })}
+
+                          <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
+                            <input
+                              type="file"
+                              multiple
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              onChange={(e) => handleDocumentUpload(e, docPath)}
+                              className="hidden"
+                              disabled={documentUploadingStates[docPath]}
+                            />
+                            <span className="text-sm text-gray-600">
+                              {documentUploadingStates[docPath] ? "Uploading..." : "Click to upload documents"}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  };
 
                   return (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">
-                        {label}
-                        {showCheckmark && <span className="text-green-600 ml-2">✓ {countText}</span>}
-                      </label>
-                      <div className="mt-2 space-y-2">
-                        {docArray.map((doc, idx) => {
-                          let displayName = `Document ${idx + 1}`;
-                          if (doc?.fileName) {
-                            displayName = doc.fileName;
-                          } else if (doc?.url) {
-                            const urlParts = doc.url.split('/');
-                            displayName = urlParts[urlParts.length - 1] || displayName;
-                          } else if (typeof doc === 'string') {
-                            displayName = doc.split('/').pop() || displayName;
-                          }
-                          
-                          return (
-                            <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
-                              <a
-                                href={doc?.url || doc}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline text-sm flex-1 truncate"
-                              >
-                                {displayName}
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => isArray ? handleRemoveDocument(docPath, idx) : handleRemoveDocument(docPath)}
-                                disabled={documentUploadingStates[docPath]}
-                                className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          );
-                        })}
-
-                        <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
-                          <input
-                            type="file"
-                            multiple
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(e) => handleDocumentUpload(e, docPath)}
-                            className="hidden"
-                            disabled={documentUploadingStates[docPath]}
-                          />
-                          <span className="text-sm text-gray-600">
-                            {documentUploadingStates[docPath] ? "Uploading..." : "Click to upload documents"}
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  );
-                };
-
-                return (
-                  <div className="md:col-span-2 space-y-4">
-                    <div
-                      className={`border rounded-lg overflow-hidden ${
-                        isDisabled
+                    <div className="md:col-span-2 space-y-4">
+                      <div
+                        className={`border rounded-lg overflow-hidden ${isDisabled
                           ? "bg-gray-50 border-gray-200 opacity-50"
                           : "bg-blue-50 border-blue-200"
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => toggleDocSection("idProofs")}
-                        disabled={isDisabled}
-                        className={`w-full p-4 flex items-start justify-between ${
-                          isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-blue-100"
-                        }`}
+                          }`}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="mt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleDocSection("idProofs")}
+                          disabled={isDisabled}
+                          className={`w-full p-4 flex items-start justify-between ${isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-blue-100"
+                            }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              <svg
+                                className={`w-5 h-5 ${isDisabled ? "text-gray-400" : "text-blue-600"
+                                  }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <h6 className="font-semibold text-gray-900">
+                                ID Proofs (Aadhaar, PAN, Passport, etc.)
+                              </h6>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Required for all employees
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                              Required
+                            </span>
                             <svg
-                              className={`w-5 h-5 ${
-                                isDisabled ? "text-gray-400" : "text-blue-600"
-                              }`}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
+                              className={`w-5 h-5 transition-transform ${expandedDocSections.idProofs ? "rotate-180" : ""
+                                } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                              />
                             </svg>
                           </div>
-                          <div className="text-left">
-                            <h6 className="font-semibold text-gray-900">
-                              ID Proofs (Aadhaar, PAN, Passport, etc.)
-                            </h6>
-                            <p className="text-sm text-gray-600 mt-1">
-                              Required for all employees
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
-                            Required
-                          </span>
-                          <svg
-                            className={`w-5 h-5 transition-transform ${
-                              expandedDocSections.idProofs ? "rotate-180" : ""
-                            } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                            />
-                          </svg>
-                        </div>
-                      </button>
+                        </button>
 
-                      {expandedDocSections.idProofs && !isDisabled && (
-                        <div className="border-t border-blue-200 p-4 space-y-4 bg-white">
-                          {renderDocumentField("Aadhaar Card", "idProofs.aadhaar")}
-                          {renderDocumentField("PAN Card", "idProofs.pan")}
-                          {renderDocumentField("Passport / Driving License / Voter ID", "idProofs.passportOrDL")}
-                          {renderDocumentField("Present Address Proof", "idProofs.presentAddressProof")}
-                          {renderDocumentField("Permanent Address Proof", "idProofs.permanentAddressProof")}
+                        {expandedDocSections.idProofs && !isDisabled && (
+                          <div className="border-t border-blue-200 p-4 space-y-4 bg-white">
+                            {renderDocumentField("Aadhaar Card", "idProofs.aadhaar")}
+                            {renderDocumentField("PAN Card", "idProofs.pan")}
+                            {renderDocumentField("Passport / Driving License / Voter ID", "idProofs.passportOrDL")}
+                            {renderDocumentField("Present Address Proof", "idProofs.presentAddressProof")}
+                            {renderDocumentField("Permanent Address Proof", "idProofs.permanentAddressProof")}
+                          </div>
+                        )}
+                      </div>
+
+                      {requiredDocs.showAcademicSection && (
+                        <div
+                          className={`border rounded-lg overflow-hidden ${isDisabled
+                            ? "bg-gray-50 border-gray-200 opacity-50"
+                            : "bg-blue-50 border-blue-200"
+                            }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleDocSection("academicDocuments")}
+                            disabled={isDisabled}
+                            className={`w-full p-4 flex items-start justify-between ${isDisabled
+                              ? "cursor-not-allowed"
+                              : "cursor-pointer hover:bg-blue-100"
+                              }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5">
+                                <svg
+                                  className={`w-5 h-5 ${isDisabled ? "text-gray-400" : "text-blue-600"
+                                    }`}
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3.5a1 1 0 000 1.814l.5.25v8.004c0 .596.231 1.17.645 1.574.413.403.97.645 1.555.645h1a1 1 0 001-1v-1a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 001 1h1c.585 0 1.142-.242 1.555-.645.414-.404.645-.978.645-1.574V7.654l.5-.25a1 1 0 000-1.814l-7-3.5z" />
+                                </svg>
+                              </div>
+                              <div className="text-left">
+                                <h6 className="font-semibold text-gray-900">
+                                  {form.employmentType === 'Internship' ? 'Internship Documents' : 'Academic Documents (10th, 12th, Graduation, etc.)'}
+                                </h6>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {form.employmentType === 'Internship' ? 'NOC from College' : `Required for ${form.employmentType} employees`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                                Required
+                              </span>
+                              <svg
+                                className={`w-5 h-5 transition-transform ${expandedDocSections.academicDocuments
+                                  ? "rotate-180"
+                                  : ""
+                                  } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                />
+                              </svg>
+                            </div>
+                          </button>
+
+                          {expandedDocSections.academicDocuments && !isDisabled && (
+                            <div className="border-t border-blue-200 p-4 space-y-6 bg-white">
+                              {form.employmentType === 'Internship' ? (
+                                <div className="border rounded-lg p-4 bg-gray-50">
+                                  <h5 className="font-semibold text-gray-900 mb-3">No Objection Certificate (NOC)</h5>
+                                  <div className="space-y-3">
+                                    {renderDocumentField("NOC from College", "academicDocuments.nocFromCollege")}
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {/* 10th */}
+                                  <div className="border rounded-lg p-4 bg-gray-50">
+                                    <h5 className="font-semibold text-gray-900 mb-3">10th Class</h5>
+                                    <div className="space-y-3">
+                                      {renderDocumentField("10th Certificate", "academicDocuments.tenth.certificate")}
+                                      {renderDocumentField("10th Marksheet", "academicDocuments.tenth.marksheet")}
+                                    </div>
+                                  </div>
+
+                                  {/* 12th */}
+                                  <div className="border rounded-lg p-4 bg-gray-50">
+                                    <h5 className="font-semibold text-gray-900 mb-3">12th Class</h5>
+                                    <div className="space-y-3">
+                                      {renderDocumentField("12th Certificate", "academicDocuments.twelth.certificate")}
+                                      {renderDocumentField("12th Marksheet", "academicDocuments.twelth.marksheet")}
+                                    </div>
+                                  </div>
+
+                                  {/* Graduation */}
+                                  <div className="border rounded-lg p-4 bg-gray-50">
+                                    <h5 className="font-semibold text-gray-900 mb-3">Graduation</h5>
+                                    <div className="space-y-3">
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-700">Degree Name</label>
+                                        <input
+                                          type="text"
+                                          value={uploadedDocuments.academicDocuments?.graduation?.name || ''}
+                                          onChange={(e) => setUploadedDocuments(prev => ({
+                                            ...prev,
+                                            academicDocuments: {
+                                              ...prev.academicDocuments,
+                                              graduation: { ...prev.academicDocuments.graduation, name: e.target.value }
+                                            }
+                                          }))}
+                                          placeholder="e.g., B.Tech, B.Sc, etc."
+                                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-700">Number of Semesters</label>
+                                        <input
+                                          type="number"
+                                          value={uploadedDocuments.academicDocuments?.graduation?.semester || ''}
+                                          onChange={(e) => setUploadedDocuments(prev => ({
+                                            ...prev,
+                                            academicDocuments: {
+                                              ...prev.academicDocuments,
+                                              graduation: { ...prev.academicDocuments.graduation, semester: e.target.value }
+                                            }
+                                          }))}
+                                          placeholder="e.g., 8"
+                                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                          min="1"
+                                        />
+                                      </div>
+                                      {renderDocumentField("Graduation Certificate", "academicDocuments.graduation.certificate")}
+                                      {(uploadedDocuments.academicDocuments?.graduation?.name && uploadedDocuments.academicDocuments?.graduation?.semester) ? (
+                                        renderDocumentField("Semester Marksheets", "academicDocuments.graduation.marksheets")
+                                      ) : (
+                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                          <p className="text-sm text-blue-700">
+                                            Please fill in Degree Name and Number of Semesters to upload marksheets
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Post Graduation */}
+                                  <div className="border rounded-lg p-4 bg-gray-50">
+                                    <h5 className="font-semibold text-gray-900 mb-3">Post Graduation</h5>
+                                    <div className="space-y-3">
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-700">Degree Name</label>
+                                        <input
+                                          type="text"
+                                          value={uploadedDocuments.academicDocuments?.postGraduation?.name || ''}
+                                          onChange={(e) => setUploadedDocuments(prev => ({
+                                            ...prev,
+                                            academicDocuments: {
+                                              ...prev.academicDocuments,
+                                              postGraduation: { ...prev.academicDocuments.postGraduation, name: e.target.value }
+                                            }
+                                          }))}
+                                          placeholder="e.g., M.Tech, M.Sc, MBA, etc."
+                                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-sm font-medium text-gray-700">Number of Semesters</label>
+                                        <input
+                                          type="number"
+                                          value={uploadedDocuments.academicDocuments?.postGraduation?.semester || ''}
+                                          onChange={(e) => setUploadedDocuments(prev => ({
+                                            ...prev,
+                                            academicDocuments: {
+                                              ...prev.academicDocuments,
+                                              postGraduation: { ...prev.academicDocuments.postGraduation, semester: e.target.value }
+                                            }
+                                          }))}
+                                          placeholder="e.g., 4"
+                                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                          min="1"
+                                        />
+                                      </div>
+                                      {renderDocumentField("Post Graduation Certificate", "academicDocuments.postGraduation.certificate")}
+                                      {(uploadedDocuments.academicDocuments?.postGraduation?.name && uploadedDocuments.academicDocuments?.postGraduation?.semester) ? (
+                                        renderDocumentField("Semester Marksheets", "academicDocuments.postGraduation.marksheets")
+                                      ) : (
+                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                          <p className="text-sm text-blue-700">
+                                            Please fill in Degree Name and Number of Semesters to upload marksheets
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* NOC from College */}
+                                  <div className="border rounded-lg p-4 bg-gray-50">
+                                    <h5 className="font-semibold text-gray-900 mb-3">No Objection Certificate (NOC) from College</h5>
+                                    <div className="space-y-3">
+                                      {renderDocumentField("NOC from College", "academicDocuments.nocFromCollege", false)}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
 
-                    {requiredDocs.showAcademicSection  && (
-                      <div
-                        className={`border rounded-lg overflow-hidden ${
-                          isDisabled
+                      {/* Employment History */}
+                      {requiredDocs.employmentHistory && (
+                        <div
+                          className={`border rounded-lg overflow-hidden ${isDisabled
                             ? "bg-gray-50 border-gray-200 opacity-50"
                             : "bg-blue-50 border-blue-200"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleDocSection("academicDocuments")}
-                          disabled={isDisabled}
-                          className={`w-full p-4 flex items-start justify-between ${
-                            isDisabled
+                            }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleDocSection("employmentHistory")}
+                            disabled={isDisabled}
+                            className={`w-full p-4 flex items-start justify-between ${isDisabled
                               ? "cursor-not-allowed"
                               : "cursor-pointer hover:bg-blue-100"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5">
+                              }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5">
+                                <svg
+                                  className={`w-5 h-5 ${isDisabled ? "text-gray-400" : "text-blue-600"
+                                    }`}
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                  <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                                </svg>
+                              </div>
+                              <div className="text-left">
+                                <h6 className="font-semibold text-gray-900">
+                                  Employment History (Offer Letter, Experience Letter, etc.)
+                                </h6>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Required for Experienced {form.employmentType} employees
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                                Required
+                              </span>
                               <svg
-                                className={`w-5 h-5 ${
-                                  isDisabled ? "text-gray-400" : "text-blue-600"
-                                }`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3.5a1 1 0 000 1.814l.5.25v8.004c0 .596.231 1.17.645 1.574.413.403.97.645 1.555.645h1a1 1 0 001-1v-1a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 001 1h1c.585 0 1.142-.242 1.555-.645.414-.404.645-.978.645-1.574V7.654l.5-.25a1 1 0 000-1.814l-7-3.5z" />
-                              </svg>
-                            </div>
-                            <div className="text-left">
-                              <h6 className="font-semibold text-gray-900">
-                                {form.employmentType === 'Internship' ? 'Internship Documents' : 'Academic Documents (10th, 12th, Graduation, etc.)'}
-                              </h6>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {form.employmentType === 'Internship' ? 'NOC from College' : `Required for ${form.employmentType} employees`}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
-                              Required
-                            </span>
-                            <svg
-                              className={`w-5 h-5 transition-transform ${
-                                expandedDocSections.academicDocuments
+                                className={`w-5 h-5 transition-transform ${expandedDocSections.employmentHistory
                                   ? "rotate-180"
                                   : ""
-                              } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                              />
-                            </svg>
-                          </div>
-                        </button>
-
-                        {expandedDocSections.academicDocuments && !isDisabled && (
-                          <div className="border-t border-blue-200 p-4 space-y-6 bg-white">
-                            {form.employmentType === 'Internship' ? (
-                              <div className="border rounded-lg p-4 bg-gray-50">
-                                <h5 className="font-semibold text-gray-900 mb-3">No Objection Certificate (NOC)</h5>
-                                <div className="space-y-3">
-                                  {renderDocumentField("NOC from College", "academicDocuments.nocFromCollege")}
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                {/* 10th */}
-                                <div className="border rounded-lg p-4 bg-gray-50">
-                                  <h5 className="font-semibold text-gray-900 mb-3">10th Class</h5>
-                                  <div className="space-y-3">
-                                    {renderDocumentField("10th Certificate", "academicDocuments.tenth.certificate")}
-                                    {renderDocumentField("10th Marksheet", "academicDocuments.tenth.marksheet")}
-                                  </div>
-                                </div>
-
-                                {/* 12th */}
-                                <div className="border rounded-lg p-4 bg-gray-50">
-                                  <h5 className="font-semibold text-gray-900 mb-3">12th Class</h5>
-                                  <div className="space-y-3">
-                                    {renderDocumentField("12th Certificate", "academicDocuments.twelth.certificate")}
-                                    {renderDocumentField("12th Marksheet", "academicDocuments.twelth.marksheet")}
-                                  </div>
-                                </div>
-
-                                {/* Graduation */}
-                                <div className="border rounded-lg p-4 bg-gray-50">
-                                  <h5 className="font-semibold text-gray-900 mb-3">Graduation</h5>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-700">Degree Name</label>
-                                      <input
-                                        type="text"
-                                        value={uploadedDocuments.academicDocuments?.graduation?.name || ''}
-                                        onChange={(e) => setUploadedDocuments(prev => ({
-                                          ...prev,
-                                          academicDocuments: {
-                                            ...prev.academicDocuments,
-                                            graduation: { ...prev.academicDocuments.graduation, name: e.target.value }
-                                          }
-                                        }))}
-                                        placeholder="e.g., B.Tech, B.Sc, etc."
-                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-700">Number of Semesters</label>
-                                      <input
-                                        type="number"
-                                        value={uploadedDocuments.academicDocuments?.graduation?.semester || ''}
-                                        onChange={(e) => setUploadedDocuments(prev => ({
-                                          ...prev,
-                                          academicDocuments: {
-                                            ...prev.academicDocuments,
-                                            graduation: { ...prev.academicDocuments.graduation, semester: e.target.value }
-                                          }
-                                        }))}
-                                        placeholder="e.g., 8"
-                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        min="1"
-                                      />
-                                    </div>
-                                    {renderDocumentField("Graduation Certificate", "academicDocuments.graduation.certificate")}
-                                    {(uploadedDocuments.academicDocuments?.graduation?.name && uploadedDocuments.academicDocuments?.graduation?.semester) ? (
-                                      renderDocumentField("Semester Marksheets", "academicDocuments.graduation.marksheets")
-                                    ) : (
-                                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <p className="text-sm text-blue-700">
-                                          Please fill in Degree Name and Number of Semesters to upload marksheets
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                    {/* Post Graduation */}
-                                <div className="border rounded-lg p-4 bg-gray-50">
-                                  <h5 className="font-semibold text-gray-900 mb-3">Post Graduation</h5>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-700">Degree Name</label>
-                                      <input
-                                        type="text"
-                                        value={uploadedDocuments.academicDocuments?.postGraduation?.name || ''}
-                                        onChange={(e) => setUploadedDocuments(prev => ({
-                                          ...prev,
-                                          academicDocuments: {
-                                            ...prev.academicDocuments,
-                                            postGraduation: { ...prev.academicDocuments.postGraduation, name: e.target.value }
-                                          }
-                                        }))}
-                                        placeholder="e.g., M.Tech, M.Sc, MBA, etc."
-                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-sm font-medium text-gray-700">Number of Semesters</label>
-                                      <input
-                                        type="number"
-                                        value={uploadedDocuments.academicDocuments?.postGraduation?.semester || ''}
-                                        onChange={(e) => setUploadedDocuments(prev => ({
-                                          ...prev,
-                                          academicDocuments: {
-                                            ...prev.academicDocuments,
-                                            postGraduation: { ...prev.academicDocuments.postGraduation, semester: e.target.value }
-                                          }
-                                        }))}
-                                        placeholder="e.g., 4"
-                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        min="1"
-                                      />
-                                    </div>
-                                    {renderDocumentField("Post Graduation Certificate", "academicDocuments.postGraduation.certificate")}
-                                    {(uploadedDocuments.academicDocuments?.postGraduation?.name && uploadedDocuments.academicDocuments?.postGraduation?.semester) ? (
-                                      renderDocumentField("Semester Marksheets", "academicDocuments.postGraduation.marksheets")
-                                    ) : (
-                                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <p className="text-sm text-blue-700">
-                                          Please fill in Degree Name and Number of Semesters to upload marksheets
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* NOC from College */}
-                                <div className="border rounded-lg p-4 bg-gray-50">
-                                  <h5 className="font-semibold text-gray-900 mb-3">No Objection Certificate (NOC) from College</h5>
-                                  <div className="space-y-3">
-                                    {renderDocumentField("NOC from College", "academicDocuments.nocFromCollege", false)}
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Employment History */}
-                    {requiredDocs.employmentHistory && (
-                      <div
-                        className={`border rounded-lg overflow-hidden ${
-                          isDisabled
-                            ? "bg-gray-50 border-gray-200 opacity-50"
-                            : "bg-blue-50 border-blue-200"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleDocSection("employmentHistory")}
-                          disabled={isDisabled}
-                          className={`w-full p-4 flex items-start justify-between ${
-                            isDisabled
-                              ? "cursor-not-allowed"
-                              : "cursor-pointer hover:bg-blue-100"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5">
-                              <svg
-                                className={`w-5 h-5 ${
-                                  isDisabled ? "text-gray-400" : "text-blue-600"
-                                }`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
+                                  } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
                               >
-                                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                                <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                />
                               </svg>
                             </div>
-                            <div className="text-left">
-                              <h6 className="font-semibold text-gray-900">
-                                Employment History (Offer Letter, Experience Letter, etc.)
-                              </h6>
-                              <p className="text-sm text-gray-600 mt-1">
-                                Required for Experienced {form.employmentType} employees
-                              </p>
+                          </button>
+
+                          {expandedDocSections.employmentHistory && !isDisabled && (
+                            <div className="border-t border-blue-200 p-4 space-y-6 bg-white">
+                              {uploadedDocuments.employmentHistory?.map((employment, idx) => (
+                                <div key={idx} className="border rounded-lg p-4 bg-gray-50">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h5 className="font-semibold text-gray-900">
+                                      {employment.companyName || `Employment Record ${idx + 1}`}
+                                    </h5>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setUploadedDocuments(prev => ({
+                                          ...prev,
+                                          employmentHistory: prev.employmentHistory.filter((_, i) => i !== idx)
+                                        }));
+                                      }}
+                                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                  <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-xs font-medium text-gray-600">Company Name</label>
+                                        <input
+                                          type="text"
+                                          value={employment.companyName || ''}
+                                          onChange={(e) => {
+                                            const updated = [...uploadedDocuments.employmentHistory];
+                                            updated[idx].companyName = e.target.value;
+                                            setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                          }}
+                                          className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium text-gray-600">Designation</label>
+                                        <input
+                                          type="text"
+                                          value={employment.designation || ''}
+                                          onChange={(e) => {
+                                            const updated = [...uploadedDocuments.employmentHistory];
+                                            updated[idx].designation = e.target.value;
+                                            setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                          }}
+                                          className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-xs font-medium text-gray-600">Start Date</label>
+                                        <input
+                                          type="date"
+                                          value={employment.employmentPeriod?.startDate ? new Date(employment.employmentPeriod.startDate).toISOString().split('T')[0] : ''}
+                                          onChange={(e) => {
+                                            const updated = [...uploadedDocuments.employmentHistory];
+                                            updated[idx].employmentPeriod = {
+                                              ...updated[idx].employmentPeriod,
+                                              startDate: e.target.value
+                                            };
+                                            setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                          }}
+                                          className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs font-medium text-gray-600">End Date</label>
+                                        <input
+                                          type="date"
+                                          value={employment.employmentPeriod?.endDate ? new Date(employment.employmentPeriod.endDate).toISOString().split('T')[0] : ''}
+                                          onChange={(e) => {
+                                            const updated = [...uploadedDocuments.employmentHistory];
+                                            updated[idx].employmentPeriod = {
+                                              ...updated[idx].employmentPeriod,
+                                              endDate: e.target.value
+                                            };
+                                            setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                          }}
+                                          className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                    </div>
+                                    {renderDocumentField("Offer Letter", `employmentHistory[${idx}].offerLetter`)}
+                                    {renderDocumentField("Experience Letter", `employmentHistory[${idx}].experienceLetter`)}
+                                    {renderDocumentField("Relieving Letter", `employmentHistory[${idx}].relievingLetter`)}
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700">
+                                        Last 3 Months Salary Slips (Upload each month separately)
+                                      </label>
+                                      <div className="mt-2 space-y-2">
+                                        {employment.salarySlips?.map((slip, sipIdx) => (
+                                          <div key={sipIdx} className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-300">
+                                            <a
+                                              href={slip.documentUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                                            >
+                                              {slip.fileName || slip.month || `Salary Slip ${sipIdx + 1}`}
+                                            </a>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const updated = [...uploadedDocuments.employmentHistory];
+                                                updated[idx].salarySlips = updated[idx].salarySlips.filter((_, i) => i !== sipIdx);
+                                                setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                              }}
+                                              className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
+                                            >
+                                              Remove
+                                            </button>
+                                          </div>
+                                        ))}
+                                        <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
+                                          <input
+                                            type="file"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                setDocumentUploadingStates((prev) => ({ ...prev, [`salarySlip-${idx}`]: true }));
+                                                const formData = new FormData();
+                                                formData.append("files", file);
+
+                                                try {
+                                                  const { data } = await axios.post("/user/add-pdf", formData);
+                                                  if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
+                                                    const pdf = data.result.pdfUrls[0];
+                                                    const updated = [...uploadedDocuments.employmentHistory];
+                                                    if (!updated[idx].salarySlips) updated[idx].salarySlips = [];
+                                                    updated[idx].salarySlips.push({
+                                                      month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+                                                      fileName: file.name,
+                                                      documentUrl: pdf.url
+                                                    });
+                                                    setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                                    toast.success("Salary slip uploaded successfully");
+                                                  }
+                                                } catch (err) {
+                                                  toast.error("Failed to upload salary slip");
+                                                  console.error("Salary slip upload error:", err);
+                                                } finally {
+                                                  setDocumentUploadingStates((prev) => ({ ...prev, [`salarySlip-${idx}`]: false }));
+                                                }
+                                              }
+                                            }}
+                                            className="hidden"
+                                            disabled={documentUploadingStates[`salarySlip-${idx}`]}
+                                          />
+                                          <span className="text-sm text-gray-600">
+                                            {documentUploadingStates[`salarySlip-${idx}`] ? "Uploading..." : "Click to upload salary slip"}
+                                          </span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-gray-700">
+                                        Other Documents <span className="text-gray-500 text-xs">(Optional)</span>
+                                      </label>
+                                      <div className="mt-2 space-y-2">
+                                        {employment.others?.map((doc, oIdx) => (
+                                          <div key={oIdx} className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-300">
+                                            <a
+                                              href={doc?.documentUrl || doc}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                                            >
+                                              {doc?.fileName || doc || `Document ${oIdx + 1}`}
+                                            </a>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const updated = [...uploadedDocuments.employmentHistory];
+                                                updated[idx].others = updated[idx].others.filter((_, i) => i !== oIdx);
+                                                setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                              }}
+                                              className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
+                                            >
+                                              Remove
+                                            </button>
+                                          </div>
+                                        ))}
+                                        <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
+                                          <input
+                                            type="file"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                setDocumentUploadingStates((prev) => ({ ...prev, [`other-${idx}`]: true }));
+                                                const formData = new FormData();
+                                                formData.append("files", file);
+
+                                                try {
+                                                  const { data } = await axios.post("/user/add-pdf", formData);
+                                                  if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
+                                                    const pdf = data.result.pdfUrls[0];
+                                                    const updated = [...uploadedDocuments.employmentHistory];
+                                                    if (!updated[idx].others) updated[idx].others = [];
+                                                    updated[idx].others.push({
+                                                      fileName: file.name,
+                                                      documentUrl: pdf.url
+                                                    });
+                                                    setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
+                                                    toast.success("Document uploaded successfully");
+                                                  }
+                                                } catch (err) {
+                                                  toast.error("Failed to upload document");
+                                                  console.error("Document upload error:", err);
+                                                } finally {
+                                                  setDocumentUploadingStates((prev) => ({ ...prev, [`other-${idx}`]: false }));
+                                                }
+                                              }
+                                            }}
+                                            className="hidden"
+                                            disabled={documentUploadingStates[`other-${idx}`]}
+                                          />
+                                          <span className="text-sm text-gray-600">
+                                            {documentUploadingStates[`other-${idx}`] ? "Uploading..." : "Click to upload other document"}
+                                          </span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Add New Employment Record */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUploadedDocuments(prev => ({
+                                    ...prev,
+                                    employmentHistory: [
+                                      ...prev.employmentHistory,
+                                      {
+                                        companyName: '',
+                                        designation: '',
+                                        employmentPeriod: { startDate: null, endDate: null },
+                                        offerLetter: [],
+                                        experienceLetter: [],
+                                        relievingLetterUrl: null,
+                                        salarySlips: [],
+                                        others: []
+                                      }
+                                    ]
+                                  }));
+                                }}
+                                className="w-full px-4 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition"
+                              >
+                                + Add Employment Record
+                              </button>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
-                              Required
-                            </span>
-                            <svg
-                              className={`w-5 h-5 transition-transform ${
-                                expandedDocSections.employmentHistory
-                                  ? "rotate-180"
-                                  : ""
-                              } ${isDisabled ? "text-gray-400" : "text-gray-600"}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                              />
-                            </svg>
-                          </div>
-                        </button>
+                          )}
+                        </div>
+                      )}
 
-                        {expandedDocSections.employmentHistory && !isDisabled && (
-                          <div className="border-t border-blue-200 p-4 space-y-6 bg-white">
-                            {uploadedDocuments.employmentHistory?.map((employment, idx) => (
-                              <div key={idx} className="border rounded-lg p-4 bg-gray-50">
-                                <div className="flex items-center justify-between mb-3">
-                                  <h5 className="font-semibold text-gray-900">
-                                    {employment.companyName || `Employment Record ${idx + 1}`}
-                                  </h5>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setUploadedDocuments(prev => ({
-                                        ...prev,
-                                        employmentHistory: prev.employmentHistory.filter((_, i) => i !== idx)
-                                      }));
-                                    }}
-                                    className="text-red-500 hover:text-red-700 text-sm font-medium"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                                <div className="space-y-3">
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="text-xs font-medium text-gray-600">Company Name</label>
-                                      <input
-                                        type="text"
-                                        value={employment.companyName || ''}
-                                        onChange={(e) => {
-                                          const updated = [...uploadedDocuments.employmentHistory];
-                                          updated[idx].companyName = e.target.value;
-                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                        }}
-                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs font-medium text-gray-600">Designation</label>
-                                      <input
-                                        type="text"
-                                        value={employment.designation || ''}
-                                        onChange={(e) => {
-                                          const updated = [...uploadedDocuments.employmentHistory];
-                                          updated[idx].designation = e.target.value;
-                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                        }}
-                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <label className="text-xs font-medium text-gray-600">Start Date</label>
-                                      <input
-                                        type="date"
-                                        value={employment.employmentPeriod?.startDate ? new Date(employment.employmentPeriod.startDate).toISOString().split('T')[0] : ''}
-                                        onChange={(e) => {
-                                          const updated = [...uploadedDocuments.employmentHistory];
-                                          updated[idx].employmentPeriod = {
-                                            ...updated[idx].employmentPeriod,
-                                            startDate: e.target.value
-                                          };
-                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                        }}
-                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs font-medium text-gray-600">End Date</label>
-                                      <input
-                                        type="date"
-                                        value={employment.employmentPeriod?.endDate ? new Date(employment.employmentPeriod.endDate).toISOString().split('T')[0] : ''}
-                                        onChange={(e) => {
-                                          const updated = [...uploadedDocuments.employmentHistory];
-                                          updated[idx].employmentPeriod = {
-                                            ...updated[idx].employmentPeriod,
-                                            endDate: e.target.value
-                                          };
-                                          setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                        }}
-                                        className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      />
-                                    </div>
-                                  </div>
-                                  {renderDocumentField("Offer Letter", `employmentHistory[${idx}].offerLetter`)}
-                                  {renderDocumentField("Experience Letter", `employmentHistory[${idx}].experienceLetter`)}
-                                  {renderDocumentField("Relieving Letter", `employmentHistory[${idx}].relievingLetter`)}
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-700">
-                                      Last 3 Months Salary Slips (Upload each month separately)
-                                    </label>
-                                    <div className="mt-2 space-y-2">
-                                      {employment.salarySlips?.map((slip, sipIdx) => (
-                                        <div key={sipIdx} className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-300">
-                                          <a
-                                            href={slip.documentUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 hover:underline text-sm flex-1 truncate"
-                                          >
-                                            {slip.fileName || slip.month || `Salary Slip ${sipIdx + 1}`}
-                                          </a>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              const updated = [...uploadedDocuments.employmentHistory];
-                                              updated[idx].salarySlips = updated[idx].salarySlips.filter((_, i) => i !== sipIdx);
-                                              setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                            }}
-                                            className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
-                                          >
-                                            Remove
-                                          </button>
-                                        </div>
-                                      ))}
-                                      <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
-                                        <input
-                                          type="file"
-                                          accept=".pdf,.jpg,.jpeg,.png"
-                                          onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                              setDocumentUploadingStates((prev) => ({ ...prev, [`salarySlip-${idx}`]: true }));
-                                              const formData = new FormData();
-                                              formData.append("files", file);
-                                              
-                                              try {
-                                                const { data } = await axios.post("/user/add-pdf", formData);
-                                                if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
-                                                  const pdf = data.result.pdfUrls[0];
-                                                  const updated = [...uploadedDocuments.employmentHistory];
-                                                  if (!updated[idx].salarySlips) updated[idx].salarySlips = [];
-                                                  updated[idx].salarySlips.push({
-                                                    month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
-                                                    fileName: file.name,
-                                                    documentUrl: pdf.url
-                                                  });
-                                                  setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                                  toast.success("Salary slip uploaded successfully");
-                                                }
-                                              } catch (err) {
-                                                toast.error("Failed to upload salary slip");
-                                                console.error("Salary slip upload error:", err);
-                                              } finally {
-                                                setDocumentUploadingStates((prev) => ({ ...prev, [`salarySlip-${idx}`]: false }));
-                                              }
-                                            }
-                                          }}
-                                          className="hidden"
-                                          disabled={documentUploadingStates[`salarySlip-${idx}`]}
-                                        />
-                                        <span className="text-sm text-gray-600">
-                                          {documentUploadingStates[`salarySlip-${idx}`] ? "Uploading..." : "Click to upload salary slip"}
-                                        </span>
-                                      </label>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-700">
-                                      Other Documents <span className="text-gray-500 text-xs">(Optional)</span>
-                                    </label>
-                                    <div className="mt-2 space-y-2">
-                                      {employment.others?.map((doc, oIdx) => (
-                                        <div key={oIdx} className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-300">
-                                          <a
-                                            href={doc?.documentUrl || doc}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 hover:underline text-sm flex-1 truncate"
-                                          >
-                                            {doc?.fileName || doc || `Document ${oIdx + 1}`}
-                                          </a>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              const updated = [...uploadedDocuments.employmentHistory];
-                                              updated[idx].others = updated[idx].others.filter((_, i) => i !== oIdx);
-                                              setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                            }}
-                                            className="text-red-500 hover:text-red-700 text-sm font-medium ml-2"
-                                          >
-                                            Remove
-                                          </button>
-                                        </div>
-                                      ))}
-                                      <label className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition text-center block">
-                                        <input
-                                          type="file"
-                                          accept=".pdf,.jpg,.jpeg,.png"
-                                          onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                              setDocumentUploadingStates((prev) => ({ ...prev, [`other-${idx}`]: true }));
-                                              const formData = new FormData();
-                                              formData.append("files", file);
-                                              
-                                              try {
-                                                const { data } = await axios.post("/user/add-pdf", formData);
-                                                if (data?.result?.pdfUrls && data.result.pdfUrls.length > 0) {
-                                                  const pdf = data.result.pdfUrls[0];
-                                                  const updated = [...uploadedDocuments.employmentHistory];
-                                                  if (!updated[idx].others) updated[idx].others = [];
-                                                  updated[idx].others.push({
-                                                    fileName: file.name,
-                                                    documentUrl: pdf.url
-                                                  });
-                                                  setUploadedDocuments(prev => ({ ...prev, employmentHistory: updated }));
-                                                  toast.success("Document uploaded successfully");
-                                                }
-                                              } catch (err) {
-                                                toast.error("Failed to upload document");
-                                                console.error("Document upload error:", err);
-                                              } finally {
-                                                setDocumentUploadingStates((prev) => ({ ...prev, [`other-${idx}`]: false }));
-                                              }
-                                            }
-                                          }}
-                                          className="hidden"
-                                          disabled={documentUploadingStates[`other-${idx}`]}
-                                        />
-                                        <span className="text-sm text-gray-600">
-                                          {documentUploadingStates[`other-${idx}`] ? "Uploading..." : "Click to upload other document"}
-                                        </span>
-                                      </label>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            
-                            {/* Add New Employment Record */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setUploadedDocuments(prev => ({
-                                  ...prev,
-                                  employmentHistory: [
-                                    ...prev.employmentHistory,
-                                    {
-                                      companyName: '',
-                                      designation: '',
-                                      employmentPeriod: { startDate: null, endDate: null },
-                                      offerLetter: [],
-                                      experienceLetter: [],
-                                      relievingLetterUrl: null,
-                                      salarySlips: [],
-                                      others: []
-                                    }
-                                  ]
-                                }));
-                              }}
-                              className="w-full px-4 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition"
-                            >
-                              + Add Employment Record
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Optional Documents */}
-                    {/* <div
+                      {/* Optional Documents */}
+                      {/* <div
                       className={`border rounded-lg overflow-hidden ${
                         isDisabled
                           ? "bg-gray-50 border-gray-200 opacity-50"
@@ -3042,131 +3161,255 @@ export default function AddEditEmployeeModal({
                       </div>
                     </div> */}
 
-                    {/* Status Banner */}
-                    <div
-                      className={`p-4 border rounded-lg ${
-                        checkAllRequiredDocumentsUploaded()
+                      {/* Status Banner */}
+                      <div
+                        className={`p-4 border rounded-lg ${checkAllRequiredDocumentsUploaded()
                           ? "border-green-200 bg-green-50"
                           : "border-amber-200 bg-amber-50"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5">
-                          <svg
-                            className={`w-5 h-5 ${
-                              checkAllRequiredDocumentsUploaded()
+                          }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            <svg
+                              className={`w-5 h-5 ${checkAllRequiredDocumentsUploaded()
                                 ? "text-green-600"
                                 : "text-amber-600"
-                            }`}
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            {checkAllRequiredDocumentsUploaded() ? (
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              />
-                            ) : (
-                              <path
-                                fillRule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
-                            )}
-                          </svg>
-                        </div>
-                        <div>
-                          <h6
-                            className={`font-semibold ${
-                              checkAllRequiredDocumentsUploaded()
+                                }`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              {checkAllRequiredDocumentsUploaded() ? (
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clipRule="evenodd"
+                                />
+                              ) : (
+                                <path
+                                  fillRule="evenodd"
+                                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
+                              )}
+                            </svg>
+                          </div>
+                          <div>
+                            <h6
+                              className={`font-semibold ${checkAllRequiredDocumentsUploaded()
                                 ? "text-green-900"
                                 : "text-amber-900"
-                            }`}
-                          >
-                            {checkAllRequiredDocumentsUploaded()
-                              ? "All Required Documents Uploaded"
-                              : "Onboarding Status"}
-                          </h6>
-                          <p
-                            className={`text-sm mt-1 ${
-                              checkAllRequiredDocumentsUploaded()
+                                }`}
+                            >
+                              {checkAllRequiredDocumentsUploaded()
+                                ? "All Required Documents Uploaded"
+                                : "Onboarding Status"}
+                            </h6>
+                            <p
+                              className={`text-sm mt-1 ${checkAllRequiredDocumentsUploaded()
                                 ? "text-green-800"
                                 : "text-amber-800"
-                            }`}
-                          >
-                            {checkAllRequiredDocumentsUploaded()
-                              ? "Your onboarding status will be marked as Completed when you save this employee."
-                              : "Your onboarding status will automatically be set to Completed once all required documents are uploaded."}
-                          </p>
+                                }`}
+                            >
+                              {checkAllRequiredDocumentsUploaded()
+                                ? "Your onboarding status will be marked as Completed when you save this employee."
+                                : "Your onboarding status will automatically be set to Completed once all required documents are uploaded."}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center justify-end  p-4 border-t border-gray-100 sticky bottom-0 bg-white">
-          <div className="flex items-center gap-2">
-            {!isFormViewMode && (
-              <>
-                {step > 1 && (
+          <div className="flex items-center justify-end  p-4 border-t border-gray-100 sticky bottom-0 bg-white">
+            <div className="flex items-center gap-2">
+              {!isFormViewMode && (
+                <>
+                  {step > 1 && (
+                    <button
+                      onClick={back}
+                      className="px-3 py-2 rounded-md bg-white border text-sm"
+                      disabled={submitting}
+                    >
+                      Back
+                    </button>
+                  )}
                   <button
-                    onClick={back}
+                    onClick={onClose}
                     className="px-3 py-2 rounded-md bg-white border text-sm"
                     disabled={submitting}
                   >
-                    Back
+                    Cancel
                   </button>
-                )}
+                  {step < 5 && (
+                    <button
+                      onClick={next}
+                      className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm hover:brightness-95"
+                      disabled={submitting}
+                    >
+                      Continue
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4">
+              {!isFormViewMode ? (
+                step === 5 && (
+                  <button
+                    onClick={submit}
+                    disabled={submitting}
+                    className={`px-4 py-2 ml-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${submitting ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                  >
+                    {submitting ? "Saving..." : primaryLabel}
+                  </button>
+                )
+              ) : (
                 <button
                   onClick={onClose}
-                  className="px-3 py-2 rounded-md bg-white border text-sm"
-                  disabled={submitting}
+                  className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white font-semibold"
                 >
-                  Cancel
+                  Close
                 </button>
-                {step < 5 && (
-                  <button
-                    onClick={next}
-                    className="px-3 py-2 rounded-md bg-[var(--color-primary)] text-white text-sm hover:brightness-95"
-                    disabled={submitting}
-                  >
-                    Continue
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-4">
-            {!isFormViewMode ? (
-              step === 5 && (
-                <button
-                  onClick={submit}
-                  disabled={submitting}
-                  className={`px-4 py-2 ml-2 rounded-md bg-[var(--color-primary)] hover:brightness-95 text-white font-semibold ${
-                    submitting ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {submitting ? "Saving..." : primaryLabel}
-                </button>
-              )
-            ) : (
-              <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-md bg-[var(--color-primary)] text-white font-semibold"
-              >
-                Close
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* ── Camera Capture Modal ─────────────────────────────────────────────── */}
+      {showCamera && (
+        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ maxWidth: 480, width: "100%" }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                {capturedDataUrl ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="font-semibold text-gray-800 text-sm">Photo Preview</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="font-semibold text-gray-800 text-sm">Live Camera</span>
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={cancelCamera}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content area — live video OR captured preview */}
+            <div className="relative bg-black" style={{ aspectRatio: "4/3" }}>
+              {capturedDataUrl ? (
+                /* ── Preview mode ── */
+                <img
+                  src={capturedDataUrl}
+                  alt="Captured preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                /* ── Live camera mode ── */
+                <>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Face guide overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div
+                      className="border-2 border-white/50 rounded-full"
+                      style={{ width: 180, height: 180 }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer — actions change based on mode */}
+            <div className="flex items-center justify-between px-5 py-4 bg-gray-50">
+              {capturedDataUrl ? (
+                /* ── Preview actions: Retake | Use Photo ── */
+                <>
+                  <button
+                    type="button"
+                    onClick={retakePhoto}
+                    className="text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1.5"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Retake
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={usePhoto}
+                    className="bg-[var(--color-primary)] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:brightness-95 flex items-center gap-2 shadow"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Use Photo
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={cancelCamera}
+                    className="text-sm text-red-400 hover:text-red-600 font-medium"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                /* ── Live camera actions: Cancel | Shutter ── */
+                <>
+                  <button
+                    type="button"
+                    onClick={cancelCamera}
+                    className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+                  >
+                    Cancel
+                  </button>
+
+                  {/* Shutter button */}
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="w-14 h-14 rounded-full bg-[var(--color-primary)] hover:brightness-95 flex items-center justify-center shadow-lg transition-transform active:scale-95"
+                    title="Capture photo"
+                  >
+                    <div className="w-10 h-10 rounded-full border-4 border-white" />
+                  </button>
+
+                  <span className="text-xs text-gray-400 w-16 text-right">Tap to capture</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ──────────────────────────────────────────────────────────────────────── */}
+    </>
   );
 }
 
