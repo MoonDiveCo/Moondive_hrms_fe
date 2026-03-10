@@ -102,10 +102,10 @@ export default function ProjectPage() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ✅ ONLY DATA STATE
   const [projects, setProjects] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const { user } = useContext(AuthContext);
+  const { user, allUserPermissions } = useContext(AuthContext);
+
   const toggleProject = (id) => {
     setOpenProject((prev) => (prev === id ? null : id));
   };
@@ -117,21 +117,16 @@ export default function ProjectPage() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-
-      const res = await axios.get(
-        '/hrms/projects/get-all-project'
-      );
-
+      const res = await axios.get('/hrms/projects/get-all-project');
       if (res.data?.responseCode === 200) {
         setProjects(res?.data?.result || []);
       }
     } catch (err) {
       console.error('Failed to fetch projects', err);
     } finally {
-      // 👇 smooth exit
       setTimeout(() => {
         setLoading(false);
-      }, 200); // small delay prevents flicker
+      }, 200);
     }
   };
 
@@ -153,16 +148,17 @@ export default function ProjectPage() {
 
       if (res.data?.responseCode === 200) {
         toast.success('Project Deleted Successfully');
-        fetchProjects(); // Refresh list
+        fetchProjects();
       } else {
         toast.error(res.data?.responseMessage || 'Failed To Delete Project');
       }
     } catch (err) {
       console.error('Error deleting project:', err);
-      toast.error(res.data?.responseMessage || 'Failed To Delete Project');
+      toast.error(err || 'Failed To Delete Project');
     }
     setOpenMenuId(null);
   };
+
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
     setEditingProject(null);
@@ -197,18 +193,13 @@ export default function ProjectPage() {
 
   const calculateProjectHours = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
-
     const start = new Date(startDate);
     const end = new Date(endDate);
-
     if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
-
     const diffMs = end - start;
     if (diffMs <= 0) return 0;
-
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    const hoursPerDay = 8; // standard working hours
-
+    const hoursPerDay = 8;
     return Math.round(diffDays * hoursPerDay);
   };
 
@@ -232,10 +223,15 @@ export default function ProjectPage() {
     return { pct, daysLeft, totalDays, startFmt: fmt(start), endFmt: fmt(end), isCompleted, completedEarly };
   };
 
+  // Permission checks — keep both for flexibility
   const isAdmin =
     user?.userRole?.includes('SuperAdmin') ||
     user?.userRole?.includes('Admin') ||
     user?.permissions?.includes('*');
+
+  const canWriteProject = allUserPermissions.includes('HRMS:PROJECTS:WRITE') || allUserPermissions.includes('*');
+  const canEditProject = allUserPermissions.includes('HRMS:PROJECTS:EDIT') || allUserPermissions.includes('*');
+  const canDeleteProject = allUserPermissions.includes('HRMS:PROJECTS:DELETE') || allUserPermissions.includes('*');
 
   if (loading) {
     return (
@@ -251,9 +247,9 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className='bg-background-light font-body text-gray-800 '>
+    <div className='bg-background-light font-body text-gray-800'>
       {/* ================= GLOBAL CSS ================= */}
-      <style jsx global>{`
+      <style>{`
         .tree-line-vertical {
           width: 2px;
           height: 32px;
@@ -305,22 +301,19 @@ export default function ProjectPage() {
               Monitor active projects, resources, and timeline estimations.
             </p>
           </div>
-          {user?.userRole?.includes('SuperAdmin') || user?.userRole?.includes('Admin') ? (
+          {canWriteProject && (
             <div className='flex gap-3'>
-
               <button
-                className='flex items-center gap-2 px-4 py-2.5 bg-primary cursor-pointer text-white rounded-lg  transition-all shadow-lg shadow-orange-500/20'
+                className='flex items-center gap-2 px-4 py-2.5 bg-primary cursor-pointer text-white rounded-lg transition-all shadow-lg shadow-orange-500/20'
                 onClick={() => setIsDrawerOpen(true)}
               >
                 Add Project
               </button>
             </div>
-          ) : (
-            ''
           )}
         </div>
 
-        {/* ================= PROJECT CARD ================= */}
+        {/* ================= PROJECT CARDS ================= */}
         {projects.length === 0 ? (
           <div className='text-center py-20 text-text-secondary'>
             No projects found
@@ -337,6 +330,8 @@ export default function ProjectPage() {
               {/* SUMMARY */}
               <div className='bg-primary/5 relative'>
                 <div className='p-5 flex items-center gap-4 relative'>
+
+                  {/* Clickable row — expands/collapses card */}
                   <div
                     onClick={() => toggleProject(project._id)}
                     className='flex-1 flex items-center gap-4 cursor-pointer hover:bg-primary/8 transition-colors duration-200 -mx-5 px-5 py-5 -my-5'
@@ -372,26 +367,22 @@ export default function ProjectPage() {
                         </span>
                       </div>
                     </div>
+
                     <div className='w-full md:w-32 flex items-center gap-2 text-sm text-text-secondary'>
-                      <Users className='w-4 h-4  text-[#5e888d]' />
+                      <Users className='w-4 h-4 text-[#5e888d]' />
                       <p>{project.projectMembers?.length || 0} members</p>
                     </div>
 
                     <div className='w-full md:w-32 flex items-center gap-2 text-sm text-text-secondary'>
-                      <Clock className='w-4 h-4 text-[#5e888d] ' />
+                      <Clock className='w-4 h-4 text-[#5e888d]' />
                       <p>
-                        {calculateProjectHours(
-                          project.startDate,
-                          project.endDate
-                        )}{' '}
-                        hrs
+                        {calculateProjectHours(project.startDate, project.endDate)}{' '}hrs
                       </p>
                     </div>
 
-                    <button className='p-2 rounded-full bg-primary/10 text-primary  cursor-pointer transition-all duration-300'>
+                    <button className='p-2 rounded-full bg-primary/10 text-primary cursor-pointer transition-all duration-300'>
                       <svg
-                        className={`w-5 h-5 transition-transform duration-300 ${openProject === project._id ? 'rotate-180' : ''
-                          }`}
+                        className={`w-5 h-5 transition-transform duration-300 ${openProject === project._id ? 'rotate-180' : ''}`}
                         viewBox='0 0 24 24'
                         fill='none'
                         stroke='currentColor'
@@ -401,7 +392,9 @@ export default function ProjectPage() {
                       </svg>
                     </button>
                   </div>
-                  {isAdmin && (
+
+                  {/* Three-dot menu — Admin only (Edit, Change Status, Delete) */}
+                  {canEditProject && (
                     <div className='relative ml-2'>
                       <button
                         onClick={() =>
@@ -432,16 +425,18 @@ export default function ProjectPage() {
                             onClick={() => setOpenMenuId(null)}
                           />
                           <div className='absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-xl z-20'>
-                            <button
-                              onClick={() => handleEditProject(project)}
-                              className='w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100'
-                            >
-                              <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-                                <path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' />
-                                <path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' />
-                              </svg>
-                              <span className='text-sm font-medium text-gray-700'>Edit Project</span>
-                            </button>
+                            {canEditProject && (
+                              <button
+                                onClick={() => handleEditProject(project)}
+                                className='w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100'
+                              >
+                                <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                                  <path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' />
+                                  <path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' />
+                                </svg>
+                                <span className='text-sm font-medium text-gray-700'>Edit Project</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setStatusModal({ projectId: project._id, currentStatus: project.status });
@@ -455,25 +450,27 @@ export default function ProjectPage() {
                               </svg>
                               <span className='text-sm font-medium text-gray-700'>Change Status</span>
                             </button>
-                            <button
-                              onClick={() => handleDeleteProject(project._id)}
-                              className='w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600'
-                            >
-                              <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-                                <polyline points='3 6 5 6 21 6' />
-                                <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
-                              </svg>
-                              <span className='text-sm font-medium'>Delete Project</span>
-                            </button>
+                            {canDeleteProject && (
+                              <button
+                                onClick={() => handleDeleteProject(project._id)}
+                                className='w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600'
+                              >
+                                <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                                  <polyline points='3 6 5 6 21 6' />
+                                  <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
+                                </svg>
+                                <span className='text-sm font-medium'>Delete Project</span>
+                              </button>
+                            )}
                           </div>
                         </>
                       )}
                     </div>
                   )}
-                  {/* Three Dots Menu - Only for Admin */}
+
                 </div>
 
-                {/* ── TIMELINE PROGRESS BAR (compact, below summary row) ── */}
+                {/* ── TIMELINE PROGRESS BAR ── */}
                 {(() => {
                   const tl = getTimelineProgress(project.startDate, project.endDate, project.status);
                   if (!tl) return null;
@@ -523,13 +520,12 @@ export default function ProjectPage() {
               {/* ================= EXPANDED - SMOOTH ANIMATION ================= */}
               <div
                 className={`bg-gray-50 border-t border-primary/30 ring-1 ring-primary/10 overflow-hidden transition-all duration-500 ease-in-out ${openProject === project._id
-                  ? 'max-h-[2000px] opacity-100'
-                  : 'max-h-0 opacity-0'
+                    ? 'max-h-[2000px] opacity-100'
+                    : 'max-h-0 opacity-0'
                   }`}
               >
                 {openProject === project._id && (
                   <div className='p-6 md:p-8 animate-slide-down'>
-
 
                     {/* ================= TEAM HIERARCHY ================= */}
                     <div className='relative'>
@@ -539,7 +535,7 @@ export default function ProjectPage() {
 
                       <div className='overflow-x-auto hide-scrollbar pt-12 max-w-full'>
                         <div className='w-full flex flex-col items-center'>
-                          {/* ================= PROJECT LEAD ================= */}
+                          {/* PROJECT LEAD */}
                           <div className='flex flex-col items-center group relative'>
                             <div className='relative mb-3'>
                               <div className='absolute inset-0 bg-primary opacity-40 rounded-full blur-md group-hover:opacity-40 transition-opacity z-0' />
@@ -571,9 +567,12 @@ export default function ProjectPage() {
                               <div className='tree-line-vertical' />
                             )}
 
-                          {/* ================= TEAM MEMBERS ================= */}
-                          <TeamMembers members={project.projectMembers?.filter((m) => m._id !== project.projectManager?._id) || []} />
-
+                          {/* TEAM MEMBERS */}
+                          <TeamMembers
+                            members={project.projectMembers?.filter(
+                              (m) => m._id !== project.projectManager?._id
+                            ) || []}
+                          />
                         </div>
                       </div>
                     </div>

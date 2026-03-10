@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import InventoryCard from "@/components/InventoryManagement/InventoryCard";
 import AddInventoryModal, { buildInventorySlug } from "@/components/InventoryManagement/AddInventoryModal";
@@ -7,10 +7,12 @@ import EditInventoryModal from "@/components/InventoryManagement/EditInventoryMo
 import FilterDropdown from "@/components/UI/FilterDropdown";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { toast, Toaster } from "sonner";
+import { RBACContext } from '@/context/rbacContext';
 
 const categories = ["Laptop", "Monitor", "Mouse", "Keyboard", "Accessories", "OfficeInventory"];
 
 function InventoryManagement() {
+  const { canPerform } = useContext(RBACContext);
   const [inventory, setInventory] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeCategory, setActiveCategory] = useState("Laptop");
@@ -271,9 +273,19 @@ const handleEditItem = async (formData, id) => {
 };
 
 const handleDeleteInventory = async (id) => {
-  await axios.delete(`/cms/inventory/delete-inventory/${id}`);
-  setEditOpen(false);
-  fetchData();
+  const confirmed = window.confirm("Are you sure you want to delete this inventory item? This action cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    await axios.delete(`/cms/inventory/delete-inventory/${id}`);
+    toast.success("Inventory item deleted successfully");
+    setEditOpen(false);
+    fetchData();
+    fetchAllInventory();
+  } catch (error) {
+    console.error("Error deleting inventory:", error);
+    toast.error(error.response?.data?.message || "Failed to delete inventory item");
+  }
 };
 
   const handleEdit = (item) => {
@@ -353,12 +365,14 @@ const filteredInventory = React.useMemo(() => {
           </button>
         ))}
 
+        {canPerform("WRITE", "CMS", "INVENTORY") && (
         <button
           className="ml-auto bg-primary text-xs flex justify-center items-center text-white px-3 py-2 rounded-full mb-2"
           onClick={() => setAddOpen(true)}
           >
             + Add Item
         </button>
+        )}
       </div>
 
     <div className="flex gap-4">
@@ -481,7 +495,7 @@ const filteredInventory = React.useMemo(() => {
           <InventoryCard
             key={item._id}
             item={item}
-            onClick={() => handleEdit(item)}
+            onClick={() => canPerform("EDIT", "CMS", "INVENTORY") && handleEdit(item)}
           />
         ))}
       </div>
@@ -564,7 +578,7 @@ const filteredInventory = React.useMemo(() => {
         item={selectedItem}
         onClose={() => setEditOpen(false)}
         onSave={(form, _id) => handleEditItem(form, _id)}
-        onDelete={(id)=>handleDeleteInventory(id)}
+        onDelete={canPerform("DELETE", "CMS", "INVENTORY") ? (id) => handleDeleteInventory(id) : undefined}
       />
     </div>
   );

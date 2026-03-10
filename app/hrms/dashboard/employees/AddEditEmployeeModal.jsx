@@ -128,6 +128,7 @@ export default function AddEditEmployeeModal({
     workingShiftId: "",
     onboardingStatus: "",
     probationEndDate: "",
+    internshipEndDate: "",
     experienceLevel: "",
     userRole: [],
     skills: [],
@@ -214,6 +215,7 @@ export default function AddEditEmployeeModal({
           : employee.workingShiftId || '',
         onboardingStatus: employee.onboardingStatus || '',
         probationEndDate: formatDateForInput(employee.probationEndDate),
+        internshipEndDate: formatDateForInput(employee.internshipEndDate),
         experienceLevel: employee.experienceLevel || '',
         userRole: employee.userRole || [],
         skills: employee.skills || [],
@@ -292,6 +294,7 @@ export default function AddEditEmployeeModal({
           : employee.workingShiftId || '',
         onboardingStatus: employee.onboardingStatus || '',
         probationEndDate: formatDateForInput(employee.probationEndDate),
+        internshipEndDate: formatDateForInput(employee.internshipEndDate),
         experienceLevel: employee.experienceLevel || '',
         userRole: employee.userRole || [],
         skills: employee.skills || [],
@@ -1018,12 +1021,21 @@ export default function AddEditEmployeeModal({
         e.availableLeave = "Available leave must be a positive number";
       }
 
-      if (form.probationEndDate && form.dateOfJoining) {
+      if (form.employmentType === "Probation" && form.probationEndDate && form.dateOfJoining) {
         const probEnd = new Date(form.probationEndDate);
         const doj = new Date(form.dateOfJoining);
-        if (probEnd < doj) {
+        if (probEnd <= doj) {
           e.probationEndDate =
-            "Probation end date must be after date of joining";
+            "Probation end date must be after the joining date.";
+        }
+      }
+      
+      if (form.employmentType === "Internship" && form.internshipEndDate && form.dateOfJoining) {
+        const internEnd = new Date(form.internshipEndDate);
+        const doj = new Date(form.dateOfJoining);
+        if (internEnd <= doj) {
+          e.internshipEndDate =
+            "Internship end date must be after the joining date.";
         }
       }
     }
@@ -1127,20 +1139,23 @@ export default function AddEditEmployeeModal({
       },
       userRole: form.userRole,
       skills: form.skills,
-      sourceOfHire: form.sourceOfHire,
+      sourceOfHire: form.sourceOfHire || undefined,
       employmentType: form.employmentType,
       employmentStatus: form.employmentStatus,
       departmentId: form.departmentId,
       designationId: form.designationId,
-      reportingManagerId: form.reportingManagerId || "",
+      reportingManagerId: form.reportingManagerId || undefined,
       dateOfJoining: form.dateOfJoining,
-      onboardingStatus: onboardingStatusValue,
+      onboardingStatus: form.onboardingStatus || undefined,
       availableLeave: form.availableLeave
         ? parseInt(form.availableLeave)
         : undefined,
-      workingShiftId: form.workingShiftId || "",
-      probationEndDate: form.probationEndDate || null,
-      experienceLevel: form.experienceLevel,
+      workingShiftId: form.workingShiftId || undefined,
+      
+      probationEndDate: form.employmentType === "Probation" ? (form.probationEndDate || null) : null,
+      internshipEndDate: form.employmentType === "Internship" ? (form.internshipEndDate || null) : null,
+      
+      experienceLevel: form.experienceLevel || undefined,
       emergencyContacts: form.emergencyContacts.filter(
         (ec) => ec.name && ec.phone
       ),
@@ -2254,19 +2269,25 @@ export default function AddEditEmployeeModal({
 
                 </div>
 
-                <div>
-                  <label className="text-sm text-[var(--color-primaryText)]">
-                    Date of Joining <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={form.dateOfJoining || ""}
-                    onChange={(e) => update("dateOfJoining", e.target.value)}
-                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.dateOfJoining ? "border-red-500" : ""
-                      }`}
-                    readOnly={isView}
-                  />
-                </div>
+              <div>
+                <label className="text-sm text-[var(--color-primaryText)] block mb-2">
+                  Joining Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={form.dateOfJoining || ""}
+                  onChange={(e) => update("dateOfJoining", e.target.value)}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
+                    errors.dateOfJoining ? "border-red-500" : ""
+                  }`}
+                  disabled={isView}
+                />
+                {errors.dateOfJoining && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.dateOfJoining}
+                  </p>
+                )}
+              </div>
 
                 {/* <div>
                 <label className="text-sm text-[var(--color-primaryText)]">
@@ -2300,21 +2321,51 @@ export default function AddEditEmployeeModal({
                 />
               </div> */}
 
-                <div>
-                  <label className="text-sm text-[var(--color-primaryText)]">
-                    Probation End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={form.probationEndDate || ""}
-                    onChange={(e) => update("probationEndDate", e.target.value)}
-                    className={`mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${errors.probationEndDate ? "border-red-500" : ""
-                      }`}
-                    readOnly={isView}
-                  />
-                </div>
+              {form.employmentType === "Probation" && (
+              <div>
+                <label className="text-sm text-[var(--color-primaryText)] block mb-2">
+                  Probation End Date
+                </label>
+                <input
+                  type="date"
+                  value={form.probationEndDate || ""}
+                  onChange={(e) => update("probationEndDate", e.target.value)}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
+                    errors.probationEndDate ? "border-red-500" : ""
+                  }`}
+                  disabled={isView}
+                />
+                {errors.probationEndDate && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.probationEndDate}
+                  </p>
+                )}
               </div>
+              )}
+              
+              {form.employmentType === "Internship" && (
+              <div>
+                <label className="text-sm text-[var(--color-primaryText)] block mb-2">
+                  Internship End Date
+                </label>
+                <input
+                  type="date"
+                  value={form.internshipEndDate || ""}
+                  onChange={(e) => update("internshipEndDate", e.target.value)}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:border-[var(--color-primary)] ${
+                    errors.internshipEndDate ? "border-red-500" : ""
+                  }`}
+                  disabled={isView}
+                />
+                {errors.internshipEndDate && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.internshipEndDate}
+                  </p>
+                )}
+              </div>
+              )}
             </div>
+          </div>
 
             <div hidden={step !== 4}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

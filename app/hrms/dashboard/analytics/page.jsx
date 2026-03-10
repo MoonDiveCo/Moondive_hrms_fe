@@ -589,14 +589,8 @@ const currentYear = now.getFullYear();
   const handleExportEmployeeDetails = async (employeeId) => {
     try {
       // Use current filter date range or today's date
-      let start, end;
-      if (filters.period === 'custom') {
-        start = filters.startDate;
-        end = filters.endDate;
-      } else {
-        start = filters.date || new Date().toISOString().slice(0, 10);
-        end = filters.date || new Date().toISOString().slice(0, 10);
-      }
+      let start = filters.startDate || new Date().toISOString().slice(0, 10);
+      let end = filters.endDate || new Date().toISOString().slice(0, 10);
 
       if (!start || !end) {
         toast.info('Please select a date range');
@@ -1174,13 +1168,35 @@ function PendingLeaveTable({ onApprovedToday }) {
   );
 
 useEffect(() => {
-  const filtered = (leaveRes?.leaveRequests || [])
-    .filter(l => !l.decision)
-    .sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
+  if (!leaveRes?.leaveRequests) return;
 
-  setRows(filtered);
+  const startOfDay = (d) => {
+    const date = new Date(d);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  const today = startOfDay(new Date());
+
+  const sorted = leaveRes.leaveRequests
+    .filter(l => !l.decision)
+    .sort((a, b) => {
+      const aDate = startOfDay(a.startDate);
+      const bDate = startOfDay(b.startDate);
+
+      const getPriority = (date) => {
+        if (date.getTime() === today.getTime()) return 1;
+        if (date > today) return 2;
+        return 3;
+      };
+
+      const diff = getPriority(aDate) - getPriority(bDate);
+      if (diff !== 0) return diff;
+
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+  setRows(sorted);
 }, [leaveRes]);
 
 
@@ -1274,16 +1290,137 @@ useEffect(() => {
     },
   ];
 
-  return (<>
-    <AnalyticsEmployeeTable
-      title="Pending Leave Requests"
-      columns={columns}
-      data={rows.map(r => ({
-        ...r,
-        name: `${r.employee.firstName} ${r.employee.lastName}`,
-      }))}
-      stats={{ count: rows.length }}
-    />
+ if (!rows.length) {
+  return (
+    <div className="py-10 text-center text-sm text-gray-400">
+      No pending leave requests
+    </div>
+  );
+}
+
+return (
+  <div className="space-y-6 max-h-[60vh] overflow-auto hide-scrollbar">
+    {(() => {
+      const startOfDay = (d) => {
+        const date = new Date(d);
+        date.setHours(0, 0, 0, 0);
+        return date;
+      };
+
+      const today = startOfDay(new Date());
+
+      const grouped = {
+        TODAY: [],
+        UPCOMING: [],
+        PREVIOUS: [],
+      };
+
+      rows.forEach((r) => {
+        const rowDate = startOfDay(r.startDate);
+
+        if (rowDate.getTime() === today.getTime()) {
+          grouped.TODAY.push(r);
+        } else if (rowDate > today) {
+          grouped.UPCOMING.push(r);
+        } else {
+          grouped.PREVIOUS.push(r);
+        }
+      });
+
+      const renderSection = (title, items) => {
+        if (!items.length) return null;
+
+        return (
+          <div className="space-y-3">
+            {/* Section Header */}
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+              <span className="h-2 w-2 rounded-full bg-primary"></span>
+              {title}
+            </div>
+
+            {/* Cards */}
+            {items.map((r) => (
+              <div
+                key={r.leaveId}
+                className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm relative space-y-2 hover:shadow-md transition"
+              >
+                {/* Top Row */}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {r.employee.firstName} {r.employee.lastName}
+                    </p>
+
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                        {r.leaveType}
+                      </span>
+
+                      {r.isHalfDay && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                          Half Day ({r.session})
+                        </span>
+                      )}
+
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700">
+                        Pending
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      disabled={processingId === r.leaveId}
+                      onClick={() =>
+                        setConfirmAction({ row: r, action: "Rejected" })
+                      }
+                      className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+
+                    <button
+                      disabled={processingId === r.leaveId}
+                      onClick={() =>
+                        setConfirmAction({ row: r, action: "Approved" })
+                      }
+                      className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs disabled:opacity-50"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reason */}
+                {r.reason && (
+                  <div className="text-sm text-gray-600 bg-gray-50 rounded-md p-2">
+                    <span className="font-medium text-gray-700">
+                      Reason:
+                    </span>{" "}
+                    {r.reason}
+                  </div>
+                )}
+
+                {/* Date */}
+                <div className="text-xs text-gray-500">
+                  {new Date(r.startDate).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      };
+
+      return (
+        <>
+          {renderSection("Today", grouped.TODAY)}
+          {renderSection("Upcoming", grouped.UPCOMING)}
+          {renderSection("Previous", grouped.PREVIOUS)}
+        </>
+      );
+    })()}
+
     {confirmAction && (
       <ConfirmLeaveActionModal
         action={confirmAction.action}
@@ -1294,9 +1431,8 @@ useEffect(() => {
         }
       />
     )}
-  </>
-
-  );
+  </div>
+);
 }
 
 function ConfirmLeaveActionModal({ action, onCancel, onConfirm, loading }) {

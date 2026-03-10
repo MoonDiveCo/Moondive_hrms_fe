@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import ComparisonForm from "@/components/ManageComparisons/ComparisonForm"; 
 import FilterDropdown from "@/components/UI/FilterDropdown";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
 
 const CATEGORIES = [
   "All",
@@ -35,6 +36,7 @@ const api = axios.create({
 });
 
 export default function ManageComparisons() {
+  const { canPerform } = useContext(RBACContext);
   const router = useRouter();
   const [comparisons, setComparisons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +199,7 @@ export default function ManageComparisons() {
         </div>
 
         <div className="flex items-center gap-3">
+          {canPerform("WRITE", "CMS", "COMPARISIONS") && (
           <button
             onClick={openAddModal}
             className="flex items-center gap-2 bg-primary text-white px-3 py-2 rounded-full hover:opacity-95 transition"
@@ -204,6 +207,7 @@ export default function ManageComparisons() {
             <span className="text-xs flex items-center"><Plus size={12} />
             Add New</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -354,13 +358,17 @@ export default function ManageComparisons() {
                           <Eye size={16} />
                         </button>
 
+                        {canPerform("EDIT", "CMS", "COMPARISIONS") && (
                         <button onClick={() => openEditModal(c._id)} className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition" title="Edit">
                           <Edit size={16} />
                         </button>
+                        )}
 
+                        {canPerform("DELETE", "CMS", "COMPARISIONS") && (
                         <button onClick={() => handleDelete(c._id, c.title)} className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition" title="Delete">
                           <Trash2 size={16} />
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>

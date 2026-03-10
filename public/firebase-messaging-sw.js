@@ -47,10 +47,10 @@ messaging.onBackgroundMessage((payload) => {
             },
           };
 
-          // self.registration.showNotification(
-          //   notificationTitle,
-          //   notificationOptions
-          // );
+          self.registration.showNotification(
+            notificationTitle,
+            notificationOptions
+          );
         } else {
           console.log("Client is visible - notification handled by foreground listener");
         }
