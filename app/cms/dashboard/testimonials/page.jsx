@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Image from "next/image";
 import axios from "axios";
 
@@ -20,8 +20,10 @@ import { formatDate } from "@/utils/utils";
 import EditModal from "@/components/ManageTestimonials/EditModal";
 import ConfirmationModal from "@/components/ConfirmationModal/ConfirmationModal";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
 
 export default function ManageTestimonials() {
+    const { canPerform } = useContext(RBACContext);
     const [testimonials, setTestimonials] = useState([])
   const [openModal, setOpenModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
@@ -32,20 +34,21 @@ export default function ManageTestimonials() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchAllModerations()
-    setTestimonials(modData?.testimonial || [])
-  }, [modData])
+    fetchAllModerations();
+  }, []);
 
-   const fetchAllModerations = async () => {
+  const fetchAllModerations = async () => {
     try {
-      const allData = await axios.get(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/moderation-data`)
-      setModData(allData?.data?.result || {})
-      setLoading(false)
+      const allData = await axios.get(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/admin/moderation-data`);
+      const result = allData?.data?.result || {};
+      setModData(result);
+      setTestimonials(result?.testimonial || []);
+      setLoading(false);
     } catch (error) {
-      setLoading(false)
-      console.error('Error fetching moderation data:', error)
+      setLoading(false);
+      console.error('Error fetching moderation data:', error);
     }
-  }
+  };
 
   const handleEdit = (index) => {
     setIsAddMode(false);
@@ -94,12 +97,14 @@ export default function ManageTestimonials() {
       <div className="mb-3 flex items-center justify-between">
         <h4 className=" text-primaryText">{TEXT_TESTIMONIAL}</h4>
 
+        {canPerform("WRITE", "CMS", "TESTIMONIALS") && (
         <button
           className="bg-primary text-whiteText px-6 py-2 rounded-full text-sm hover:bg-primary/90 transition"
           onClick={handleAdd}
         >
           <span className="flex item-center text-xs">{BTN_ADD}</span>
         </button>
+        )}
       </div>
 
       {/* GRID OF TESTIMONIAL CARDS */}
@@ -130,23 +135,27 @@ export default function ManageTestimonials() {
               <div className="flex flex-col gap-3 items-center">
 
                 {/* DELETE BUTTON */}
+              {canPerform("DELETE", "CMS", "TESTIMONIALS") && (
               <button
                   className="p-2 bg-red-50 rounded-full hover:bg-red-100 transition"
                   onClick={() => {
-                    setDeleteIndex(index);
+                    setDeleteIndex(t._id);
                     setOpenDeleteModal(true);
                   }}
                 >
                   <Image src={del} alt="Delete" width={18} height={18} />
                 </button>
+              )}
 
                 {/* EDIT BUTTON */}
+                {canPerform("EDIT", "CMS", "TESTIMONIALS") && (
                 <button
                   className="p-2 bg-blue-50 rounded-full hover:bg-blue-100 transition"
                   onClick={() => handleEdit(index)}
                 >
                   <Image src={edit} alt="Edit" width={18} height={18} />
                 </button>
+                )}
 
               </div>
             </div>

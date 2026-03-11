@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Search, MoreVertical } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
 import LeadList from "../../../../components/CrmDashboard/LeadList";
 import FilterDropdown from "../../../../components/CrmDashboard/ui/FilterDropdown";
 
@@ -25,6 +26,7 @@ function getDefaultStats() {
 }
 
 export default function MeetingSchedulingPage() {
+  const { canPerform } = useContext(RBACContext);
   const [baseLeads, setBaseLeads] = useState([]); // full batch used for filtering + stats
   const [allLeads, setAllLeads] = useState([]); // filtered slice passed to LeadList
   const [loading, setLoading] = useState(true);
@@ -362,7 +364,7 @@ export default function MeetingSchedulingPage() {
               />
 
               {/* SELECT / ACTIONS dropdown — appears inline with other filters */}
-              {selectedLeadIds.length > 0 && (
+              {selectedLeadIds.length > 0 && canPerform("EDIT", "CRM", "MEETING_SCHEDULE") && (
                 <FilterDropdown
                   label="Select"
                   value=""
@@ -412,8 +414,9 @@ export default function MeetingSchedulingPage() {
             onToggleLeadSelect={handleToggleLeadSelect}
             onToggleSelectAll={handleToggleSelectAll}
             showContactActions={false}
-            showSelection={true}
+            showSelection={canPerform("EDIT", "CRM", "MEETING_SCHEDULE")}
             contactActions={["view"]}
+            canEdit={canPerform("EDIT", "CRM", "MEETING_SCHEDULE")}
           />
         </div>
       </div>

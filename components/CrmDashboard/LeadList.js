@@ -20,6 +20,7 @@ export default function LeadList({
   onToggleSelectAll,
   showContactActions = true, // controls Email + Phone icons
   showSelection = true, // controls checkboxes column
+  canEdit = true, // controls per-lead edit actions (move/archive)
 }) {
   const [selectedLead, setSelectedLead] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -383,7 +384,7 @@ const handleConfirmCall = async (e) => {
                       </button>
 
                       {/* Conditionally visible: Email + Phone */}
-                      {showContactActions && (
+                      {showContactActions && canEdit && (
                         <>
                           <button
                             onClick={() => sendEmail(lead)}
@@ -408,7 +409,7 @@ const handleConfirmCall = async (e) => {
                         </>
                       )}
 
-                      {activeMenu === lead._id && (
+                      {canEdit && activeMenu === lead._id && (
                         <div
                           ref={menuRef}
                           className="absolute right-0 top-8 w-44 bg-white shadow-lg border rounded-md z-50 py-1 text-sm"

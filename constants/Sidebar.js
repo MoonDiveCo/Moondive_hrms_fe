@@ -99,13 +99,13 @@ export function MenuProvider({ children }) {
               href: "/cms/dashboard/inventory-management",
               position: "top"
       },
-      "CRM:CRM_OVERVIEW:VIEW":{ label: "Overview", icon: OverviewIcon, href: "/crm/dashboard",position: "top" },
-      "CRM:SALES:VIEW":{
-              label: "Sales Dashboard",
-              icon: OverviewIcon,
-              href: "/crm/dashboard/sales",
-              position: "top"
-            },
+      "CRM:CRM_OVERVIEW:VIEW":{ label: "Dashboard", icon: OverviewIcon, href: "/crm/dashboard",position: "top" },
+      // "CRM:SALES:VIEW":{
+      //         label: "Sales Dashboard",
+      //         icon: OverviewIcon,
+      //         href: "/crm/dashboard/sales",
+      //         position: "top"
+      //       },
       "CRM:LEADS:VIEW":{
               label: "Leads",
               icon: CandidateIcon,
@@ -124,7 +124,7 @@ export function MenuProvider({ children }) {
               href: "/crm/dashboard/MeetingSchedule",
               position: "top"
         },
-      "CRM:FINALISED:":{
+      "CRM:FINALISED:VIEW":{
               label: "Finalised",
               icon: TimeTrackerIcon,
               href: "/crm/dashboard/Finalised",
@@ -152,7 +152,7 @@ export function MenuProvider({ children }) {
       "/hrms/dashboard/operations/leave-tracker/employment-group":"HRMS:LEAVE:VIEW",
       "/hrms/dashboard/operations/leave-tracker/leave-calender":"HRMS:LEAVE:VIEW",
       "/hrms/dashboard/operations/employeeInfo":"HRMS:EMPLOYEE:VIEW",
-      "/hrms/dashboard/operations/hr-helpdesk":"HRMS:HR HELPDESK:VIEW",
+      "/hrms/dashboard/operations/hr-helpdesk":"HRMS:HR_HELPDESK:VIEW",
       "/hrms/dashboard/attendance/list":"HRMS:ATTENDANCE:VIEW",
       "/hrms/dashboard/payroll/salary-structures":"HRMS:PAYROLL_SALARY:VIEW",
       "/hrms/dashboard/payroll/payslips":"HRMS:PAYROLL:VIEW",

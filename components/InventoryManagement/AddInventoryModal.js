@@ -358,8 +358,8 @@ const handleClose = () => {
         {/* FOOTER */}
         <div className="flex justify-between items-center mt-6">
   
-          {/* DELETE (only in edit mode) */}
-          {mode === "edit" && (
+          {/* DELETE (only in edit mode and when onDelete is provided) */}
+          {mode === "edit" && typeof onDelete === "function" && (
             <button
               onClick={handleDelete}
               className="flex items-center gap-2 px-4 py-2 rounded-full

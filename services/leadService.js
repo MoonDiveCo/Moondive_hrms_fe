@@ -65,7 +65,8 @@ export const getLeadsFromAllSources = async ({
   status,   
   search,   
   time,     
-  score,   
+  score,
+  leadType,   
   page = 1,
   limit = 100,
 } = {}) => {
@@ -93,32 +94,39 @@ export const getLeadsFromAllSources = async ({
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  const [contactRes, chatbotRes, scheduleRes, sdrRes] = await Promise.all([
-    axios.get(`${API}${ENDPOINT_CONTACT_LEAD}`),
-    axios.get(`${API}${ENDPOINT_INDIRECT_LEAD}`, {
+  const fetchContact  = !leadType || leadType === "direct";
+  const fetchChatbot  = !leadType || leadType === "chatbot";
+  const fetchSchedule = !leadType || leadType === "schedule";
+  const fetchSdr      = !leadType || leadType === "sdrLeads";
+
+  const settled = await Promise.allSettled([
+    fetchContact  ? axios.get(`${API}${ENDPOINT_CONTACT_LEAD}`) : Promise.resolve(null),
+    fetchChatbot  ? axios.get(`${API}${ENDPOINT_INDIRECT_LEAD}`, {
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-    }),
-    axios.get(`${API}${ENDPOINT_CONNECT_LEAD}`),
-    axios.get(`${API}/leads?${params.toString()}`),
+    }) : Promise.resolve(null),
+    fetchSchedule ? axios.get(`${API}${ENDPOINT_CONNECT_LEAD}`) : Promise.resolve(null),
+    fetchSdr      ? axios.get(`${API}/leads?${params.toString()}`) : Promise.resolve(null),
   ]);
 
+  const [contactRes, chatbotRes, scheduleRes, sdrRes] = settled;
+
   // CONTACT
-  const contactRaw = contactRes.data?.result || [];
+  const contactRaw = contactRes.value?.data?.result || [];
   const contactLeads = contactRaw.map(normalizeContactLead);
 
   // CHATBOT
-  const chatbotRaw = chatbotRes.data?.results || [];
+  const chatbotRaw = chatbotRes.value?.data?.results || [];
   const chatbotLeads = chatbotRaw.map(normalizeChatbotLead);
 
   // SCHEDULE
-  const scheduleRaw = scheduleRes.data?.result || [];
+  const scheduleRaw = scheduleRes.value?.data?.result || [];
   const scheduleLeads = scheduleRaw.map(normalizeScheduleLead);
 
   // SDR / LEAD SCORING
-  const sdrData = sdrRes.data;
+  const sdrData = sdrRes.value?.data;
   const sdrRaw = Array.isArray(sdrData?.result?.leads)
     ? sdrData.result.leads
     : Array.isArray(sdrData?.result)

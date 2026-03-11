@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import BlogTableRow from '@/components/ManageBlogs/BlogTableRow';
 import { ROUTE_ALL_BLOGS_ADMIN } from '@/text';
 import BlogModal from '@/components/ManageBlogs/BlogModal';
 import FilterDropdown from '@/components/UI/FilterDropdown';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { RBACContext } from '@/context/rbacContext';
+
 
 const Blog = () => {
+  const { canPerform } = useContext(RBACContext);
   const [blogs, setBlogs] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,12 +75,14 @@ const [loading, setLoading] = useState(true)
             onChange={(v) => setSelectedFilter(v)}
           />
 
+          {canPerform("WRITE", "CMS", "BLOGS") && (
           <button
             className="bg-primary text-white rounded-full px-3 py-1"
             onClick={() => { setEditBlog(null); setOpenModal(true); }}
           >
             <span className='text-xs flex item-center'>Add Blog</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -97,7 +102,10 @@ const [loading, setLoading] = useState(true)
 
           <tbody>
             {blogs?.length > 0 ? (
-              blogs.map((blog) => <BlogTableRow key={blog._id} blog={blog} openEditModal={(blog) => {
+              blogs.map((blog) => <BlogTableRow key={blog._id} blog={blog}
+                canEdit={canPerform("EDIT", "CMS", "BLOGS")}
+                canDelete={canPerform("DELETE", "CMS", "BLOGS")}
+                openEditModal={(blog) => {
                   setEditBlog(blog);
                   setOpenModal(true);
               }} />)

@@ -54,10 +54,40 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
       if (data.responseCode === 200 || data.success) {
         setActivities(data.result);
       }
+
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const chatbotRes = await fetch(`${process.env.NEXT_PUBLIC_MOONDIVE_API}/chat/get-leads`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const chatbotData = await chatbotRes.json();
+        if (chatbotData.results && Array.isArray(chatbotData.results)) {
+          let matchedLead = chatbotData.results.find(l => l._id === leadId);
+          if (!matchedLead && leadData?.email) {
+            matchedLead = chatbotData.results.find(l => l.email === leadData.email);
+          }
+          
+          if (matchedLead && matchedLead.behavior) {
+            setLead(prevLead => ({
+              ...prevLead,
+              behavior: matchedLead.behavior,
+              intent: matchedLead.intent || prevLead?.intent,
+              sentiment: matchedLead.sentiment || prevLead?.sentiment,
+              message: matchedLead.message || prevLead?.message
+            }));
+          }
+        }
+      } catch (chatError) {
+        console.error("Failed to fetch chatbot behavior:", chatError);
+      }
+      
     } catch (error) {
       console.error("Failed to fetch activities:", error);
     }
-  }, [leadId]); // depends on leadId
+  }, [leadId, leadData]);
 
   // 3️⃣ Effect that uses both fetch functions
   useEffect(() => {
@@ -259,7 +289,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
               { id: "overview", label: "Overview" },
               { id: "activity", label: "Activity Timeline" },
               ...(lead.behavior?.interactions
-                ? [{ id: "chat", label: "💬 Chat History" }]
+                ? [{ id: "chat", label: "Chat History" }]
                 : []),
               { id: "emails", label: "Email History" },
               { id: "notes", label: "Notes" },
@@ -522,7 +552,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
           {activeTab === "chat" && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                💬 Chatbot Conversation
+                Chatbot Conversation
               </h3>
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 {lead.intent && (
@@ -563,7 +593,7 @@ export default function LeadDetail({ leadId, leadData, onClose, onUpdate }) {
                           <div
                             className={`max-w-[70%] px-4 py-2 rounded-lg shadow-sm text-sm ${
                               isBot
-                                ? "bg-blue-100 text-blue-900 rounded-br-none"
+                                ? "bg-primary/80 text-white rounded-br-none"
                                 : "bg-white text-gray-900 rounded-bl-none border border-gray-200"
                             }`}
                           >

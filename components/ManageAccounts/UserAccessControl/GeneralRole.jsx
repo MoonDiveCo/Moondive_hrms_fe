@@ -245,9 +245,9 @@ export default function GeneralRole() {
                   >
                     {role.users.length > 0 ? (
                       <div className="space-y-2 mt-2 max-h-[260px] overflow-y-auto pr-1">
-                        {role.users.map((user) => (
+                        {role.users.map((user, index) => (
                           <div
-                            key={user._id}
+                            key={`${user._id}_${index}`}
                             className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
                           >
                             <div>

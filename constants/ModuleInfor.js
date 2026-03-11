@@ -202,6 +202,212 @@ export const MODULE_INFO = {
   },
 
 
+  // ───────── CMS Modules ─────────
+
+  CMS_OVERVIEW: {
+    title: "CMS Overview",
+    description:
+      "Central dashboard for content management with key metrics and activity summaries.",
+    features: [
+      "Content performance metrics",
+      "Recent activity feed",
+      "Quick access to all CMS modules",
+    ],
+  },
+
+  BLOGS: {
+    title: "Blogs",
+    description:
+      "Create, edit, publish, and manage blog posts for the company website.",
+    features: [
+      "Blog post creation & editing",
+      "Publish & unpublish controls",
+      "SEO metadata management",
+      "Category & tag management",
+    ],
+  },
+
+  TESTIMONIALS: {
+    title: "Testimonials",
+    description:
+      "Manage client testimonials and reviews displayed on the website.",
+    features: [
+      "Add & edit testimonials",
+      "Client details & ratings",
+      "Display order management",
+    ],
+  },
+
+  CASE_STUDIES: {
+    title: "Case Studies",
+    description:
+      "Create and manage detailed case studies showcasing company projects and results.",
+    features: [
+      "Case study creation",
+      "AI-powered generation",
+      "Project highlights & outcomes",
+      "Media attachments",
+    ],
+  },
+
+  COMPARISIONS: {
+    title: "Comparisons",
+    description:
+      "Build and manage product or service comparison pages for the website.",
+    features: [
+      "Comparison table creation",
+      "Feature-by-feature analysis",
+      "Competitive positioning",
+    ],
+  },
+
+  SUMMARIES: {
+    title: "Summaries",
+    description:
+      "Create and manage executive summaries and content briefs.",
+    features: [
+      "Executive summary editing",
+      "Content brief management",
+      "Summary publishing",
+    ],
+  },
+
+  INDUSTARIES: {
+    title: "Industries",
+    description:
+      "Manage industry-specific landing pages and content for the website.",
+    features: [
+      "Industry page creation",
+      "Page duplication",
+      "Publish & draft controls",
+      "Industry-specific content",
+    ],
+  },
+
+  WEBSITE_SEO: {
+    title: "Website SEO",
+    description:
+      "Manage website SEO settings, meta tags, and search engine optimization.",
+    features: [
+      "Meta title & descriptions",
+      "Keyword management",
+      "SEO audit & recommendations",
+    ],
+  },
+
+  CONTENT_PERFORMANCE: {
+    title: "Content Performance",
+    description:
+      "Track and analyze how website content is performing across channels.",
+    features: [
+      "Page view analytics",
+      "Engagement metrics",
+      "Content ranking insights",
+    ],
+  },
+
+  GENAI_VISIBILITY: {
+    title: "GenAI Visibility",
+    description:
+      "Monitor and manage content visibility across AI-powered search engines and assistants.",
+    features: [
+      "AI search presence tracking",
+      "Visibility score monitoring",
+      "AI citation tracking",
+    ],
+  },
+
+  INVENTORY: {
+    title: "Inventory Management",
+    description:
+      "Track and manage company assets like laptops, monitors, keyboards, and accessories.",
+    features: [
+      "Asset tracking & assignment",
+      "User assignment history",
+      "Condition & status monitoring",
+      "Receipt & agreement management",
+    ],
+  },
+
+  // ───────── CRM Modules ─────────
+
+  CRM_OVERVIEW: {
+    title: "CRM Overview",
+    description:
+      "Central dashboard for customer relationship management with sales pipeline metrics.",
+    features: [
+      "Pipeline overview",
+      "Lead statistics",
+      "Sales activity summary",
+    ],
+  },
+
+  ACCOUNTS: {
+    title: "Accounts",
+    description:
+      "Manage client accounts, company profiles, and business relationships.",
+    features: [
+      "Account creation & management",
+      "Contact management",
+      "Account history & notes",
+    ],
+  },
+
+  SALES: {
+    title: "Sales",
+    description:
+      "Track and manage the sales pipeline, deals, and revenue forecasting.",
+    features: [
+      "Deal tracking",
+      "Revenue forecasting",
+      "Sales team performance",
+    ],
+  },
+
+  LEADS: {
+    title: "Leads",
+    description:
+      "Capture, manage, and qualify incoming leads before moving them through the pipeline.",
+    features: [
+      "Lead capture & import",
+      "Lead qualification",
+      "Bulk actions & export",
+      "Move to In-Process or Archive",
+    ],
+  },
+
+  IN_PROCESS: {
+    title: "In Process",
+    description:
+      "Manage leads that are actively being worked on — send emails, schedule meetings, and track progress.",
+    features: [
+      "Email communication",
+      "Meeting scheduling",
+      "Move to Finalised or Archive",
+    ],
+  },
+
+  MEETING_SCHEDULE: {
+    title: "Meeting Schedule",
+    description:
+      "Track and manage scheduled meetings with leads and prospects.",
+    features: [
+      "Meeting tracking",
+      "Follow-up management",
+      "Move to Finalised or Archive",
+    ],
+  },
+
+  FINALISED: {
+    title: "Finalised",
+    description:
+      "View and manage leads that have been successfully converted or finalised.",
+    features: [
+      "Converted lead records",
+      "Deal closure tracking",
+      "Final status management",
+    ],
+  },
 
   // add more modules as needed
 };

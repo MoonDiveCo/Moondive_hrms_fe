@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { Eye, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import EntityTable from '@/components/Common/EntityTable';
@@ -8,8 +8,10 @@ import HRHelpdeskSlideOver from '@/components/Operations/HrHelpdesk/HrHelpdeskSl
 import HRHelpdeskViewModal from '@/components/Operations/HrHelpdesk/HRHelpdeskViewModal';
 import DeleteButton from '@/components/OrganizationFileComponent/ConfirmDeleteModal';
 import axios from 'axios';
+import { AuthContext } from '@/context/authContext';
 
 export default function HRHelpdeskPage() {
+  const { allUserPermissions } = useContext(AuthContext);
   const [tab, setTab] = useState('sent');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -282,7 +284,7 @@ const unviewedCount = (() => {
             </button>
 
             {/* EDIT - Only for sent tab */}
-            {tab === 'sent' && (
+            {tab === 'sent' && allUserPermissions.includes("HRMS:HR_HELPDESK:EDIT") && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -307,7 +309,7 @@ const unviewedCount = (() => {
             )}
 
             {/* DELETE - Only for sent tab */}
-            {tab === 'sent' && (
+            {tab === 'sent' && allUserPermissions.includes("HRMS:HR_HELPDESK:DELETE") && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -337,12 +339,14 @@ const unviewedCount = (() => {
               <h3 className="text-2xl font-bold text-gray-900">HR Help Desk</h3>
               <p className="text-sm text-gray-500 mt-1">Manage and track help desk requests</p>
             </div>
+            {allUserPermissions.includes("HRMS:HR_HELPDESK:WRITE") && (
             <button
               onClick={openAdd}
               className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium shadow-sm transition-colors"
             >
               <Plus size={18} /> New Request
             </button>
+            )}
           </div>
         </div>
 
