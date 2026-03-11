@@ -39,6 +39,8 @@ export function MenuProvider({ children }) {
       "HRMS:ATTENDANCE:VIEW": { label: "Attendance", icon: AttendanceIcon, href: "/hrms/dashboard/attendance/list", position: "top" },
       // "HRMS:TIME_TRACKER:VIEW": { label: "Time Tracker", icon: TimeTrackerIcon, href: "/hrms/dashboard/time-tracker", position: "top" },
       "HRMS:COMPANY_POLICY:VIEW": { label: "Organization Policy", icon: TimeTrackerIcon, href: "/hrms/dashboard/organizationpolicy", position: "top" },
+      "HRMS:HR_DOCS:VIEW": { label: "HR Docs", icon: DocumentsIcon, href: "/hrms/dashboard/hr-docs", position: "top" },
+      "HRMS:PAYROLL:VIEW": { label: "Payroll", icon: DocumentsIcon, href: "/hrms/dashboard/payroll", position: "top" },
       "HRMS:PERFORMANCE:VIEW": { label: "Performance", icon: PerformanceIcon, href: "/hrms/dashboard/performance", position: "top" },
       // "HRMS:DOCUMENTS:VIEW": { label: "Documents", icon: DocumentsIcon, href: "/hrms/dashboard/documents", position: "top" },
       "CMS:CMS_OVERVIEW:VIEW": { label: "Overview", icon: OverviewIcon, href: "/cms/dashboard", position: "top" },
@@ -152,6 +154,10 @@ export function MenuProvider({ children }) {
       "/hrms/dashboard/operations/employeeInfo":"HRMS:EMPLOYEE:VIEW",
       "/hrms/dashboard/operations/hr-helpdesk":"HRMS:HR_HELPDESK:VIEW",
       "/hrms/dashboard/attendance/list":"HRMS:ATTENDANCE:VIEW",
+      "/hrms/dashboard/payroll/salary-structures":"HRMS:PAYROLL_SALARY:VIEW",
+      "/hrms/dashboard/payroll/payslips":"HRMS:PAYROLL:VIEW",
+      // My Payslips — accessible to all HRMS users (self-service, no special payroll role needed)
+      "/hrms/dashboard/my-payslips":"HRMS:HRMS_OVERVIEW:VIEW",
     }
 
 
