@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { X } from "lucide-react";
+import { toast, Toaster } from "sonner";
 
 import {
   PLACEHOLDER_TITLE,
@@ -132,16 +133,19 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
           `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/publish-blog/${initialData._id}`,
           payload
         );
+        toast.success(`Blog ${status === 'published' ? 'published' : 'saved as draft'} successfully`);
       } else {
         await axios.post(
           `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/publish-blog`,
-          payload
+          payload,
         );
+        toast.success(`Blog ${status === 'published' ? 'created and published' : 'created as draft'} successfully`);
       }
 
       onClose(true);
     } catch (err) {
       console.log("Blog Save Error", err);
+      toast.error(err?.response?.data?.message || "Failed to save blog");
     }
 
     setLoading(false);
@@ -149,6 +153,8 @@ export default function BlogModal({ isOpen, onClose, initialData }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center">
+<Toaster richColors position="top-right" />
+
       <div className="bg-white w-[90%] max-w-6xl h-[90vh] rounded-xl overflow-hidden shadow-lg flex flex-col">
         
         {/* HEADER */}

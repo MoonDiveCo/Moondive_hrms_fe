@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Mail, Phone, Eye } from "lucide-react";
 import LeadDetail from "./LeadDetail";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import axios from "axios";
 
 export default function LeadList({

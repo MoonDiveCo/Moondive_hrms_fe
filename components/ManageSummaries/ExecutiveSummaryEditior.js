@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { toast, Toaster } from "sonner";
 
 export default function ExecSummaryEditor({ title, categoryKey, moderation }) {
   const [summary, setSummary] = useState("");
@@ -49,10 +50,10 @@ export default function ExecSummaryEditor({ title, categoryKey, moderation }) {
           : ""
       );
 
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success("Summary updated successfully!");
     } catch (err) {
       console.log("Save failed", err);
+      toast.error("Save failed. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -101,7 +102,7 @@ Context: ${ctx}`;
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
-
+      <Toaster richColors position="top-right" />
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-primaryText">
@@ -124,10 +125,6 @@ Context: ${ctx}`;
           >
             <span className="text-xs flex items-center">{saving ? "Saving…" : "Save"}</span>
           </button>
-
-          {saved && (
-            <span className="text-green-600 text-sm font-medium">Saved ✓</span>
-          )}
         </div>
       </div>
 

@@ -39,8 +39,8 @@ messaging.onBackgroundMessage((payload) => {
           const notificationTitle = payload.data.notificationTitle || "New Notification";
           const notificationOptions = {
             body: payload.data.notificationMessage || "You have a new message",
-            icon: `${self.location.origin}/logo-icon.svg`,
-            badge: `${self.location.origin}/badge.png`,
+            icon: `${self.location.origin}/Homepage/MoondiveLogo.png`,
+            badge: `${self.location.origin}/Homepage/MoondiveLogo.png`,
             tag: payload.data._id || Date.now().toString(),
             data: {
               ...payload.data,

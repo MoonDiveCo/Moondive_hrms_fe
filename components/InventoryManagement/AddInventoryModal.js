@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import LaptopForm from "./LaptopForm.js";
 import AccessoryForm from "./AccessoryForm";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast, Toaster } from "sonner";
 import FileUploader from "./FileUploader";
 import { Trash2 } from "lucide-react";
 import SlugSearchInput from "./SlugSearchInput.js";
@@ -262,6 +262,8 @@ const handleClose = () => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+<Toaster richColors position="top-right" />
+
       <div className="bg-white p-6 rounded-lg w-[850px] shadow-lg text-black max-h-[90vh] hide-scrollbar overflow-y-auto">
 
         {/* HEADER */}

@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast, Toaster } from "sonner";
 import AddInventoryModal from "./AddInventoryModal";
 import { EditIcon } from "lucide-react";
 import ImagePreviewModal from "./ImagePreviewModal";
@@ -120,6 +120,8 @@ const openPreview = (fileUrl) => {
     const { item, users } = props;
     return (
       <div className="pl-4 overflow-y-auto max-h-[60vh]">
+<Toaster richColors position="top-right" />
+
         {/* CURRENT USER */}
         <div className="mb-6">
           <h4 className="text-primaryText mb-3">Current User</h4>

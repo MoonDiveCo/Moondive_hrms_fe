@@ -31,7 +31,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast, Toaster } from "sonner"
 
 // import 'react-quill/dist/quill.snow.css'
 
@@ -1200,8 +1200,10 @@ const handleFileSelect = async (e) => {
   }
 
   if(fetchingCasestudies){
-    return(
+    return (
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+<Toaster richColors position="top-right" />
+
         <DotLottieReact
           src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
           loop

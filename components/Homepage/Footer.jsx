@@ -3,7 +3,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion"; 
 import Link from "next/link";
-import MoondiveLogo from "../../public/Homepage/MoondiveLogo.png";
+import MoondeskLogo from "../../public/Dashboard/MoondiveLogo.svg";
 import Facebook from "../../public/Homepage/Facebook.png";
 import Youtube from "../../public/Homepage/Youtube.png";
 import Linkedin from "../../public/Homepage/Linkedin.png";
@@ -11,14 +11,17 @@ import Instagram from "../../public/Homepage/Instagram.png";
 
 export default function Footer() {
   const navLinks = [
-    { label: "Zoho Home", href: "#" },
-    { label: "Contact Us", href: "#" },
-    { label: "Security", href: "#" },
-    { label: "Compliance", href: "#" },
-    { label: "IPR Complaints", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Privacy Policy", href: "#" },
-    { label: "Cookie Policy", href: "#" },
+    // { label: "Zoho Home", href: "#" },
+    // { label: "Contact Us", href: "#" },
+    // { label: "Security", href: "#" },
+    // { label: "Compliance", href: "#" },
+    // { label: "IPR Complaints", href: "#" },
+    // { label: "Terms of Service", href: "#" },
+    // { label: "Privacy Policy", href: "#" },
+    // { label: "Cookie Policy", href: "#" },
+    { label: "CMS", href: "/cms/login" },
+    { label: "CRM", href: "/crm/login" },
+    { label: "HRMS", href: "/hrms/login" },
   ];
 
   const socials = [
@@ -42,8 +45,8 @@ export default function Footer() {
                   transition={{ duration: 0.6, ease: "easeOut" }}
                 >
                   <Image
-                    src={MoondiveLogo}
-                    alt="MoonDive Logo"
+                    src={MoondeskLogo}
+                    alt="MoonDesk Logo"
                     className="object-contain"
                     width={160}
                     height={48}
@@ -79,8 +82,8 @@ export default function Footer() {
               {navLinks.map((link, idx) => (
                 <li key={idx} className="text-center md:text-left">
                   <Link href={link.href} className="inline-block px-2 py-1 hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primaryText">
-  {link.label}
-</Link>
+                  {link.label}
+                </Link>
                 </li>
               ))}
             </ul>
@@ -89,7 +92,7 @@ export default function Footer() {
           <hr className="my-6 border-[#EBEBEB]" />
 
           <p className="text-center text-sm text-primaryText font-normal mt-2">
-            © {new Date().getFullYear()} Moondive Pvt. Ltd. – MoonDive Private Limited, All Rights
+            © {new Date().getFullYear()} Moondive Pvt. Ltd. – Moondive Private Limited, All Rights
             Reserved.
           </p>
         </div>

@@ -6,7 +6,13 @@ import { fetchIPData } from "@/helper/tracking";
 import { ACTION_PERMISSIONS } from "@/constants/NestedDashboard";
 
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API;
-axios.defaults.withCredentials = true; // ✅ REQUIRED
+
+axios.interceptors.request.use((config) => {
+  if (!config.url.startsWith("/moondive-api") && !config.url.startsWith("http")) {
+    config.withCredentials = true;
+  }
+  return config;
+});
 
 export const AuthContext = createContext();
 

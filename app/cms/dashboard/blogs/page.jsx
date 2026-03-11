@@ -8,6 +8,8 @@ import BlogModal from '@/components/ManageBlogs/BlogModal';
 import FilterDropdown from '@/components/UI/FilterDropdown';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { RBACContext } from '@/context/rbacContext';
+import ConfirmDeleteModal from '@/components/OrganizationFileComponent/ConfirmDeleteModal';
+import { toast } from 'sonner';
 
 
 const Blog = () => {
@@ -18,6 +20,9 @@ const Blog = () => {
   const [openModal, setOpenModal] = useState(false);
 const [editBlog, setEditBlog] = useState(null);
 const [loading, setLoading] = useState(true)
+const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+const [blogToDelete, setBlogToDelete] = useState(null);
+const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchBlogs = async () => {
     try {
@@ -35,6 +40,25 @@ const [loading, setLoading] = useState(true)
   useEffect(() => {
     fetchBlogs();
   }, [selectedFilter, searchQuery]);
+
+  const handleDelete = async () => {
+    if (!blogToDelete) return;
+    setIsDeleting(true);
+    try {
+      await axios.delete(
+        `${process.env.NEXT_PUBLIC_MOONDIVE_API}/blogs/delete/${blogToDelete._id}`
+      );
+      toast.success("Blog deleted successfully");
+      setIsDeleteModalOpen(false);
+      setBlogToDelete(null);
+      fetchBlogs();
+    } catch (error) {
+      console.error("Error deleting blog:", error);
+      toast.error(error?.response?.data?.message || "Failed to delete blog");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if(loading){
     return(
@@ -108,7 +132,12 @@ const [loading, setLoading] = useState(true)
                 openEditModal={(blog) => {
                   setEditBlog(blog);
                   setOpenModal(true);
-              }} />)
+              }} 
+                onDelete={(blog) => {
+                  setBlogToDelete(blog);
+                  setIsDeleteModalOpen(true);
+                }}
+              />)
             ) : (
               <tr>
                 <td className="p-6 text-center text-gray-500" colSpan={6}>
@@ -134,6 +163,15 @@ const [loading, setLoading] = useState(true)
         fetchBlogs(); 
       }} 
     />
+
+      <ConfirmDeleteModal
+        open={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Blog"
+        message="Are you sure you want to delete this blog? This action cannot be undone."
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };

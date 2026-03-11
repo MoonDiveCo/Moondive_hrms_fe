@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { EnhancedTableShimmer } from '@/components/UI/ShimmerComponents';
-import { toast } from 'react-toastify';
+import { toast, Toaster } from "sonner";
 import BrandPerception from './BrandPerception';
 import { platforms } from '@/constants/GenAI';
 import Image from 'next/image';
@@ -263,6 +263,8 @@ const AdvancedGenAI = () => {
 
   return (
     <div className="p-8 bg-white min-h-screen">
+<Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="mb-6">
