@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useContext } from 'react';
+import React, { useEffect, useRef, useState, useContext, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { AuthContext } from '@/context/authContext';
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
 import { getAllDocuments, getEmployeeDocuments, getDocument, deleteDocument, updateDocumentStatus } from '@/services/hrDocsService';
-import { Search, FileText, Send, Download, Eye, X, CheckCircle2, Clock, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, FileText, Send, Download, Eye, X, CheckCircle2, Clock, Trash2, AlertTriangle, Layers, AlertCircle } from 'lucide-react';
 import apiClient from '@/lib/axiosClient';
+import BulkGenerateDocModal from '@/components/HRDocs/DocumentGenerator/BulkGenerateDocModal';
 
 const CATEGORIES = [
   'OFFER_LETTER', 'CONTRACT_OF_EMPLOYMENT', 'APPRAISAL_LETTER', 'EXPERIENCE_LETTER',
@@ -51,13 +52,22 @@ export default function EmployeeDocumentsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null); // doc object pending deletion
   const [deleting, setDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [bulkDocOpen, setBulkDocOpen] = useState(false);
 
-  const fetchDocuments = async () => {
+  // Debounce search for server-side filtering
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setCurrentPage(1); }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page: currentPage, limit: 15 };
       if (categoryFilter) params.category = categoryFilter;
       if (statusFilter) params.status = statusFilter;
+      if (debouncedSearch) params.search = debouncedSearch;
       let res;
       if (employeeFilter) {
         res = await getEmployeeDocuments(employeeFilter, params);
@@ -73,11 +83,11 @@ export default function EmployeeDocumentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, employeeFilter, categoryFilter, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     fetchDocuments();
-  }, [currentPage, employeeFilter, categoryFilter, statusFilter]);
+  }, [fetchDocuments]);
 
   useEffect(() => {
     apiClient.get('hrms/employee/list')
@@ -164,16 +174,25 @@ export default function EmployeeDocumentsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const filteredDocs = documents.filter((d) => {
-    const q = search.toLowerCase();
-    return (
-      (d.employeeName || '').toLowerCase().includes(q) ||
-      (d.templateName || '').toLowerCase().includes(q) ||
-      (d.templateCategory || '').toLowerCase().includes(q)
-    );
-  });
+  // Documents are server-side filtered — no client-side filter needed
+  const filteredDocs = documents;
 
   const isDocx = (doc) => !!doc?.docxBase64;
+
+  // Expiry badge helper
+  const getExpiryBadge = (doc) => {
+    if (!doc.expiresAt) return null;
+    const now = new Date();
+    const expiry = new Date(doc.expiresAt);
+    const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0 || doc.isExpired) {
+      return <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full">Expired</span>;
+    }
+    if (diffDays <= 30) {
+      return <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full">Expires in {diffDays}d</span>;
+    }
+    return null;
+  };
 
   return (
     <SubModuleProtectedRoute>
@@ -188,6 +207,12 @@ export default function EmployeeDocumentsPage() {
                 {total > 0 ? `${total} documents` : 'All generated and sent documents'}
               </p>
             </div>
+            <button
+              onClick={() => setBulkDocOpen(true)}
+              className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition"
+            >
+              <Layers className="w-4 h-4" /> Bulk Generate
+            </button>
           </div>
 
           {/* FILTERS */}
@@ -285,7 +310,10 @@ export default function EmployeeDocumentsPage() {
                           <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-[#FF7B30] text-xs font-bold">
                             {(doc.employeeName?.[0] || '?').toUpperCase()}
                           </div>
-                          <span className="text-sm font-medium text-gray-800">{doc.employeeName}</span>
+                          <div>
+                            <span className="text-sm font-medium text-gray-800">{doc.employeeName}</span>
+                            {getExpiryBadge(doc)}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{doc.templateName}</td>
@@ -434,6 +462,14 @@ export default function EmployeeDocumentsPage() {
           </div>
         </div>
       )}
+      {/* BULK GENERATE MODAL */}
+      <BulkGenerateDocModal
+        open={bulkDocOpen}
+        onClose={() => setBulkDocOpen(false)}
+        onSuccess={() => fetchDocuments()}
+        employees={employees}
+      />
+
       {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">

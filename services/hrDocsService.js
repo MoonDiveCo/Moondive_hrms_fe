@@ -57,6 +57,9 @@ export const deleteDocument = (id) =>
 export const updateDocumentStatus = (id, status) =>
   apiClient.patch(`${BASE}/documents/${id}/status`, { status });
 
+export const bulkGenerateDocuments = (data) =>
+  apiClient.post(`${BASE}/documents/bulk-generate`, data);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ONBOARDING SOP API
 // ─────────────────────────────────────────────────────────────────────────────

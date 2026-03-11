@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { X, User, CheckCircle, Send, Download } from 'lucide-react';
+import { X, User, CheckCircle, Send, Download, FileText, Eye, Loader2 } from 'lucide-react';
 import apiClient from '@/lib/axiosClient';
 import { resolveParameters, generateDocument, sendDocument } from '@/services/hrDocsService';
 import jsPDF from 'jspdf';
@@ -10,33 +10,34 @@ import html2canvas from 'html2canvas';
 const STEPS = ['Select Employee', 'Fill Parameters', 'Preview & Send'];
 
 const isLetterheadHtml = (val) => typeof val === 'string' && val.trimStart().startsWith('<');
-
-const isDocxTemplate = (tmpl) => tmpl?.templateType === 'DOCX';
+const isDocxTemplate   = (tmpl) => tmpl?.templateType === 'DOCX';
 
 export default function GenerateDocModal({ open, template, onClose, onSuccess }) {
-  const [step, setStep] = useState(0);
-  const [isNewJoiner, setIsNewJoiner] = useState(false);
-  const [employees, setEmployees] = useState([]);
-  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [step,             setStep]             = useState(0);
+  const [isNewJoiner,      setIsNewJoiner]      = useState(false);
+  const [employees,        setEmployees]        = useState([]);
+  const [employeeSearch,   setEmployeeSearch]   = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [paramValues, setParamValues] = useState({});
-  const [resolvedValues, setResolvedValues] = useState({});
-  const [parameters, setParameters] = useState([]);
-  const [resolving, setResolving] = useState(false);
-  const [generating, setSaving] = useState(false);
-  const [generatedDoc, setGeneratedDoc] = useState(null);
-  const [sendModalOpen, setSendModalOpen] = useState(false);
-  const [emailForm, setEmailForm] = useState({ to: '', subject: '', body: '' });
-  const [sending, setSending] = useState(false);
+  const [paramValues,      setParamValues]      = useState({});
+  const [resolvedValues,   setResolvedValues]   = useState({});
+  const [parameters,       setParameters]       = useState([]);
+  const [resolving,        setResolving]        = useState(false);
+  const [generating,       setSaving]           = useState(false);
+  const [generatedDoc,     setGeneratedDoc]     = useState(null);
+  const [sendModalOpen,    setSendModalOpen]    = useState(false);
+  const [emailForm,        setEmailForm]        = useState({ to: '', subject: '', body: '' });
+  const [sendFormat,       setSendFormat]       = useState('PDF'); // 'PDF' | 'DOCX'
+  const [sending,          setSending]          = useState(false);
   const [docxPreviewReady, setDocxPreviewReady] = useState(false);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const previewRef = useRef(null);
+  const [downloadingPdf,   setDownloadingPdf]   = useState(false);
+  const [newJoinerForm,    setNewJoinerForm]    = useState({ name: '', email: '' });
+
+  // previewRef    → QUILL HTML div (used for PDF capture for QUILL templates)
+  // docxPreviewRef → docx-preview div (used for PDF capture for DOCX templates)
+  const previewRef     = useRef(null);
   const docxPreviewRef = useRef(null);
 
-  // New joiner fields (basic)
-  const [newJoinerForm, setNewJoinerForm] = useState({ name: '', email: '' });
-
-  // Fetch employees list
+  // ── Fetch employees ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     apiClient.get('hrms/employee/list')
@@ -44,7 +45,7 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
       .catch(() => {});
   }, [open]);
 
-  // Reset on open
+  // ── Reset on open ───────────────────────────────────────────────────────
   useEffect(() => {
     if (open) {
       setStep(0);
@@ -54,10 +55,11 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
       setResolvedValues({});
       setGeneratedDoc(null);
       setNewJoinerForm({ name: '', email: '' });
+      setSendFormat('PDF');
     }
   }, [open]);
 
-  // When employee is selected, resolve parameters
+  // ── Select employee ─────────────────────────────────────────────────────
   const handleEmployeeSelect = async (emp) => {
     setSelectedEmployee(emp);
     setResolving(true);
@@ -67,7 +69,6 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
       setParameters(data.parameters || template.parameters || []);
       setResolvedValues(data.resolvedValues || {});
       setParamValues(data.resolvedValues || {});
-      // Pre-fill email from employee
       setEmailForm((prev) => ({
         ...prev,
         to: emp.email || '',
@@ -80,7 +81,6 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
     }
   };
 
-  // For new joiner — just use template parameters as-is
   const handleNewJoinerMode = () => {
     setIsNewJoiner(true);
     setSelectedEmployee(null);
@@ -90,34 +90,24 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
     params.forEach((p) => { blanks[p.key] = p.defaultValue || ''; });
     setParamValues(blanks);
     setResolvedValues({});
-    setEmailForm((prev) => ({
-      ...prev,
-      subject: template.name || '',
-    }));
+    setEmailForm((prev) => ({ ...prev, subject: template.name || '' }));
   };
 
-  const isSystemAutoFilled = (paramKey) =>
-    resolvedValues[paramKey] !== undefined && resolvedValues[paramKey] !== '';
+  const isSystemAutoFilled = (key) =>
+    resolvedValues[key] !== undefined && resolvedValues[key] !== '';
 
+  // ── Generate document ───────────────────────────────────────────────────
   const handleGenerate = async () => {
-    // Validate required params
     const missing = parameters
       .filter((p) => p.required && !paramValues[p.key]?.trim())
       .map((p) => p.label || p.key);
-    if (missing.length > 0) {
-      toast.error(`Please fill: ${missing.join(', ')}`);
-      return;
-    }
+    if (missing.length > 0) { toast.error(`Please fill: ${missing.join(', ')}`); return; }
 
-    const employeeName = isNewJoiner
+    const employeeName  = isNewJoiner
       ? newJoinerForm.name
       : `${selectedEmployee.firstName} ${selectedEmployee.lastName || ''}`;
     const employeeEmail = isNewJoiner ? newJoinerForm.email : selectedEmployee.email;
-
-    if (!employeeName.trim()) {
-      toast.error('Employee name is required');
-      return;
-    }
+    if (!employeeName.trim()) { toast.error('Employee name is required'); return; }
 
     try {
       setSaving(true);
@@ -138,7 +128,7 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
     }
   };
 
-  // Render docx-preview when step 2 is reached for a DOCX template
+  // ── Render docx-preview (headers/footers/letterhead preserved) ──────────
   useEffect(() => {
     if (step !== 2 || !isDocxTemplate(template) || !generatedDoc?.docxBase64 || !docxPreviewRef.current) return;
     setDocxPreviewReady(false);
@@ -146,7 +136,7 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
       try {
         const { renderAsync } = await import('docx-preview');
         const binary = atob(generatedDoc.docxBase64);
-        const bytes = new Uint8Array(binary.length);
+        const bytes  = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         docxPreviewRef.current.innerHTML = '';
         await renderAsync(bytes.buffer, docxPreviewRef.current, null, {
@@ -166,49 +156,54 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
     })();
   }, [step, generatedDoc?.docxBase64]);
 
-  // Download the filled .docx file directly
+  // ── Download .docx ──────────────────────────────────────────────────────
   const handleDownloadDocx = () => {
     if (!generatedDoc?.docxBase64) return;
     const binary = atob(generatedDoc.docxBase64);
-    const bytes = new Uint8Array(binary.length);
+    const bytes  = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
     const name = (generatedDoc?.employeeName || 'document').replace(/\s+/g, '_');
     a.download = `${template.category}_${name}.docx`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  // Builds a multi-page A4 PDF from an HTML element
+  // ── Build PDF from the correct element (DOCX → docxPreviewRef, QUILL → previewRef) ──
   const buildPdf = async (el) => {
-    const canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true });
+    const canvas  = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#fff' });
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW;
-    const imgH = (canvas.height * pageW) / canvas.width;
+    const pdf     = new jsPDF('p', 'mm', 'a4');
+    const pageW   = pdf.internal.pageSize.getWidth();
+    const pageH   = pdf.internal.pageSize.getHeight();
+    const imgH    = (canvas.height * pageW) / canvas.width;
     let heightLeft = imgH;
-    let position = 0;
-    pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+    let position   = 0;
+    pdf.addImage(imgData, 'PNG', 0, position, pageW, imgH);
     heightLeft -= pageH;
     while (heightLeft > 0) {
       position -= pageH;
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+      pdf.addImage(imgData, 'PNG', 0, position, pageW, imgH);
       heightLeft -= pageH;
     }
     return pdf;
   };
 
+  // Returns the correct ref element based on template type
+  const getPreviewEl = () =>
+    isDocxTemplate(template) ? docxPreviewRef.current : previewRef.current;
+
+  // ── Download PDF ────────────────────────────────────────────────────────
   const handleDownloadPDF = async () => {
-    if (!previewRef.current || downloadingPdf) return;
+    const el = getPreviewEl();
+    if (!el || downloadingPdf) return;
     setDownloadingPdf(true);
     try {
-      const pdf = await buildPdf(previewRef.current);
+      const pdf  = await buildPdf(el);
       const name = (generatedDoc?.employeeName || 'document').replace(/\s+/g, '_');
       pdf.save(`${template.category}_${name}.pdf`);
     } catch {
@@ -218,25 +213,37 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
     }
   };
 
+  // ── Send email ──────────────────────────────────────────────────────────
   const handleSend = async () => {
-    if (!emailForm.to) return toast.error('Recipient email is required');
+    if (!emailForm.to)      return toast.error('Recipient email is required');
     if (!emailForm.subject) return toast.error('Subject is required');
 
     try {
       setSending(true);
-      // Generate PDF as base64
-      let pdfBase64 = null;
-      if (previewRef.current) {
-        const pdf = await buildPdf(previewRef.current);
-        pdfBase64 = pdf.output('datauristring').split(',')[1];
+      const name = (generatedDoc?.employeeName || 'document').replace(/\s+/g, '_');
+
+      let pdfBase64  = null;
+      let docxBase64 = null;
+
+      if (sendFormat === 'PDF') {
+        const el = getPreviewEl();
+        if (el) {
+          const pdf = await buildPdf(el);
+          pdfBase64 = pdf.output('datauristring').split(',')[1];
+        }
+      } else {
+        // DOCX format
+        docxBase64 = generatedDoc?.docxBase64 || null;
       }
 
       await sendDocument(generatedDoc._id, {
-        to: emailForm.to,
-        subject: emailForm.subject,
-        body: emailForm.body,
+        to:               emailForm.to,
+        subject:          emailForm.subject,
+        body:             emailForm.body,
         pdfBase64,
-        fileName: `${template.category}_${generatedDoc?.employeeName || 'document'}.pdf`,
+        docxBase64,
+        attachmentFormat: sendFormat,
+        fileName:         `${template.category}_${name}.${sendFormat === 'DOCX' ? 'docx' : 'pdf'}`,
       });
 
       toast.success('Document sent successfully!');
@@ -264,6 +271,7 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+
           {/* HEADER */}
           <div className="flex items-center justify-between px-6 py-4 border-b">
             <div>
@@ -281,7 +289,9 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
               <React.Fragment key={s}>
                 <div className={`flex items-center gap-1.5 text-xs font-medium ${i <= step ? 'text-[#FF7B30]' : 'text-gray-400'}`}>
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                    i < step ? 'bg-[#FF7B30] text-white' : i === step ? 'bg-orange-100 text-[#FF7B30] border-2 border-[#FF7B30]' : 'bg-gray-200 text-gray-500'
+                    i < step  ? 'bg-[#FF7B30] text-white'
+                    : i === step ? 'bg-orange-100 text-[#FF7B30] border-2 border-[#FF7B30]'
+                    : 'bg-gray-200 text-gray-500'
                   }`}>
                     {i < step ? '✓' : i + 1}
                   </span>
@@ -294,6 +304,7 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
 
           {/* BODY */}
           <div className="flex-1 overflow-y-auto px-6 py-5">
+
             {/* STEP 0: Select Employee */}
             {step === 0 && (
               <div className="space-y-4">
@@ -336,17 +347,12 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
                           }`}
                         >
                           <div>
-                            <p className="text-sm font-medium text-gray-800">
-                              {emp.firstName} {emp.lastName}
-                            </p>
+                            <p className="text-sm font-medium text-gray-800">{emp.firstName} {emp.lastName}</p>
                             <p className="text-xs text-gray-400">
-                              {emp.designationId?.name || emp.designation || '—'} •{' '}
-                              {emp.departmentId?.name || emp.department || '—'}
+                              {emp.designationId?.name || emp.designation || '—'} · {emp.departmentId?.name || emp.department || '—'}
                             </p>
                           </div>
-                          {selectedEmployee?._id === emp._id && (
-                            <CheckCircle className="w-4 h-4 text-[#FF7B30]" />
-                          )}
+                          {selectedEmployee?._id === emp._id && <CheckCircle className="w-4 h-4 text-[#FF7B30]" />}
                         </button>
                       ))}
                       {filteredEmployees.length === 0 && (
@@ -393,50 +399,38 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {/* Auto-filled section */}
                         {!isNewJoiner && parameters.some((p) => isSystemAutoFilled(p.key)) && (
                           <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-3">
                             <p className="text-xs font-semibold text-green-700 uppercase tracking-wide flex items-center gap-1.5">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              Auto-filled from employee record
+                              <CheckCircle className="w-3.5 h-3.5" /> Auto-filled from employee record
                             </p>
-                            {parameters
-                              .filter((p) => isSystemAutoFilled(p.key))
-                              .map((param) => (
-                                <div key={param.key}>
-                                  <label className="text-xs font-medium text-gray-600 mb-1 block">
-                                    {param.label || param.key}
-                                  </label>
-                                  <input
-                                    value={paramValues[param.key] || ''}
-                                    onChange={(e) => setParamValues((prev) => ({ ...prev, [param.key]: e.target.value }))}
-                                    className="w-full border border-green-300 bg-green-50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                                  />
-                                </div>
-                              ))}
+                            {parameters.filter((p) => isSystemAutoFilled(p.key)).map((param) => (
+                              <div key={param.key}>
+                                <label className="text-xs font-medium text-gray-600 mb-1 block">{param.label || param.key}</label>
+                                <input
+                                  value={paramValues[param.key] || ''}
+                                  onChange={(e) => setParamValues((prev) => ({ ...prev, [param.key]: e.target.value }))}
+                                  className="w-full border border-green-300 bg-green-50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                                />
+                              </div>
+                            ))}
                           </div>
                         )}
-
-                        {/* Manual fill section */}
-                        {parameters
-                          .filter((p) => !isSystemAutoFilled(p.key) || isNewJoiner)
-                          .map((param) => (
-                            <div key={param.key}>
-                              <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5 block">
-                                {param.label || param.key}
-                                {param.required && <span className="text-red-400">*</span>}
-                                <span className="text-xs text-gray-400 font-normal font-mono">{`{{${param.key}}}`}</span>
-                              </label>
-                              <input
-                                value={paramValues[param.key] || ''}
-                                onChange={(e) =>
-                                  setParamValues((prev) => ({ ...prev, [param.key]: e.target.value }))
-                                }
-                                placeholder={param.placeholder || `Enter ${param.label || param.key}`}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-                              />
-                            </div>
-                          ))}
+                        {parameters.filter((p) => !isSystemAutoFilled(p.key) || isNewJoiner).map((param) => (
+                          <div key={param.key}>
+                            <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5 block">
+                              {param.label || param.key}
+                              {param.required && <span className="text-red-400">*</span>}
+                              <span className="text-xs text-gray-400 font-normal font-mono">{`{{${param.key}}}`}</span>
+                            </label>
+                            <input
+                              value={paramValues[param.key] || ''}
+                              onChange={(e) => setParamValues((prev) => ({ ...prev, [param.key]: e.target.value }))}
+                              placeholder={param.placeholder || `Enter ${param.label || param.key}`}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                            />
+                          </div>
+                        ))}
                       </div>
                     )}
                   </>
@@ -444,7 +438,7 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
               </div>
             )}
 
-            {/* STEP 2: Preview */}
+            {/* STEP 2: Preview & Actions */}
             {step === 2 && generatedDoc && (
               <div className="space-y-3">
                 {/* Actions bar */}
@@ -453,29 +447,31 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
                     <p className="text-sm font-semibold text-gray-800">{generatedDoc.employeeName}</p>
                     <p className="text-xs text-gray-400">{generatedDoc.templateCategory?.replace(/_/g, ' ')}</p>
                   </div>
-                  {isDocxTemplate(template) ? (
-                    /* DOCX: download the actual Word file */
+
+                  {/* DOCX templates get both buttons; QUILL gets PDF only */}
+                  {isDocxTemplate(template) && (
                     <button
                       onClick={handleDownloadDocx}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      <Download className="w-4 h-4" />
+                      <FileText className="w-4 h-4" />
                       Download .docx
                     </button>
-                  ) : (
-                    /* QUILL: generate PDF from HTML canvas */
-                    <button
-                      onClick={handleDownloadPDF}
-                      disabled={downloadingPdf}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      {downloadingPdf ? (
-                        <><div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" /> Generating...</>
-                      ) : (
-                        <><Download className="w-4 h-4" /> Download PDF</>
-                      )}
-                    </button>
                   )}
+
+                  {/* Download PDF — works for both DOCX (docxPreviewRef) and QUILL (previewRef) */}
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={downloadingPdf || (isDocxTemplate(template) && !docxPreviewReady)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {downloadingPdf ? (
+                      <><div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" /> Generating...</>
+                    ) : (
+                      <><Download className="w-4 h-4" /> Download PDF</>
+                    )}
+                  </button>
+
                   <button
                     onClick={() => setSendModalOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FF7B30] text-white text-sm font-medium hover:bg-[#ff6a1a]"
@@ -485,11 +481,10 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
                   </button>
                 </div>
 
-                {/* Document Preview */}
+                {/* Document preview */}
                 <div className="bg-gray-300 rounded-xl overflow-auto" style={{ maxHeight: '55vh' }}>
                   <div className="py-5 px-4">
                     {isDocxTemplate(template) ? (
-                      /* DOCX preview — exact Word rendering with headers, footers, images */
                       <>
                         {!docxPreviewReady && (
                           <div className="flex items-center justify-center py-10">
@@ -497,20 +492,15 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
                             <span className="text-sm text-gray-500">Rendering document...</span>
                           </div>
                         )}
-                        <style>{`
-                          .docx-gen-preview section.docx { box-shadow: 0 4px 24px rgba(0,0,0,0.18); margin: 0 auto 16px; }
-                        `}</style>
+                        <style>{`.docx-gen-preview section.docx { box-shadow: 0 4px 24px rgba(0,0,0,0.18); margin: 0 auto 16px; }`}</style>
                         <div ref={docxPreviewRef} className="docx-gen-preview" />
                       </>
                     ) : (
-                      /* QUILL preview — A4 HTML */
                       <>
                         <style>{`
                           .md-doc-content { word-wrap: break-word; overflow-wrap: break-word; }
                           .md-doc-content * { background-color: transparent !important; background: transparent !important; }
-                          .md-doc-content p, .md-doc-content span, .md-doc-content li {
-                            overflow-wrap: break-word !important; word-break: break-word !important;
-                          }
+                          .md-doc-content p, .md-doc-content span, .md-doc-content li { overflow-wrap: break-word !important; word-break: break-word !important; }
                           .md-doc-content img { max-width: 100% !important; height: auto !important; }
                           .md-doc-content table { max-width: 100% !important; table-layout: fixed !important; border-collapse: collapse; }
                           .md-doc-content td, .md-doc-content th { word-break: break-word !important; }
@@ -559,7 +549,6 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
             >
               {step === 0 ? 'Cancel' : 'Back'}
             </button>
-
             {step === 0 && (
               <button
                 onClick={() => setStep(1)}
@@ -590,54 +579,127 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
         </div>
       </div>
 
-      {/* EMAIL SEND MODAL */}
+      {/* ── EMAIL SEND MODAL ────────────────────────────────────────────── */}
       {sendModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h5 className="font-semibold text-gray-900">Send Document</h5>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col my-4">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h5 className="font-semibold text-gray-900">Send Document via Email</h5>
               <button onClick={() => setSendModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <input
-              value={emailForm.to}
-              onChange={(e) => setEmailForm((p) => ({ ...p, to: e.target.value }))}
-              placeholder="Recipient email *"
-              type="email"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
-            <input
-              value={emailForm.subject}
-              onChange={(e) => setEmailForm((p) => ({ ...p, subject: e.target.value }))}
-              placeholder="Subject *"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
-            <textarea
-              rows={3}
-              value={emailForm.body}
-              onChange={(e) => setEmailForm((p) => ({ ...p, body: e.target.value }))}
-              placeholder="Email body (optional — document will be attached as PDF)"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
-            />
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setSendModalOpen(false)}
-                className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSend}
-                disabled={sending}
-                className="flex-1 py-2.5 rounded-lg bg-[#FF7B30] text-white text-sm font-medium hover:bg-[#ff6a1a] disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {sending ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sending...</>
-                ) : (
-                  <><Send className="w-4 h-4" /> Send</>
-                )}
-              </button>
+
+            <div className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: '75vh' }}>
+
+              {/* Format selector */}
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Send as</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { val: 'PDF',  label: 'PDF',  desc: 'Universal, print-ready', icon: Download },
+                    { val: 'DOCX', label: 'DOCX', desc: 'Editable Word format',   icon: FileText },
+                  ].map(({ val, label, desc, icon: Icon }) => (
+                    <button
+                      key={val}
+                      onClick={() => setSendFormat(val)}
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all ${
+                        sendFormat === val
+                          ? 'border-[#FF7B30] bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${sendFormat === val ? 'text-[#FF7B30]' : 'text-gray-500'}`} />
+                      <div>
+                        <p className={`text-sm font-semibold ${sendFormat === val ? 'text-[#FF7B30]' : 'text-gray-700'}`}>{label}</p>
+                        <p className="text-[11px] text-gray-400">{desc}</p>
+                      </div>
+                      {sendFormat === val && <CheckCircle className="w-4 h-4 text-[#FF7B30] ml-auto" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Document preview before sending */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex items-center gap-2">
+                  <Eye className="w-3.5 h-3.5 text-gray-500" />
+                  <span className="text-xs font-medium text-gray-600">
+                    Preview — what will be sent as {sendFormat}
+                  </span>
+                </div>
+                <div
+                  className="overflow-y-auto bg-gray-100 flex justify-center py-3"
+                  style={{ maxHeight: '220px' }}
+                >
+                  {isDocxTemplate(template) ? (
+                    <div className="bg-white shadow-sm" style={{ minWidth: '440px', maxWidth: '600px' }}>
+                      {/* Reuse the already-rendered docx-preview by cloning its content */}
+                      <div
+                        className="docx-gen-preview"
+                        style={{ transform: 'scale(0.7)', transformOrigin: 'top left', width: '143%' }}
+                        dangerouslySetInnerHTML={{
+                          __html: docxPreviewRef.current?.innerHTML || '<p style="padding:16px;color:#aaa;font-size:13px">Loading preview…</p>',
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      style={{ width: '440px', background: 'white', padding: '12px 20px', fontSize: '9pt', lineHeight: 1.6, boxShadow: '0 2px 8px rgba(0,0,0,.1)', transform: 'scale(0.85)', transformOrigin: 'top center' }}
+                    >
+                      {template?.letterheadDataUrl && (
+                        isLetterheadHtml(template.letterheadDataUrl)
+                          ? <div dangerouslySetInnerHTML={{ __html: template.letterheadDataUrl }} />
+                          : <img src={template.letterheadDataUrl} alt="Letterhead" style={{ width: '100%', display: 'block' }} />
+                      )}
+                      <div dangerouslySetInnerHTML={{ __html: generatedDoc?.generatedContent || '' }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email fields */}
+              <input
+                value={emailForm.to}
+                onChange={(e) => setEmailForm((p) => ({ ...p, to: e.target.value }))}
+                placeholder="Recipient email *"
+                type="email"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+              <input
+                value={emailForm.subject}
+                onChange={(e) => setEmailForm((p) => ({ ...p, subject: e.target.value }))}
+                placeholder="Subject *"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+              <textarea
+                rows={2}
+                value={emailForm.body}
+                onChange={(e) => setEmailForm((p) => ({ ...p, body: e.target.value }))}
+                placeholder={`Email body (optional — document will be attached as ${sendFormat})`}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+              />
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setSendModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSend}
+                  disabled={sending}
+                  className="flex-1 py-2.5 rounded-lg bg-[#FF7B30] text-white text-sm font-medium hover:bg-[#ff6a1a] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {sending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                  ) : (
+                    <><Send className="w-4 h-4" /> Send as {sendFormat}</>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
