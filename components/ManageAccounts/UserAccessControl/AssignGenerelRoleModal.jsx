@@ -17,7 +17,11 @@ export default function AssignGeneralRoleModal({ role, onClose, onSuccess }) {
   const fetchEmployees = async () => {
     try {
       const res = await axios.get('/hrms/roles/get-employee'); 
-      setEmployees(res.data.result || []);
+       const filteredEmployees = (res.data.result || []).filter(
+        (emp) => emp.userRole[0] !== 'SuperAdmin'
+      );
+
+      setEmployees(filteredEmployees);
     } catch (err) {
       console.error('Error fetching employees', err);
     }

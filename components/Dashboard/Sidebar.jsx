@@ -52,7 +52,7 @@ export default function Sidebar({
           } flex items-center gap-3`}
         >
           <div className='flex items-center gap-3 '>
-            <div className='flex items-center'>
+            <Link href="/" className='flex items-center cursor-pointer'>
               {collapsed ? (
                 <Image
                   src={MoondiveAdminMobileLogo}
@@ -70,7 +70,7 @@ export default function Sidebar({
                   className='object-contain'
                 />
               )}
-            </div>
+            </Link>
           </div>
         </div>
 

@@ -202,9 +202,15 @@ async function deleteGroup(groupName) {
 
         </table>
         </div>
-         {groupModal.open && (
-        <EmploymentGroupModal {...groupModal} policy={policy} onClose={closeModal} organizationId={user?.organizationId} />
-      )}
+      {groupModal.open && (
+      <EmploymentGroupModal
+        {...groupModal}
+        policy={policy}
+        onClose={closeModal}
+        organizationId={user?.organizationId}
+        existingEmploymentTypes={policy?.employmentType || []}
+      />
+    )}
       </section>
   )
 }

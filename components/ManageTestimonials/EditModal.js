@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import axios from "axios";
+import { toast, Toaster } from "sonner";
 
 import crossIcon from "@/public/CMS/cross-icon.svg";
 import defaultImage from "@/public/CMS/default_image.svg";
@@ -75,15 +76,20 @@ export default function EditModal({
       );
 
       setter(data?.result?.imageUrls?.[0]);
+      toast.success("Image uploaded successfully");
     } catch (err) {
       console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to upload image");
     }
   };
 
   const handleProfileImageUpdate = (e) => uploadImage(e.target.files[0], setProfileImage);
   const handleOgImageUpdate = (e) => uploadImage(e.target.files[0], setOgImage);
 
+  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       const { data } = await axios.post(
         `${process.env.NEXT_PUBLIC_MOONDIVE_API}/${ENDPOINT_EDIT_TESTIMONIAL}/${editIndex}/${TEXT_SMALL_TESTIMONIAL}`,
@@ -101,13 +107,18 @@ export default function EditModal({
       );
 
       setTestimonials(data?.result?.testimonial);
+      toast.success("Updated successfully");
       setOpenModal(false);
     } catch (error) {
       console.error(error);
+      toast.error(error?.response?.data?.message || "Failed to update");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpdateWebLink = async () => {
+    setLoading(true);
     try {
       const { data } = await axios.post(
         `${process.env.NEXT_PUBLIC_MOONDIVE_API}/${ENDPOINT_EDIT_WEB_LINK}${category}`,
@@ -122,13 +133,18 @@ export default function EditModal({
       );
 
       setWebLink(data?.result?.[category]);
+      toast.success("Details updated successfully");
       setOpenModal(false);
     } catch (error) {
       console.error(error);
+      toast.error(error?.response?.data?.message || "Failed to update details");
+    } finally {
+      setLoading(false);
     }
   };
 
   const addTestimonial = async () => {
+    setLoading(true);
     try {
       const { data } = await axios.post(
         `${process.env.NEXT_PUBLIC_MOONDIVE_API}/${ENDPOINT_CREATE_TESTIMONIAL}`,
@@ -144,13 +160,18 @@ export default function EditModal({
       );
 
       setTestimonials(data?.result?.testimonial);
+      toast.success("Added successfully");
       setOpenModal(false);
     } catch (error) {
       console.error(error);
+      toast.error(error?.response?.data?.message || "Failed to add");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleClick = () => {
+    if (loading) return; // Prevent double clicks
     if (isAddMode) return addTestimonial();
     if (editWebLink) return handleUpdateWebLink();
     handleSubmit();
@@ -160,6 +181,8 @@ export default function EditModal({
   
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex justify-center items-center">
+<Toaster richColors position="top-right" />
+
       <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-xl p-6 shadow-xl relative hide-scrollbar">
 
         <button onClick={onClose} className="absolute top-4 right-4">
@@ -307,10 +330,11 @@ export default function EditModal({
         </div>
 
         <button
-          className="mt-6 w-full bg-primary text-whiteText py-3 rounded-full text-base hover:bg-primary/90 transition"
+          className="mt-6 w-full bg-primary text-whiteText py-3 rounded-full text-base hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleClick}
+          disabled={loading}
         >
-          {isAddMode || isBlogMode ? BTN_DONE : BTN_UPDATE}
+          {loading ? (isAddMode || isBlogMode ? "Adding..." : "Updating...") : (isAddMode || isBlogMode ? BTN_DONE : BTN_UPDATE)}
         </button>
       </div>
     </div>

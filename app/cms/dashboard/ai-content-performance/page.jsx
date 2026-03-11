@@ -22,6 +22,7 @@ import CompetitorAnalysisTab from '@/components/AIContentPerformance/CompetitorA
 import RealTimeQueryAnalysis from '@/components/AIContentPerformance/RealTimeQueryAnalysis';
 import axios from 'axios';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { toast, Toaster } from "sonner";
 
 export default function AiContentPerformance() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -145,22 +146,22 @@ export default function AiContentPerformance() {
       const data = response.data;
 
       if (data.responseCode === 200) {
-        alert('Content analysis completed successfully!');
+        toast.success('Content analysis completed successfully!');
         fetchContentScores();
         fetchDashboardData();
       } else {
-        alert('Failed to analyze content: ' + data.responseMessage);
+        toast.error('Failed to analyze content: ' + data.responseMessage);
       }
     } catch (error) {
       console.error('Failed to analyze content:', error);
-      alert('Failed to analyze content. Check console for details.');
+      toast.error('Failed to analyze content. Check console for details.');
     } finally {
       setAnalyzing(false);
     }
   };
 
   const analyzeAllPages = async () => {
-    if (!confirm('This will analyze all pages from your sitemap. Continue?')) return;
+    if (!window.confirm('This will analyze all pages from your sitemap. Continue?')) return;
 
     setAnalyzingAll(true);
     setBulkStatus({ total: 0, completed: 0, errors: 0, analyzing: 0 });
@@ -188,7 +189,7 @@ export default function AiContentPerformance() {
                 setAnalyzingAll(false);
                 fetchDashboardData();
                 fetchContentScores();
-                alert(`Bulk analysis complete! Analyzed: ${statusData.result.completed}, Errors: ${statusData.result.errors}`);
+                toast.success(`Bulk analysis complete! Analyzed: ${statusData.result.completed}, Errors: ${statusData.result.errors}`);
               }
             }
           } catch (error) {
@@ -196,12 +197,12 @@ export default function AiContentPerformance() {
           }
         }, 3000); // Poll every 3 seconds
       } else {
-        alert('Failed to start bulk analysis: ' + data.responseMessage);
+        toast.error('Failed to start bulk analysis: ' + data.responseMessage);
         setAnalyzingAll(false);
       }
     } catch (error) {
       console.error('Failed to start bulk analysis:', error);
-      alert('Failed to start bulk analysis. Check console for details.');
+      toast.error('Failed to start bulk analysis. Check console for details.');
       setAnalyzingAll(false);
     }
   };
@@ -219,6 +220,8 @@ export default function AiContentPerformance() {
   if (loading && !dashboardData) {
     return (
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+<Toaster richColors position="top-right" />
+
         <DotLottieReact
           src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
           loop

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import { toast, Toaster } from "sonner";
 import Image from 'next/image';
 import axios from 'axios';
 
@@ -98,6 +98,8 @@ const ComparisonView = ({ reports, period }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
+<Toaster richColors position="top-right" />
+
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );

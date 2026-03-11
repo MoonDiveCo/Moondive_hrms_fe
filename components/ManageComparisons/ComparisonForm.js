@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Save, X, ArrowLeft, Upload } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast, Toaster } from "sonner";
 import axios from "axios";
 import Image from "next/image";
 import { CONNECT_US_SUBTITLE } from "@/text";   
@@ -348,6 +348,8 @@ export default function ComparisonForm({ comparisonId = null, onClose = () => {}
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+<Toaster richColors position="top-right" />
+
       <div ref={containerRef} className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[92vh] hide-scrollbar overflow-y-auto">
         <div className="p-6">
           {/* Header */}

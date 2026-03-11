@@ -78,8 +78,10 @@ export default function ManageTestimonials() {
   };
 
    if(loading){
-    return(
+    return (
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+<Toaster richColors position="top-right" />
+
         <DotLottieReact
           src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
           loop
@@ -139,7 +141,7 @@ export default function ManageTestimonials() {
               <button
                   className="p-2 bg-red-50 rounded-full hover:bg-red-100 transition"
                   onClick={() => {
-                    setDeleteIndex(t._id);
+                    setDeleteIndex(index);
                     setOpenDeleteModal(true);
                   }}
                 >
