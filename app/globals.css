@@ -749,3 +749,17 @@ li {
 .vis-group {
   min-height: 70px;
 }
+
+/* Mobile Blocker Logic */
+#mobile-blocker {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  #mobile-blocker {
+    display: flex !important;
+  }
+  #app-content {
+    display: none !important;
+  }
+}
