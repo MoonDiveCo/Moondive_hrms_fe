@@ -9,6 +9,8 @@ import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 import { AttendanceProvider } from "@/context/attendanceContext";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import { NotificationProvider } from "@/context/notificationcontext";
+import MobileBlocker from "@/components/MobileBlocker";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -49,6 +51,8 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <MobileBlocker />
+        <div id="app-content" className="w-full h-full min-h-screen">
         <Toaster richColors position="top-right" />
         {/* Skip to main content link for accessibility */}
         <a href="#main-content" className="skip-to-main">
@@ -65,6 +69,7 @@ export default function RootLayout({ children }) {
             </RBACProvider>
           </AuthProvider>
         </ReactQueryProvider>
+        </div>
       </body>
     </html>
   );
