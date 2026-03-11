@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import AddEditEmployeeModal from "../AddEditEmployeeModal";
@@ -10,7 +11,7 @@ import jsPDF from "jspdf";
 import { AuthContext } from "@/context/authContext";
 import { RBACContext } from "@/context/rbacContext";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, FileText, Send, CheckCircle2, Clock, ExternalLink } from "lucide-react";
 
 /* ================= MAIN ================= */
 
@@ -122,7 +123,12 @@ const hasEmployment = (docs) =>
   const statsRef = useRef(null);
   const compensationRef = useRef(null);
   const documentsRef = useRef(null);
+  const hrDocsRef = useRef(null);
   const isAutoScrollingRef = useRef(false);
+
+  // HR Docs state
+  const [employeeHRDocs, setEmployeeHRDocs] = useState([]);
+  const [hrDocsLoading, setHrDocsLoading] = useState(false);
 
   // ✅ Check if viewing own profile
   const isOwnProfile = employee?.basic?.employeeId && user?.employeeId 
@@ -145,6 +151,21 @@ const hasEmployment = (docs) =>
   // ✅ Can edit: Own profile OR SuperAdmin OR HR
   const canEditProfile = isOwnProfile || isSuperAdmin || isHR;
 
+  // HR Docs visibility:
+  //   - Employee on their OWN profile → sees their own documents
+  //   - SuperAdmin, HR, or HRMS:HR_DOCS:VIEW → sees all docs for any employee
+  const canViewHRDocs =
+    isOwnProfile ||
+    isSuperAdmin ||
+    isHR ||
+    allUserPermissions.includes('HRMS:HR_DOCS:VIEW');
+
+  // Whether the viewer has management-level access (can see all docs, navigate to full list)
+  const isHRDocsManager =
+    isSuperAdmin ||
+    isHR ||
+    allUserPermissions.includes('HRMS:HR_DOCS:VIEW');
+
   // ✅ Filter tabs based on permissions
   const tabs = [
     { key: "bio", label: "Bio", visible: true },
@@ -152,6 +173,7 @@ const hasEmployment = (docs) =>
     { key: "stats", label: "Stats", visible: canViewStats },
     { key: "documents", label: "Documents", visible: canViewDocuments },
     { key: "compensation", label: "Compensation", visible: canViewCompensation },
+    { key: "hr-docs", label: "HR Docs", visible: canViewHRDocs },
   ].filter(tab => tab.visible);
 
   // Create section map based on visible tabs
@@ -161,6 +183,7 @@ const hasEmployment = (docs) =>
     stats: statsRef,
     compensation: compensationRef,
     documents: documentsRef,
+    "hr-docs": hrDocsRef,
   };
 
   /* ================= DATA ================= */
@@ -208,6 +231,21 @@ const hasEmployment = (docs) =>
 
     loadOrganizationData();
   }, [employeeId]);
+
+  /* ================= LOAD EMPLOYEE HR DOCS ================= */
+
+  useEffect(() => {
+    if (!employeeId || !canViewHRDocs) return;
+    setHrDocsLoading(true);
+    axios
+      .get(`/api/v1/hrms/hr-docs/documents/employee/${employeeId}?limit=5`)
+      .then((res) => {
+        const data = res.data?.result || res.data?.data || {};
+        setEmployeeHRDocs(data.docs || data || []);
+      })
+      .catch(() => {})
+      .finally(() => setHrDocsLoading(false));
+  }, [employeeId, canViewHRDocs]);
 
   /* ================= TAB SYNC - IMPROVED ================= */
 
@@ -715,6 +753,90 @@ const hasEmployment = (docs) =>
           <section ref={compensationRef} className="">
             <Card title="Compensation">
               <p className="text-gray-500">Confidential compensation information</p>
+            </Card>
+          </section>
+        )}
+
+        {/* ================= HR DOCS ================= */}
+        {canViewHRDocs && (
+          <section ref={hrDocsRef} className="">
+            <Card title={isOwnProfile && !isHRDocsManager ? "My Documents" : "HR Documents"}>
+              <div className="space-y-3">
+                {/* Employee-only info banner */}
+                {isOwnProfile && !isHRDocsManager && (
+                  <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    Documents generated for you by HR. Only you can see these.
+                  </p>
+                )}
+                {hrDocsLoading ? (
+                  [...Array(3)].map((_, i) => (
+                    <div key={i} className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+                  ))
+                ) : employeeHRDocs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm text-gray-400">No documents generated yet</p>
+                  </div>
+                ) : (
+                  <>
+                    {employeeHRDocs.map((doc) => (
+                      <div
+                        key={doc._id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF7B30]">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">{doc.templateName}</p>
+                            <p className="text-xs text-gray-400">
+                              {(doc.templateCategory || '').replace(/_/g, ' ')} •{' '}
+                              {new Date(doc.createdAt).toLocaleDateString('en-IN')}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${
+                            doc.status === 'SENT'
+                              ? 'bg-green-100 text-green-700'
+                              : doc.status === 'ACKNOWLEDGED'
+                              ? 'bg-purple-100 text-purple-700'
+                              : doc.status === 'GENERATED'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {doc.status === 'SENT' ? (
+                            <Send className="w-3 h-3" />
+                          ) : doc.status === 'ACKNOWLEDGED' ? (
+                            <CheckCircle2 className="w-3 h-3" />
+                          ) : (
+                            <Clock className="w-3 h-3" />
+                          )}
+                          {doc.status}
+                        </span>
+                      </div>
+                    ))}
+                    {/* "View all" — managers go to the management page, employees stay on their profile */}
+                    <div className="pt-2 border-t border-gray-100">
+                      {isHRDocsManager ? (
+                        <Link
+                          href={`/hrms/dashboard/hr-docs/employee-documents?employee=${employeeId}`}
+                          className="flex items-center gap-1.5 text-sm text-[#FF7B30] font-medium hover:underline"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          View all documents
+                        </Link>
+                      ) : (
+                        <p className="text-xs text-gray-400">
+                          Showing last {employeeHRDocs.length} document{employeeHRDocs.length !== 1 ? 's' : ''}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </Card>
           </section>
         )}
