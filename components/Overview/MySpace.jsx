@@ -66,7 +66,7 @@ const holidayFetcher = async (url) => {
 };
 
 export default function HRMSOverviewPage() {
-  const { workedSeconds } = useAttendance();
+const { workedSeconds, isCheckedIn, isCheckedOut } = useAttendance();
   const { user } = useContext(AuthContext);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('leave');
@@ -76,7 +76,6 @@ export default function HRMSOverviewPage() {
   const [openProfile, setOpenProfile] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [startTs, setStartTs] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -300,7 +299,36 @@ export default function HRMSOverviewPage() {
       };
     }
 
-    // Priority 4: Check for attendance sessions
+    const isToday = day.isSame(dayjs(), "day");
+
+    // Priority 4: Live Context fallback for today
+    if (isToday && (isCheckedIn || isCheckedOut || workedSeconds > 0)) {
+      const h = Math.floor(workedSeconds / 3600);
+      const m = Math.floor((workedSeconds % 3600) / 60);
+      const formattedHours = h > 0 ? `${h}h ${m}m` : `${m}m`;
+
+      let timeString = "—";
+      if (record?.sessions?.length) {
+        const sessions = record.sessions;
+        const firstIn = sessions[0]?.checkIn ? dayjs(sessions[0].checkIn).format("hh:mm A") : "";
+        const lastOut = sessions[sessions.length - 1]?.checkOut ? dayjs(sessions[sessions.length - 1].checkOut).format("hh:mm A") : "";
+        timeString = lastOut ? `${firstIn} — ${lastOut}` : `${firstIn} — (Active)`;
+      } else if (isCheckedIn) {
+        timeString = "Checked In";
+      } else if (isCheckedOut) {
+        timeString = "Checked Out";
+      }
+
+      return {
+        day: dayLabel,
+        time: timeString,
+        hours: workedSeconds > 0 ? formattedHours : "0h",
+        status: "Present",
+        color: "green",
+      };
+    }
+
+    // Priority 5: Check for attendance sessions
     if (record?.sessions?.length) {
       const sessions = record.sessions;
 
@@ -312,8 +340,6 @@ export default function HRMSOverviewPage() {
       const lastOut = lastSession?.checkOut
         ? dayjs(lastSession.checkOut)
         : null;
-
-      const isToday = day.isSame(dayjs(), "day");
 
       let totalMs = sessions.reduce((sum, s) => {
         if (!s.checkIn) return sum;
