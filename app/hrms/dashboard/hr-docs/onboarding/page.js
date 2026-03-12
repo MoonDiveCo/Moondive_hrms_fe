@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { AuthContext } from '@/context/authContext';
 import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
 import { getSOPs, createSOP, updateSOP, deleteSOP, assignSOP, getOnboardingRecords, getOnboardingRecord, updateChecklistItem } from '@/services/hrDocsService';
-import { Plus, ClipboardList, Users, CheckCircle2, Clock, ChevronDown, ChevronUp, Trash2, Edit2, UserPlus, X } from 'lucide-react';
+import { Plus, ClipboardList, Users, Clock, ChevronDown, ChevronUp, Trash2, Edit2, UserPlus, X } from 'lucide-react';
 import axios from 'axios';
 
 const TABS = ['SOP Manager', 'Active Onboardings'];
@@ -59,7 +59,7 @@ export default function OnboardingPage() {
   };
 
   const fetchEmployees = async () => {
-    axios.get('/api/v1/hrms/employee/list')
+    axios.get('/hrms/employee/list')
       .then((res) => setEmployees(res.data?.result || res.data?.data || []))
       .catch(() => {});
   };
