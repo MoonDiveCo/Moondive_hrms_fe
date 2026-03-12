@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const BlogTableRow = ({ blog, openEditModal, canEdit = true, canDelete = true }) => {
+const BlogTableRow = ({ blog, openEditModal, onDelete, canEdit = true, canDelete = true }) => {
   const router =  useRouter()
   return (
     <tr className="border-b border-gray-200 hover:bg-gray-50">
@@ -12,7 +12,7 @@ const BlogTableRow = ({ blog, openEditModal, canEdit = true, canDelete = true })
       {/* Image */}
       <td className="p-3">
         <Image
-          src={blog?.featuredImage?.[0]?.url || blog.heroImage[0]?.url}
+          src={blog?.featuredImage?.[0]?.url || blog.heroImage?.[0]?.url}
           alt="Featured"
           width={100}
           height={50}
@@ -67,7 +67,7 @@ const BlogTableRow = ({ blog, openEditModal, canEdit = true, canDelete = true })
           )}
 
           {canDelete && (
-          <button onClick={() => console.log("Delete", blog._id)}>
+          <button onClick={() => onDelete(blog)}>
             <Trash2 className="w-4 h-4 text-red-600 cursor-pointer" />
           </button>
           )}

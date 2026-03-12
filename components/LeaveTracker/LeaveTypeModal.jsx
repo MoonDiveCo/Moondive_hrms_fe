@@ -5,6 +5,8 @@ import { Trash2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
+
 const LEAVE_NAMES = [
   "Casual Leave",
   "Earned Leave",
@@ -29,22 +31,22 @@ export default function LeaveTypeModal({
   data,
   onClose,
   organizationId,
-  existingLeaveTypes =[],
+  existingLeaveTypes = [],
 }) {
   const isView = mode === "view";
   const isEdit = mode === "edit";
   const [leaveNameError, setLeaveNameError] = useState("");
 
   const existingCodes = React.useMemo(() => {
-  if (!existingLeaveTypes) return [];
+    if (!existingLeaveTypes) return [];
 
-  return existingLeaveTypes
-    .filter((lt) => {
-      if (isEdit && lt.code === data?.code) return false;
-      return true;
-    })
-    .map((lt) => lt.code);
-}, [existingLeaveTypes, isEdit, data]);
+    return existingLeaveTypes
+      .filter((lt) => {
+        if (isEdit && lt.code === data?.code) return false;
+        return true;
+      })
+      .map((lt) => lt.code);
+  }, [existingLeaveTypes, isEdit, data]);
 
   const [form, setForm] = useState({
     name: "",
@@ -65,7 +67,6 @@ export default function LeaveTypeModal({
 
     setForm({
       ...data,
-
       usageRule: {
         type: data.usageRule?.type || "NONE",
         windows: Array.isArray(data.usageRule?.windows)
@@ -74,6 +75,7 @@ export default function LeaveTypeModal({
       },
     });
   }, [data]);
+
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -86,20 +88,36 @@ export default function LeaveTypeModal({
   };
 
   const updateWindow = (index, key, value) => {
-    const updated = [...form.usageRule.windows];
-    updated[index][key] = Number(value);
-    handleChange("usageRule", { ...form.usageRule, windows: updated });
+    const windows = [...form.usageRule.windows];
+
+    windows[index][key] = Number(value);
+
+    if (key === "toMonth") {
+      const next = windows[index + 1];
+      if (next) {
+        next.fromMonth = Number(value);
+      }
+    }
+
+    handleChange("usageRule", { ...form.usageRule, windows });
   };
 
-  const addWindow = () => {
-    handleChange("usageRule", {
-      ...form.usageRule,
-      windows: [
-        ...form.usageRule.windows,
-        { fromMonth: 1, toMonth: 12, maxUsage: 1 },
-      ],
-    });
-  };
+const addWindow = () => {
+  const last = form.usageRule.windows.at(-1);
+  if (!last || last.toMonth >= 12) return;
+
+  handleChange("usageRule", {
+    ...form.usageRule,
+    windows: [
+      ...form.usageRule.windows,
+      {
+        fromMonth: last.toMonth, 
+        toMonth: Math.min(last.toMonth + 1, 12),
+        maxUsage: 1,
+      },
+    ],
+  });
+};
 
   const removeWindow = (index) => {
     handleChange("usageRule", {
@@ -109,10 +127,11 @@ export default function LeaveTypeModal({
   };
 
   const save = async () => {
-      if (!form.name) {
-    setLeaveNameError("Please select a leave type");
-    return;
-  }
+    if (!form.name) {
+      setLeaveNameError("Please select a leave type");
+      return;
+    }
+
     const payload = {
       organizationId,
       leaveTypes: [form],
@@ -120,11 +139,12 @@ export default function LeaveTypeModal({
 
     if (isEdit) {
       await axios.put(`/hrms/leave/update-leave-policy/`, payload);
-      toast.success("Leave Policy Updated Successsfully")
+      toast.success("Leave Policy Updated Successfully");
     } else {
       await axios.post(`/hrms/leave/create-leave-policy/`, payload);
-      toast.success("Leave Policy Created Successsfully")
+      toast.success("Leave Policy Created Successfully");
     }
+
     onClose();
   };
 
@@ -146,32 +166,37 @@ export default function LeaveTypeModal({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium">Leave Name</label>
+
             <select
               disabled={isView}
               value={form.name}
               onChange={(e) => {
-              const name = e.target.value;
-              handleChange("name", name);
-              handleChange("code", LEAVE_CODE_MAP[name] || "");
+                const name = e.target.value;
+                handleChange("name", name);
+                handleChange("code", LEAVE_CODE_MAP[name] || "");
 
-              if (name) setLeaveNameError("");
-            }}
+                if (name) setLeaveNameError("");
+              }}
               className="w-full px-3 py-2 border rounded-md"
             >
               <option value="">Select Leave Name</option>
-            {LEAVE_NAMES.map((l) => {
-            const code = LEAVE_CODE_MAP[l];
-            const isDisabled = existingCodes.includes(code);
 
-            return (
-              <option key={l} value={l} disabled={isDisabled}>
-                {l} {isDisabled ? "(Already added)" : ""}
-              </option>
-            );
-            })}
+              {LEAVE_NAMES.map((l) => {
+                const code = LEAVE_CODE_MAP[l];
+                const isDisabled = existingCodes.includes(code);
+
+                return (
+                  <option key={l} value={l} disabled={isDisabled}>
+                    {l} {isDisabled ? "(Already added)" : ""}
+                  </option>
+                );
+              })}
             </select>
+
             {leaveNameError && (
-              <span className="text-xs text-red-500 mt-1">{leaveNameError}</span>
+              <span className="text-xs text-red-500 mt-1">
+                {leaveNameError}
+              </span>
             )}
           </div>
 
@@ -244,6 +269,7 @@ export default function LeaveTypeModal({
               checked={form.usageRule.type === "WINDOWED"}
               onChange={(e) => toggleWindowed(e.target.checked)}
             />
+
             <span className="text-sm font-medium">
               Enable Window Based Usage (Optional)
             </span>
@@ -255,28 +281,40 @@ export default function LeaveTypeModal({
                 <div key={i} className="grid grid-cols-4 gap-3 items-end">
                   <div>
                     <label className="text-xs">From Month</label>
-                    <input
-                      type="number"
+
+                    <select
+                      disabled={isView || i !== 0}
                       value={w.fromMonth}
-                      disabled={isView}
                       onChange={(e) =>
                         updateWindow(i, "fromMonth", e.target.value)
                       }
                       className="w-full px-2 py-1 border rounded"
-                    />
+                    >
+                      {MONTH_OPTIONS.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
                     <label className="text-xs">To Month</label>
-                    <input
-                      type="number"
-                      value={w.toMonth}
+
+                    <select
                       disabled={isView}
+                      value={w.toMonth}
                       onChange={(e) =>
                         updateWindow(i, "toMonth", e.target.value)
                       }
                       className="w-full px-2 py-1 border rounded"
-                    />
+                    >
+                      {MONTH_OPTIONS.filter((m) => m >= w.fromMonth).map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -295,11 +333,11 @@ export default function LeaveTypeModal({
                   {!isView && (
                     <button
                       onClick={(e) => {
-                        e.stopPropagation(); // prevents row / parent click
+                        e.stopPropagation();
                         removeWindow(i);
                       }}
                       title="Remove"
-                      className="p-2 rounded-md "
+                      className="p-2 rounded-md"
                     >
                       <Trash2 size={16} className="text-red-600" />
                     </button>
@@ -307,14 +345,15 @@ export default function LeaveTypeModal({
                 </div>
               ))}
 
-              {!isView && (
-                <button
-                  onClick={addWindow}
-                  className="text-xs text-primary underline"
-                >
-                  + Add Window
-                </button>
-              )}
+              {!isView &&
+                form.usageRule.windows.at(-1)?.toMonth < 12 && (
+                  <button
+                    onClick={addWindow}
+                    className="text-xs text-primary underline"
+                  >
+                    + Add Window
+                  </button>
+                )}
             </div>
           )}
         </div>
@@ -328,6 +367,7 @@ export default function LeaveTypeModal({
               Save
             </button>
           )}
+
           <button
             onClick={onClose}
             className="px-4 py-2 text-xs border rounded-full"

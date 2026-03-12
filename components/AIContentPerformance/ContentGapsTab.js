@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, AlertCircle, TrendingUp, Clock, Sparkles } from 'lucide-react';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import FilterDropdown from '../UI/FilterDropdown';
 

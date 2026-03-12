@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 
-export default function EmploymentGroupModal({ mode, data, policy, onClose, organizationId }) {
+export default function EmploymentGroupModal({ mode, data, policy, onClose, organizationId, existingEmploymentTypes = [] }) {
   const isView = mode === "view";
   const isEdit = mode === "edit";
 
@@ -32,6 +32,17 @@ useEffect(() => {
     setAllocations(defaultAllocations);
   }
 }, [data, leaveTypes]);
+
+const existingGroups = React.useMemo(() => {
+  if (!existingEmploymentTypes) return [];
+
+  return existingEmploymentTypes
+    .filter((g) => {
+      if (isEdit && g.groupName === data?.groupName) return false;
+      return true;
+    })
+    .map((g) => g.groupName);
+}, [existingEmploymentTypes, isEdit, data]);
 
 
   // Save
@@ -146,16 +157,22 @@ const isValidNumberInput = (value) => /^\d*$/.test(value);
           disabled={isView || isEdit}
           value={groupName}
           onChange={(e) => {
-              setGroupName(e.target.value);
-              if (e.target.value) setGroupError("");
-            }
-          }
+            setGroupName(e.target.value);
+            if (e.target.value) setGroupError("");
+          }}
           className="w-full px-3 py-2 border rounded-md mb-4 bg-white"
         >
           <option value="">Select Group</option>
-          <option value="Permanent">Permanent</option>
-          <option value="Internship">Internship</option>
-          <option value="Probation">Probation</option>
+
+          {["Permanent", "Internship", "Probation"].map((group) => {
+            const isDisabled = existingGroups.includes(group);
+
+            return (
+              <option key={group} value={group} disabled={isDisabled}>
+                {group} {isDisabled ? "(Already added)" : ""}
+              </option>
+            );
+          })}
         </select>
         {groupError && (
           <span className="text-xs text-red-500 mb-4 mt-1">{groupError}</span>

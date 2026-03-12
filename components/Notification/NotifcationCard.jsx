@@ -24,6 +24,12 @@ const ICON_MAP = {
 /* Navigation handler */
 const navigateFromNotification = (notification, router) => {
   const type = notification.relatedDomainType;
+  const title = (notification.title || notification.notificationTitle || "").toLowerCase();
+  const message = (notification.message || notification.notificationMessage || "").toLowerCase();
+
+  if (title.includes("late check") || message.includes("late check")) {
+    return;
+  }
 
   switch (type) {
     case "HR":

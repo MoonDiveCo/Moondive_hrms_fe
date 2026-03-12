@@ -51,8 +51,12 @@ export default function AssignAdditionalPermissionModal({
   useEffect(() => {
     if (!isEdit) {
       axios.get('/hrms/roles//list-employee-to-assign').then((res) => {
-        setEmployees(res.data.result || []);
-      });
+         const filteredEmployees = (res.data.result || []).filter(
+        (emp) => emp.userRole[0] !== 'SuperAdmin'
+      );
+
+      setEmployees(filteredEmployees);
+    });
     }
   }, [isEdit]);
 

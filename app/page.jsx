@@ -17,9 +17,9 @@ export default function Page() {
     <div>
 
 
-      <Navbar/>
+      {/* <Navbar/> */}
       <HeroSection/>
-      <TrustedBySlider/>
+      {/* <TrustedBySlider/> */}
       <PlatformSection/>
       <ScrollCards/>
       <FeatuedTools/>

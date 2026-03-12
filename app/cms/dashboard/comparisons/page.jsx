@@ -12,7 +12,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast, Toaster } from "sonner";
 import ComparisonForm from "@/components/ManageComparisons/ComparisonForm"; 
 import FilterDropdown from "@/components/UI/FilterDropdown";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -177,8 +177,10 @@ export default function ManageComparisons() {
   };
 
     if(loading){
-    return(
+    return (
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+<Toaster richColors position="top-right" />
+
         <DotLottieReact
           src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
           loop

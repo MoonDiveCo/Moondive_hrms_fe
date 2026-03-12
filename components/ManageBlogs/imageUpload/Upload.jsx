@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Eye, Trash2 } from "lucide-react";
 import ImagePreviewModal from "./ImagePreviewModal";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 export default function ImageUploader({
   onFileSelect,

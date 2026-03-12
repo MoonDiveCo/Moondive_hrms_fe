@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import HeroCursorRight from "../../public/Homepage/HeroCursorRight.png";
 import HeroCursorLeft from "../../public/Homepage/HeroCursorLeft.png";
 import Image from "next/image";
-import HeroImage from "../../public/Homepage/heroImage.svg";
+import HeroImage from "../../public/Homepage/heroImage.png";
+import MoondeskLogo from '../../public/Dashboard/MoondiveLogo.svg';
 import { useRouter } from "next/navigation";
 import CmsImage from "../../public/Homepage/Document.svg";
 import CrmImage from "../../public/Homepage/Chart.svg";
@@ -150,8 +151,12 @@ export function HeroSection() {
   };
  
   return (
-    <div className="w-full flex flex-col items-center text-center py-6 bg-[#FFF9F0]">
-      <div className="text-8xl font-bold text-[#0A0F1C] leading-[1.02] tracking-tighter mb-8">
+    <div className="w-full flex flex-col items-center text-center pb-6 bg-[#FFF9F0]">
+      <div className="w-full max-w-[1400px] px-6 lg:px-12 py-6 flex justify-start items-center">
+        <Image src={MoondeskLogo} alt="MoonDesk" width={160} height={40} className="object-contain" priority />
+      </div>
+
+      <div className="text-8xl font-bold text-[#0A0F1C] leading-[1.02] tracking-tighter mb-8 mt-4 md:mt-8">
         Built For Fast,
         <br />
         Aligned{" "}
@@ -216,55 +221,66 @@ export function HeroSection() {
       </p>
  
    
-      <div className="w-full cursor-pointer max-w-6xl grid grid-cols-1 sm:grid-cols-3 gap-10 mb-4">
-        <div
-          className="bg-[#0A0F1C] text-white rounded-lg px-5 py-3 flex items-center gap-4 shadow-xl"
+      <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-3 gap-8 px-4 md:px-6 mb-8 mt-4">
+        {/* CMS CARD */}
+        <button
+          className="group relative cursor-pointer w-full bg-[#0A0F1C] overflow-hidden text-white rounded-2xl p-6 flex flex-col md:flex-row items-center gap-5 shadow-xl shadow-black/10 border border-gray-800 hover:border-[#ff7a33] hover:shadow-[#ff7a33]/20 transition-all duration-300 hover:-translate-y-1"
           onClick={handleCmsClick}
         >
-          <img
-           src={CmsImage.src}
-           alt="cms"
-           className="w-14 h-14 object-contain"
-          />
-          <div>
-            <h4 className="text-lg font-semibold text-left">CMS</h4>
-            <p className="text-sm text-gray-300 leading-tight text-left">
-              Content Management System
-            </p>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#ff7a33]/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <div className="w-16 h-16 rounded-xl bg-gray-800/60 flex items-center justify-center flex-shrink-0 group-hover:bg-[#ff7a33]/20 transition-colors">
+            <img src={CmsImage.src} alt="cms icon" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300" />
           </div>
-        </div>
-        <div
-          className="bg-[#0A0F1C] cursor-pointer text-white rounded-lg px-5 py-3 flex items-center gap-4 shadow-xl"
+          <div className="w-full flex-1 text-center md:text-left">
+            <h4 className="text-xl font-bold mb-1 flex items-center justify-center md:justify-between group-hover:text-[#ff7a33] transition-colors">
+              CMS
+              <svg className="hidden md:block w-5 h-5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </h4>
+            <p className="text-sm text-gray-400 font-medium leading-tight">Content Management System</p>
+          </div>
+        </button>
+
+        {/* CRM CARD */}
+        <button
+          className="group relative cursor-pointer w-full bg-[#0A0F1C] overflow-hidden text-white rounded-2xl p-6 flex flex-col md:flex-row items-center gap-5 shadow-xl shadow-black/10 border border-gray-800 hover:border-[#ff7a33] hover:shadow-[#ff7a33]/20 transition-all duration-300 hover:-translate-y-1"
           onClick={handleCrmClick}
         >
-        <img
-           src={CrmImage.src}
-           alt="crm"
-           className="w-14 h-14 object-contain"
-          />
-          <div>
-            <h4 className="text-lg font-semibold text-left">CRM</h4>
-            <p className="text-sm text-gray-300 leading-tight text-left">
-              Customer Relationship Management
-            </p>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#ff7a33]/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <div className="w-16 h-16 rounded-xl bg-gray-800/60 flex items-center justify-center flex-shrink-0 group-hover:bg-[#ff7a33]/20 transition-colors">
+            <img src={CrmImage.src} alt="crm icon" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300" />
           </div>
-        </div>
-        <div
-          className="bg-[#0A0F1C] cursor-pointer text-white rounded-lg px-5 py-3 flex items-center gap-4 shadow-xl"
+          <div className="w-full flex-1 text-center md:text-left">
+            <h4 className="text-xl font-bold mb-1 flex items-center justify-center md:justify-between group-hover:text-[#ff7a33] transition-colors">
+              CRM
+              <svg className="hidden md:block w-5 h-5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </h4>
+            <p className="text-sm text-gray-400 font-medium leading-tight">Customer Relationship Management</p>
+          </div>
+        </button>
+
+        {/* HRMS CARD */}
+        <button
+          className="group relative cursor-pointer w-full bg-[#0A0F1C] overflow-hidden text-white rounded-2xl p-6 flex flex-col md:flex-row items-center gap-5 shadow-xl shadow-black/10 border border-gray-800 hover:border-[#ff7a33] hover:shadow-[#ff7a33]/20 transition-all duration-300 hover:-translate-y-1"
           onClick={handleHrmsClick}
         >
-           <img
-           src={HrmsImage.src}
-           alt="hrms"
-           className="w-14 h-14 object-contain"
-          />
-          <div>
-            <h4 className="text-lg font-semibold  text-left">HRMS</h4>
-            <p className="text-sm text-gray-300 leading-tight text-left">
-              Human Resource Management System
-            </p>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#ff7a33]/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <div className="w-16 h-16 rounded-xl bg-gray-800/60 flex items-center justify-center flex-shrink-0 group-hover:bg-[#ff7a33]/20 transition-colors">
+            <img src={HrmsImage.src} alt="hrms icon" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300" />
           </div>
-        </div>
+          <div className="w-full flex-1 text-center md:text-left">
+            <h4 className="text-xl font-bold mb-1 flex items-center justify-center md:justify-between group-hover:text-[#ff7a33] transition-colors">
+              HRMS
+              <svg className="hidden md:block w-5 h-5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </h4>
+            <p className="text-sm text-gray-400 font-medium leading-tight">Human Resource Management System</p>
+          </div>
+        </button>
       </div>
  
       <div className="relative w-full px-6" style={{ minHeight: 420 }}>

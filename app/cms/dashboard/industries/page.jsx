@@ -3,7 +3,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
 import { BarChart3, Copy, Edit, ExternalLink, Eye, FileText, Filter, Globe, Plus, Search, Trash2, TrashIcon, X } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { toast, Toaster } from "sonner";
 import { TEXT_A_PROVEN_TRACK_RECORD, TEXT_ADVANCED_PLATFORMS_TO_EMPOWER_YOUR_OPERATIONS, TEXT_ADVANCED_TECHNOLOGIES_WE_EMPLOY, TEXT_COMPLETE_SOLUTIONS_FOR_YOUR_BUSINESS_NEEDS, TEXT_DELIVERING_SPECIALIZED_SOLUTIONS, TEXT_ENABLE_SERVED_INDUSTRIES, TEXT_ENABLE_TARGET_INDUSTRIES, TEXT_INDUSTRIES_WE_FOCUS, TEXT_INDUSTRIES_WE_TRANSFORMED, TEXT_INITIATE_A_PARTNERSHIP, TEXT_KICKSTART_YOUR_DREAM_PROJECT, TEXT_LETS_REDEFINE_YOUR_INDUSTRY, TEXT_VIEW_CASE_STUDIES, TEXT_WE_DEVELOP_EVERYTHING_FOR_YOUR_INDUSTRY, TEXT_WE_HAVE_WORKED_WITH_INNOVATIVE_IDEAS } from '@/text';
 import BasicTab from '@/components/ManageIndustries/BasicTab';
 import HeroTab from '@/components/ManageIndustries/HeroTab';
@@ -508,8 +508,10 @@ const ManageIndustries = () => {
 
     
   if(isLoading){
-    return(
+    return (
       <div className='flex items-center justify-center h-screen fixed inset-0 bg-black/5 backdrop-blur-sm'>
+<Toaster richColors position="top-right" />
+
         <DotLottieReact
           src='https://lottie.host/ae5fb18b-4cf0-4446-800f-111558cf9122/InmwUHkQVs.lottie'
           loop

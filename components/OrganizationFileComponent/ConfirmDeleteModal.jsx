@@ -48,11 +48,11 @@ export default function ConfirmDeleteModal({
             </div>
           )}
 
-          <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3">
+          {/* <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3">
             <p className="text-xs text-orange-800">
               <strong>Warning:</strong> This will permanently delete the file from the system.
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* FOOTER */}
