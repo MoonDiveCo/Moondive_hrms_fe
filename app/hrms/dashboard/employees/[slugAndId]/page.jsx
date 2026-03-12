@@ -238,7 +238,7 @@ const hasEmployment = (docs) =>
     if (!employeeId || !canViewHRDocs) return;
     setHrDocsLoading(true);
     axios
-      .get(`/api/v1/hrms/hr-docs/documents/employee/${employeeId}?limit=5`)
+      .get(`/hrms/hr-docs/documents/employee/${employeeId}?limit=5`)
       .then((res) => {
         const data = res.data?.result || res.data?.data || {};
         setEmployeeHRDocs(data.docs || data || []);

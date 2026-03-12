@@ -1,27 +1,64 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState, useContext, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
-import { AuthContext } from '@/context/authContext';
-import SubModuleProtectedRoute from '@/lib/routeProtection/SubModuleProtectedRoute';
-import { getAllDocuments, getEmployeeDocuments, getDocument, deleteDocument, updateDocumentStatus } from '@/services/hrDocsService';
-import { Search, FileText, Send, Download, Eye, X, CheckCircle2, Clock, Trash2, AlertTriangle, Layers, AlertCircle } from 'lucide-react';
-import apiClient from '@/lib/axiosClient';
-import BulkGenerateDocModal from '@/components/HRDocs/DocumentGenerator/BulkGenerateDocModal';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useContext,
+  useCallback,
+} from "react";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { AuthContext } from "@/context/authContext";
+import SubModuleProtectedRoute from "@/lib/routeProtection/SubModuleProtectedRoute";
+import {
+  getAllDocuments,
+  getEmployeeDocuments,
+  getDocument,
+  deleteDocument,
+  updateDocumentStatus,
+} from "@/services/hrDocsService";
+import {
+  Search,
+  FileText,
+  Send,
+  Download,
+  Eye,
+  X,
+  CheckCircle2,
+  Clock,
+  Trash2,
+  AlertTriangle,
+  Layers,
+  AlertCircle,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
+import apiClient from "@/lib/axiosClient";
+import BulkGenerateDocModal from "@/components/HRDocs/DocumentGenerator/BulkGenerateDocModal";
 
 const CATEGORIES = [
-  'OFFER_LETTER', 'CONTRACT_OF_EMPLOYMENT', 'APPRAISAL_LETTER', 'EXPERIENCE_LETTER',
-  'RELIEVING_LETTER', 'NDA', 'WARNING_LETTER', 'PROMOTION_LETTER', 'POLICY', 'OTHER',
+  "OFFER_LETTER",
+  "CONTRACT_OF_EMPLOYMENT",
+  "APPRAISAL_LETTER",
+  "EXPERIENCE_LETTER",
+  "RELIEVING_LETTER",
+  "NDA",
+  "WARNING_LETTER",
+  "PROMOTION_LETTER",
+  "POLICY",
+  "OTHER",
 ];
 
-const STATUS_OPTIONS = ['DRAFT', 'GENERATED', 'SENT', 'ACKNOWLEDGED'];
+const STATUS_OPTIONS = ["DRAFT", "GENERATED", "SENT", "ACKNOWLEDGED"];
 
 const STATUS_BADGES = {
-  DRAFT: 'bg-gray-100 text-gray-600',
-  GENERATED: 'bg-blue-100 text-blue-700',
-  SENT: 'bg-green-100 text-green-700',
-  ACKNOWLEDGED: 'bg-purple-100 text-purple-700',
+  DRAFT: "bg-gray-100 text-gray-600",
+  GENERATED: "bg-blue-100 text-blue-700",
+  SENT: "bg-green-100 text-green-700",
+  ACKNOWLEDGED: "bg-purple-100 text-purple-700",
 };
 
 const STATUS_ICONS = {
@@ -37,10 +74,12 @@ export default function EmployeeDocumentsPage() {
 
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [employeeFilter, setEmployeeFilter] = useState(searchParams.get('employee') || '');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [employeeFilter, setEmployeeFilter] = useState(
+    searchParams.get("employee") || "",
+  );
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [employees, setEmployees] = useState([]);
   const [viewDoc, setViewDoc] = useState(null);
   const [loadingDoc, setLoadingDoc] = useState(false);
@@ -52,12 +91,17 @@ export default function EmployeeDocumentsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null); // doc object pending deletion
   const [deleting, setDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [bulkDocOpen, setBulkDocOpen] = useState(false);
+  const [previewZoom, setPreviewZoom] = useState(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Debounce search for server-side filtering
   useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(search); setCurrentPage(1); }, 400);
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 400);
     return () => clearTimeout(t);
   }, [search]);
 
@@ -75,57 +119,80 @@ export default function EmployeeDocumentsPage() {
         res = await getAllDocuments(params);
       }
       const data = res.data?.result || res.data?.data || {};
-      setDocuments(data.docs || data || []);
+      const docs = data.docs || data;
+      setDocuments(Array.isArray(docs) ? docs : []);
       setTotalPages(data.pages || data.totalPages || 1);
       setTotal(data.total || 0);
     } catch {
-      toast.error('Failed to load documents');
+      toast.error("Failed to load documents");
     } finally {
       setLoading(false);
     }
-  }, [currentPage, employeeFilter, categoryFilter, statusFilter, debouncedSearch]);
+  }, [
+    currentPage,
+    employeeFilter,
+    categoryFilter,
+    statusFilter,
+    debouncedSearch,
+  ]);
 
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
 
   useEffect(() => {
-    apiClient.get('hrms/employee/list')
+    apiClient
+      .get("hrms/employee/list")
       .then((res) => setEmployees(res.data?.result || res.data?.data || []))
       .catch(() => {});
   }, []);
 
-  // Render docx-preview when viewDoc is a DOCX type
+  // Render docx-preview when viewing a DOCX document
+  // Must wait for loadingDoc=false so the ref div is mounted
   useEffect(() => {
+    if (loadingDoc || !viewDoc?.docxBase64) return;
+    // Small delay to ensure ref is mounted after render
+    const t = setTimeout(() => renderDocxFallback(), 50);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewDoc?.docxBase64, loadingDoc]);
+
+  // docx-preview renderer
+  const renderDocxFallback = useCallback(async () => {
     if (!viewDoc?.docxBase64 || !docxPreviewRef.current) return;
     setDocxPreviewReady(false);
-    (async () => {
-      try {
-        const { renderAsync } = await import('docx-preview');
-        const binary = atob(viewDoc.docxBase64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        docxPreviewRef.current.innerHTML = '';
-        await renderAsync(bytes.buffer, docxPreviewRef.current, null, {
-          className: 'docx-preview', inWrapper: false, ignoreWidth: true,
-          renderHeaders: true, renderFooters: true, breakPages: true, useBase64URL: true,
-        });
-        setDocxPreviewReady(true);
-      } catch (err) {
-        console.error('docx-preview error:', err);
-      }
-    })();
+    try {
+      const { renderAsync } = await import("docx-preview");
+      const binary = atob(viewDoc.docxBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      docxPreviewRef.current.innerHTML = "";
+      await renderAsync(bytes.buffer, docxPreviewRef.current, null, {
+        className: "docx-preview",
+        inWrapper: false,
+        ignoreWidth: true,
+        renderHeaders: true,
+        renderFooters: true,
+        breakPages: true,
+        useBase64URL: true,
+      });
+      setDocxPreviewReady(true);
+    } catch (err) {
+      console.error("docx-preview error:", err);
+    }
   }, [viewDoc?.docxBase64]);
 
   const openDocument = async (doc) => {
     setLoadingDoc(true);
     setViewDoc(null);
     setDocxPreviewReady(false);
+    setPreviewZoom(100);
+    setIsFullscreen(false);
     try {
       const res = await getDocument(doc._id);
       setViewDoc(res.data?.result || res.data?.data);
     } catch {
-      toast.error('Failed to load document');
+      toast.error("Failed to load document");
     } finally {
       setLoadingDoc(false);
     }
@@ -136,11 +203,11 @@ export default function EmployeeDocumentsPage() {
     setDeleting(true);
     try {
       await deleteDocument(deleteConfirm._id);
-      toast.success('Document deleted');
+      toast.success("Document deleted");
       setDeleteConfirm(null);
       fetchDocuments();
     } catch {
-      toast.error('Failed to delete document');
+      toast.error("Failed to delete document");
     } finally {
       setDeleting(false);
     }
@@ -149,12 +216,13 @@ export default function EmployeeDocumentsPage() {
   const handleMarkAcknowledged = async (doc) => {
     setUpdatingStatus(true);
     try {
-      await updateDocumentStatus(doc._id, 'ACKNOWLEDGED');
-      toast.success('Document marked as acknowledged');
+      await updateDocumentStatus(doc._id, "ACKNOWLEDGED");
+      toast.success("Document marked as acknowledged");
       fetchDocuments();
-      if (viewDoc?._id === doc._id) setViewDoc((prev) => ({ ...prev, status: 'ACKNOWLEDGED' }));
+      if (viewDoc?._id === doc._id)
+        setViewDoc((prev) => ({ ...prev, status: "ACKNOWLEDGED" }));
     } catch {
-      toast.error('Failed to update status');
+      toast.error("Failed to update status");
     } finally {
       setUpdatingStatus(false);
     }
@@ -165,11 +233,13 @@ export default function EmployeeDocumentsPage() {
     const binary = atob(doc.docxBase64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const blob = new Blob([bytes], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `${doc.templateCategory}_${doc.employeeName || 'document'}.docx`;
+    a.download = `${doc.templateCategory}_${doc.employeeName || "document"}.docx`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -186,10 +256,18 @@ export default function EmployeeDocumentsPage() {
     const expiry = new Date(doc.expiresAt);
     const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
     if (diffDays < 0 || doc.isExpired) {
-      return <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full">Expired</span>;
+      return (
+        <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full">
+          Expired
+        </span>
+      );
     }
     if (diffDays <= 30) {
-      return <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full">Expires in {diffDays}d</span>;
+      return (
+        <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+          Expires in {diffDays}d
+        </span>
+      );
     }
     return null;
   };
@@ -198,13 +276,16 @@ export default function EmployeeDocumentsPage() {
     <SubModuleProtectedRoute>
       <div className="p-4 bg-gray-50 min-h-screen hide-scrollbar">
         <div className="max-w-7xl mx-auto space-y-6">
-
           {/* HEADER */}
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-2xl font-bold text-gray-900">Employee Documents</h4>
+              <h4 className="text-2xl font-bold text-gray-900">
+                Employee Documents
+              </h4>
               <p className="text-sm text-gray-500 mt-1">
-                {total > 0 ? `${total} documents` : 'All generated and sent documents'}
+                {total > 0
+                  ? `${total} documents`
+                  : "All generated and sent documents"}
               </p>
             </div>
             <button
@@ -229,42 +310,60 @@ export default function EmployeeDocumentsPage() {
 
             <select
               value={employeeFilter}
-              onChange={(e) => { setEmployeeFilter(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setEmployeeFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="">All Employees</option>
               {employees.map((e) => (
-                <option key={e._id} value={e._id}>{e.firstName} {e.lastName}</option>
+                <option key={e._id} value={e._id}>
+                  {e.firstName} {e.lastName}
+                </option>
               ))}
             </select>
 
             <select
               value={categoryFilter}
-              onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="">All Categories</option>
               {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
+                <option key={c} value={c}>
+                  {c.replace(/_/g, " ")}
+                </option>
               ))}
             </select>
 
             <select
               value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="">All Statuses</option>
               {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
 
             {(employeeFilter || categoryFilter || statusFilter || search) && (
               <button
                 onClick={() => {
-                  setSearch(''); setEmployeeFilter(''); setCategoryFilter('');
-                  setStatusFilter(''); setCurrentPage(1);
+                  setSearch("");
+                  setEmployeeFilter("");
+                  setCategoryFilter("");
+                  setStatusFilter("");
+                  setCurrentPage(1);
                 }}
                 className="flex items-center gap-1.5 px-3 py-2.5 text-sm rounded-lg border border-gray-300 bg-white text-gray-500 hover:text-red-500 hover:border-red-300 transition-colors"
               >
@@ -278,8 +377,21 @@ export default function EmployeeDocumentsPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Employee', 'Template', 'Category', 'Status', 'Generated By', 'Date', 'Actions'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  {[
+                    "Employee",
+                    "Template",
+                    "Category",
+                    "Status",
+                    "Generated By",
+                    "Date",
+                    "Actions",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -288,51 +400,69 @@ export default function EmployeeDocumentsPage() {
                   [...Array(5)].map((_, i) => (
                     <tr key={i}>
                       {[...Array(7)].map((_, j) => (
-                        <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
+                        <td key={j} className="px-4 py-3">
+                          <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                        </td>
                       ))}
                     </tr>
                   ))
                 ) : filteredDocs.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16 text-center text-gray-400">
+                    <td
+                      colSpan={7}
+                      className="px-4 py-16 text-center text-gray-400"
+                    >
                       <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
                       <p className="text-sm">No documents found</p>
                       {(employeeFilter || categoryFilter || statusFilter) && (
-                        <p className="text-xs mt-1 text-gray-400">Try clearing the filters</p>
+                        <p className="text-xs mt-1 text-gray-400">
+                          Try clearing the filters
+                        </p>
                       )}
                     </td>
                   </tr>
                 ) : (
                   filteredDocs.map((doc) => (
-                    <tr key={doc._id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={doc._id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-[#FF7B30] text-xs font-bold">
-                            {(doc.employeeName?.[0] || '?').toUpperCase()}
+                            {(doc.employeeName?.[0] || "?").toUpperCase()}
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-gray-800">{doc.employeeName}</span>
+                            <span className="text-sm font-medium text-gray-800">
+                              {doc.employeeName}
+                            </span>
                             {getExpiryBadge(doc)}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{doc.templateName}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {doc.templateName}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                          {(doc.templateCategory || '').replace(/_/g, ' ')}
+                          {(doc.templateCategory || "").replace(/_/g, " ")}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${STATUS_BADGES[doc.status] || STATUS_BADGES.DRAFT}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${STATUS_BADGES[doc.status] || STATUS_BADGES.DRAFT}`}
+                        >
                           {STATUS_ICONS[doc.status]}
                           {doc.status}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">
-                        {doc.generatedBy?.firstName ? `${doc.generatedBy.firstName} ${doc.generatedBy.lastName || ''}` : '—'}
+                        {doc.generatedBy?.firstName
+                          ? `${doc.generatedBy.firstName} ${doc.generatedBy.lastName || ""}`
+                          : "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-400">
-                        {new Date(doc.createdAt).toLocaleDateString('en-IN')}
+                        {new Date(doc.createdAt).toLocaleDateString("en-IN")}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
@@ -344,7 +474,7 @@ export default function EmployeeDocumentsPage() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {doc.status === 'SENT' && (
+                          {doc.status === "SENT" && (
                             <button
                               onClick={() => handleMarkAcknowledged(doc)}
                               disabled={updatingStatus}
@@ -372,12 +502,24 @@ export default function EmployeeDocumentsPage() {
             {/* PAGINATION */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                <p className="text-xs text-gray-500">Page {currentPage} of {totalPages}</p>
+                <p className="text-xs text-gray-500">
+                  Page {currentPage} of {totalPages}
+                </p>
                 <div className="flex gap-2">
-                  <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-50">Previous</button>
-                  <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-[#FF7B30] text-white disabled:opacity-40 hover:bg-[#ff6a1a]">Next</button>
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 bg-white disabled:opacity-40 hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-[#FF7B30] text-white disabled:opacity-40 hover:bg-[#ff6a1a]"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             )}
@@ -387,16 +529,26 @@ export default function EmployeeDocumentsPage() {
 
       {/* DOCUMENT VIEW MODAL */}
       {(viewDoc || loadingDoc) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm ${isFullscreen ? 'p-0' : 'p-4'}`}>
+          <div className={`bg-white shadow-2xl w-full flex flex-col transition-all duration-200 ${isFullscreen ? 'max-w-full max-h-full rounded-none' : 'max-w-3xl max-h-[90vh] rounded-2xl'}`}>
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div>
-                <h5 className="font-semibold text-gray-900">{viewDoc?.templateName || 'Loading...'}</h5>
+                <h5 className="font-semibold text-gray-900">
+                  {viewDoc?.templateName || "Loading..."}
+                </h5>
                 {viewDoc && (
                   <p className="text-xs text-gray-400 mt-0.5">
-                    For: {viewDoc.employeeName} •{' '}
-                    <span className={`ml-1 px-1.5 py-0.5 rounded text-xs font-medium ${STATUS_BADGES[viewDoc.status]}`}>{viewDoc.status}</span>
-                    {isDocx(viewDoc) && <span className="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">Word (.docx)</span>}
+                    For: {viewDoc.employeeName} •{" "}
+                    <span
+                      className={`ml-1 px-1.5 py-0.5 rounded text-xs font-medium ${STATUS_BADGES[viewDoc.status]}`}
+                    >
+                      {viewDoc.status}
+                    </span>
+                    {isDocx(viewDoc) && (
+                      <span className="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs">
+                        Word (.docx)
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
@@ -410,31 +562,73 @@ export default function EmployeeDocumentsPage() {
                     Download .docx
                   </button>
                 )}
-                <button onClick={() => { setViewDoc(null); setDocxPreviewReady(false); }} className="text-gray-400 hover:text-gray-600">
+                <button
+                  onClick={() => {
+                    setViewDoc(null);
+                    setDocxPreviewReady(false);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-gray-100">
-              {loadingDoc ? (
-                <div className="flex items-center justify-center h-48">
-                  <div className="w-6 h-6 border-2 border-[#FF7B30] border-t-transparent rounded-full animate-spin" />
+            <div
+              className="flex-1 overflow-hidden bg-gray-100"
+              style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}
+            >
+              {/* Zoom + fullscreen bar for DOCX docs */}
+              {viewDoc && isDocx(viewDoc) && (
+                <div
+                  style={{
+                    position: 'absolute', top: 8, right: 8, zIndex: 20,
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'rgba(255,255,255,0.95)',
+                    boxShadow: '0 1px 8px rgba(0,0,0,0.12)',
+                    borderRadius: 10, padding: '4px 8px',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  <button onClick={() => setPreviewZoom((z) => Math.max(50, z - 25))} style={{ padding: '2px 6px', cursor: 'pointer', background: 'none', border: 'none', color: '#555', borderRadius: 4, display: 'flex', alignItems: 'center' }} title="Zoom out"><ZoomOut size={14} /></button>
+                  <span style={{ fontSize: 12, color: '#555', minWidth: 38, textAlign: 'center' }}>{previewZoom}%</span>
+                  <button onClick={() => setPreviewZoom((z) => Math.min(200, z + 25))} style={{ padding: '2px 6px', cursor: 'pointer', background: 'none', border: 'none', color: '#555', borderRadius: 4, display: 'flex', alignItems: 'center' }} title="Zoom in"><ZoomIn size={14} /></button>
+                  <div style={{ width: 1, height: 16, background: '#ddd', margin: '0 4px' }} />
+                  <button onClick={() => setIsFullscreen((f) => !f)} style={{ padding: '2px 6px', cursor: 'pointer', background: 'none', border: 'none', color: '#555', borderRadius: 4, display: 'flex', alignItems: 'center' }} title={isFullscreen ? 'Restore' : 'Fullscreen'}>
+                    {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                  </button>
                 </div>
-              ) : viewDoc && isDocx(viewDoc) ? (
-                /* DOCX preview */
-                <div className="p-4">
-                  {!docxPreviewReady && (
-                    <div className="flex items-center justify-center py-10">
-                      <div className="w-5 h-5 border-2 border-[#FF7B30] border-t-transparent rounded-full animate-spin mr-2" />
-                      <span className="text-sm text-gray-500">Rendering document...</span>
+              )}
+
+              <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+                {loadingDoc ? (
+                  <div className="flex items-center justify-center h-48">
+                    <div className="w-6 h-6 border-2 border-[#FF7B30] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : viewDoc && isDocx(viewDoc) ? (
+                <div
+                  className="w-full h-full overflow-auto"
+                  style={{ minHeight: "400px" }}
+                >
+                  <div className="flex items-center gap-2.5 mx-3 mt-3 px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                    <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <p className="text-xs text-blue-700 m-0">
+                      This is an approximate preview. Download the .docx file for the exact design with all backgrounds and formatting.
+                    </p>
+                  </div>
+                  <div style={{ padding: '16px 12px' }}>
+                    {!docxPreviewReady && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 8 }}>
+                        <div className="w-5 h-5 border-2 border-[#FF7B30] border-t-transparent rounded-full animate-spin" />
+                        <span style={{ fontSize: 13, color: '#888' }}>Rendering document…</span>
+                      </div>
+                    )}
+                    <div style={{ transformOrigin: 'top center', transform: `scale(${previewZoom / 100})`, width: `${10000 / previewZoom}%`, transition: 'transform 0.15s ease' }}>
+                      <div ref={docxPreviewRef} className="doc-mgmt-preview" />
                     </div>
-                  )}
-                  <style>{`.doc-mgmt-preview section.docx { box-shadow: 0 4px 24px rgba(0,0,0,0.15); margin: 0 auto 12px; }`}</style>
-                  <div ref={docxPreviewRef} className="doc-mgmt-preview" />
+                  </div>
                 </div>
               ) : viewDoc ? (
-                /* QUILL HTML preview */
                 <div className="p-8">
                   <style>{`
                     .mgmt-doc-content * { background-color: transparent !important; background: transparent !important; }
@@ -444,16 +638,24 @@ export default function EmployeeDocumentsPage() {
                   `}</style>
                   <div
                     className="mgmt-doc-content prose prose-sm max-w-none bg-white rounded-xl p-8 shadow"
-                    style={{ fontFamily: 'Arial, sans-serif' }}
-                    dangerouslySetInnerHTML={{ __html: viewDoc.generatedContent || '<p style="color:#9ca3af">Content not available</p>' }}
+                    style={{ fontFamily: "Arial, sans-serif" }}
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        viewDoc.generatedContent ||
+                        '<p style="color:#9ca3af">Content not available</p>',
+                    }}
                   />
                 </div>
               ) : null}
             </div>
+            </div>
 
             <div className="border-t px-6 py-3 flex justify-end">
               <button
-                onClick={() => { setViewDoc(null); setDocxPreviewReady(false); }}
+                onClick={() => {
+                  setViewDoc(null);
+                  setDocxPreviewReady(false);
+                }}
                 className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
               >
                 Close
@@ -480,12 +682,17 @@ export default function EmployeeDocumentsPage() {
               </div>
               <div>
                 <h5 className="font-semibold text-gray-900">Delete Document</h5>
-                <p className="text-xs text-gray-400 mt-0.5">This action cannot be undone</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
             <p className="text-sm text-gray-600">
-              Are you sure you want to delete{' '}
-              <span className="font-medium">"{deleteConfirm.templateName}"</span> for{' '}
+              Are you sure you want to delete{" "}
+              <span className="font-medium">
+                "{deleteConfirm.templateName}"
+              </span>{" "}
+              for{" "}
               <span className="font-medium">{deleteConfirm.employeeName}</span>?
             </p>
             <div className="flex gap-3 pt-1">
@@ -501,9 +708,14 @@ export default function EmployeeDocumentsPage() {
                 className="flex-1 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {deleting ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Deleting...</>
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{" "}
+                    Deleting...
+                  </>
                 ) : (
-                  <><Trash2 className="w-4 h-4" /> Delete</>
+                  <>
+                    <Trash2 className="w-4 h-4" /> Delete
+                  </>
                 )}
               </button>
             </div>

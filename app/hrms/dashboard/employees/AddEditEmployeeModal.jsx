@@ -908,7 +908,7 @@ export default function AddEditEmployeeModal({
         }
       }
 
-      if (form.imageUrl && !isValidURL(form.imageUrl)) {
+      if (form.imageUrl && !isValidURL(form.imageUrl) && !form.imageUrl.startsWith('images/')) {
         e.imageUrl = "Please enter a valid URL";
       }
 

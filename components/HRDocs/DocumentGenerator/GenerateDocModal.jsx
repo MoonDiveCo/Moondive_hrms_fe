@@ -1,7 +1,7 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { X, User, CheckCircle, Send, Download, FileText, Eye, Loader2 } from 'lucide-react';
+import { X, User, CheckCircle, Send, Download, FileText, Eye, Loader2, Maximize2, Minimize2, ZoomIn, ZoomOut, Info } from 'lucide-react';
 import apiClient from '@/lib/axiosClient';
 import { resolveParameters, generateDocument, sendDocument } from '@/services/hrDocsService';
 import jsPDF from 'jspdf';
@@ -27,13 +27,15 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
   const [sendModalOpen,    setSendModalOpen]    = useState(false);
   const [emailForm,        setEmailForm]        = useState({ to: '', subject: '', body: '' });
   const [sendFormat,       setSendFormat]       = useState('PDF'); // 'PDF' | 'DOCX'
-  const [sending,          setSending]          = useState(false);
-  const [docxPreviewReady, setDocxPreviewReady] = useState(false);
-  const [downloadingPdf,   setDownloadingPdf]   = useState(false);
-  const [newJoinerForm,    setNewJoinerForm]    = useState({ name: '', email: '' });
+  const [sending,           setSending]           = useState(false);
+  const [docxPreviewReady,  setDocxPreviewReady]  = useState(false);
+  const [downloadingPdf,    setDownloadingPdf]    = useState(false);
+  const [newJoinerForm,     setNewJoinerForm]     = useState({ name: '', email: '' });
+  const [previewZoom,       setPreviewZoom]       = useState(100);   // percentage
+  const [isFullscreen,      setIsFullscreen]      = useState(false);
 
   // previewRef    → QUILL HTML div (used for PDF capture for QUILL templates)
-  // docxPreviewRef → docx-preview div (used for PDF capture for DOCX templates)
+  // docxPreviewRef → docx-preview div (fallback if server PDF unavailable)
   const previewRef     = useRef(null);
   const docxPreviewRef = useRef(null);
 
@@ -128,33 +130,39 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
     }
   };
 
-  // ── Render docx-preview (headers/footers/letterhead preserved) ──────────
+  // ── Render docx-preview when arriving at step 2 with a DOCX doc ─────────
   useEffect(() => {
-    if (step !== 2 || !isDocxTemplate(template) || !generatedDoc?.docxBase64 || !docxPreviewRef.current) return;
-    setDocxPreviewReady(false);
-    (async () => {
-      try {
-        const { renderAsync } = await import('docx-preview');
-        const binary = atob(generatedDoc.docxBase64);
-        const bytes  = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        docxPreviewRef.current.innerHTML = '';
-        await renderAsync(bytes.buffer, docxPreviewRef.current, null, {
-          className: 'docx-preview',
-          inWrapper: false,
-          ignoreWidth: true,
-          renderHeaders: true,
-          renderFooters: true,
-          renderFootnotes: true,
-          breakPages: true,
-          useBase64URL: true,
-        });
-        setDocxPreviewReady(true);
-      } catch (err) {
-        console.error('docx-preview error:', err);
-      }
-    })();
+    if (step !== 2 || !isDocxTemplate(template) || !generatedDoc?.docxBase64) return;
+    const t = setTimeout(() => renderDocxPreview(), 50);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, generatedDoc?.docxBase64]);
+
+  // ── docx-preview renderer ─────────────────────────────────────────────────
+  const renderDocxPreview = useCallback(async () => {
+    if (!generatedDoc?.docxBase64 || !docxPreviewRef.current) return;
+    setDocxPreviewReady(false);
+    try {
+      const { renderAsync } = await import('docx-preview');
+      const binary = atob(generatedDoc.docxBase64);
+      const bytes  = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      docxPreviewRef.current.innerHTML = '';
+      await renderAsync(bytes.buffer, docxPreviewRef.current, null, {
+        className: 'docx-preview',
+        inWrapper: false,
+        ignoreWidth: true,
+        renderHeaders: true,
+        renderFooters: true,
+        renderFootnotes: true,
+        breakPages: true,
+        useBase64URL: true,
+      });
+      setDocxPreviewReady(true);
+    } catch (err) {
+      console.error('docx-preview fallback error:', err);
+    }
+  }, [generatedDoc?.docxBase64]);
 
   // ── Download .docx ──────────────────────────────────────────────────────
   const handleDownloadDocx = () => {
@@ -482,18 +490,83 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
                 </div>
 
                 {/* Document preview */}
-                <div className="bg-gray-300 rounded-xl overflow-auto" style={{ maxHeight: '55vh' }}>
-                  <div className="py-5 px-4">
+                <div
+                  className="rounded-xl overflow-hidden border border-gray-200"
+                  style={{
+                    height: isFullscreen ? '78vh' : '58vh',
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: '#e5e7eb',
+                  }}
+                >
+                  {/* Toolbar: zoom + fullscreen (only for DOCX) */}
+                  {isDocxTemplate(template) && (
+                    <div
+                      style={{
+                        position: 'absolute', top: 8, right: 8, zIndex: 20,
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        background: 'rgba(255,255,255,0.95)',
+                        boxShadow: '0 1px 8px rgba(0,0,0,0.12)',
+                        borderRadius: 10,
+                        padding: '4px 8px',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <button
+                        onClick={() => setPreviewZoom((z) => Math.max(50, z - 25))}
+                        style={{ padding: '2px 6px', cursor: 'pointer', background: 'none', border: 'none', color: '#555', borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                        title="Zoom out"
+                      >
+                        <ZoomOut size={14} />
+                      </button>
+                      <span style={{ fontSize: 12, color: '#555', minWidth: 38, textAlign: 'center' }}>{previewZoom}%</span>
+                      <button
+                        onClick={() => setPreviewZoom((z) => Math.min(200, z + 25))}
+                        style={{ padding: '2px 6px', cursor: 'pointer', background: 'none', border: 'none', color: '#555', borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                        title="Zoom in"
+                      >
+                        <ZoomIn size={14} />
+                      </button>
+                      <div style={{ width: 1, height: 16, background: '#ddd', margin: '0 4px' }} />
+                      <button
+                        onClick={() => setIsFullscreen((f) => !f)}
+                        style={{ padding: '2px 6px', cursor: 'pointer', background: 'none', border: 'none', color: '#555', borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                        title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                      >
+                        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Scrollable content area */}
+                  <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
                     {isDocxTemplate(template) ? (
                       <>
-                        {!docxPreviewReady && (
-                          <div className="flex items-center justify-center py-10">
-                            <div className="w-5 h-5 border-2 border-[#FF7B30] border-t-transparent rounded-full animate-spin mr-2" />
-                            <span className="text-sm text-gray-500">Rendering document...</span>
+                        <div style={{ margin: '12px 12px 0', padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
+                          <Info size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                          <p style={{ fontSize: 12, color: '#1e40af', margin: 0 }}>
+                            This is an approximate preview. Download the .docx file for the exact design with all backgrounds and formatting.
+                          </p>
+                        </div>
+                        <div style={{ padding: '16px 12px' }}>
+                          {!docxPreviewReady && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: 8 }}>
+                              <div className="w-5 h-5 border-2 border-[#FF7B30] border-t-transparent rounded-full animate-spin" />
+                              <span style={{ fontSize: 13, color: '#888' }}>Rendering document…</span>
+                            </div>
+                          )}
+                          <div
+                            style={{
+                              transformOrigin: 'top center',
+                              transform: `scale(${previewZoom / 100})`,
+                              width: `${10000 / previewZoom}%`,
+                              transition: 'transform 0.15s ease',
+                            }}
+                          >
+                            <div ref={docxPreviewRef} className="docx-gen-preview" />
                           </div>
-                        )}
-                        <style>{`.docx-gen-preview section.docx { box-shadow: 0 4px 24px rgba(0,0,0,0.18); margin: 0 auto 16px; }`}</style>
-                        <div ref={docxPreviewRef} className="docx-gen-preview" />
+                        </div>
                       </>
                     ) : (
                       <>
@@ -537,6 +610,7 @@ export default function GenerateDocModal({ open, template, onClose, onSuccess })
                     )}
                   </div>
                 </div>
+
               </div>
             )}
           </div>

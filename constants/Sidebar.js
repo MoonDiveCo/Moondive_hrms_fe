@@ -154,6 +154,9 @@ export function MenuProvider({ children }) {
       "/hrms/dashboard/operations/employeeInfo":"HRMS:EMPLOYEE:VIEW",
       "/hrms/dashboard/operations/hr-helpdesk":"HRMS:HR_HELPDESK:VIEW",
       "/hrms/dashboard/attendance/list":"HRMS:ATTENDANCE:VIEW",
+      "/hrms/dashboard/hr-docs/templates":"HRMS:HR_DOCS:VIEW",
+      "/hrms/dashboard/hr-docs/employee-documents":"HRMS:HR_DOCS:VIEW",
+      "/hrms/dashboard/hr-docs/onboarding":"HRMS:HR_DOCS:VIEW",
       "/hrms/dashboard/payroll/salary-structures":"HRMS:PAYROLL_SALARY:VIEW",
       "/hrms/dashboard/payroll/payslips":"HRMS:PAYROLL:VIEW",
       // My Payslips — accessible to all HRMS users (self-service, no special payroll role needed)
