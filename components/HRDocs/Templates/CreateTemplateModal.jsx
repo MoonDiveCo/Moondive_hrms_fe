@@ -3,7 +3,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { X, Plus, Trash2, ChevronDown, Tag, Info, FileText, ImageIcon, Upload } from 'lucide-react';
-import { createTemplate, updateTemplate, getSystemParameters } from '@/services/hrDocsService';
+import { createTemplate, updateTemplate, getSystemParameters, getTemplate } from '@/services/hrDocsService';
 import dynamic from 'next/dynamic';
 
 // Quill loaded dynamically to avoid SSR issues
@@ -69,20 +69,35 @@ export default function CreateTemplateModal({ open, onClose, editTemplate, onSuc
 
   useEffect(() => {
     if (editTemplate) {
-      setForm({
-        name: editTemplate.name || '',
-        category: editTemplate.category || '',
-        subCategory: editTemplate.subCategory || '',
-        description: editTemplate.description || '',
-        content: editTemplate.content || '',
-        tags: editTemplate.tags || [],
-        letterheadDataUrl: editTemplate.letterheadDataUrl || null,
-        templateType: editTemplate.templateType || 'QUILL',
-        docxBase64: editTemplate.docxBase64 || null,
-      });
-      setDocxFileName(editTemplate.templateType === 'DOCX' ? 'template.docx' : null);
-      setDocxPreviewReady(false);
-      setParameters(editTemplate.parameters || []);
+      // List API excludes content/docxBase64 — fetch full template for edit
+      const populateForm = (tmpl) => {
+        setForm({
+          name: tmpl.name || '',
+          category: tmpl.category || '',
+          subCategory: tmpl.subCategory || '',
+          description: tmpl.description || '',
+          content: tmpl.content || '',
+          tags: tmpl.tags || [],
+          letterheadDataUrl: tmpl.letterheadDataUrl || null,
+          templateType: tmpl.templateType || 'QUILL',
+          docxBase64: tmpl.docxBase64 || null,
+        });
+        setDocxFileName(tmpl.templateType === 'DOCX' && tmpl.docxBase64 ? 'template.docx' : null);
+        setDocxPreviewReady(false);
+        setParameters(tmpl.parameters || []);
+      };
+
+      if (!editTemplate.content && !editTemplate.docxBase64) {
+        // Fetch full template (list endpoint strips content/docxBase64)
+        getTemplate(editTemplate._id)
+          .then((res) => {
+            const full = res.data?.result || res.data?.data || editTemplate;
+            populateForm(full);
+          })
+          .catch(() => populateForm(editTemplate));
+      } else {
+        populateForm(editTemplate);
+      }
     } else {
       setForm({ name: '', category: '', subCategory: '', description: '', content: '', tags: [], letterheadDataUrl: null, templateType: 'QUILL', docxBase64: null });
       setDocxFileName(null);

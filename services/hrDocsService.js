@@ -60,6 +60,9 @@ export const updateDocumentStatus = (id, status) =>
 export const bulkGenerateDocuments = (data) =>
   apiClient.post(`${BASE}/documents/bulk-generate`, data);
 
+export const updateDocument = (id, data) =>
+  apiClient.put(`${BASE}/documents/${id}`, data);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ONBOARDING SOP API
 // ─────────────────────────────────────────────────────────────────────────────
